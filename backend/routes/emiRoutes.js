@@ -8,6 +8,7 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const EMI = require('../models/EMI');
 const User = require('../models/User');
+const FinancialProfile = require('../models/FinancialProfile');
 const logger = require('../utils/logger');
 const CreditCardStatementService = require('../services/creditCardStatementService');
 const EMIExtractionService = require('../services/emiExtractionService');
@@ -249,13 +250,24 @@ router.post('/sync-statements', authenticate, async (req, res) => {
   try {
     logger.info(`Starting credit card statement sync for user: ${req.user._id}`);
     
-    // Get user's Gmail tokens
-    const user = await User.findById(req.user._id);
+    // Get user's Gmail tokens from FinancialProfile
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
     
-    if (!user.gmailTokens) {
+    if (!profile || !profile.gmailSettings || !profile.gmailSettings.isConnected) {
       return res.status(400).json({
         success: false,
         message: 'Gmail not connected. Please connect Gmail first.'
+      });
+    }
+
+    // Get tokens (need to include the select: false fields)
+    const profileWithTokens = await FinancialProfile.findOne({ userId: req.user._id })
+      .select('+gmailSettings.accessToken +gmailSettings.refreshToken');
+    
+    if (!profileWithTokens.gmailSettings.accessToken || !profileWithTokens.gmailSettings.refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Gmail tokens not found. Please reconnect Gmail.'
       });
     }
 
@@ -266,7 +278,13 @@ router.post('/sync-statements', authenticate, async (req, res) => {
       process.env.GMAIL_CLIENT_SECRET,
       process.env.GMAIL_REDIRECT_URI
     );
-    oauth2Client.setCredentials(user.gmailTokens);
+    
+    // Set credentials from profile
+    oauth2Client.setCredentials({
+      access_token: profileWithTokens.gmailSettings.accessToken,
+      refresh_token: profileWithTokens.gmailSettings.refreshToken,
+      scope: profileWithTokens.gmailSettings.grantedScopes?.join(' ') || ''
+    });
     
     const ccStatementService = new CreditCardStatementService(oauth2Client);
     
@@ -599,6 +617,337 @@ router.get('/statistics/summary', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch statistics',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route POST /api/emi/manual
+ * @desc Create EMI manually
+ * @access Private
+ */
+router.post('/manual', authenticate, async (req, res) => {
+  try {
+    logger.info(`Creating manual EMI for user: ${req.user._id}`);
+    
+    const {
+      cardProvider,
+      cardLastFourDigits,
+      cardHolderName,
+      merchantName,
+      productDescription,
+      principalAmount,
+      interestRate,
+      processingFee,
+      emiAmount,
+      totalTenure,
+      startDate,
+      notes,
+      tags
+    } = req.body;
+    
+    // Validation
+    if (!cardProvider || !cardLastFourDigits || !cardHolderName || !merchantName || 
+        !principalAmount || !emiAmount || !totalTenure || !startDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+    }
+    
+    // Validate card last four digits
+    if (!/^\d{4}$/.test(cardLastFourDigits)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Card last four digits must be exactly 4 digits'
+      });
+    }
+    
+    // Calculate dates
+    const emiStartDate = new Date(startDate);
+    const endDate = new Date(emiStartDate);
+    endDate.setMonth(endDate.getMonth() + totalTenure);
+    
+    const nextDueDate = new Date(emiStartDate);
+    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    
+    // Calculate payment schedule
+    const paymentHistory = [];
+    const monthlyInterest = (interestRate || 0) / 12 / 100;
+    
+    for (let i = 1; i <= totalTenure; i++) {
+      const dueDate = new Date(emiStartDate);
+      dueDate.setMonth(dueDate.getMonth() + i);
+      
+      // Calculate principal and interest for this installment
+      const outstandingPrincipal = principalAmount - ((i - 1) * (principalAmount / totalTenure));
+      const interestPaid = outstandingPrincipal * monthlyInterest;
+      const principalPaid = emiAmount - interestPaid;
+      
+      paymentHistory.push({
+        installmentNumber: i,
+        dueDate: dueDate,
+        amount: emiAmount,
+        principalPaid: Math.max(0, principalPaid),
+        interestPaid: Math.max(0, interestPaid),
+        status: 'upcoming'
+      });
+    }
+    
+    // Create EMI record
+    const emi = new EMI({
+      userId: req.user._id,
+      cardProvider: cardProvider.toUpperCase(),
+      cardLastFourDigits,
+      cardHolderName,
+      merchantName,
+      productDescription: productDescription || 'Manual Entry',
+      principalAmount: parseFloat(principalAmount),
+      interestRate: parseFloat(interestRate) || 0,
+      processingFee: parseFloat(processingFee) || 0,
+      emiAmount: parseFloat(emiAmount),
+      totalTenure: parseInt(totalTenure),
+      paidInstallments: 0,
+      remainingInstallments: parseInt(totalTenure),
+      startDate: emiStartDate,
+      endDate: endDate,
+      nextDueDate: nextDueDate,
+      paymentHistory: paymentHistory,
+      status: 'active',
+      extractionMethod: 'manual',
+      extractionConfidence: 100,
+      notes: notes || '',
+      tags: tags || []
+    });
+    
+    await emi.save();
+    
+    logger.info(`Manual EMI created successfully: ${emi._id}`);
+    
+    res.status(201).json({
+      success: true,
+      message: 'EMI created successfully',
+      data: emi
+    });
+  } catch (error) {
+    logger.error('Create manual EMI error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create EMI',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route PUT /api/emi/:id
+ * @desc Update EMI details
+ * @access Private
+ */
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    logger.info(`Updating EMI: ${id}`);
+    
+    const emi = await EMI.findOne({ _id: id, userId: req.user._id });
+    
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+    
+    // Update allowed fields
+    const allowedUpdates = [
+      'merchantName', 'productDescription', 'notes', 'tags',
+      'cardHolderName', 'interestRate'
+    ];
+    
+    Object.keys(req.body).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        emi[key] = req.body[key];
+      }
+    });
+    
+    await emi.save();
+    
+    res.json({
+      success: true,
+      message: 'EMI updated successfully',
+      data: emi
+    });
+  } catch (error) {
+    logger.error('Update EMI error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update EMI',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route DELETE /api/emi/:id
+ * @desc Delete EMI
+ * @access Private
+ */
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    logger.info(`Deleting EMI: ${id}`);
+    
+    const emi = await EMI.findOne({ _id: id, userId: req.user._id });
+    
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+    
+    await EMI.deleteOne({ _id: id });
+    
+    res.json({
+      success: true,
+      message: 'EMI deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Delete EMI error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete EMI',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route POST /api/emi/:id/mark-paid
+ * @desc Mark an installment as paid
+ * @access Private
+ */
+router.post('/:id/mark-paid', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { installmentNumber, paidDate } = req.body;
+    
+    logger.info(`Marking installment ${installmentNumber} as paid for EMI: ${id}`);
+    
+    const emi = await EMI.findOne({ _id: id, userId: req.user._id });
+    
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+    
+    // Find the payment in history
+    const payment = emi.paymentHistory.find(p => p.installmentNumber === parseInt(installmentNumber));
+    
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment not found'
+      });
+    }
+    
+    if (payment.status === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment already marked as paid'
+      });
+    }
+    
+    // Update payment status
+    payment.status = 'paid';
+    payment.paidDate = paidDate ? new Date(paidDate) : new Date();
+    
+    // Update EMI counters
+    emi.paidInstallments = emi.paymentHistory.filter(p => p.status === 'paid').length;
+    emi.remainingInstallments = emi.totalTenure - emi.paidInstallments;
+    
+    // Update next due date
+    if (emi.remainingInstallments > 0) {
+      const nextUnpaid = emi.paymentHistory.find(p => p.status !== 'paid');
+      if (nextUnpaid) {
+        emi.nextDueDate = nextUnpaid.dueDate;
+      }
+    } else {
+      emi.status = 'completed';
+    }
+    
+    await emi.save();
+    
+    res.json({
+      success: true,
+      message: 'Payment marked as paid',
+      data: emi
+    });
+  } catch (error) {
+    logger.error('Mark payment as paid error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark payment as paid',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route POST /api/emi/:id/foreclose
+ * @desc Foreclose an EMI
+ * @access Private
+ */
+router.post('/:id/foreclose', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { foreclosureDate, foreclosureAmount } = req.body;
+    
+    logger.info(`Foreclosing EMI: ${id}`);
+    
+    const emi = await EMI.findOne({ _id: id, userId: req.user._id });
+    
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+    
+    if (emi.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only active EMIs can be foreclosed'
+      });
+    }
+    
+    // Update EMI status
+    emi.status = 'foreclosed';
+    emi.foreclosureAmount = foreclosureAmount || (emi.emiAmount * emi.remainingInstallments);
+    emi.remainingInstallments = 0;
+    
+    // Mark all remaining payments as cancelled
+    emi.paymentHistory.forEach(payment => {
+      if (payment.status === 'upcoming' || payment.status === 'pending') {
+        payment.status = 'cancelled';
+      }
+    });
+    
+    await emi.save();
+    
+    res.json({
+      success: true,
+      message: 'EMI foreclosed successfully',
+      data: emi
+    });
+  } catch (error) {
+    logger.error('Foreclose EMI error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to foreclose EMI',
       error: error.message
     });
   }

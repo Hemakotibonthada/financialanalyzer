@@ -23,7 +23,11 @@ router.get('/', authenticate, async (req, res) => {
 
     res.json({
       success: true,
-      data: { profile }
+      data: { 
+        profile,
+        gmailConnected: profile.gmailSettings?.isConnected || false,
+        gmailEmail: profile.gmailSettings?.email || null
+      }
     });
   } catch (error) {
     logger.error('Get profile error:', error);

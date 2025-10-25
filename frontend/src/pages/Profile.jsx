@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { 
+  User, Mail, Phone, CreditCard, DollarSign, Calendar, 
+  Settings, Bell, Shield, CheckCircle, AlertCircle, 
+  TrendingUp, Target, Plus, Trash2, Save, RefreshCw,
+  Eye, EyeOff, Lock, Globe, Zap, Link, XCircle
+} from 'lucide-react';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -329,125 +335,180 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-          <button
-            onClick={saveProfile}
-            disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+            {/* Decorative background pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+            </div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-6">
+                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                  <User className="w-12 h-12" />
+                </div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold mb-2">Profile Settings</h1>
+                  <p className="text-blue-100 text-sm md:text-base">
+                    Manage your personal information and preferences
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={saveProfile}
+                disabled={saving}
+                className="bg-white text-blue-600 px-8 py-3 rounded-xl font-semibold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                {saving ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' :
-            message.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
-            'bg-blue-100 text-blue-700 border border-blue-200'
+          <div className={`mb-6 p-4 rounded-xl shadow-lg flex items-center gap-3 animate-fade-in ${
+            message.type === 'success' ? 'bg-green-50 text-green-700 border-2 border-green-200' :
+            message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' :
+            'bg-blue-50 text-blue-700 border-2 border-blue-200'
           }`}>
-            {message.text}
+            {message.type === 'success' && <CheckCircle className="w-6 h-6 flex-shrink-0" />}
+            {message.type === 'error' && <AlertCircle className="w-6 h-6 flex-shrink-0" />}
+            <span className="font-medium">{message.text}</span>
           </div>
         )}
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+        {/* Enhanced Tab Navigation */}
+        <div className="bg-white rounded-2xl shadow-xl mb-6 overflow-hidden">
+          <div className="border-b border-gray-100">
+            <nav className="flex overflow-x-auto px-6">
               {[
-                { key: 'personal', label: 'Personal Info' },
-                { key: 'financial', label: 'Financial Details' },
-                { key: 'budget', label: 'Budget & Goals' },
-                { key: 'gmail', label: 'Gmail Integration' },
-                { key: 'preferences', label: 'Preferences' }
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.key
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+                { key: 'personal', label: 'Personal Info', icon: User },
+                { key: 'financial', label: 'Financial Details', icon: DollarSign },
+                { key: 'budget', label: 'Budget & Goals', icon: Target },
+                { key: 'gmail', label: 'Gmail Integration', icon: Mail },
+                { key: 'preferences', label: 'Preferences', icon: Settings }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`group flex items-center gap-2 py-4 px-6 border-b-3 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                      activeTab === tab.key
+                        ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 transition-transform duration-300 ${activeTab === tab.key ? 'scale-110' : 'group-hover:scale-110'}`} />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-8">
             {/* Personal Information */}
             {activeTab === 'personal' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+              <div className="space-y-8 animate-fade-in">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-gradient-to-br from-blue-500 to-purple-500 p-3 rounded-xl">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
+                    <p className="text-gray-500 text-sm">Update your personal details and identity information</p>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                      <User className="w-4 h-4 text-blue-600" />
                       Full Name *
                     </label>
                     <input
                       type="text"
                       value={profile.fullName}
                       onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 font-medium"
                       placeholder="Enter your full name as per PAN"
                       required
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                      <Calendar className="w-4 h-4 text-blue-600" />
                       Date of Birth
                     </label>
                     <input
                       type="date"
                       value={profile.dateOfBirth}
                       onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 font-medium"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                      <CreditCard className="w-4 h-4 text-blue-600" />
                       PAN Number
                     </label>
                     <input
                       type="text"
                       value={profile.panNumber}
                       onChange={(e) => handleInputChange('panNumber', e.target.value.toUpperCase())}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      className={`w-full p-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300 font-medium uppercase ${
                         profile.panNumber && !validatePAN(profile.panNumber) 
-                          ? 'border-red-500' 
-                          : 'border-gray-300'
+                          ? 'border-red-500 focus:border-red-500 bg-red-50' 
+                          : 'border-gray-200 focus:border-blue-500'
                       }`}
                       placeholder="ABCDE1234F"
                       maxLength="10"
                     />
                     {profile.panNumber && !validatePAN(profile.panNumber) && (
-                      <p className="text-red-600 text-sm mt-1">Please enter a valid PAN number</p>
+                      <p className="text-red-600 text-sm mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        Please enter a valid PAN number (e.g., ABCDE1234F)
+                      </p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                      <Phone className="w-4 h-4 text-blue-600" />
                       Phone Number *
                     </label>
                     <input
                       type="tel"
                       value={profile.phoneNumber || ''}
                       onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 font-medium"
                       placeholder="10-digit mobile number"
                       maxLength="10"
                       pattern="[0-9]{10}"
@@ -474,54 +535,75 @@ const Profile = () => {
 
             {/* Financial Details */}
             {activeTab === 'financial' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold mb-4">Financial Details</h2>
+              <div className="space-y-8 animate-fade-in">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-gradient-to-br from-green-500 to-emerald-500 p-3 rounded-xl">
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Financial Details</h2>
+                    <p className="text-gray-500 text-sm">Manage your income and currency preferences</p>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                      <DollarSign className="w-4 h-4 text-green-600" />
                       Monthly Income *
                     </label>
                     <input
                       type="number"
                       value={profile.monthlyIncome}
                       onChange={(e) => handleInputChange('monthlyIncome', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 hover:border-gray-300 font-medium"
                       placeholder="Enter your monthly income"
                       min="0"
                       step="0.01"
                       required
                     />
                     {incomeInfo.source === 'salary-transactions' && (
-                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
-                        <span className="font-medium">✓ Auto-detected from {incomeInfo.transactionCount} salary transaction{incomeInfo.transactionCount !== 1 ? 's' : ''}</span>
-                        {incomeInfo.lastSalaryDate && (
-                          <div className="text-xs mt-1">
-                            Last salary: {new Date(incomeInfo.lastSalaryDate).toLocaleDateString('en-IN')}
+                      <div className="mt-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl text-sm text-green-800 animate-scale-in">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold block">Auto-detected from {incomeInfo.transactionCount} salary transaction{incomeInfo.transactionCount !== 1 ? 's' : ''}</span>
+                            {incomeInfo.lastSalaryDate && (
+                              <div className="text-xs mt-1 text-green-600">
+                                Last salary: {new Date(incomeInfo.lastSalaryDate).toLocaleDateString('en-IN')}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     )}
                     {incomeInfo.source === 'profile-setting' && (
-                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
-                        <span className="font-medium">ℹ Manual entry - Connect Gmail to auto-detect from payslips</span>
+                      <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl text-sm text-blue-800 animate-scale-in">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                          <span className="font-medium">Manual entry - Connect Gmail to auto-detect from payslips</span>
+                        </div>
                       </div>
                     )}
                     {incomeInfo.source === 'not-set' && (
-                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                        <span className="font-medium">⚠ Not set - Enter manually or connect Gmail for auto-detection</span>
+                      <div className="mt-3 p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl text-sm text-yellow-800 animate-scale-in">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                          <span className="font-medium">Not set - Enter manually or connect Gmail for auto-detection</span>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="group">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                      <DollarSign className="w-4 h-4 text-green-600" />
                       Currency
                     </label>
                     <select
                       value={profile.currency}
                       onChange={(e) => handleInputChange('currency', e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 hover:border-gray-300 font-medium bg-white cursor-pointer"
                     >
                       {currencies.map(curr => (
                         <option key={curr.code} value={curr.code}>
@@ -536,23 +618,34 @@ const Profile = () => {
 
             {/* Budget & Goals */}
             {activeTab === 'budget' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold mb-4">Budget Limits & Savings Goals</h2>
+              <div className="space-y-8 animate-fade-in">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-xl">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Budget Limits & Savings Goals</h2>
+                    <p className="text-gray-500 text-sm">Set spending limits and define your financial goals</p>
+                  </div>
+                </div>
                 
                 {/* Budget Limits */}
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Monthly Budget Limits</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-purple-600" />
+                    Monthly Budget Limits
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {categories.map(category => (
-                      <div key={category}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <div key={category} className="group">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </label>
                         <input
                           type="number"
                           value={profile.budgetLimits[category] || ''}
                           onChange={(e) => handleBudgetLimitChange(category, e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 hover:border-gray-300 font-medium"
                           placeholder="0"
                           min="0"
                           step="0.01"
@@ -563,15 +656,17 @@ const Profile = () => {
                 </div>
 
                 {/* Custom Expense Categories */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Custom Expense Categories</h3>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-start">
-                      <svg className="w-5 h-5 text-gray-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-100">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-purple-600" />
+                    Custom Expense Categories
+                  </h3>
+                  
+                  <div className="bg-white/80 backdrop-blur-sm border-2 border-purple-200 rounded-xl p-4 mb-6">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-gray-900">Add your custom expense types</h4>
+                        <h4 className="font-semibold text-gray-900">Add your custom expense types</h4>
                         <p className="text-gray-600 text-sm mt-1">
                           Create custom categories to better track your specific spending patterns (e.g., Bills, Rent, Loans, Pet Care)
                         </p>
@@ -580,43 +675,43 @@ const Profile = () => {
                   </div>
 
                   {/* Add New Category Form */}
-                  <div className="bg-white border border-gray-300 rounded-lg p-4 mb-4">
-                    <h4 className="font-medium text-gray-900 mb-3">Add New Category</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-white rounded-xl p-6 border-2 border-purple-200 mb-6 shadow-sm">
+                    <h4 className="font-semibold text-gray-900 mb-4">Add New Category</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Category Name
                         </label>
                         <input
                           type="text"
                           value={newCategory.name}
                           onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300"
                           placeholder="e.g., Rent, Bills, Loans"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Icon (Emoji)
                         </label>
                         <input
                           type="text"
                           value={newCategory.icon}
                           onChange={(e) => setNewCategory({...newCategory, icon: e.target.value})}
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 text-center text-2xl"
                           placeholder="🏠 💡 💳"
                           maxLength="2"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Keywords (comma-separated)
                         </label>
                         <input
                           type="text"
                           value={newCategory.keywords}
                           onChange={(e) => setNewCategory({...newCategory, keywords: e.target.value})}
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300"
                           placeholder="rent, lease, apartment"
                         />
                       </div>
@@ -624,7 +719,7 @@ const Profile = () => {
                     <button
                       onClick={handleAddCustomCategory}
                       disabled={!newCategory.name || !newCategory.icon}
-                      className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 shadow-lg"
                     >
                       Add Category
                     </button>
@@ -633,14 +728,14 @@ const Profile = () => {
                   {/* Existing Custom Categories */}
                   {profile.customCategories && profile.customCategories.length > 0 && (
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-3">Your Custom Categories</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <h4 className="font-semibold text-gray-900 mb-4">Your Custom Categories</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {profile.customCategories.map((category, index) => (
-                          <div key={index} className="bg-white border border-gray-300 rounded-lg p-3 flex items-center justify-between">
-                            <div className="flex items-center">
-                              <span className="text-2xl mr-2">{category.icon}</span>
+                          <div key={index} className="bg-white border-2 border-purple-200 rounded-xl p-4 flex items-center justify-between hover:shadow-lg transition-all duration-300 hover:scale-105 animate-scale-in">
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl">{category.icon}</span>
                               <div>
-                                <p className="font-medium text-gray-900">{category.name}</p>
+                                <p className="font-semibold text-gray-900">{category.name}</p>
                                 {category.keywords && category.keywords.length > 0 && (
                                   <p className="text-xs text-gray-500">{category.keywords.join(', ')}</p>
                                 )}
@@ -648,10 +743,10 @@ const Profile = () => {
                             </div>
                             <button
                               onClick={() => handleRemoveCustomCategory(index)}
-                              className="text-red-600 hover:text-red-800"
+                              className="text-red-600 hover:text-red-800 hover:scale-110 transition-all duration-300"
                               title="Remove category"
                             >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
                             </button>
@@ -663,18 +758,21 @@ const Profile = () => {
                 </div>
 
                 {/* Savings Goal */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Savings Goal</h3>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-green-600" />
+                    Savings Goal
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Target Amount
                       </label>
                       <input
                         type="number"
                         value={profile.savingsGoal.amount}
                         onChange={(e) => handleInputChange('savingsGoal.amount', e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
                         placeholder="Enter target amount"
                         min="0"
                         step="0.01"
@@ -682,27 +780,27 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Target Date
                       </label>
                       <input
                         type="date"
                         value={profile.savingsGoal.deadline}
                         onChange={(e) => handleInputChange('savingsGoal.deadline', e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Description
                       </label>
                       <input
                         type="text"
                         value={profile.savingsGoal.description}
                         onChange={(e) => handleInputChange('savingsGoal.description', e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Emergency fund, Vacation, House down payment"
+                        className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
+                        placeholder="e.g., Emergency fund, Vacation"
                       />
                     </div>
                   </div>
@@ -712,17 +810,23 @@ const Profile = () => {
 
             {/* Gmail Integration */}
             {activeTab === 'gmail' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold mb-4">Gmail Integration</h2>
+              <div className="space-y-8 animate-fade-in">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-gradient-to-br from-red-500 to-orange-500 p-3 rounded-xl">
+                    <Mail className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Gmail Integration</h2>
+                    <p className="text-gray-500 text-sm">Automatically sync financial documents from your email</p>
+                  </div>
+                </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-start">
-                    <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-6 mb-6">
+                  <div className="flex items-start gap-4">
+                    <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h3 className="font-medium text-blue-900">Connect Your Gmail</h3>
-                      <p className="text-blue-700 text-sm mt-1">
+                      <h3 className="font-semibold text-blue-900 text-lg">Connect Your Gmail</h3>
+                      <p className="text-blue-700 text-sm mt-2 leading-relaxed">
                         Connect your Gmail account to automatically fetch financial documents like bank statements, 
                         credit card statements, and receipts from your email.
                       </p>
@@ -730,67 +834,90 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg p-6">
+                <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8">
                   {gmailStatus.isConnected ? (
                     <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-                            <span className="font-medium text-green-700">Gmail Connected</span>
+                      <div className="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-100">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-4 rounded-2xl">
+                            <CheckCircle className="w-8 h-8 text-white" />
                           </div>
-                          <p className="text-gray-600">Email: {gmailStatus.email}</p>
-                          {gmailStatus.lastSync && (
-                            <p className="text-sm text-gray-500">
-                              Last sync: {new Date(gmailStatus.lastSync).toLocaleDateString()}
-                            </p>
-                          )}
-                          {!hasReadonlyScope && (
-                            <p className="mt-3 text-sm text-red-600">
-                              Gmail read permission missing. Remove "Financial Analyzer" from <a className="underline" href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer">Google account permissions</a> and reconnect to grant full access.
-                            </p>
-                          )}
-                          {gmailStatus.grantedScopes && gmailStatus.grantedScopes.length > 0 && (
-                            <div className="mt-3">
-                              <p className="text-xs text-gray-500">Granted scopes:</p>
-                              <ul className="text-xs text-gray-500 list-disc list-inside">
-                                {gmailStatus.grantedScopes.map(scope => (
-                                  <li key={scope}>{scope}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">Connected</h3>
+                            <p className="text-gray-600 mt-1">{gmailStatus.email}</p>
+                            {gmailStatus.lastSync && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                Last synced: {new Date(gmailStatus.lastSync).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="space-x-3">
+                        <div className="flex gap-3">
                           <button
                             onClick={syncGmail}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 shadow-lg flex items-center gap-2"
                             disabled={!hasReadonlyScope}
                           >
+                            <RefreshCw className="w-5 h-5" />
                             Sync Now
                           </button>
                           <button
                             onClick={disconnectGmail}
-                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                            className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all duration-300 hover:scale-105 shadow-lg flex items-center gap-2"
                           >
+                            <Mail className="w-5 h-5" />
                             Disconnect
                           </button>
                         </div>
                       </div>
+                      
+                      {/* Scopes and Permissions */}
+                      <div className="mt-6 space-y-4">
+                        {!hasReadonlyScope && (
+                          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-5 animate-scale-in">
+                            <div className="flex items-start gap-3">
+                              <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" />
+                              <div>
+                                <p className="font-semibold text-yellow-900 text-sm">Missing Required Permissions</p>
+                                <p className="text-yellow-700 text-sm mt-1">
+                                  Gmail read permission missing. Remove "Financial Analyzer" from <a className="underline hover:text-yellow-900" href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer">Google account permissions</a> and reconnect to grant full access.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {gmailStatus.grantedScopes && gmailStatus.grantedScopes.length > 0 && (
+                          <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-200">
+                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                              Granted Permissions
+                            </h4>
+                            <ul className="space-y-2">
+                              {gmailStatus.grantedScopes.map(scope => (
+                                <li key={scope} className="text-sm text-gray-600 flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                  {scope}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-center">
-                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Connect Gmail Account</h3>
-                      <p className="text-gray-600 mb-4">
-                        Automatically fetch financial documents from your Gmail account
+                    <div className="text-center py-8">
+                      <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Mail className="w-12 h-12 text-gray-400" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">Connect Gmail Account</h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        Automatically fetch financial documents from your Gmail account including bank statements, credit card bills, and receipts
                       </p>
                       <button
                         onClick={connectGmail}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
+                        className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-xl flex items-center gap-3 mx-auto"
                       >
+                        <Mail className="w-6 h-6" />
                         Connect Gmail
                       </button>
                     </div>
@@ -801,50 +928,71 @@ const Profile = () => {
 
             {/* Preferences */}
             {activeTab === 'preferences' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold mb-4">Preferences</h2>
+              <div className="space-y-8 animate-fade-in">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-500 p-3 rounded-xl">
+                    <Settings className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
+                    <p className="text-gray-500 text-sm">Customize your experience and notification settings</p>
+                  </div>
+                </div>
                 
                 <div className="space-y-6">
                   {/* AI Provider */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border-2 border-indigo-200">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-indigo-600" />
                       AI Analysis Provider
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center">
+                    </h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 transition-all duration-300 cursor-pointer bg-white">
                         <input
                           type="radio"
                           name="aiProvider"
                           value="ollama"
                           checked={profile.preferences.aiProvider === 'ollama'}
                           onChange={(e) => handleInputChange('preferences.aiProvider', e.target.value)}
-                          className="mr-3"
+                          className="w-5 h-5 text-indigo-600 mr-4"
                         />
-                        <span>Ollama (Local AI - Free)</span>
+                        <div>
+                          <span className="font-semibold text-gray-900">Ollama (Local AI)</span>
+                          <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">Free</span>
+                          <p className="text-sm text-gray-600 mt-1">Run AI analysis locally on your machine</p>
+                        </div>
                       </label>
-                      <label className="flex items-center">
+                      <label className="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 transition-all duration-300 cursor-pointer bg-white">
                         <input
                           type="radio"
                           name="aiProvider"
                           value="openai"
                           checked={profile.preferences.aiProvider === 'openai'}
                           onChange={(e) => handleInputChange('preferences.aiProvider', e.target.value)}
-                          className="mr-3"
+                          className="w-5 h-5 text-indigo-600 mr-4"
                         />
-                        <span>OpenAI (Requires API Key)</span>
+                        <div>
+                          <span className="font-semibold text-gray-900">OpenAI</span>
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">API Key Required</span>
+                          <p className="text-sm text-gray-600 mt-1">Use OpenAI's powerful cloud-based AI</p>
+                        </div>
                       </label>
                     </div>
                     
                     {profile.preferences.aiProvider === 'openai' && (
-                      <div className="mt-3">
+                      <div className="mt-4 animate-scale-in">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          OpenAI API Key
+                        </label>
                         <input
                           type="password"
                           value={profile.preferences.openAIKey}
                           onChange={(e) => handleInputChange('preferences.openAIKey', e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter your OpenAI API key"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-300 font-medium"
+                          placeholder="sk-..."
                         />
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
                           Your API key is encrypted and stored securely
                         </p>
                       </div>
@@ -852,53 +1000,68 @@ const Profile = () => {
                   </div>
 
                   {/* Notifications */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Notifications</h3>
-                    <div className="space-y-3">
-                      <label className="flex items-center">
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-blue-600" />
+                      Notifications
+                    </h3>
+                    <div className="space-y-4">
+                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 transition-all duration-300 cursor-pointer bg-white">
+                        <div>
+                          <span className="font-semibold text-gray-900">Email Notifications</span>
+                          <p className="text-sm text-gray-600 mt-1">Get notified when analysis is complete</p>
+                        </div>
                         <input
                           type="checkbox"
                           checked={profile.preferences.emailNotifications}
                           onChange={(e) => handleInputChange('preferences.emailNotifications', e.target.checked)}
-                          className="mr-3"
+                          className="w-6 h-6 text-blue-600 rounded focus:ring-4 focus:ring-blue-100"
                         />
-                        <span>Email notifications for analysis completion</span>
                       </label>
-                      <label className="flex items-center">
+                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 transition-all duration-300 cursor-pointer bg-white">
+                        <div>
+                          <span className="font-semibold text-gray-900">Budget Limit Alerts</span>
+                          <p className="text-sm text-gray-600 mt-1">Get alerts when you exceed budget limits</p>
+                        </div>
                         <input
                           type="checkbox"
                           checked={profile.preferences.budgetAlerts}
                           onChange={(e) => handleInputChange('preferences.budgetAlerts', e.target.checked)}
-                          className="mr-3"
+                          className="w-6 h-6 text-blue-600 rounded focus:ring-4 focus:ring-blue-100"
                         />
-                        <span>Budget limit alerts</span>
                       </label>
                     </div>
                   </div>
 
                   {/* Auto-fetch settings */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Auto-fetch Settings</h3>
-                    <div className="space-y-3">
-                      <label className="flex items-center">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <RefreshCw className="w-5 h-5 text-green-600" />
+                      Auto-fetch Settings
+                    </h3>
+                    <div className="space-y-4">
+                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-green-300 transition-all duration-300 cursor-pointer bg-white">
+                        <div>
+                          <span className="font-semibold text-gray-900">Automatic Gmail Sync</span>
+                          <p className="text-sm text-gray-600 mt-1">Automatically fetch documents from Gmail</p>
+                        </div>
                         <input
                           type="checkbox"
                           checked={profile.preferences.autoFetchDocuments}
                           onChange={(e) => handleInputChange('preferences.autoFetchDocuments', e.target.checked)}
-                          className="mr-3"
+                          className="w-6 h-6 text-green-600 rounded focus:ring-4 focus:ring-green-100"
                         />
-                        <span>Automatically fetch documents from Gmail</span>
                       </label>
                       
                       {profile.preferences.autoFetchDocuments && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Fetch Frequency
+                        <div className="animate-scale-in">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Sync Frequency
                           </label>
                           <select
                             value={profile.preferences.fetchFrequency}
                             onChange={(e) => handleInputChange('preferences.fetchFrequency', e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium cursor-pointer"
                           >
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
