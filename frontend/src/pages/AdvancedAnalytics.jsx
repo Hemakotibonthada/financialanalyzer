@@ -216,7 +216,7 @@ const AdvancedAnalytics = () => {
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">Daily Predictions</h3>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {forecast.forecast.slice(0, 14).map((day, index) => (
+                    {forecast.forecast && Array.isArray(forecast.forecast) && forecast.forecast.slice(0, 14).map((day, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
                         <div className="flex items-center space-x-3">
                           <Calendar className="w-4 h-4 text-gray-400" />
@@ -302,7 +302,7 @@ const AdvancedAnalytics = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {anomalies.detected.map((anomaly, index) => (
+                    {anomalies.detected && Array.isArray(anomalies.detected) && anomalies.detected.map((anomaly, index) => (
                       <div 
                         key={index} 
                         className={`border rounded-lg p-4 ${getSeverityColor(anomaly.severity)}`}
@@ -361,7 +361,7 @@ const AdvancedAnalytics = () => {
                 <p className="text-gray-600 mb-6">When do you spend the most? Darker colors indicate higher spending.</p>
 
                 {/* Peak Times */}
-                {heatmap.peakTimes && heatmap.peakTimes.length > 0 && (
+                {heatmap.peakTimes && Array.isArray(heatmap.peakTimes) && heatmap.peakTimes.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Peak Spending Times</h3>
                     <div className="grid grid-cols-5 gap-3">
@@ -380,7 +380,7 @@ const AdvancedAnalytics = () => {
                 )}
 
                 {/* Day Totals */}
-                {heatmap.dayTotals && (
+                {heatmap.dayTotals && Array.isArray(heatmap.dayTotals) && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Spending by Day of Week</h3>
                     <div className="space-y-2">
@@ -420,7 +420,7 @@ const AdvancedAnalytics = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Financial Health Breakdown</h2>
                 
                 <div className="space-y-4">
-                  {healthScore.factors.map((factor, index) => (
+                  {healthScore.factors && Array.isArray(healthScore.factors) && healthScore.factors.map((factor, index) => (
                     <div key={index} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
@@ -453,7 +453,7 @@ const AdvancedAnalytics = () => {
               </div>
 
               {/* Recommendations */}
-              {healthScore.recommendations && healthScore.recommendations.length > 0 && (
+              {healthScore.recommendations && Array.isArray(healthScore.recommendations) && healthScore.recommendations.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Personalized Recommendations</h2>
                   <div className="space-y-4">
@@ -476,7 +476,7 @@ const AdvancedAnalytics = () => {
                             <div className="bg-white rounded p-3">
                               <div className="text-xs font-semibold text-gray-600 mb-2">ACTION STEPS:</div>
                               <ul className="space-y-1">
-                                {rec.actionSteps.map((step, idx) => (
+                                {rec.actionSteps && Array.isArray(rec.actionSteps) && rec.actionSteps.map((step, idx) => (
                                   <li key={idx} className="text-sm text-gray-700 flex items-start">
                                     <span className="text-blue-600 mr-2">•</span>
                                     <span>{step}</span>
@@ -509,14 +509,14 @@ const AdvancedAnalytics = () => {
                   </div>
                 </div>
 
-                {savingsOpportunities.opportunities.length === 0 ? (
+                {savingsOpportunities.opportunities && Array.isArray(savingsOpportunities.opportunities) && savingsOpportunities.opportunities.length === 0 ? (
                   <div className="text-center py-8">
                     <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">Great job! No major savings opportunities identified.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {savingsOpportunities.opportunities.map((opp, index) => (
+                    {savingsOpportunities.opportunities && Array.isArray(savingsOpportunities.opportunities) && savingsOpportunities.opportunities.map((opp, index) => (
                       <div key={index} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
