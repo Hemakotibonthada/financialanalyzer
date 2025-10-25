@@ -17,7 +17,7 @@ const emiSchema = new mongoose.Schema({
   cardProvider: {
     type: String,
     required: true,
-    enum: ['ICICI', 'HDFC', 'SBI', 'AXIS', 'KOTAK', 'CITI', 'AMEX', 'STANDARD CHARTERED', 'INDUSIND', 'YES BANK', 'OTHER'],
+    // Removed enum to support custom provider names (e.g., friends, family, local banks)
     index: true
   },
   cardLastFourDigits: {
@@ -82,6 +82,14 @@ const emiSchema = new mongoose.Schema({
     min: 0
   },
   
+  // Repayment Type
+  repaymentType: {
+    type: String,
+    enum: ['MONTHLY', 'ON_REQUEST'],
+    default: 'MONTHLY',
+    index: true
+  },
+  
   // Date Information
   startDate: {
     type: Date,
@@ -90,11 +98,11 @@ const emiSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-    required: true
+    required: false // Not required for ON_REQUEST type
   },
   nextDueDate: {
     type: Date,
-    required: true,
+    required: false, // Not required for ON_REQUEST type
     index: true
   },
   
@@ -106,7 +114,7 @@ const emiSchema = new mongoose.Schema({
     },
     dueDate: {
       type: Date,
-      required: true
+      required: false // Not required for ON_REQUEST type
     },
     paidDate: {
       type: Date
@@ -279,17 +287,57 @@ emiSchema.methods.addPayment = function(paymentData) {
 emiSchema.methods.getUpcomingPayments = function(months = 12) {
   const upcoming = [];
   const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
   
+  const nextDue = new Date(this.nextDueDate);
+  nextDue.setHours(0, 0, 0, 0);
+  
+  // Calculate starting point
+  let monthsToAdd = 0;
+  let installmentNumber = this.paidInstallments + 1;
+  
+  // If next due date is in the past, calculate how many months behind
+  if (nextDue < currentDate) {
+    monthsToAdd = Math.floor(
+      (currentDate.getFullYear() - nextDue.getFullYear()) * 12 +
+      (currentDate.getMonth() - nextDue.getMonth())
+    );
+    installmentNumber += monthsToAdd;
+  }
+  
+  // Store the original day of month for the payment
+  const originalDay = nextDue.getDate();
+  
+  // Generate upcoming payments
   for (let i = 0; i < Math.min(months, this.remainingInstallments); i++) {
-    const dueDate = new Date(this.nextDueDate);
-    dueDate.setMonth(dueDate.getMonth() + i);
+    // Calculate the target month and year
+    const totalMonthsFromStart = monthsToAdd + i;
+    const targetYear = nextDue.getFullYear() + Math.floor((nextDue.getMonth() + totalMonthsFromStart) / 12);
+    const targetMonth = (nextDue.getMonth() + totalMonthsFromStart) % 12;
     
-    upcoming.push({
-      installmentNumber: this.paidInstallments + i + 1,
-      dueDate: dueDate,
-      amount: this.emiAmount,
-      status: dueDate < currentDate ? 'overdue' : 'upcoming'
-    });
+    // Create date for the first day of target month
+    const paymentDate = new Date(targetYear, targetMonth, 1);
+    
+    // Get the last day of the target month
+    const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    
+    // Set the day to the original day, or last day of month if original day doesn't exist
+    paymentDate.setDate(Math.min(originalDay, lastDayOfMonth));
+    
+    // Check if this payment falls within the requested period from current date
+    const monthsDiff = Math.floor(
+      (paymentDate.getFullYear() - currentDate.getFullYear()) * 12 +
+      (paymentDate.getMonth() - currentDate.getMonth())
+    );
+    
+    if (monthsDiff >= 0 && monthsDiff < months) {
+      upcoming.push({
+        installmentNumber: installmentNumber + i,
+        dueDate: paymentDate,
+        amount: this.emiAmount,
+        status: paymentDate < currentDate ? 'overdue' : 'upcoming'
+      });
+    }
   }
   
   return upcoming;

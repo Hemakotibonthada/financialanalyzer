@@ -129,6 +129,7 @@ const EMITracker = () => {
   const [manualEMILoading, setManualEMILoading] = useState(false);
   const [manualEMIData, setManualEMIData] = useState({
     cardProvider: '',
+    customProviderName: '',
     cardLastFourDigits: '',
     cardHolderName: '',
     merchantName: '',
@@ -138,6 +139,7 @@ const EMITracker = () => {
     processingFee: '',
     emiAmount: '',
     totalTenure: '',
+    repaymentType: 'MONTHLY', // MONTHLY or ON_REQUEST
     startDate: new Date().toISOString().split('T')[0],
     notes: '',
     tags: []
@@ -148,6 +150,9 @@ const EMITracker = () => {
   const [selectedEMI, setSelectedEMI] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editEMIDialogOpen, setEditEMIDialogOpen] = useState(false);
+
+  // Upcoming Payments State
+  const [upcomingMonthsToShow, setUpcomingMonthsToShow] = useState(1); // Default show next month only
 
   useEffect(() => {
     fetchAllData();
@@ -179,10 +184,10 @@ const EMITracker = () => {
         headers: { Authorization: `Bearer ${token}` }
       };
 
-      // Fetch all data in parallel
+      // Fetch all data in parallel - fetch max 36 months for upcoming payments
       const [overviewRes, upcomingRes, chartsRes, insightsRes] = await Promise.all([
         axios.get(`${API_URL}/emi/overview`, config),
-        axios.get(`${API_URL}/emi/upcoming?months=${selectedPeriod}`, config),
+        axios.get(`${API_URL}/emi/upcoming?months=36`, config), // Fetch 36 months, filter on frontend
         axios.get(`${API_URL}/emi/charts`, config),
         axios.get(`${API_URL}/emi/insights`, config)
       ]);
@@ -249,6 +254,7 @@ const EMITracker = () => {
     setManualEMIDialogOpen(false);
     setManualEMIData({
       cardProvider: '',
+      customProviderName: '',
       cardLastFourDigits: '',
       cardHolderName: '',
       merchantName: '',
@@ -258,6 +264,7 @@ const EMITracker = () => {
       processingFee: '',
       emiAmount: '',
       totalTenure: '',
+      repaymentType: 'MONTHLY', // MONTHLY or ON_REQUEST
       startDate: new Date().toISOString().split('T')[0],
       notes: '',
       tags: []
@@ -283,6 +290,9 @@ const EMITracker = () => {
     const errors = {};
     
     if (!manualEMIData.cardProvider) errors.cardProvider = 'Card provider is required';
+    if (manualEMIData.cardProvider === 'OTHER' && !manualEMIData.customProviderName) {
+      errors.customProviderName = 'Provider name is required when selecting OTHER';
+    }
     if (!manualEMIData.cardLastFourDigits) {
       errors.cardLastFourDigits = 'Card last 4 digits required';
     } else if (!/^\d{4}$/.test(manualEMIData.cardLastFourDigits)) {
@@ -293,12 +303,17 @@ const EMITracker = () => {
     if (!manualEMIData.principalAmount || parseFloat(manualEMIData.principalAmount) <= 0) {
       errors.principalAmount = 'Valid principal amount required';
     }
-    if (!manualEMIData.emiAmount || parseFloat(manualEMIData.emiAmount) <= 0) {
-      errors.emiAmount = 'Valid EMI amount required';
+    
+    // Only validate EMI amount and tenure for MONTHLY repayment type
+    if (manualEMIData.repaymentType === 'MONTHLY') {
+      if (!manualEMIData.emiAmount || parseFloat(manualEMIData.emiAmount) <= 0) {
+        errors.emiAmount = 'Valid EMI amount required';
+      }
+      if (!manualEMIData.totalTenure || parseInt(manualEMIData.totalTenure) <= 0) {
+        errors.totalTenure = 'Valid tenure required';
+      }
     }
-    if (!manualEMIData.totalTenure || parseInt(manualEMIData.totalTenure) <= 0) {
-      errors.totalTenure = 'Valid tenure required';
-    }
+    
     if (!manualEMIData.startDate) errors.startDate = 'Start date is required';
     
     setManualEMIErrors(errors);
@@ -341,17 +356,36 @@ const EMITracker = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const deletedEmiId = selectedEMI.id;
+      
       await axios.delete(
-        `${API_URL}/emi/${selectedEMI.id}`,
+        `${API_URL}/emi/${deletedEmiId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
 
+      // Immediately filter out deleted EMI from upcoming payments
+      if (upcomingPayments && upcomingPayments.monthlyBreakdown) {
+        const updatedBreakdown = upcomingPayments.monthlyBreakdown.map(month => ({
+          ...month,
+          emis: month.emis.filter(emi => emi.emiId !== deletedEmiId),
+          emiCount: month.emis.filter(emi => emi.emiId !== deletedEmiId).length,
+          totalAmount: month.emis
+            .filter(emi => emi.emiId !== deletedEmiId)
+            .reduce((sum, emi) => sum + emi.amount, 0)
+        })).filter(month => month.emiCount > 0); // Remove empty months
+
+        setUpcomingPayments({
+          ...upcomingPayments,
+          monthlyBreakdown: updatedBreakdown
+        });
+      }
+
       alert('EMI deleted successfully!');
       setDeleteConfirmOpen(false);
       setSelectedEMI(null);
-      fetchAllData();
+      fetchAllData(); // Refresh all data from backend
     } catch (err) {
       console.error('Error deleting EMI:', err);
       alert('Failed to delete EMI');
@@ -402,6 +436,21 @@ const EMITracker = () => {
       case 'error': return 'error';
       default: return 'info';
     }
+  };
+
+  // Get filtered monthly breakdown for display
+  const getDisplayedMonths = () => {
+    if (!upcomingPayments || !upcomingPayments.monthlyBreakdown) return [];
+    
+    // Calculate how many months to show based on selection
+    const monthsToDisplay = upcomingMonthsToShow === 1 ? 1 : 
+                            upcomingMonthsToShow === 3 ? 3 :
+                            upcomingMonthsToShow === 6 ? 6 :
+                            upcomingMonthsToShow === 12 ? 12 :
+                            upcomingMonthsToShow === 24 ? 24 :
+                            upcomingMonthsToShow === 36 ? 36 : 1;
+    
+    return upcomingPayments.monthlyBreakdown.slice(0, monthsToDisplay);
   };
 
   if (loading && !overview) {
@@ -1026,6 +1075,11 @@ const EMITracker = () => {
             icon={<CreditCardIcon />} 
             iconPosition="start"
           />
+          <Tab 
+            label="Completed EMIs" 
+            icon={<CheckCircleIcon />} 
+            iconPosition="start"
+          />
         </Tabs>
       </Box>
 
@@ -1112,105 +1166,6 @@ const EMITracker = () => {
             </Card>
           </Grid>
 
-          {/* Stacked Bar Chart - Principal vs Interest */}
-          {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 1,
-                    transition: 'all 0.3s ease'
-                  }}>
-                    💰 Principal vs Interest Breakdown
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <BarChart data={chartData.stackedBarChart}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <RechartsTooltip formatter={(value) => formatCurrency(value)} />
-                      <Legend />
-                      <Bar dataKey="principal" stackId="a" fill="#82ca9d" name="Principal" />
-                      <Bar dataKey="interest" stackId="a" fill="#ff8042" name="Interest" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Line Chart - EMI Completion Timeline */}
-          {chartData.lineChart && chartData.lineChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 1,
-                    transition: 'all 0.3s ease'
-                  }}>
-                    📉 EMI Completion Progress
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <LineChart data={chartData.lineChart}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                      <YAxis label={{ value: 'Progress %', angle: -90, position: 'insideLeft' }} />
-                      <RechartsTooltip 
-                        formatter={(value, name) => {
-                          if (name === 'progress') return `${value.toFixed(1)}%`;
-                          if (name === 'remaining') return formatCurrency(value);
-                          return value;
-                        }}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="progress" stroke="#8884d8" name="Completion %" strokeWidth={3} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Scatter Chart - EMI Distribution Analysis */}
-          {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 1,
-                    transition: 'all 0.3s ease'
-                  }}>
-                    🎯 Principal vs Interest Scatter Analysis
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <ScatterChart>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" dataKey="principal" name="Principal" label={{ value: 'Principal (₹)', position: 'insideBottom', offset: -5 }} />
-                      <YAxis type="number" dataKey="interest" name="Interest" label={{ value: 'Interest (₹)', angle: -90, position: 'insideLeft' }} />
-                      <RechartsTooltip 
-                        cursor={{ strokeDasharray: '3 3' }}
-                        formatter={(value) => formatCurrency(value)}
-                        labelFormatter={(label) => chartData.stackedBarChart[label]?.name || ''}
-                      />
-                      <Legend />
-                      <Scatter name="EMIs" data={chartData.stackedBarChart} fill="#8884d8">
-                        {chartData.stackedBarChart.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Scatter>
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
           {/* Radar Chart - Card Provider Analysis */}
           {chartData.pieChart && chartData.pieChart.length > 0 && chartData.pieChart.length <= 8 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
@@ -1233,111 +1188,6 @@ const EMITracker = () => {
                       <RechartsTooltip formatter={(value) => formatCurrency(value)} />
                       <Legend />
                     </RadarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Merchant Comparison Chart */}
-          {chartData.merchantChart && chartData.merchantChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 1,
-                    transition: 'all 0.3s ease'
-                  }}>
-                    🏪 Top Merchants by Outstanding Amount
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <ComposedChart data={chartData.merchantChart}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} />
-                      <YAxis yAxisId="left" label={{ value: 'Amount (₹)', angle: -90, position: 'insideLeft' }} />
-                      <YAxis yAxisId="right" orientation="right" label={{ value: 'Interest Rate %', angle: 90, position: 'insideRight' }} />
-                      <RechartsTooltip 
-                        formatter={(value, name) => {
-                          if (name === 'amount') return formatCurrency(value);
-                          if (name === 'rate') return `${value}%`;
-                          return value;
-                        }}
-                      />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="amount" fill="#8884d8" name="Outstanding Amount" />
-                      <Line yAxisId="right" type="monotone" dataKey="rate" stroke="#ff7300" name="Interest Rate %" strokeWidth={3} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Interest Rate Distribution */}
-          {chartData.rateDistribution && chartData.rateDistribution.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 1,
-                    transition: 'all 0.3s ease'
-                  }}>
-                    📊 Interest Rate Distribution
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <BarChart data={chartData.rateDistribution}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="range" />
-                      <YAxis label={{ value: 'Number of EMIs', angle: -90, position: 'insideLeft' }} />
-                      <RechartsTooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#82ca9d" name="EMI Count">
-                        {chartData.rateDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {/* EMI Progress Funnel */}
-          {chartData.lineChart && chartData.lineChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: 1,
-                    transition: 'all 0.3s ease'
-                  }}>
-                    🎯 EMI Progress Overview
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <BarChart data={chartData.lineChart.slice(0, 10)} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 100]} label={{ value: 'Completion %', position: 'insideBottom', offset: -5 }} />
-                      <YAxis type="category" dataKey="name" width={200} />
-                      <RechartsTooltip 
-                        formatter={(value, name) => {
-                          if (name === 'progress') return `${value.toFixed(1)}%`;
-                          return value;
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="progress" fill="#8884d8" name="Progress %">
-                        {chartData.lineChart.slice(0, 10).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.progress > 80 ? '#82ca9d' : entry.progress > 50 ? '#FFBB28' : '#FF8042'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
@@ -1527,73 +1377,371 @@ const EMITracker = () => {
               </Card>
             </Grid>
           )}
+
+          {/* Stacked Bar Chart - Principal vs Interest */}
+          {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    💰 Principal vs Interest Breakdown
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <BarChart data={chartData.stackedBarChart}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <RechartsTooltip formatter={(value) => formatCurrency(value)} />
+                      <Legend />
+                      <Bar dataKey="principal" stackId="a" fill="#82ca9d" name="Principal" />
+                      <Bar dataKey="interest" stackId="a" fill="#ff8042" name="Interest" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Line Chart - EMI Completion Timeline */}
+          {chartData.lineChart && chartData.lineChart.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    📉 EMI Completion Progress
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <LineChart data={chartData.lineChart}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                      <YAxis label={{ value: 'Progress %', angle: -90, position: 'insideLeft' }} />
+                      <RechartsTooltip 
+                        formatter={(value, name) => {
+                          if (name === 'progress') return `${value.toFixed(1)}%`;
+                          if (name === 'remaining') return formatCurrency(value);
+                          return value;
+                        }}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="progress" stroke="#8884d8" name="Completion %" strokeWidth={3} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Scatter Chart - EMI Distribution Analysis */}
+          {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🎯 Principal vs Interest Scatter Analysis
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <ScatterChart>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" dataKey="principal" name="Principal" label={{ value: 'Principal (₹)', position: 'insideBottom', offset: -5 }} />
+                      <YAxis type="number" dataKey="interest" name="Interest" label={{ value: 'Interest (₹)', angle: -90, position: 'insideLeft' }} />
+                      <RechartsTooltip 
+                        cursor={{ strokeDasharray: '3 3' }}
+                        formatter={(value) => formatCurrency(value)}
+                        labelFormatter={(label) => chartData.stackedBarChart[label]?.name || ''}
+                      />
+                      <Legend />
+                      <Scatter name="EMIs" data={chartData.stackedBarChart} fill="#8884d8">
+                        {chartData.stackedBarChart.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Merchant Comparison Chart */}
+          {chartData.merchantChart && chartData.merchantChart.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🏪 Top Merchants by Outstanding Amount
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <ComposedChart data={chartData.merchantChart}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} />
+                      <YAxis yAxisId="left" label={{ value: 'Amount (₹)', angle: -90, position: 'insideLeft' }} />
+                      <YAxis yAxisId="right" orientation="right" label={{ value: 'Interest Rate %', angle: 90, position: 'insideRight' }} />
+                      <RechartsTooltip 
+                        formatter={(value, name) => {
+                          if (name === 'amount') return formatCurrency(value);
+                          if (name === 'rate') return `${value}%`;
+                          return value;
+                        }}
+                      />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="amount" fill="#8884d8" name="Outstanding Amount" />
+                      <Line yAxisId="right" type="monotone" dataKey="rate" stroke="#ff7300" name="Interest Rate %" strokeWidth={3} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Interest Rate Distribution */}
+          {chartData.rateDistribution && chartData.rateDistribution.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    📊 Interest Rate Distribution
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <BarChart data={chartData.rateDistribution}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="range" />
+                      <YAxis label={{ value: 'Number of EMIs', angle: -90, position: 'insideLeft' }} />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Bar dataKey="count" fill="#82ca9d" name="EMI Count">
+                        {chartData.rateDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* EMI Progress Funnel */}
+          {chartData.lineChart && chartData.lineChart.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🎯 EMI Progress Overview
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <BarChart data={chartData.lineChart.slice(0, 10)} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" domain={[0, 100]} label={{ value: 'Completion %', position: 'insideBottom', offset: -5 }} />
+                      <YAxis type="category" dataKey="name" width={200} />
+                      <RechartsTooltip 
+                        formatter={(value, name) => {
+                          if (name === 'progress') return `${value.toFixed(1)}%`;
+                          return value;
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="progress" fill="#8884d8" name="Progress %">
+                        {chartData.lineChart.slice(0, 10).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.progress > 80 ? '#82ca9d' : entry.progress > 50 ? '#FFBB28' : '#FF8042'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
         </Grid>
       )}
 
       {activeTab === 2 && upcomingPayments && (
-        <Grid container spacing={3}>
-          {/* Monthly Breakdown */}
-          {upcomingPayments.monthlyBreakdown.map((month, index) => (
-            <Grid item xs={12} md={6} key={index}>
-              <Card
-                elevation={3}
-                sx={{
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: 8,
-                    borderTop: '4px solid',
-                    borderColor: 'primary.main'
-                  }
-                }}
-              >
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h6">
-                      {month.month}/{month.year}
-                    </Typography>
-                    <Chip
-                      label={`${month.emiCount} EMIs`}
-                      color="primary"
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="h4" color="primary" gutterBottom>
-                    {formatCurrency(month.totalAmount)}
-                  </Typography>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Merchant</TableCell>
-                          <TableCell>Card</TableCell>
-                          <TableCell align="right">Amount</TableCell>
-                          <TableCell align="right">Due Date</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {month.emis.map((emi, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell>{emi.merchantName}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={`${emi.cardProvider} ${emi.cardLastFourDigits}`}
-                                size="small"
-                                variant="outlined"
-                              />
-                            </TableCell>
-                            <TableCell align="right">{formatCurrency(emi.amount)}</TableCell>
-                            <TableCell align="right">{formatDate(emi.dueDate)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </CardContent>
-              </Card>
+        <Box>
+          {/* Time Period Selector */}
+          <Card elevation={2} sx={{ mb: 3, p: 2 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  View Upcoming Payments For:
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6} md={9}>
+                <Box display="flex" gap={1} flexWrap="wrap">
+                  <Chip
+                    label="Next Month"
+                    color={upcomingMonthsToShow === 1 ? "primary" : "default"}
+                    onClick={() => setUpcomingMonthsToShow(1)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                  <Chip
+                    label="3 Months"
+                    color={upcomingMonthsToShow === 3 ? "primary" : "default"}
+                    onClick={() => setUpcomingMonthsToShow(3)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                  <Chip
+                    label="6 Months"
+                    color={upcomingMonthsToShow === 6 ? "primary" : "default"}
+                    onClick={() => setUpcomingMonthsToShow(6)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                  <Chip
+                    label="12 Months"
+                    color={upcomingMonthsToShow === 12 ? "primary" : "default"}
+                    onClick={() => setUpcomingMonthsToShow(12)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                  <Chip
+                    label="2 Years"
+                    color={upcomingMonthsToShow === 24 ? "primary" : "default"}
+                    onClick={() => setUpcomingMonthsToShow(24)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                  <Chip
+                    label="3 Years"
+                    color={upcomingMonthsToShow === 36 ? "primary" : "default"}
+                    onClick={() => setUpcomingMonthsToShow(36)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                </Box>
+              </Grid>
             </Grid>
-          ))}
-        </Grid>
+          </Card>
+
+          {/* Monthly Breakdown */}
+          <Grid container spacing={3}>
+            {getDisplayedMonths().map((month, index) => (
+              <Grid item xs={12} md={6} key={index}>
+                <Card
+                  elevation={3}
+                  sx={{
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: 8,
+                      borderTop: '4px solid',
+                      borderColor: 'primary.main'
+                    }
+                  }}
+                >
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Typography variant="h6" fontWeight="bold">
+                        {month.month}/{month.year}
+                      </Typography>
+                      <Chip
+                        label={`${month.emiCount} EMIs`}
+                        color="primary"
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="h4" color="primary" gutterBottom fontWeight="bold">
+                      {formatCurrency(month.totalAmount)}
+                    </Typography>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell><strong>Merchant</strong></TableCell>
+                            <TableCell><strong>Card</strong></TableCell>
+                            <TableCell align="right"><strong>Amount</strong></TableCell>
+                            <TableCell align="right"><strong>Due Date</strong></TableCell>
+                            <TableCell align="center"><strong>Actions</strong></TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {month.emis.map((emi, idx) => (
+                            <TableRow 
+                              key={idx}
+                              sx={{
+                                '&:hover': {
+                                  backgroundColor: 'action.hover'
+                                }
+                              }}
+                            >
+                              <TableCell>{emi.merchantName}</TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={`${emi.cardProvider} ${emi.cardLastFourDigits}`}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography variant="body2" fontWeight="bold" color="primary">
+                                  {formatCurrency(emi.amount)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">{formatDate(emi.dueDate)}</TableCell>
+                              <TableCell align="center">
+                                <Tooltip title="Mark as Paid">
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={() => handleMarkAsPaid(emi.emiId, emi.installmentNumber)}
+                                    sx={{
+                                      '&:hover': {
+                                        transform: 'scale(1.1)',
+                                        backgroundColor: 'success.light'
+                                      }
+                                    }}
+                                  >
+                                    <CheckCircleIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* No Results Message */}
+          {getDisplayedMonths().length === 0 && (
+            <Card elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="h6" color="text.secondary">
+                No upcoming payments found
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                You have no scheduled payments for the selected period
+              </Typography>
+            </Card>
+          )}
+        </Box>
       )}
 
       {activeTab === 3 && overview && (
@@ -1656,24 +1804,59 @@ const EMITracker = () => {
                     {formatCurrency(emi.emiAmount)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Per month
+                    {emi.repaymentType === 'ON_REQUEST' ? 'Total Due (Principal + Interest)' : 'Per month'}
                   </Typography>
 
-                  <Box my={2}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="body2">
-                        {emi.paidInstallments} of {emi.totalTenure} paid
+                  {/* Show accrued interest for ON_REQUEST loans */}
+                  {emi.repaymentType === 'ON_REQUEST' && emi.accruedInterest > 0 && (
+                    <Box my={2} p={2} bgcolor="warning.light" borderRadius={2}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        💰 Interest Accrued
                       </Typography>
-                      <Typography variant="body2">
-                        {emi.completionPercentage}%
+                      <Typography variant="h6" color="warning.dark" fontWeight="bold">
+                        {formatCurrency(emi.accruedInterest)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {emi.daysElapsed} days @ {emi.interestRate}% p.a.
+                      </Typography>
+                      <Box mt={1} display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="body2" color="text.secondary">
+                          Principal: {formatCurrency(emi.principalAmount)}
+                        </Typography>
+                        <Typography variant="body2" fontWeight="bold" color="warning.dark">
+                          + {formatCurrency(emi.accruedInterest)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Regular progress bar for MONTHLY, status indicator for ON_REQUEST */}
+                  {emi.repaymentType === 'ON_REQUEST' ? (
+                    <Box my={2} p={2} bgcolor="info.light" borderRadius={2}>
+                      <Typography variant="body2" color="info.dark" fontWeight="bold">
+                        🤝 Pay Anytime (On Request)
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                        No fixed EMI or due date. Flexible repayment.
                       </Typography>
                     </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={emi.completionPercentage}
-                      sx={{ height: 8, borderRadius: 4 }}
-                    />
-                  </Box>
+                  ) : (
+                    <Box my={2}>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
+                        <Typography variant="body2">
+                          {emi.paidInstallments} of {emi.totalTenure} paid
+                        </Typography>
+                        <Typography variant="body2">
+                          {emi.completionPercentage}%
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={emi.completionPercentage}
+                        sx={{ height: 8, borderRadius: 4 }}
+                      />
+                    </Box>
+                  )}
 
                   <Box display="flex" justifyContent="space-between" mt={2}>
                     <Box>
@@ -1706,6 +1889,138 @@ const EMITracker = () => {
             </Grid>
           ))}
         </Grid>
+      )}
+
+      {/* Tab 4: Completed EMIs */}
+      {activeTab === 4 && overview && (
+        <>
+          {overview.completedEMIs && overview.completedEMIs.length === 0 ? (
+            <Box 
+              sx={{ 
+                textAlign: 'center', 
+                py: 8,
+                px: 3,
+                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                borderRadius: 4,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+                No Completed EMIs Yet
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', mt: 2 }}>
+                EMIs that reach their full tenure will automatically appear here. Keep track of your active EMIs to see your progress!
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {overview.completedEMIs.map((emi) => (
+                <Grid item xs={12} md={6} lg={4} key={emi.id}>
+                  <Card 
+                    elevation={3}
+                    sx={{
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      border: '2px solid',
+                      borderColor: 'success.main',
+                      '&:hover': {
+                        transform: 'scale(1.03)',
+                        boxShadow: 8,
+                        borderColor: 'success.dark'
+                      }
+                    }}
+                  >
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                        <Box flex={1}>
+                          <Box display="flex" alignItems="center" gap={1} mb={1}>
+                            <CheckCircleIcon sx={{ color: 'success.main', fontSize: 28 }} />
+                            <Chip
+                              label="COMPLETED"
+                              size="small"
+                              color="success"
+                              sx={{ fontWeight: 700 }}
+                            />
+                          </Box>
+                          <Typography variant="h6" gutterBottom>
+                            {emi.merchantName}
+                          </Typography>
+                          <Chip
+                            label={`${emi.cardProvider} ${emi.cardLastFourDigits}`}
+                            size="small"
+                            color="default"
+                            variant="outlined"
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 1 }}>
+                          {emi.interestRate}% Interest
+                        </Typography>
+                      </Box>
+
+                      <Typography variant="h4" color="success.main" gutterBottom>
+                        {formatCurrency(emi.emiAmount)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Per month (was)
+                      </Typography>
+
+                      <Box my={2}>
+                        <Box display="flex" justifyContent="space-between" mb={1}>
+                          <Typography variant="body2" fontWeight="bold" color="success.main">
+                            {emi.totalTenure} of {emi.totalTenure} paid
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold" color="success.main">
+                            100%
+                          </Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={100}
+                          color="success"
+                          sx={{ height: 8, borderRadius: 4 }}
+                        />
+                      </Box>
+
+                      <Box display="flex" justifyContent="space-between" mt={2} p={2} bgcolor="success.light" borderRadius={2}>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Total Paid
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold" color="success.dark">
+                            {formatCurrency(emi.emiAmount * emi.totalTenure)}
+                          </Typography>
+                        </Box>
+                        <Box textAlign="right">
+                          <Typography variant="caption" color="text.secondary">
+                            Completed On
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">
+                            {formatDate(emi.endDate)}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {emi.notes && (
+                        <Box mt={2} p={1} bgcolor="grey.100" borderRadius={1}>
+                          <Typography variant="caption" color="text.secondary">
+                            📝 {emi.notes}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      <Box mt={2} display="flex" alignItems="center" gap={1}>
+                        <Typography variant="caption" color="success.main" fontWeight="bold">
+                          ✓ Successfully Completed
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </>
       )}
 
       {/* Sync Dialog */}
@@ -1869,7 +2184,22 @@ const EMITracker = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            {/* Custom Provider Name - Shows only when OTHER is selected */}
+            {manualEMIData.cardProvider === 'OTHER' && (
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Provider Name *"
+                  value={manualEMIData.customProviderName}
+                  onChange={(e) => handleManualEMIChange('customProviderName', e.target.value)}
+                  error={!!manualEMIErrors.customProviderName}
+                  helperText={manualEMIErrors.customProviderName || 'Enter the name of the loan provider'}
+                  placeholder="e.g., Local Bank, Friend, Family, etc."
+                />
+              </Grid>
+            )}
+
+            <Grid item xs={12} sm={manualEMIData.cardProvider === 'OTHER' ? 12 : 6}>
               <TextField
                 fullWidth
                 label="Card Last 4 Digits *"
@@ -1930,6 +2260,35 @@ const EMITracker = () => {
               </Typography>
             </Grid>
 
+            {/* Repayment Type Selection */}
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Repayment Type *</InputLabel>
+                <Select
+                  value={manualEMIData.repaymentType}
+                  onChange={(e) => handleManualEMIChange('repaymentType', e.target.value)}
+                  label="Repayment Type *"
+                >
+                  <MenuItem value="MONTHLY">
+                    <Box>
+                      <Typography variant="body1" fontWeight={600}>📅 Monthly EMI</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Regular monthly installments with fixed tenure
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="ON_REQUEST">
+                    <Box>
+                      <Typography variant="body1" fontWeight={600}>🤝 On Request (Personal Loan)</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Pay back anytime when requested (friends, family, informal loans)
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -1938,25 +2297,28 @@ const EMITracker = () => {
                 value={manualEMIData.principalAmount}
                 onChange={(e) => handleManualEMIChange('principalAmount', e.target.value)}
                 error={!!manualEMIErrors.principalAmount}
-                helperText={manualEMIErrors.principalAmount}
+                helperText={manualEMIErrors.principalAmount || (manualEMIData.repaymentType === 'ON_REQUEST' ? 'Total loan amount to be repaid' : '')}
                 InputProps={{ startAdornment: '₹' }}
                 placeholder="50000"
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="EMI Amount (Monthly) *"
-                type="number"
-                value={manualEMIData.emiAmount}
-                onChange={(e) => handleManualEMIChange('emiAmount', e.target.value)}
-                error={!!manualEMIErrors.emiAmount}
-                helperText={manualEMIErrors.emiAmount}
-                InputProps={{ startAdornment: '₹' }}
-                placeholder="5000"
-              />
-            </Grid>
+            {/* Only show EMI Amount for MONTHLY repayment type */}
+            {manualEMIData.repaymentType === 'MONTHLY' && (
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="EMI Amount (Monthly) *"
+                  type="number"
+                  value={manualEMIData.emiAmount}
+                  onChange={(e) => handleManualEMIChange('emiAmount', e.target.value)}
+                  error={!!manualEMIErrors.emiAmount}
+                  helperText={manualEMIErrors.emiAmount}
+                  InputProps={{ startAdornment: '₹' }}
+                  placeholder="5000"
+                />
+              </Grid>
+            )}
 
             <Grid item xs={12} sm={4}>
               <TextField
@@ -1982,19 +2344,22 @@ const EMITracker = () => {
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Tenure (Months) *"
-                type="number"
-                value={manualEMIData.totalTenure}
-                onChange={(e) => handleManualEMIChange('totalTenure', e.target.value)}
-                error={!!manualEMIErrors.totalTenure}
-                helperText={manualEMIErrors.totalTenure}
-                placeholder="12"
-                inputProps={{ min: 1, max: 60 }}
-              />
-            </Grid>
+            {/* Only show Tenure for MONTHLY repayment type */}
+            {manualEMIData.repaymentType === 'MONTHLY' && (
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Tenure (Months) *"
+                  type="number"
+                  value={manualEMIData.totalTenure}
+                  onChange={(e) => handleManualEMIChange('totalTenure', e.target.value)}
+                  error={!!manualEMIErrors.totalTenure}
+                  helperText={manualEMIErrors.totalTenure}
+                  placeholder="12"
+                  inputProps={{ min: 1, max: 60 }}
+                />
+              </Grid>
+            )}
 
             {/* Date Section */}
             <Grid item xs={12}>
@@ -2035,8 +2400,11 @@ const EMITracker = () => {
               />
             </Grid>
 
-            {/* Summary Card */}
-            {manualEMIData.principalAmount && manualEMIData.emiAmount && manualEMIData.totalTenure && (
+            {/* Summary Card - Shows for both MONTHLY and ON_REQUEST types */}
+            {manualEMIData.principalAmount && (
+              (manualEMIData.repaymentType === 'MONTHLY' && manualEMIData.emiAmount && manualEMIData.totalTenure) ||
+              manualEMIData.repaymentType === 'ON_REQUEST'
+            ) && (
               <Grid item xs={12}>
                 <Card sx={{ 
                   background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
@@ -2045,34 +2413,66 @@ const EMITracker = () => {
                 }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                      📊 EMI Summary
+                      📊 {manualEMIData.repaymentType === 'MONTHLY' ? 'EMI Summary' : 'Loan Summary'}
                     </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" color="text.secondary">Principal</Typography>
-                        <Typography variant="h6" color="primary">
-                          {formatCurrency(parseFloat(manualEMIData.principalAmount))}
-                        </Typography>
+                    
+                    {manualEMIData.repaymentType === 'MONTHLY' ? (
+                      <Grid container spacing={2}>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="caption" color="text.secondary">Principal</Typography>
+                          <Typography variant="h6" color="primary">
+                            {formatCurrency(parseFloat(manualEMIData.principalAmount))}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="caption" color="text.secondary">Monthly EMI</Typography>
+                          <Typography variant="h6" color="primary">
+                            {formatCurrency(parseFloat(manualEMIData.emiAmount))}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="caption" color="text.secondary">Total Payable</Typography>
+                          <Typography variant="h6" color="secondary">
+                            {formatCurrency(parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure))}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="caption" color="text.secondary">Total Interest</Typography>
+                          <Typography variant="h6" color="error">
+                            {formatCurrency((parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure)) - parseFloat(manualEMIData.principalAmount))}
+                          </Typography>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" color="text.secondary">Monthly EMI</Typography>
-                        <Typography variant="h6" color="primary">
-                          {formatCurrency(parseFloat(manualEMIData.emiAmount))}
-                        </Typography>
+                    ) : (
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="caption" color="text.secondary">Total Loan Amount</Typography>
+                          <Typography variant="h6" color="primary">
+                            {formatCurrency(parseFloat(manualEMIData.principalAmount))}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="caption" color="text.secondary">Repayment Type</Typography>
+                          <Typography variant="h6" color="secondary">
+                            🤝 On Request (Pay Anytime)
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Box sx={{ 
+                            p: 2, 
+                            backgroundColor: 'info.light', 
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'info.main'
+                          }}>
+                            <Typography variant="body2" color="info.dark">
+                              💡 <strong>Note:</strong> This is a personal loan that can be repaid anytime when requested. 
+                              No fixed monthly EMI or tenure.
+                            </Typography>
+                          </Box>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" color="text.secondary">Total Payable</Typography>
-                        <Typography variant="h6" color="secondary">
-                          {formatCurrency(parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure))}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6} sm={3}>
-                        <Typography variant="caption" color="text.secondary">Total Interest</Typography>
-                        <Typography variant="h6" color="error">
-                          {formatCurrency((parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure)) - parseFloat(manualEMIData.principalAmount))}
-                        </Typography>
-                      </Grid>
-                    </Grid>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>

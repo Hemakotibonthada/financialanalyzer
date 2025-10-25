@@ -1,6 +1,7 @@
 const Analysis = require('../models/Analysis');
 const Transaction = require('../models/Transaction');
 const FinancialProfile = require('../models/FinancialProfile');
+const EMI = require('../models/EMI');
 const logger = require('../utils/logger');
 
 /**
@@ -495,6 +496,12 @@ class AnalyticsService {
       factors.push(awareness);
       logger.info(`  📱 Financial Awareness: ${awareness.score} points`);
 
+      // EMI burden assessment (deducts from score if high) - NEW
+      const emiBurden = await this.assessEMIBurden(userId, monthlyIncomeData.amount);
+      score += emiBurden.score; // Can be negative if burden is too high
+      factors.push(emiBurden);
+      logger.info(`  💳 EMI Burden: ${emiBurden.score} points`);
+
       // Ensure score is between 0 and 100
       const finalScore = Math.min(100, Math.max(0, Math.round(score)));
       logger.info(`  ✅ Final Health Score: ${finalScore}/100 (Grade ${this.getHealthGrade(finalScore)})`);
@@ -954,6 +961,68 @@ class AnalyticsService {
     };
   }
 
+  async assessEMIBurden(userId, monthlyIncome) {
+    try {
+      const activeEMIs = await EMI.find({ 
+        userId, 
+        status: 'active',
+        remainingInstallments: { $gt: 0 }
+      });
+
+      if (activeEMIs.length === 0) {
+        return {
+          factor: 'EMI Burden',
+          score: 5, // Bonus points for debt-free
+          description: '🎉 No active EMIs - Debt-free!'
+        };
+      }
+
+      const monthlyEMIBurden = activeEMIs.reduce((sum, emi) => sum + emi.emiAmount, 0);
+      const emiCount = activeEMIs.length;
+      
+      if (!monthlyIncome || monthlyIncome === 0) {
+        return {
+          factor: 'EMI Burden',
+          score: 0,
+          description: `${emiCount} active EMIs totaling ₹${monthlyEMIBurden.toLocaleString()}/month (set income to see impact)`
+        };
+      }
+
+      const emiBurdenRatio = monthlyEMIBurden / monthlyIncome;
+      const burdenPercentage = Math.round(emiBurdenRatio * 100);
+
+      let score = 0;
+      let status = '';
+
+      if (emiBurdenRatio < 0.15) {
+        score = 5; // Bonus points
+        status = '✅ Excellent';
+      } else if (emiBurdenRatio < 0.25) {
+        score = 0; // Neutral
+        status = '👍 Good';
+      } else if (emiBurdenRatio < 0.40) {
+        score = -5; // Penalty
+        status = '⚠️ Moderate';
+      } else {
+        score = -10; // Heavy penalty
+        status = '🚨 High burden';
+      }
+
+      return {
+        factor: 'EMI Burden',
+        score,
+        description: `${status} - ${emiCount} active EMIs, ₹${monthlyEMIBurden.toLocaleString()}/month (${burdenPercentage}% of income)`
+      };
+    } catch (error) {
+      logger.error('Error assessing EMI burden:', error);
+      return {
+        factor: 'EMI Burden',
+        score: 0,
+        description: 'Unable to calculate EMI burden'
+      };
+    }
+  }
+
   getHealthGrade(score) {
     if (score >= 80) return 'A';
     if (score >= 70) return 'B';
@@ -992,6 +1061,11 @@ class AnalyticsService {
           case 'Financial Awareness':
             recommendations.push('📱 Set up budgets, goals, and track transactions regularly');
             break;
+          case 'EMI Burden':
+            if (factor.description.includes('High burden') || factor.description.includes('Moderate')) {
+              recommendations.push('💳 Reduce EMI burden: Consider foreclosing high-interest EMIs or avoid new loans');
+            }
+            break;
         }
       } else if (factor.score < 20) {
         switch (factor.factor) {
@@ -1002,6 +1076,11 @@ class AnalyticsService {
             recommendations.push('🎯 Fine-tune your budget - eliminate one unnecessary subscription this month');
             break;
         }
+      }
+      
+      // Special case for negative EMI scores
+      if (factor.factor === 'EMI Burden' && factor.score < 0) {
+        recommendations.push('🚨 EMI Alert: Your EMI burden is impacting financial health - prioritize paying off high-interest EMIs');
       }
     });
     

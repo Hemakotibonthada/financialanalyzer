@@ -89,8 +89,9 @@ const BudgetTracker = ({ budgetData }) => {
 
         {/* Category Budgets */}
         <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-900">Category Breakdown</h4>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">Category Breakdown</h4>
           
+          <div className="space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {budgetData.categories?.map((category, index) => {
             const StatusIcon = getStatusIcon(category.status);
             
@@ -132,6 +133,7 @@ const BudgetTracker = ({ budgetData }) => {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Alerts */}

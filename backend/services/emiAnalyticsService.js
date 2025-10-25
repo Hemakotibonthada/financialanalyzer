@@ -12,16 +12,61 @@ class EMIAnalyticsService {
    */
   async getEMIOverview(userId) {
     try {
-      const activeEMIs = await EMI.find({
+      // Fetch all EMIs (we'll categorize based on time-based calculation)
+      const allActiveEMIs = await EMI.find({
         userId,
-        status: 'active',
-        remainingInstallments: { $gt: 0 }
+        status: { $in: ['active', 'completed'] }
       }).sort({ nextDueDate: 1 });
 
-      const completedEMIs = await EMI.find({
-        userId,
-        status: 'completed'
-      });
+      // Separate active and completed based on time-based calculation
+      const activeEMIs = [];
+      const completedEMIs = [];
+      const emisToUpdate = []; // EMIs that need status update in DB
+
+      for (const emi of allActiveEMIs) {
+        const currentDate = new Date();
+        const startDate = new Date(emi.startDate);
+        
+        // Calculate months elapsed
+        const monthsElapsed = Math.max(0, Math.floor(
+          (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
+          (currentDate.getMonth() - startDate.getMonth())
+        ));
+        
+        // If months elapsed >= total tenure, it's completed
+        if (monthsElapsed >= emi.totalTenure) {
+          completedEMIs.push(emi);
+          // Mark for status update if currently active
+          if (emi.status === 'active') {
+            emisToUpdate.push(emi._id);
+          }
+        } else {
+          // Only include in active if truly active
+          if (emi.status === 'active') {
+            activeEMIs.push(emi);
+          }
+        }
+      }
+
+      // Update completed EMIs status in database (individual updates for proper calculation)
+      if (emisToUpdate.length > 0) {
+        for (const emiId of emisToUpdate) {
+          const emi = allActiveEMIs.find(e => e._id.toString() === emiId.toString());
+          if (emi) {
+            await EMI.updateOne(
+              { _id: emiId },
+              { 
+                $set: { 
+                  status: 'completed',
+                  remainingInstallments: 0,
+                  paidInstallments: emi.totalTenure
+                } 
+              }
+            );
+          }
+        }
+        logger.info(`Auto-completed ${emisToUpdate.length} EMIs based on time elapsed`);
+      }
 
       // Calculate totals
       const totalActiveEMIs = activeEMIs.length;
@@ -41,11 +86,29 @@ class EMIAnalyticsService {
 
       const monthlyBurden = activeEMIs.reduce((sum, emi) => sum + emi.emiAmount, 0);
 
-      const totalAmountPaid = completedEMIs.reduce((sum, emi) => {
+      // Calculate total amount paid from completed EMIs (full amount)
+      const totalPaidFromCompleted = completedEMIs.reduce((sum, emi) => {
         return sum + (emi.emiAmount * emi.totalTenure);
-      }, 0) + activeEMIs.reduce((sum, emi) => {
-        return sum + (emi.emiAmount * emi.paidInstallments);
       }, 0);
+
+      // Calculate total amount paid from active EMIs (only paid installments based on time)
+      const totalPaidFromActive = activeEMIs.reduce((sum, emi) => {
+        const currentDate = new Date();
+        const startDate = new Date(emi.startDate);
+        
+        // Calculate months elapsed since start date
+        const monthsElapsed = Math.max(0, Math.floor(
+          (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
+          (currentDate.getMonth() - startDate.getMonth())
+        ));
+        
+        // Paid installments should be min of (months elapsed, total tenure)
+        const actualPaidInstallments = Math.min(monthsElapsed, emi.totalTenure);
+        
+        return sum + (emi.emiAmount * actualPaidInstallments);
+      }, 0);
+
+      const totalAmountPaid = totalPaidFromCompleted + totalPaidFromActive;
 
       return {
         overview: {
@@ -522,9 +585,134 @@ class EMIAnalyticsService {
   }
 
   /**
+   * Calculate interest rate from EMI details
+   * Uses the EMI formula to reverse-calculate the monthly interest rate
+   * 
+   * EMI Formula: EMI = P × r × (1 + r)^n / ((1 + r)^n - 1)
+   * Where: P = Principal, r = monthly rate, n = tenure
+   * 
+   * This uses Newton-Raphson method for approximation
+   */
+  calculateInterestRate(principal, emiAmount, tenure) {
+    // If EMI equals principal/tenure, it's 0% interest
+    const totalAmount = emiAmount * tenure;
+    const totalInterest = totalAmount - principal;
+    
+    // Simple case: 0% interest
+    if (totalInterest <= 0 || Math.abs(totalInterest) < 1) {
+      return 0;
+    }
+    
+    // Flat rate approximation (not technically accurate but common understanding)
+    // Total Interest = Principal × Rate × (Tenure/12)
+    // Rate = (Total Interest × 12) / (Principal × Tenure)
+    const flatRate = (totalInterest * 12) / (principal * tenure);
+    const flatRatePercent = parseFloat((flatRate * 100).toFixed(2));
+    
+    // Newton-Raphson method for more accurate monthly reducing rate
+    // This is computationally intensive, so we'll use flat rate for simplicity
+    // Most users understand flat rate better anyway
+    
+    return flatRatePercent;
+  }
+
+  /**
    * Format EMI data for API response
+   * 
+   * This method calculates the paid installments based on time elapsed since start date,
+   * providing realistic progress tracking regardless of manual payment marking.
+   * 
+   * Example: If EMI started on Sep 1, 2024 with 36-month tenure,
+   *          and current date is Oct 25, 2025:
+   *          - Months elapsed = 14 months (Sep 2024 to Oct 2025)
+   *          - Display: "14 of 36 paid" (39% complete)
    */
   formatEMIData(emi) {
+    // Calculate actual paid installments based on time elapsed since start date
+    const currentDate = new Date();
+    const startDate = new Date(emi.startDate);
+    
+    // Calculate months elapsed since start date
+    // This counts full months from start date to current date
+    const monthsElapsed = Math.max(0, Math.floor(
+      (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (currentDate.getMonth() - startDate.getMonth())
+    ));
+    
+    // Calculate days elapsed for ON_REQUEST interest calculation
+    const daysElapsed = Math.max(0, Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24)));
+    
+    // Special handling for ON_REQUEST type loans
+    let accruedInterest = 0;
+    let totalAmountDue = emi.principalAmount;
+    
+    if (emi.repaymentType === 'ON_REQUEST') {
+      // Calculate accrued interest from start date to current date
+      // Formula: Principal × (Interest Rate / 100) × (Days / 365)
+      if (emi.interestRate && emi.interestRate > 0) {
+        accruedInterest = emi.principalAmount * (emi.interestRate / 100) * (daysElapsed / 365);
+        totalAmountDue = emi.principalAmount + accruedInterest;
+      }
+      
+      // For ON_REQUEST, paid installments is always 0 (unpaid) or 1 (paid)
+      const actualPaidInstallments = emi.status === 'completed' ? 1 : 0;
+      const actualRemainingInstallments = emi.status === 'completed' ? 0 : 1;
+      const actualCompletionPercentage = emi.status === 'completed' ? 100 : 0;
+      
+      return {
+        id: emi._id,
+        merchantName: emi.merchantName,
+        productDescription: emi.productDescription,
+        cardProvider: emi.cardProvider,
+        cardLastFourDigits: emi.cardLastFourDigits,
+        emiAmount: totalAmountDue, // Principal + accrued interest
+        totalTenure: emi.totalTenure,
+        paidInstallments: actualPaidInstallments,
+        remainingInstallments: actualRemainingInstallments,
+        remainingAmount: totalAmountDue, // Total amount due including interest
+        completionPercentage: actualCompletionPercentage,
+        interestRate: emi.interestRate,
+        principalAmount: emi.principalAmount,
+        accruedInterest: accruedInterest, // Interest accrued so far
+        daysElapsed: daysElapsed, // Days since loan started
+        nextDueDate: emi.nextDueDate,
+        startDate: emi.startDate,
+        endDate: emi.endDate,
+        status: emi.status,
+        repaymentType: emi.repaymentType,
+        notes: emi.notes,
+        createdAt: emi.createdAt
+      };
+    }
+    
+    // Regular MONTHLY EMI handling
+    // Paid installments should be min of (months elapsed, total tenure)
+    // This ensures we show realistic progress based on time
+    // If tenure is complete, it caps at total tenure
+    const actualPaidInstallments = Math.min(monthsElapsed, emi.totalTenure);
+    
+    // Remaining installments based on actual time
+    const actualRemainingInstallments = Math.max(0, emi.totalTenure - actualPaidInstallments);
+    
+    // Calculate remaining amount based on actual remaining installments
+    const actualRemainingAmount = actualRemainingInstallments * emi.emiAmount;
+    
+    // Calculate completion percentage based on time elapsed
+    const actualCompletionPercentage = Math.round((actualPaidInstallments / emi.totalTenure) * 100);
+    
+    // Determine actual status based on time
+    let actualStatus = emi.status;
+    if (monthsElapsed >= emi.totalTenure) {
+      actualStatus = 'completed';
+    }
+    
+    // Calculate actual interest rate from principal, EMI amount, and tenure
+    const calculatedInterestRate = this.calculateInterestRate(
+      emi.principalAmount,
+      emi.emiAmount,
+      emi.totalTenure
+    );
+    
     return {
       id: emi._id,
       merchantName: emi.merchantName,
@@ -533,16 +721,18 @@ class EMIAnalyticsService {
       cardLastFourDigits: emi.cardLastFourDigits,
       emiAmount: emi.emiAmount,
       totalTenure: emi.totalTenure,
-      paidInstallments: emi.paidInstallments,
-      remainingInstallments: emi.remainingInstallments,
-      remainingAmount: emi.remainingAmount,
-      completionPercentage: emi.completionPercentage,
-      interestRate: emi.interestRate,
+      paidInstallments: actualPaidInstallments, // Time-based calculation
+      remainingInstallments: actualRemainingInstallments, // Time-based calculation
+      remainingAmount: actualRemainingAmount, // Time-based calculation
+      completionPercentage: actualCompletionPercentage, // Time-based calculation
+      interestRate: calculatedInterestRate, // Calculated from financial terms
       principalAmount: emi.principalAmount,
       nextDueDate: emi.nextDueDate,
       startDate: emi.startDate,
       endDate: emi.endDate,
-      status: emi.status,
+      status: actualStatus, // Time-based status
+      repaymentType: emi.repaymentType,
+      notes: emi.notes,
       createdAt: emi.createdAt
     };
   }

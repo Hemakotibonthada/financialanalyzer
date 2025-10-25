@@ -2,37 +2,95 @@ import { useState, useEffect } from 'react';
 import { 
   TrendingUp, TrendingDown, AlertTriangle, Calendar, DollarSign, 
   Target, Activity, Award, Lightbulb, Zap, BarChart3, PieChart,
-  Clock, MapPin, Flame, Check, X
+  Clock, MapPin, Flame, Check, X, CreditCard, TrendingDown as TrendingDownIcon,
+  Percent, Users, ShoppingBag, Bell, Smartphone, Wallet, ArrowUpRight,
+  ArrowDownRight, Shield, Building, Package, Receipt, Star, Info
 } from 'lucide-react';
 import axios from 'axios';
+import {
+  LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell,
+  AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Scatter,
+  ScatterChart, ZAxis, ComposedChart
+} from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
+// Color palette for charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
 const AdvancedAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('forecast');
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [emiData, setEmiData] = useState(null);
+  const [creditScore, setCreditScore] = useState(null);
+  const [budgetData, setBudgetData] = useState(null);
+  const [investmentData, setInvestmentData] = useState(null);
+  const [billReminders, setBillReminders] = useState([]);
+  const [upiTransactions, setUpiTransactions] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAdvancedAnalytics();
+    fetchAllAnalytics();
   }, []);
 
-  const fetchAdvancedAnalytics = async () => {
+  const fetchAllAnalytics = async () => {
     try {
       setLoading(true);
       setError(null);
       
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/analytics/advanced/complete-dashboard`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      
+      // Fetch all analytics data in parallel
+      const [advancedRes, emiRes, profileRes, transactionsRes, billsRes] = await Promise.all([
+        axios.get(`${API_URL}/analytics/advanced/complete-dashboard`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_URL}/emi/overview`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: { success: false } })),
+        axios.get(`${API_URL}/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: { success: false } })),
+        axios.get(`${API_URL}/transactions/analytics`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: { success: false } })),
+        axios.get(`${API_URL}/bill-reminders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: { success: false } }))
+      ]);
 
-      if (response.data.success) {
-        setAnalyticsData(response.data.data);
+      if (advancedRes.data.success) {
+        setAnalyticsData(advancedRes.data.data);
       }
+
+      if (emiRes.data.success) {
+        setEmiData(emiRes.data.data);
+      }
+
+      if (profileRes.data.success) {
+        const profile = profileRes.data.data;
+        setCreditScore(profile.creditScore);
+        setBudgetData({
+          limits: profile.budgetLimits,
+          monthlyIncome: profile.monthlyIncome
+        });
+      }
+
+      if (transactionsRes.data.success) {
+        const txData = transactionsRes.data.data;
+        // Extract UPI and Investment data
+        setUpiTransactions(txData.upiStats);
+        setInvestmentData(txData.investmentCategories);
+      }
+
+      if (billsRes.data.success) {
+        setBillReminders(billsRes.data.data || []);
+      }
+
     } catch (err) {
-      console.error('Error fetching advanced analytics:', err);
+      console.error('Error fetching analytics:', err);
       setError(err.response?.data?.message || 'Failed to load analytics data');
     } finally {
       setLoading(false);
@@ -91,7 +149,7 @@ const AdvancedAnalytics = () => {
           <h3 className="text-lg font-semibold text-red-900 text-center mb-2">Error Loading Analytics</h3>
           <p className="text-red-700 text-center">{error}</p>
           <button
-            onClick={fetchAdvancedAnalytics}
+            onClick={fetchAllAnalytics}
             className="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
           >
             Try Again
@@ -103,6 +161,16 @@ const AdvancedAnalytics = () => {
 
   const { forecast, anomalies, heatmap, healthScore, savingsOpportunities } = analyticsData || {};
 
+  // Helper: EMI summary for both types
+  const emiSummary = emiData?.overview || {};
+  const activeEMIs = emiData?.activeEMIs || [];
+  const completedEMIs = emiData?.completedEMIs || [];
+  const onRequestEMIs = activeEMIs.filter(e => e.repaymentType === 'ON_REQUEST');
+  const monthlyEMIs = activeEMIs.filter(e => !e.repaymentType || e.repaymentType === 'MONTHLY');
+
+  // Helper: Scrollable container class
+  const scrollableClass = 'max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -112,7 +180,8 @@ const AdvancedAnalytics = () => {
           <p className="text-gray-600">AI-powered insights into your financial patterns</p>
         </div>
 
-        {/* Financial Health Score - Prominent Display */}
+
+        {/* Advanced Financial Health Score + EMI Burden */}
         {healthScore && (
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 mb-6 text-white shadow-lg">
             <div className="flex items-center justify-between">
@@ -121,16 +190,15 @@ const AdvancedAnalytics = () => {
                   <Award className="w-6 h-6" />
                   <h2 className="text-xl font-semibold">Financial Health Score</h2>
                 </div>
-                <p className="text-blue-100 text-sm">Based on {healthScore.factors.length} key factors</p>
+                <p className="text-blue-100 text-sm">Based on {healthScore.factors.length} key factors (including EMI Burden)</p>
               </div>
               <div className="text-right">
                 <div className="text-5xl font-bold mb-1">{healthScore.score}</div>
                 <div className="text-xl font-medium">{healthScore.rating}</div>
               </div>
             </div>
-            
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/20">
+            <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/20">
               <div className="text-center">
                 <div className="text-2xl font-bold">{healthScore.factors.length}</div>
                 <div className="text-sm text-blue-100">Factors Analyzed</div>
@@ -140,14 +208,112 @@ const AdvancedAnalytics = () => {
                 <div className="text-sm text-blue-100">Recommendations</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">
-                  {formatCurrency(savingsOpportunities?.totalPotentialSavings || 0)}
-                </div>
-                <div className="text-sm text-blue-100">Potential Savings</div>
+                <div className="text-2xl font-bold">{emiSummary.monthlyBurden ? formatCurrency(emiSummary.monthlyBurden) : '₹0'}</div>
+                <div className="text-sm text-blue-100">Monthly EMI Burden</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{emiSummary.totalOutstanding ? formatCurrency(emiSummary.totalOutstanding) : '₹0'}</div>
+                <div className="text-sm text-blue-100">Outstanding Debt</div>
               </div>
             </div>
+            {/* EMI Burden Factor */}
+            {healthScore.factors?.find(f => f.name?.toLowerCase().includes('emi')) && (
+              <div className="mt-6 p-4 bg-white/10 rounded-lg">
+                <div className="flex items-center space-x-2 mb-1">
+                  <CreditCard className="w-5 h-5" />
+                  <span className="font-semibold">EMI Burden Factor</span>
+                </div>
+                <div className="text-blue-100 text-sm">
+                  {healthScore.factors.find(f => f.name?.toLowerCase().includes('emi'))?.description}
+                </div>
+              </div>
+            )}
           </div>
         )}
+        {/* EMI Analytics Section - Advanced */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* EMI Summary Card */}
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col h-full">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><CreditCard className="w-5 h-5" /> EMI Analytics</h2>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-blue-50 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 mb-1">Active EMIs</div>
+                <div className="text-2xl font-bold text-blue-600">{emiSummary.totalActiveEMIs || 0}</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 mb-1">Completed EMIs</div>
+                <div className="text-2xl font-bold text-green-600">{emiSummary.totalCompletedEMIs || 0}</div>
+              </div>
+              <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 mb-1">Total Paid</div>
+                <div className="text-2xl font-bold text-yellow-600">{emiSummary.totalAmountPaid ? formatCurrency(emiSummary.totalAmountPaid) : '₹0'}</div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 mb-1">Outstanding</div>
+                <div className="text-2xl font-bold text-purple-600">{emiSummary.totalOutstanding ? formatCurrency(emiSummary.totalOutstanding) : '₹0'}</div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp className="w-4 h-4 text-blue-400" /> Monthly Burden: <span className="font-semibold">{emiSummary.monthlyBurden ? formatCurrency(emiSummary.monthlyBurden) : '₹0'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingDownIcon className="w-4 h-4 text-red-400" /> Interest Outstanding: <span className="font-semibold">{emiSummary.totalInterestOutstanding ? formatCurrency(emiSummary.totalInterestOutstanding) : '₹0'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-green-400" /> Principal Outstanding: <span className="font-semibold">{emiSummary.totalPrincipalOutstanding ? formatCurrency(emiSummary.totalPrincipalOutstanding) : '₹0'}</span>
+              </div>
+            </div>
+            {/* On-Request Loans */}
+            {onRequestEMIs.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="font-semibold text-blue-700 mb-1">On-Request Loans (Personal)</div>
+                <div className={scrollableClass} style={{ maxHeight: 120 }}>
+                  {onRequestEMIs.map(emi => (
+                    <div key={emi.id} className="flex items-center justify-between py-1 border-b border-blue-100 last:border-0">
+                      <span className="font-medium">{emi.merchantName || emi.cardProvider}</span>
+                      <span className="text-blue-700">{formatCurrency(emi.principalAmount)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-blue-500 mt-2">These loans can be repaid anytime on request. No fixed EMI or tenure.</div>
+              </div>
+            )}
+          </div>
+          {/* EMI Progress/Charts */}
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col h-full">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> EMI Progress & Charts</h2>
+            {/* Example: Pie chart for EMI distribution by provider */}
+            {emiData && emiData.activeEMIs && emiData.activeEMIs.length > 0 && (
+              <ResponsiveContainer width="100%" height={220}>
+                <RechartsPie data={Object.entries(emiData.activeEMIs.reduce((acc, emi) => {
+                  const key = emi.cardProvider || 'Other';
+                  acc[key] = (acc[key] || 0) + emi.principalAmount;
+                  return acc;
+                }, {})).map(([name, value]) => ({ name, value }))} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value">
+                  {Object.entries(emiData.activeEMIs.reduce((acc, emi) => {
+                    const key = emi.cardProvider || 'Other';
+                    acc[key] = (acc[key] || 0) + emi.principalAmount;
+                    return acc;
+                  }, {})).map(([name], idx) => (
+                    <Cell key={`cell-${name}`} fill={COLORS[idx % COLORS.length]} />
+                  ))}
+                </RechartsPie>
+                <Tooltip />
+                <Legend />
+              </ResponsiveContainer>
+            )}
+            {/* Scrollable Active EMI List */}
+            <div className={scrollableClass + ' mt-4'} style={{ maxHeight: 160 }}>
+              {monthlyEMIs.map(emi => (
+                <div key={emi.id} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                  <span className="font-medium">{emi.merchantName || emi.cardProvider}</span>
+                  <span className="text-gray-700">{formatCurrency(emi.emiAmount)} x {emi.totalTenure} months</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Tab Navigation */}
         <div className="bg-white rounded-lg shadow-sm mb-6 p-2">
