@@ -87,6 +87,7 @@ app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
 app.use('/api/emi', require('./routes/emiRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import EMIMonthlyTrends from '../components/EMIMonthlyTrends';
 import {
   Box,
   Container,
@@ -898,6 +899,13 @@ const EMITracker = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+            </Grid>
+          )}
+
+          {/* EMI Monthly Trends Chart */}
+          {upcomingPayments && upcomingPayments.monthlyBreakdown && upcomingPayments.monthlyBreakdown.length > 0 && (
+            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+              <EMIMonthlyTrends monthlyData={upcomingPayments.monthlyBreakdown} />
             </Grid>
           )}
         </Grid>

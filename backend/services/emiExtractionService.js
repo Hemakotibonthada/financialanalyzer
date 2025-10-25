@@ -511,31 +511,76 @@ class EMIExtractionService {
     for (const pattern of this.datePatterns) {
       const match = dateStr.match(pattern);
       if (match) {
+        let parsedDate;
+        
         if (pattern.toString().includes('MMM')) {
           // Handle month name format
           const monthMap = {
             'JAN': 0, 'FEB': 1, 'MAR': 2, 'APR': 3, 'MAY': 4, 'JUN': 5,
-            'JUL': 6, 'AUG': 7, 'SEP': 8, 'OCT': 9, 'NOV': 10, 'DEC': 11
+            'JUL': 6, 'AUG': 7, 'SEP': 8, 'OCT': 9, 'NOV': 10, 'DEC': 11,
+            'JANUARY': 0, 'FEBRUARY': 1, 'MARCH': 2, 'APRIL': 3, 'MAY': 4, 'JUNE': 5,
+            'JULY': 6, 'AUGUST': 7, 'SEPTEMBER': 8, 'OCTOBER': 9, 'NOVEMBER': 10, 'DECEMBER': 11
           };
-          const month = monthMap[match[2].toUpperCase()];
-          return new Date(match[3], month, match[1]);
+          
+          // Check if first capture is a digit (DD MMM YYYY) or letter (MMM DD, YYYY)
+          let day, month, year;
+          if (/^\d+$/.test(match[1])) {
+            // Pattern: DD MMM YYYY (match[1]=day, match[2]=month, match[3]=year)
+            day = parseInt(match[1]);
+            month = monthMap[match[2].toUpperCase()];
+            year = parseInt(match[3]);
+          } else {
+            // Pattern: MMM DD, YYYY (match[1]=month, match[2]=day, match[3]=year)
+            month = monthMap[match[1].toUpperCase()];
+            day = parseInt(match[2]);
+            year = parseInt(match[3]);
+          }
+          
+          parsedDate = new Date(year, month, day);
         } else {
-          // Handle numeric format
+          // Handle numeric format (DD-MM-YYYY or DD/MM/YYYY)
           const day = parseInt(match[1]);
           const month = parseInt(match[2]) - 1;
           let year = parseInt(match[3]);
           
           // Handle 2-digit year
           if (year < 100) {
-            year += 2000;
+            // Assume years 00-50 are 2000-2050, 51-99 are 1951-1999
+            year += (year <= 50) ? 2000 : 1900;
           }
           
-          return new Date(year, month, day);
+          parsedDate = new Date(year, month, day);
+        }
+        
+        // Validate the parsed date is reasonable (within past 3 years to 2 years future)
+        const currentDate = new Date();
+        const minDate = new Date(currentDate.getFullYear() - 3, 0, 1);
+        const maxDate = new Date(currentDate.getFullYear() + 2, 11, 31);
+        
+        if (parsedDate >= minDate && parsedDate <= maxDate && !isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        } else {
+          logger.warn(`Parsed date ${parsedDate.toISOString()} from "${dateStr}" is out of valid range. Skipping this pattern.`);
+          continue; // Try next pattern
         }
       }
     }
     
-    return new Date(dateStr);
+    // Fallback: try native Date parsing
+    const fallbackDate = new Date(dateStr);
+    if (!isNaN(fallbackDate.getTime())) {
+      const currentDate = new Date();
+      const minDate = new Date(currentDate.getFullYear() - 3, 0, 1);
+      const maxDate = new Date(currentDate.getFullYear() + 2, 11, 31);
+      
+      if (fallbackDate >= minDate && fallbackDate <= maxDate) {
+        return fallbackDate;
+      }
+    }
+    
+    // If all else fails, return current date
+    logger.warn(`Could not parse valid date from "${dateStr}", using current date`);
+    return new Date();
   }
 }
 

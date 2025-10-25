@@ -18,6 +18,7 @@ import ReportDetail from './pages/ReportDetail';
 import CreditScoreDetail from './pages/CreditScoreDetail';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import EMITracker from './pages/EMITracker';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   return (
@@ -80,6 +81,12 @@ function App() {
             <Route path="/emi-tracker" element={
               <ProtectedRoute>
                 <EMITracker />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
             

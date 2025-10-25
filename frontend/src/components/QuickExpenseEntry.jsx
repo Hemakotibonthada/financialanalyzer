@@ -44,6 +44,8 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
     { value: 'travel', label: 'Travel', icon: '✈️' },
     { value: 'subscriptions', label: 'Subscriptions', icon: '📱' },
     { value: 'investment', label: 'Investment', icon: '📈' },
+    { value: 'emi', label: 'EMI', icon: '💳' },
+    { value: 'loan', label: 'Loan', icon: '🏦' },
     { value: 'other', label: 'Other', icon: '💰' }
   ];
 

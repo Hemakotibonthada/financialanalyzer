@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BarChart3, TrendingUp, DollarSign, FileText, Plus, LogOut, User, RefreshCw, Mail, Sparkles, CreditCard } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, FileText, Plus, LogOut, User, RefreshCw, Mail, Sparkles, CreditCard, Shield } from 'lucide-react';
 import FinancialSummary from '../components/FinancialSummary';
 import MonthlyTrends from '../components/MonthlyTrends';
 import CategoryBreakdown from '../components/CategoryBreakdown';
@@ -158,6 +158,15 @@ const Dashboard = () => {
           <div className="flex justify-between h-16 items-center">
             <h1 className="text-2xl font-bold text-blue-600">Financial Analyzer</h1>
             <div className="flex items-center space-x-4">
+              {user?.role === 'admin' && (
+                <Link 
+                  to="/admin" 
+                  className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-purple-600 to-indigo-700 rounded-lg hover:from-purple-700 hover:to-indigo-800 transition-all shadow-sm"
+                >
+                  <Shield className="w-5 h-5 mr-1" />
+                  Admin Panel
+                </Link>
+              )}
               <Link 
                 to="/emi-tracker" 
                 className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"

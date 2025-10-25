@@ -52,7 +52,7 @@ const Profile = () => {
   const categories = [
     'food_dining', 'groceries', 'transportation', 'fuel', 'utilities',
     'rent_mortgage', 'insurance', 'healthcare', 'entertainment', 'shopping',
-    'education', 'travel', 'subscriptions', 'investment', 'other'
+    'education', 'travel', 'subscriptions', 'investment', 'emi', 'loan', 'other'
   ];
 
   const currencies = [
