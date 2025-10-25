@@ -283,29 +283,32 @@ const Dashboard = () => {
                       <div className="flex items-center space-x-3">
                         <div className={`h-2 w-2 rounded-full ${
                           activity.status === 'completed' ? 'bg-green-500' : 
-                          activity.status === 'processing' ? 'bg-yellow-500' : 'bg-red-500'
+                          activity.status === 'processing' ? 'bg-yellow-500' : 
+                          activity.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
                         }`}></div>
                         <div>
                           <p className="text-sm font-medium text-gray-900 capitalize">
-                            {activity.analysisType?.replace('_', ' ')} Analysis
+                            {activity.analysisType?.replace(/_/g, ' ')}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {activity.results?.extractedTransactions ? 
-                              `${activity.results.extractedTransactions} transactions` : 
-                              'Processing...'
+                            {activity.status === 'completed' && activity.transactionsAnalyzed ? 
+                              `${activity.transactionsAnalyzed} transactions analyzed` : 
+                              activity.status === 'processing' ? 'Processing...' :
+                              activity.status === 'failed' ? 'Failed' :
+                              'Pending...'
                             }
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600">
-                          {activity.results?.totalAmount ? 
-                            `$${activity.results.totalAmount.toFixed(2)}` : 
+                          {activity.status === 'completed' && activity.summary?.totalExpenses ? 
+                            `₹${activity.summary.totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 
                             '-'
                           }
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(activity.createdAt).toLocaleDateString()}
+                          {new Date(activity.createdAt).toLocaleDateString('en-IN')}
                         </p>
                       </div>
                     </div>
