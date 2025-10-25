@@ -23,8 +23,18 @@ export const WebSocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Get WebSocket URL from environment or construct from API URL
+      const getWebSocketURL = () => {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+        // Remove /api from the end to get base URL
+        return apiUrl.replace(/\/api$/, '');
+      };
+
+      const wsUrl = getWebSocketURL();
+      console.log('🔌 Connecting to WebSocket:', wsUrl);
+
       // Initialize socket connection
-      const socketInstance = io('http://localhost:5001', {
+      const socketInstance = io(wsUrl, {
         autoConnect: true,
         reconnection: true,
         reconnectionAttempts: 5,
