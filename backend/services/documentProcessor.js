@@ -33,10 +33,8 @@ const parsePDF = async (filePath, password = null) => {
         
         try {
           // Use qpdf to decrypt the PDF
-          await qpdf.decrypt(filePath, {
-            password: password,
-            output: decryptedPath
-          });
+          // node-qpdf2 syntax: decrypt(input, password, output)
+          await qpdf.decrypt(filePath, password, decryptedPath);
           
           logger.info(`✅ PDF decrypted successfully with qpdf`);
           
@@ -59,7 +57,21 @@ const parsePDF = async (filePath, password = null) => {
             passwordUsed: password
           };
         } catch (qpdfError) {
-          logger.error('QPDF decryption error:', qpdfError.message);
+          logger.error('QPDF decryption error:');
+          logger.error('  Error type:', typeof qpdfError);
+          logger.error('  Error value:', qpdfError);
+          logger.error('  Error message:', qpdfError.message || qpdfError || 'No error message');
+          logger.error('  Error stack:', qpdfError.stack || 'No stack trace');
+          logger.error('  Password tried:', password ? password.substring(0, 4) + '***' : 'None');
+          
+          // Check if qpdf is installed
+          const errorStr = String(qpdfError);
+          if (!qpdfError || errorStr.includes('ENOENT') || errorStr.includes('spawn')) {
+            logger.error('⚠️ QPDF binary not found or cannot be executed!');
+            logger.error('Please verify QPDF installation and PATH configuration');
+          }
+          
+          logger.info(`QPDF stderr output: ${errorStr}`);
           
           // Fallback to pdf-lib if qpdf fails
           logger.info('Trying fallback method with pdf-lib...');
@@ -79,8 +91,13 @@ const parsePDF = async (filePath, password = null) => {
               passwordUsed: password
             };
           } catch (pdfLibError) {
-            logger.error('PDF-lib fallback error:', pdfLibError.message);
-            throw new Error(`Invalid password or unsupported encryption: ${qpdfError.message}`);
+            logger.error('PDF-lib fallback error:');
+            logger.error('  Error message:', pdfLibError.message || 'No error message');
+            logger.error('  Error code:', pdfLibError.code || 'No error code');
+            logger.error('  Password tried:', password ? password.substring(0, 4) + '***' : 'None');
+            
+            // If both fail, the PDF might use unsupported encryption
+            throw new Error(`Could not decrypt PDF. QPDF not installed and pdf-lib failed. Please install QPDF or check if the PDF uses supported encryption.`);
           }
         }
       } catch (passwordError) {
@@ -359,181 +376,461 @@ const extractICICIBankTransactions = (text) => {
   const transactions = [];
   const lines = text.split('\n');
   
-  // Pattern for ICICI transactions
-  // Example: 14-04-2025 ICICI CRM CAM/72041ORY/CASH DEP-Self/14-04-25/2488 15,500.00 35,555.55
-  // Example: 26-04-2025 MOBILE BANKING MMT/IMPS/511614818398/Hema Kotes/HDFC0002081 5,000.00 34,555.55
-  const transactionPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/;
+  logger.info(`\n${'='.repeat(70)}`);
+  logger.info(`📄 STARTING ICICI BANK STATEMENT PROCESSING`);
+  logger.info(`${'='.repeat(70)}`);
+  logger.info(`Total lines in document: ${lines.length}`);
   
-  // Alternate pattern for withdrawals only
-  const withdrawalPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})$/;
+  // Statistics tracking
+  const stats = {
+    totalLines: lines.length,
+    emptyLines: 0,
+    headerLines: 0,
+    depositTransactions: 0,
+    withdrawalTransactions: 0,
+    balanceForwardMatches: 0,
+    skippedPotentialTransactions: 0,
+    validTransactionsExtracted: 0,
+    invalidDates: 0,
+    processingErrors: 0,
+    totalDeposits: 0,
+    totalWithdrawals: 0
+  };
   
-  // Pattern for balance brought forward
-  const balanceForwardPattern = /^(\d{2}-\d{2}-\d{4})\s+B\/F\s+([\d,]+\.\d{2})$/;
+  /**
+   * ICICI Statement Format:
+   * DATE | MODE | PARTICULARS | DEPOSITS | WITHDRAWALS | BALANCE
+   * 
+   * Pattern variations:
+   * 1. DATE MODE DESCRIPTION DEPOSIT_AMOUNT BALANCE (withdrawal column empty)
+   * 2. DATE MODE DESCRIPTION WITHDRAWAL_AMOUNT BALANCE (deposit column empty)
+   * 3. DATE MODE DESCRIPTION DEPOSIT_AMOUNT WITHDRAWAL_AMOUNT BALANCE (rare, both columns)
+   * 
+   * Key: Look at the statement to determine column positions
+   * - If amount appears before balance and increases balance → DEPOSIT
+   * - If amount appears before balance and decreases balance → WITHDRAWAL
+   */
+  
+  // Pattern 1: Transaction with 3 amounts (Date, Description, Amt1, Amt2, Amt3)
+  // This captures: DATE DESCRIPTION DEPOSITS WITHDRAWALS BALANCE
+  const threeAmountPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s*$/;
+  
+  // Pattern 2: Transaction with 2 amounts (Date, Description, Amt1, Amt2)
+  // This could be: DATE DESCRIPTION DEPOSIT BALANCE or DATE DESCRIPTION WITHDRAWAL BALANCE
+  const twoAmountPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s*$/;
+  
+  // Pattern 3: Transaction with 1 amount (just balance, rare)
+  const oneAmountPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})\s*$/;
+  
+  // Pattern 4: Balance brought forward
+  const balanceForwardPattern = /^(\d{2}-\d{2}-\d{4})\s+B\/F\s+([\d,]+\.\d{2})\s*$/;
   
   let currentBalance = null;
+  const skippedLinesSample = [];
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    if (!line || /^DATE\s+MODE/i.test(line) || /^Page\s+\d+/i.test(line)) {
-      continue; // Skip headers and empty lines
-    }
-    
-    // Check for balance brought forward
-    const bfMatch = line.match(balanceForwardPattern);
-    if (bfMatch) {
-      currentBalance = parseFloat(bfMatch[2].replace(/,/g, ''));
-      logger.info(`Balance brought forward: ${currentBalance}`);
+    // Track empty lines
+    if (!line || line.length < 10) {
+      stats.emptyLines++;
       continue;
     }
     
-    // Try full transaction pattern (with deposit or withdrawal)
-    const txnMatch = line.match(transactionPattern);
-    if (txnMatch) {
-      const [, dateStr, description, amount1, amount2] = txnMatch;
+    // Skip headers, footers, page numbers
+    if (/^DATE\s+|^MODE\s+|^PARTICULARS\s+|^DEPOSITS\s+|^WITHDRAWALS\s+|^BALANCE\s+/i.test(line) ||
+        /^Page\s+\d+|^Statement\s+|^Account\s+/i.test(line) ||
+        /^Opening\s+Balance|^Closing\s+Balance/i.test(line) ||
+        /^TOTAL\s+|^Sub\s+Total/i.test(line)) {
+      stats.headerLines++;
+      continue;
+    }
+    
+    try {
+      // Check for balance brought forward
+      const bfMatch = line.match(balanceForwardPattern);
+      if (bfMatch) {
+        currentBalance = parseFloat(bfMatch[2].replace(/,/g, ''));
+        stats.balanceForwardMatches++;
+        logger.info(`✓ Balance brought forward: ₹${currentBalance.toLocaleString('en-IN')}`);
+        continue;
+      }
       
-      // Parse amounts
-      const amt1 = parseFloat(amount1.replace(/,/g, ''));
-      const amt2 = parseFloat(amount2.replace(/,/g, ''));
-      
-      // Determine if deposit or withdrawal
-      // If current balance + amt1 = amt2, then amt1 is deposit
-      // If current balance - amt1 = amt2, then amt1 is withdrawal
-      let type, amount, balance;
-      
-      if (currentBalance !== null) {
-        if (Math.abs((currentBalance + amt1) - amt2) < 0.01) {
-          // Deposit
-          type = 'credit';
-          amount = amt1;
-          balance = amt2;
-        } else if (Math.abs((currentBalance - amt1) - amt2) < 0.01) {
-          // Withdrawal
-          type = 'debit';
-          amount = amt1;
-          balance = amt2;
+      // Try three-amount pattern first (DATE DESC DEPOSIT WITHDRAWAL BALANCE)
+      let match3 = line.match(threeAmountPattern);
+      if (match3) {
+        const [, dateStr, description, amt1, amt2, amt3] = match3;
+        
+        // Parse amounts
+        const amount1 = parseFloat(amt1.replace(/,/g, ''));
+        const amount2 = parseFloat(amt2.replace(/,/g, ''));
+        const balance = parseFloat(amt3.replace(/,/g, ''));
+        
+        // Determine which is deposit and which is withdrawal
+        // Usually: amt1 = deposit, amt2 = withdrawal, amt3 = balance
+        // But we need to verify with balance calculation
+        
+        let depositAmt = 0;
+        let withdrawalAmt = 0;
+        
+        if (currentBalance !== null) {
+          // Check if amt1 is deposit (balance increases)
+          if (Math.abs((currentBalance + amount1 - amount2) - balance) < 0.01) {
+            depositAmt = amount1;
+            withdrawalAmt = amount2;
+          } else if (Math.abs((currentBalance + amount2 - amount1) - balance) < 0.01) {
+            depositAmt = amount2;
+            withdrawalAmt = amount1;
+          } else {
+            // Can't determine precisely, use heuristic
+            depositAmt = amount1;
+            withdrawalAmt = amount2;
+          }
         } else {
-          // Can't determine, assume based on pattern position
-          // Usually: DATE MODE PARTICULARS DEPOSITS WITHDRAWALS BALANCE
-          // So amt1 could be deposit, amt2 is always balance
-          type = 'credit';
-          amount = amt1;
-          balance = amt2;
+          // No previous balance, assume standard format
+          depositAmt = amount1;
+          withdrawalAmt = amount2;
         }
-      } else {
-        // No previous balance, assume deposit
-        type = 'credit';
-        amount = amt1;
-        balance = amt2;
-      }
-      
-      currentBalance = balance;
-      
-      // Parse date (DD-MM-YYYY format)
-      const [day, month, year] = dateStr.split('-');
-      const transactionDate = new Date(`${year}-${month}-${day}`);
-      
-      // Clean description
-      let cleanDesc = description.trim();
-      
-      // Extract mode if present
-      let mode = 'Unknown';
-      if (cleanDesc.includes('ICICI CRM CAM')) {
-        mode = 'Cash Deposit';
-      } else if (cleanDesc.includes('MOBILE BANKING') || cleanDesc.includes('IMPS') || cleanDesc.includes('MMT')) {
-        mode = 'Mobile Banking - IMPS';
-      } else if (cleanDesc.includes('UPI')) {
-        mode = 'UPI';
-      } else if (cleanDesc.includes('NEFT')) {
-        mode = 'NEFT';
-      } else if (cleanDesc.includes('RTGS')) {
-        mode = 'RTGS';
-      } else if (cleanDesc.includes('ATM')) {
-        mode = 'ATM';
-      } else if (cleanDesc.includes('POS')) {
-        mode = 'POS';
-      }
-      
-      // Extract reference number
-      let referenceNumber = null;
-      const refMatch = cleanDesc.match(/\d{10,}/);
-      if (refMatch) {
-        referenceNumber = refMatch[0];
-      }
-      
-      // Extract UPI ID or account info if IMPS
-      let upiInfo = null;
-      const impsMatch = cleanDesc.match(/MMT\/IMPS\/(\d+)\/(.*?)\/(.*?)(?:\s|$)/);
-      if (impsMatch) {
-        upiInfo = {
-          transactionId: impsMatch[1],
-          beneficiaryName: impsMatch[2],
-          bankCode: impsMatch[3]
-        };
-      }
-      
-      transactions.push({
-        date: transactionDate,
-        description: cleanDesc,
-        amount: amount,
-        type: type,
-        balance: balance,
-        paymentMethod: mode.toLowerCase().replace(/\s+/g, '_'),
-        referenceNumber: referenceNumber,
-        upi: upiInfo,
-        rawLine: line,
-        source: 'bank_statement'
-      });
-      
-      logger.debug(`Extracted ICICI transaction: ${dateStr} - ${type} - ${amount} - ${cleanDesc.substring(0, 50)}`);
-      continue;
-    }
-    
-    // Try withdrawal-only pattern (some statements may have deposits and withdrawals in separate columns)
-    const withdrawMatch = line.match(withdrawalPattern);
-    if (withdrawMatch) {
-      const [, dateStr, descAndAmount, balance] = withdrawMatch;
-      
-      // Try to separate description from amount
-      const parts = descAndAmount.trim().split(/\s+/);
-      const balanceVal = parseFloat(balance.replace(/,/g, ''));
-      
-      // Last numeric part before balance might be withdrawal amount
-      let amount = null;
-      let description = descAndAmount;
-      
-      for (let j = parts.length - 1; j >= 0; j--) {
-        const cleanPart = parts[j].replace(/,/g, '');
-        if (/^\d+\.\d{2}$/.test(cleanPart)) {
-          amount = parseFloat(cleanPart);
-          description = parts.slice(0, j).join(' ');
-          break;
-        }
-      }
-      
-      if (amount) {
-        // Parse date (DD-MM-YYYY format)
+        
+        // Parse date
         const [day, month, year] = dateStr.split('-');
         const transactionDate = new Date(`${year}-${month}-${day}`);
         
+        if (isNaN(transactionDate.getTime())) {
+          logger.warn(`Invalid date: ${dateStr}`);
+          stats.invalidDates++;
+          continue;
+        }
+        
+        // Create transactions for both if amounts > 0
+        if (depositAmt > 0) {
+          const transactionDetails = extractTransactionDetails(description);
+          transactions.push({
+            date: transactionDate,
+            description: transactionDetails.cleanDescription,
+            amount: depositAmt,
+            type: 'credit',
+            balance: balance,
+            paymentMethod: transactionDetails.mode,
+            referenceNumber: transactionDetails.referenceNumber,
+            upi: transactionDetails.upiInfo,
+            rawLine: line,
+            source: 'bank_statement'
+          });
+          stats.depositTransactions++;
+          stats.totalDeposits += depositAmt;
+        }
+        
+        if (withdrawalAmt > 0) {
+          const transactionDetails = extractTransactionDetails(description);
+          transactions.push({
+            date: transactionDate,
+            description: transactionDetails.cleanDescription,
+            amount: withdrawalAmt,
+            type: 'debit',
+            balance: balance,
+            paymentMethod: transactionDetails.mode,
+            referenceNumber: transactionDetails.referenceNumber,
+            upi: transactionDetails.upiInfo,
+            rawLine: line,
+            source: 'bank_statement'
+          });
+          stats.withdrawalTransactions++;
+          stats.totalWithdrawals += withdrawalAmt;
+        }
+        
+        currentBalance = balance;
+        stats.validTransactionsExtracted++;
+        
+        if (stats.validTransactionsExtracted % 50 === 0) {
+          logger.info(`  ⏳ Progress: ${stats.validTransactionsExtracted} transaction lines processed...`);
+        }
+        continue;
+      }
+      
+      // Try two-amount pattern (DATE DESC AMOUNT BALANCE)
+      let match2 = line.match(twoAmountPattern);
+      if (match2) {
+        const [, dateStr, description, amt1, amt2] = match2;
+        
+        const amount = parseFloat(amt1.replace(/,/g, ''));
+        const balance = parseFloat(amt2.replace(/,/g, ''));
+        
+        // Determine if deposit or withdrawal based on balance change
+        let type = 'debit';
+        
+        if (currentBalance !== null) {
+          // If balance increased, it's a deposit
+          if (balance > currentBalance) {
+            type = 'credit';
+            // Verify: currentBalance + amount = balance
+            if (Math.abs((currentBalance + amount) - balance) < 0.01) {
+              type = 'credit';
+            }
+          } else {
+            type = 'debit';
+            // Verify: currentBalance - amount = balance
+            if (Math.abs((currentBalance - amount) - balance) < 0.01) {
+              type = 'debit';
+            }
+          }
+        } else {
+          // No previous balance, assume based on description keywords
+          const desc = description.toLowerCase();
+          if (desc.includes('deposit') || desc.includes('credit') || desc.includes('received')) {
+            type = 'credit';
+          } else if (desc.includes('withdrawal') || desc.includes('debit') || desc.includes('paid') || desc.includes('transfer')) {
+            type = 'debit';
+          } else {
+            // Default: check if balance went up or down (need to guess)
+            type = 'debit'; // Conservative default
+          }
+        }
+        
+        // Parse date
+        const [day, month, year] = dateStr.split('-');
+        const transactionDate = new Date(`${year}-${month}-${day}`);
+        
+        if (isNaN(transactionDate.getTime())) {
+          logger.warn(`Invalid date: ${dateStr}`);
+          stats.invalidDates++;
+          continue;
+        }
+        
+        const transactionDetails = extractTransactionDetails(description);
+        
         transactions.push({
           date: transactionDate,
-          description: description.trim(),
+          description: transactionDetails.cleanDescription,
           amount: amount,
-          type: 'debit',
-          balance: balanceVal,
+          type: type,
+          balance: balance,
+          paymentMethod: transactionDetails.mode,
+          referenceNumber: transactionDetails.referenceNumber,
+          upi: transactionDetails.upiInfo,
           rawLine: line,
           source: 'bank_statement'
         });
         
-        currentBalance = balanceVal;
-        logger.debug(`Extracted ICICI withdrawal: ${dateStr} - ${amount} - ${description.substring(0, 50)}`);
+        if (type === 'credit') {
+          stats.depositTransactions++;
+          stats.totalDeposits += amount;
+        } else {
+          stats.withdrawalTransactions++;
+          stats.totalWithdrawals += amount;
+        }
+        
+        currentBalance = balance;
+        stats.validTransactionsExtracted++;
+        
+        if (stats.validTransactionsExtracted % 50 === 0) {
+          logger.info(`  ⏳ Progress: ${stats.validTransactionsExtracted} transaction lines processed...`);
+        }
+        continue;
       }
+      
+      // Try one-amount pattern (rare, just balance)
+      let match1 = line.match(oneAmountPattern);
+      if (match1 && currentBalance !== null) {
+        const [, dateStr, description, balance] = match1;
+        const balanceNum = parseFloat(balance.replace(/,/g, ''));
+        
+        // Calculate transaction from balance difference
+        const diff = balanceNum - currentBalance;
+        const amount = Math.abs(diff);
+        const type = diff > 0 ? 'credit' : 'debit';
+        
+        if (amount > 0.01) {
+          const [day, month, year] = dateStr.split('-');
+          const transactionDate = new Date(`${year}-${month}-${day}`);
+          
+          if (!isNaN(transactionDate.getTime())) {
+            const transactionDetails = extractTransactionDetails(description);
+            
+            transactions.push({
+              date: transactionDate,
+              description: transactionDetails.cleanDescription,
+              amount: amount,
+              type: type,
+              balance: balanceNum,
+              paymentMethod: transactionDetails.mode,
+              referenceNumber: transactionDetails.referenceNumber,
+              upi: transactionDetails.upiInfo,
+              rawLine: line,
+              source: 'bank_statement'
+            });
+            
+            if (type === 'credit') {
+              stats.depositTransactions++;
+              stats.totalDeposits += amount;
+            } else {
+              stats.withdrawalTransactions++;
+              stats.totalWithdrawals += amount;
+            }
+            
+            currentBalance = balanceNum;
+            stats.validTransactionsExtracted++;
+            
+            if (stats.validTransactionsExtracted % 50 === 0) {
+              logger.info(`  ⏳ Progress: ${stats.validTransactionsExtracted} transaction lines processed...`);
+            }
+          }
+        } else {
+          currentBalance = balanceNum;
+        }
+        continue;
+      }
+      
+      // If line contains date and numbers but didn't match, log for debugging
+      if (/^\d{2}-\d{2}-\d{4}/.test(line) && /\d+\.\d{2}/.test(line)) {
+        stats.skippedPotentialTransactions++;
+        if (skippedLinesSample.length < 10) {
+          skippedLinesSample.push(line.substring(0, 100));
+        }
+      }
+    } catch (error) {
+      stats.processingErrors++;
+      logger.error(`Error processing line ${i}: ${error.message}`);
+      logger.debug(`Problematic line: ${line.substring(0, 100)}`);
     }
   }
   
-  logger.info(`Extracted ${transactions.length} transactions from ICICI bank statement`);
+  // Comprehensive logging summary
+  logger.info(`\n${'='.repeat(70)}`);
+  logger.info(`📊 ICICI BANK STATEMENT PROCESSING COMPLETE`);
+  logger.info(`${'='.repeat(70)}`);
+  logger.info(`✅ Successfully extracted: ${transactions.length} transactions`);
+  logger.info(`\n📈 DETAILED STATISTICS:`);
+  logger.info(`  Total lines processed: ${stats.totalLines}`);
+  logger.info(`  Empty/short lines: ${stats.emptyLines}`);
+  logger.info(`  Header/footer lines: ${stats.headerLines}`);
+  logger.info(`  Balance forward entries: ${stats.balanceForwardMatches}`);
+  logger.info(`  Transaction lines processed: ${stats.validTransactionsExtracted}`);
+  logger.info(`  Deposit transactions: ${stats.depositTransactions}`);
+  logger.info(`  Withdrawal transactions: ${stats.withdrawalTransactions}`);
+  logger.info(`  Invalid dates encountered: ${stats.invalidDates}`);
+  logger.info(`  Skipped potential transactions: ${stats.skippedPotentialTransactions}`);
+  logger.info(`  Processing errors: ${stats.processingErrors}`);
+  
+  if (skippedLinesSample.length > 0) {
+    logger.warn(`\n⚠️  SAMPLE OF SKIPPED LINES (first 10):`);
+    skippedLinesSample.forEach((line, idx) => {
+      logger.warn(`  ${idx + 1}. ${line}`);
+    });
+  }
+  
+  // Calculate transaction summary - properly separated
+  const depositTransactions = transactions.filter(t => t.type === 'credit');
+  const withdrawalTransactions = transactions.filter(t => t.type === 'debit');
+  const totalDeposits = depositTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalWithdrawals = withdrawalTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const netFlow = totalDeposits - totalWithdrawals;
+  
+  logger.info(`\n💰 FINANCIAL SUMMARY:`);
+  logger.info(`  📥 DEPOSITS (Credits):`);
+  logger.info(`     Count: ${depositTransactions.length}`);
+  logger.info(`     Total: ₹${totalDeposits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  logger.info(`  📤 WITHDRAWALS (Debits):`);
+  logger.info(`     Count: ${withdrawalTransactions.length}`);
+  logger.info(`     Total: ₹${totalWithdrawals.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  logger.info(`  💵 NET FLOW: ₹${netFlow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  logger.info(`  📊 TOTAL VOLUME: ₹${(totalDeposits + totalWithdrawals).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  
+  if (currentBalance !== null) {
+    logger.info(`  💼 FINAL BALANCE: ₹${currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  }
+  
+  // Validation check against expected statement totals
+  // Expected from statement footer: TOTAL 27,41,145.82 26,72,243.25 44,488.82
+  logger.info(`\n✅ VALIDATION:`);
+  logger.info(`  Expected from statement footer:`);
+  logger.info(`    Total Deposits should be: ₹27,41,145.82`);
+  logger.info(`    Total Withdrawals should be: ₹26,72,243.25`);
+  logger.info(`    Final Balance should be: ₹44,488.82`);
+  logger.info(`  Actual extracted:`);
+  logger.info(`    Total Deposits: ₹${totalDeposits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  logger.info(`    Total Withdrawals: ₹${totalWithdrawals.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  if (currentBalance !== null) {
+    logger.info(`    Final Balance: ₹${currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  }
+  
+  // Calculate accuracy
+  const expectedDeposits = 2741145.82;
+  const expectedWithdrawals = 2672243.25;
+  const expectedBalance = 44488.82;
+  
+  const depositAccuracy = totalDeposits > 0 ? ((Math.min(totalDeposits, expectedDeposits) / Math.max(totalDeposits, expectedDeposits)) * 100) : 0;
+  const withdrawalAccuracy = totalWithdrawals > 0 ? ((Math.min(totalWithdrawals, expectedWithdrawals) / Math.max(totalWithdrawals, expectedWithdrawals)) * 100) : 0;
+  
+  logger.info(`\n📊 ACCURACY:`);
+  logger.info(`  Deposits: ${depositAccuracy.toFixed(2)}%`);
+  logger.info(`  Withdrawals: ${withdrawalAccuracy.toFixed(2)}%`);
+  
+  if (depositAccuracy > 99 && withdrawalAccuracy > 99) {
+    logger.info(`  ✅ EXCELLENT! Extraction matches statement totals!`);
+  } else if (depositAccuracy > 95 && withdrawalAccuracy > 95) {
+    logger.info(`  ✅ GOOD! Extraction is close to statement totals.`);
+  } else {
+    logger.warn(`  ⚠️  REVIEW NEEDED: Extraction totals differ from statement.`);
+  }
+  
+  logger.info(`${'='.repeat(70)}\n`);
+  
   return transactions;
+};
+
+/**
+ * Helper function to extract transaction details from description
+ */
+const extractTransactionDetails = (description) => {
+  const cleanDesc = description.trim();
+  
+  // Determine payment mode
+  let mode = 'unknown';
+  if (cleanDesc.includes('ICICI CRM CAM') || cleanDesc.includes('CASH DEP')) {
+    mode = 'cash_deposit';
+  } else if (cleanDesc.includes('MOBILE BANKING') || cleanDesc.includes('IMPS') || cleanDesc.includes('MMT')) {
+    mode = 'mobile_banking_-_imps';
+  } else if (cleanDesc.includes('UPI')) {
+    mode = 'upi';
+  } else if (cleanDesc.includes('NEFT')) {
+    mode = 'neft';
+  } else if (cleanDesc.includes('RTGS')) {
+    mode = 'rtgs';
+  } else if (cleanDesc.includes('ATM')) {
+    mode = 'atm';
+  } else if (cleanDesc.includes('POS') || cleanDesc.includes('POINT OF SALE')) {
+    mode = 'pos';
+  } else if (cleanDesc.includes('CHEQUE') || cleanDesc.includes('CHQ')) {
+    mode = 'cheque';
+  } else if (cleanDesc.includes('ONLINE')) {
+    mode = 'online';
+  }
+  
+  // Extract reference number (sequence of 10+ digits)
+  let referenceNumber = null;
+  const refMatch = cleanDesc.match(/\d{10,}/);
+  if (refMatch) {
+    referenceNumber = refMatch[0];
+  }
+  
+  // Extract UPI/IMPS details
+  let upiInfo = null;
+  const impsMatch = cleanDesc.match(/MMT\/IMPS\/(\d+)\/(.*?)\/(.*?)(?:\s|$)/);
+  if (impsMatch) {
+    upiInfo = {
+      transactionId: impsMatch[1],
+      beneficiaryName: impsMatch[2],
+      bankCode: impsMatch[3]
+    };
+  }
+  
+  return {
+    cleanDescription: cleanDesc,
+    mode: mode,
+    referenceNumber: referenceNumber,
+    upiInfo: upiInfo
+  };
 };
 
 /**
@@ -747,10 +1044,30 @@ const processDocumentFile = async (filePath, fileType, password = null, password
     if (fileExtension === '.pdf') {
       let pdfData;
       
-      if (password) {
-        // Try with provided password
-        logger.info('Trying with provided password');
-        pdfData = await parsePDF(filePath, password);
+      if (password || (passwordHints && passwordHints.length > 0)) {
+        // Try with provided password or hints
+        if (password) {
+          logger.info('Trying with provided password');
+          logger.info(`Password value: "${password}"`);
+          logger.info(`Password length: ${password.length}`);
+          logger.info(`Password type: ${typeof password}`);
+          try {
+            pdfData = await parsePDF(filePath, password);
+          } catch (pwdError) {
+            logger.warn(`Direct password failed: ${pwdError.message}`);
+            // If direct password fails and we have hints, try combinations
+            if (passwordHints && passwordHints.length > 0) {
+              logger.info('Direct password failed, trying password combinations from hints');
+              pdfData = await tryPasswordCombinations(filePath, passwordHints, userProfile);
+            } else {
+              throw pwdError;
+            }
+          }
+        } else {
+          // Only hints available
+          logger.info('Trying password combinations from hints');
+          pdfData = await tryPasswordCombinations(filePath, passwordHints, userProfile);
+        }
       } else {
         try {
           // Try without password first

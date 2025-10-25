@@ -17,6 +17,7 @@ import Reports from './pages/Reports';
 import ReportDetail from './pages/ReportDetail';
 import CreditScoreDetail from './pages/CreditScoreDetail';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
+import EMITracker from './pages/EMITracker';
 
 function App() {
   return (
@@ -73,6 +74,12 @@ function App() {
             <Route path="/advanced-analytics" element={
               <ProtectedRoute>
                 <AdvancedAnalytics />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/emi-tracker" element={
+              <ProtectedRoute>
+                <EMITracker />
               </ProtectedRoute>
             } />
             

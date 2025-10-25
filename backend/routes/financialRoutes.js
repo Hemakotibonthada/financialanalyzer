@@ -2803,4 +2803,170 @@ router.get('/expenses-in-currency/:currency', authenticate, async (req, res) => 
   }
 });
 
+/**
+ * @route GET /api/financial/analytics/document-summary
+ * @desc Get comprehensive summary of ALL documents and transactions for a user
+ * @desc This endpoint aggregates data across ALL uploaded and processed documents
+ * @access Private
+ */
+router.get('/analytics/document-summary', authenticate, async (req, res) => {
+  try {
+    logger.info(`Fetching document summary for user: ${req.user._id}`);
+
+    // Get all completed documents for the user
+    const documents = await Document.find({
+      userId: req.user._id,
+      processingStatus: 'completed'
+    }).select('_id originalFileName createdAt transactionCount');
+
+    logger.info(`Found ${documents.length} completed documents`);
+
+    // Get ALL transactions for the user (no date filter)
+    const allTransactions = await Transaction.find({
+      userId: req.user._id
+    });
+
+    logger.info(`Found ${allTransactions.length} total transactions`);
+
+    // Calculate comprehensive aggregations
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    let transactionsByDocument = {};
+    let transactionsByCategory = {};
+    let transactionsByMonth = {};
+
+    allTransactions.forEach(transaction => {
+      const amount = Math.abs(transaction.amount);
+      
+      // Income vs Expenses
+      if (transaction.type === 'credit') {
+        totalIncome += amount;
+      } else if (transaction.type === 'debit') {
+        totalExpenses += amount;
+      }
+
+      // By document
+      const docId = transaction.documentId?.toString() || 'unknown';
+      if (!transactionsByDocument[docId]) {
+        transactionsByDocument[docId] = {
+          count: 0,
+          income: 0,
+          expenses: 0,
+          transactions: []
+        };
+      }
+      transactionsByDocument[docId].count++;
+      transactionsByDocument[docId].transactions.push(transaction._id);
+      if (transaction.type === 'credit') {
+        transactionsByDocument[docId].income += amount;
+      } else {
+        transactionsByDocument[docId].expenses += amount;
+      }
+
+      // By category
+      const category = transaction.category || 'uncategorized';
+      if (!transactionsByCategory[category]) {
+        transactionsByCategory[category] = { count: 0, amount: 0 };
+      }
+      transactionsByCategory[category].count++;
+      transactionsByCategory[category].amount += amount;
+
+      // By month
+      const date = new Date(transaction.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!transactionsByMonth[monthKey]) {
+        transactionsByMonth[monthKey] = {
+          income: 0,
+          expenses: 0,
+          net: 0,
+          transactionCount: 0
+        };
+      }
+      transactionsByMonth[monthKey].transactionCount++;
+      if (transaction.type === 'credit') {
+        transactionsByMonth[monthKey].income += amount;
+      } else {
+        transactionsByMonth[monthKey].expenses += amount;
+      }
+      transactionsByMonth[monthKey].net = transactionsByMonth[monthKey].income - transactionsByMonth[monthKey].expenses;
+    });
+
+    const netSavings = totalIncome - totalExpenses;
+    const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100) : 0;
+
+    // Format document details
+    const documentDetails = documents.map(doc => {
+      const docStats = transactionsByDocument[doc._id.toString()] || {
+        count: 0,
+        income: 0,
+        expenses: 0
+      };
+      
+      return {
+        documentId: doc._id,
+        fileName: doc.originalFileName,
+        uploadDate: doc.createdAt,
+        transactionCount: docStats.count,
+        totalIncome: docStats.income,
+        totalExpenses: docStats.expenses,
+        netFlow: docStats.income - docStats.expenses
+      };
+    });
+
+    // Sort categories by amount
+    const topCategories = Object.entries(transactionsByCategory)
+      .map(([category, data]) => ({
+        category,
+        count: data.count,
+        amount: data.amount
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
+
+    // Sort months chronologically
+    const monthlyData = Object.entries(transactionsByMonth)
+      .map(([month, data]) => ({
+        month,
+        ...data
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    const summary = {
+      overview: {
+        totalDocuments: documents.length,
+        totalTransactions: allTransactions.length,
+        totalIncome,
+        totalExpenses,
+        netSavings,
+        savingsRate,
+        averageTransactionValue: allTransactions.length > 0 ? (totalIncome + totalExpenses) / allTransactions.length : 0
+      },
+      documents: documentDetails,
+      categories: topCategories,
+      monthlyTrends: monthlyData,
+      dateRange: {
+        earliest: allTransactions.length > 0 ? 
+          new Date(Math.min(...allTransactions.map(t => new Date(t.date)))).toISOString() : null,
+        latest: allTransactions.length > 0 ? 
+          new Date(Math.max(...allTransactions.map(t => new Date(t.date)))).toISOString() : null
+      }
+    };
+
+    logger.info(`Document summary generated: ${documents.length} documents, ${allTransactions.length} transactions, ₹${totalIncome} income, ₹${totalExpenses} expenses`);
+
+    res.json({
+      success: true,
+      data: summary
+    });
+
+  } catch (error) {
+    logger.error('Document summary error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate document summary',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = router;
