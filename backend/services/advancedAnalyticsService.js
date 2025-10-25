@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transaction');
 const FinancialProfile = require('../models/FinancialProfile');
+const EMI = require('../models/EMI');
 
 class AdvancedAnalyticsService {
   /**
@@ -412,6 +413,66 @@ class AdvancedAnalyticsService {
       }
     }
 
+    // Factor 6: EMI Burden (15 points) - NEW
+    const activeEMIs = await EMI.find({ 
+      userId, 
+      status: 'active',
+      remainingInstallments: { $gt: 0 }
+    });
+
+    if (activeEMIs.length > 0 && profile && profile.monthlyIncome) {
+      const monthlyEMIBurden = activeEMIs.reduce((sum, emi) => sum + emi.emiAmount, 0);
+      const emiBurdenRatio = monthlyEMIBurden / profile.monthlyIncome;
+      const emiCount = activeEMIs.length;
+
+      if (emiBurdenRatio < 0.15) {
+        // EMI burden < 15% of income - Excellent
+        score += 15;
+        factors.push({ 
+          name: 'EMI Burden', 
+          impact: 15, 
+          status: 'excellent', 
+          detail: `₹${monthlyEMIBurden.toLocaleString()} EMI (${Math.round(emiBurdenRatio * 100)}% of income, ${emiCount} active EMIs)` 
+        });
+      } else if (emiBurdenRatio < 0.25) {
+        // EMI burden 15-25% - Good
+        score += 10;
+        factors.push({ 
+          name: 'EMI Burden', 
+          impact: 10, 
+          status: 'good', 
+          detail: `₹${monthlyEMIBurden.toLocaleString()} EMI (${Math.round(emiBurdenRatio * 100)}% of income, ${emiCount} active EMIs)` 
+        });
+      } else if (emiBurdenRatio < 0.40) {
+        // EMI burden 25-40% - Fair
+        score += 5;
+        factors.push({ 
+          name: 'EMI Burden', 
+          impact: 5, 
+          status: 'fair', 
+          detail: `₹${monthlyEMIBurden.toLocaleString()} EMI (${Math.round(emiBurdenRatio * 100)}% of income, ${emiCount} active EMIs)` 
+        });
+      } else {
+        // EMI burden > 40% - High burden
+        score -= 5;
+        factors.push({ 
+          name: 'EMI Burden', 
+          impact: -5, 
+          status: 'high', 
+          detail: `₹${monthlyEMIBurden.toLocaleString()} EMI (${Math.round(emiBurdenRatio * 100)}% of income, ${emiCount} active EMIs) - Consider debt consolidation` 
+        });
+      }
+    } else if (activeEMIs.length === 0) {
+      // No EMIs - Excellent
+      score += 15;
+      factors.push({ 
+        name: 'EMI Burden', 
+        impact: 15, 
+        status: 'excellent', 
+        detail: 'No active EMIs - Debt-free status!' 
+      });
+    }
+
     // Normalize score to 0-100
     score = Math.max(0, Math.min(100, score));
 
@@ -491,6 +552,23 @@ class AdvancedAnalyticsService {
                 'Keep emergency fund in a separate, easily accessible account'
               ]
             });
+            break;
+          case 'EMI Burden':
+            if (factor.status === 'high' || factor.status === 'fair') {
+              recommendations.push({
+                priority: factor.status === 'high' ? 'critical' : 'high',
+                category: 'debt',
+                title: 'Reduce EMI Burden',
+                description: `Your EMI obligations are ${factor.detail.includes('40%') ? 'significantly impacting' : 'affecting'} your financial flexibility.`,
+                actionSteps: [
+                  'Consider foreclosing high-interest EMIs if possible',
+                  'Avoid taking new EMIs until current burden reduces',
+                  'Prioritize paying off EMIs with highest interest rates first',
+                  'Explore balance transfer options for better interest rates',
+                  'Aim to keep total EMI below 30% of monthly income'
+                ]
+              });
+            }
             break;
         }
       }

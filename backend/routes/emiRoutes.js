@@ -633,6 +633,7 @@ router.post('/manual', authenticate, async (req, res) => {
     
     const {
       cardProvider,
+      customProviderName,
       cardLastFourDigits,
       cardHolderName,
       merchantName,
@@ -642,17 +643,34 @@ router.post('/manual', authenticate, async (req, res) => {
       processingFee,
       emiAmount,
       totalTenure,
+      repaymentType, // MONTHLY or ON_REQUEST
       startDate,
       notes,
       tags
     } = req.body;
     
-    // Validation
+    // Validation - different based on repayment type
     if (!cardProvider || !cardLastFourDigits || !cardHolderName || !merchantName || 
-        !principalAmount || !emiAmount || !totalTenure || !startDate) {
+        !principalAmount || !startDate || !repaymentType) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields'
+      });
+    }
+
+    // Additional validation for MONTHLY repayment type
+    if (repaymentType === 'MONTHLY' && (!emiAmount || !totalTenure)) {
+      return res.status(400).json({
+        success: false,
+        message: 'EMI amount and tenure are required for monthly repayment type'
+      });
+    }
+
+    // Validate custom provider name when OTHER is selected
+    if (cardProvider === 'OTHER' && !customProviderName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Provider name is required when selecting OTHER'
       });
     }
     
@@ -664,60 +682,88 @@ router.post('/manual', authenticate, async (req, res) => {
       });
     }
     
+    // For ON_REQUEST type, set default values for EMI amount and tenure
+    const finalEmiAmount = repaymentType === 'ON_REQUEST' ? principalAmount : parseFloat(emiAmount);
+    const finalTotalTenure = repaymentType === 'ON_REQUEST' ? 1 : parseInt(totalTenure);
+    
     // Calculate dates
     const emiStartDate = new Date(startDate);
     const endDate = new Date(emiStartDate);
-    endDate.setMonth(endDate.getMonth() + totalTenure);
+    if (repaymentType === 'MONTHLY') {
+      endDate.setMonth(endDate.getMonth() + finalTotalTenure);
+    }
+    // For ON_REQUEST, end date is not applicable (no fixed tenure)
     
-    const nextDueDate = new Date(emiStartDate);
-    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    const nextDueDate = repaymentType === 'MONTHLY' ? (() => {
+      const date = new Date(emiStartDate);
+      date.setMonth(date.getMonth() + 1);
+      return date;
+    })() : null; // No next due date for ON_REQUEST type
     
-    // Calculate payment schedule
+    // Calculate payment schedule (only for MONTHLY type)
     const paymentHistory = [];
-    const monthlyInterest = (interestRate || 0) / 12 / 100;
-    
-    for (let i = 1; i <= totalTenure; i++) {
-      const dueDate = new Date(emiStartDate);
-      dueDate.setMonth(dueDate.getMonth() + i);
+    if (repaymentType === 'MONTHLY') {
+      const monthlyInterest = (interestRate || 0) / 12 / 100;
       
-      // Calculate principal and interest for this installment
-      const outstandingPrincipal = principalAmount - ((i - 1) * (principalAmount / totalTenure));
-      const interestPaid = outstandingPrincipal * monthlyInterest;
-      const principalPaid = emiAmount - interestPaid;
-      
+      for (let i = 1; i <= finalTotalTenure; i++) {
+        const dueDate = new Date(emiStartDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+        
+        // Calculate principal and interest for this installment
+        const outstandingPrincipal = principalAmount - ((i - 1) * (principalAmount / finalTotalTenure));
+        const interestPaid = outstandingPrincipal * monthlyInterest;
+        const principalPaid = finalEmiAmount - interestPaid;
+        
+        paymentHistory.push({
+          installmentNumber: i,
+          dueDate: dueDate,
+          amount: finalEmiAmount,
+          principalPaid: Math.max(0, principalPaid),
+          interestPaid: Math.max(0, interestPaid),
+          status: 'upcoming'
+        });
+      }
+    } else {
+      // For ON_REQUEST type, create a single entry
       paymentHistory.push({
-        installmentNumber: i,
-        dueDate: dueDate,
-        amount: emiAmount,
-        principalPaid: Math.max(0, principalPaid),
-        interestPaid: Math.max(0, interestPaid),
+        installmentNumber: 1,
+        dueDate: null, // No fixed due date
+        amount: principalAmount,
+        principalPaid: principalAmount,
+        interestPaid: 0,
         status: 'upcoming'
       });
     }
     
     // Create EMI record
+    // Use custom provider name if OTHER is selected, otherwise use the selected provider
+    const finalCardProvider = cardProvider === 'OTHER' && customProviderName 
+      ? customProviderName.toUpperCase() 
+      : cardProvider.toUpperCase();
+    
     const emi = new EMI({
       userId: req.user._id,
-      cardProvider: cardProvider.toUpperCase(),
+      cardProvider: finalCardProvider,
       cardLastFourDigits,
       cardHolderName,
       merchantName,
-      productDescription: productDescription || 'Manual Entry',
+      productDescription: productDescription || (repaymentType === 'ON_REQUEST' ? 'Personal Loan' : 'Manual Entry'),
       principalAmount: parseFloat(principalAmount),
       interestRate: parseFloat(interestRate) || 0,
       processingFee: parseFloat(processingFee) || 0,
-      emiAmount: parseFloat(emiAmount),
-      totalTenure: parseInt(totalTenure),
+      emiAmount: finalEmiAmount,
+      totalTenure: finalTotalTenure,
       paidInstallments: 0,
-      remainingInstallments: parseInt(totalTenure),
+      remainingInstallments: finalTotalTenure,
+      repaymentType: repaymentType || 'MONTHLY', // Add repayment type field
       startDate: emiStartDate,
-      endDate: endDate,
+      endDate: repaymentType === 'MONTHLY' ? endDate : null,
       nextDueDate: nextDueDate,
       paymentHistory: paymentHistory,
       status: 'active',
       extractionMethod: 'manual',
       extractionConfidence: 100,
-      notes: notes || '',
+      notes: notes || (repaymentType === 'ON_REQUEST' ? 'Personal loan - pay back anytime when requested' : ''),
       tags: tags || []
     });
     

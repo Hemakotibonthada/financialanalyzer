@@ -293,7 +293,7 @@ const Dashboard = () => {
                 <h3 className="text-lg font-medium text-gray-900">Recent Analysis Activity</h3>
               </div>
               <div className="p-6">
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   {dashboardData.recentActivity.slice(0, 5).map((activity) => (
                     <div key={activity._id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                       <div className="flex items-center space-x-3">
