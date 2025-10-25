@@ -14,6 +14,13 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 LAST_ID_FILE = "last_email_id.txt"
 CHECK_INTERVAL = 0  # seconds
 
+# Get the path to the backend uploads folder
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+UPLOADS_DIR = os.path.join(PROJECT_ROOT, "backend", "uploads")
+FINANCIAL_UPLOADS_DIR = os.path.join(UPLOADS_DIR, "financial")
+EMAIL_SUMMARIES_DIR = os.path.join(UPLOADS_DIR, "email_summaries")
+
 def is_public_email(sender, headers):
     public_keywords = [
         "noreply", "no-reply", "newsletter", "promotions", "notification",
@@ -186,13 +193,14 @@ if __name__ == "__main__":
                     continue
                 if is_public_email(sender, headers):
                     continue
-                # Ensure mails directory exists
-                os.makedirs("mails", exist_ok=True)
+                # Ensure upload directories exist
+                os.makedirs(EMAIL_SUMMARIES_DIR, exist_ok=True)
+                os.makedirs(FINANCIAL_UPLOADS_DIR, exist_ok=True)
                 # Clean sender and subject for filename
                 safe_sender = re.sub(r'[\\/*?:"<>|@.\s]', "_", sender)
                 safe_subject = re.sub(r'[\\/*?:"<>|]', "_", subject)
-                filename = f"mails/{safe_sender}_{msg_id}_{safe_subject[:30]}.txt"
-                folder = f"mails/{safe_sender}_{msg_id}_{safe_subject[:30]}_attachments"
+                filename = os.path.join(EMAIL_SUMMARIES_DIR, f"{safe_sender}_{msg_id}_{safe_subject[:30]}.txt")
+                folder = os.path.join(FINANCIAL_UPLOADS_DIR, f"{safe_sender}_{msg_id}_{safe_subject[:30]}_attachments")
                 email_text = extract_email_text([msg_data['payload']])
                 save_attachments([msg_data['payload']], folder, service, msg_id)
                 print(f"\nSubject: {subject}\nFrom: {sender}\n")
