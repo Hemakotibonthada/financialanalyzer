@@ -188,7 +188,7 @@ class AnalyticsService {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - monthsBack);
 
-    // Get transactions directly (excluding investments from category breakdown)
+    // Get transactions directly (now including all categories including investments)
     const transactions = await Transaction.find({
       userId,
       type: 'debit',
@@ -196,21 +196,15 @@ class AnalyticsService {
     }).lean();
 
     const categoryTotals = {};
-    const investmentTotal = { amount: 0, count: 0 };
     let grandTotal = 0;
 
     transactions.forEach(transaction => {
       const amount = Math.abs(transaction.amount || 0);
       const category = transaction.category || transaction.ai_category || 'other';
 
-      // Track investments separately as they're savings, not spending
-      if (category.toLowerCase() === 'investment') {
-        investmentTotal.amount += amount;
-        investmentTotal.count += 1;
-      } else {
-        categoryTotals[category] = (categoryTotals[category] || 0) + amount;
-        grandTotal += amount;
-      }
+      // Include all categories including investment
+      categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+      grandTotal += amount;
     });
 
     // Convert to chart format
@@ -225,11 +219,9 @@ class AnalyticsService {
 
     return {
       chartData,
-      investments: investmentTotal, // Track investments separately
       summary: {
         totalCategories: chartData.length,
         totalAmount: grandTotal,
-        totalInvestments: investmentTotal.amount,
         topCategory: chartData[0]?.category || 'No data',
         diversificationIndex: this.calculateDiversificationIndex(chartData)
       }
@@ -609,7 +601,15 @@ class AnalyticsService {
       'Education': '#98D8C8',
       'Insurance': '#F7DC6F',
       'Investment': '#BB8FCE',
-      'Rent': '#85C1E9'
+      'Rent': '#85C1E9',
+      'EMI': '#FF8C94',
+      'Loan': '#FFA07A',
+      'Groceries': '#90EE90',
+      'Bills': '#FFB6C1',
+      'Travel': '#87CEEB',
+      'Fuel': '#FFD700',
+      'Subscriptions': '#DDA0DD',
+      'Other': '#BDC3C7'
     };
     return colors[category] || '#BDC3C7';
   }

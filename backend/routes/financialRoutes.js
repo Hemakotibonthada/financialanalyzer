@@ -680,10 +680,22 @@ router.get('/analytics/monthly-trends', authenticate, async (req, res) => {
         }
       },
       {
+        $addFields: {
+          // Convert date to Date object if it's a string
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
         $group: {
           _id: {
-            year: { $year: '$date' },
-            month: { $month: '$date' },
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
             type: '$type'
           },
           totalAmount: { $sum: { $abs: '$amount' } },
@@ -2813,11 +2825,11 @@ router.get('/analytics/document-summary', authenticate, async (req, res) => {
   try {
     logger.info(`Fetching document summary for user: ${req.user._id}`);
 
-    // Get all completed documents for the user
+    // Get all completed documents for the user with extractedData
     const documents = await Document.find({
       userId: req.user._id,
       processingStatus: 'completed'
-    }).select('_id originalFileName createdAt transactionCount');
+    }).select('_id originalFileName createdAt transactionCount extractedData');
 
     logger.info(`Found ${documents.length} completed documents`);
 
@@ -2931,6 +2943,64 @@ router.get('/analytics/document-summary', authenticate, async (req, res) => {
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
+    // Calculate date range from statement periods in documents
+    let earliestDate = null;
+    let latestDate = null;
+    
+    // First, try to get date range from statement periods in document metadata
+    const statementPeriods = documents
+      .filter(doc => doc.extractedData && doc.extractedData.statementPeriod)
+      .map(doc => doc.extractedData.statementPeriod);
+    
+    if (statementPeriods.length > 0) {
+      logger.info(`Found ${statementPeriods.length} documents with statement periods`);
+      
+      const startDates = statementPeriods
+        .map(sp => new Date(sp.startDate))
+        .filter(d => !isNaN(d.getTime()));
+      
+      const endDates = statementPeriods
+        .map(sp => new Date(sp.endDate))
+        .filter(d => !isNaN(d.getTime()));
+      
+      if (startDates.length > 0 && endDates.length > 0) {
+        earliestDate = new Date(Math.min(...startDates));
+        latestDate = new Date(Math.max(...endDates));
+        
+        logger.info(`Date range from statement periods: ${earliestDate.toISOString()} to ${latestDate.toISOString()}`);
+      }
+    }
+    
+    // Fallback to transaction dates if no statement periods found
+    if (!earliestDate || !latestDate) {
+      if (allTransactions.length > 0) {
+        logger.info('No statement periods found, using transaction dates');
+        const now = new Date();
+        const threeYearsAgo = new Date(now.getFullYear() - 3, 0, 1);
+        const oneYearAhead = new Date(now.getFullYear() + 1, 11, 31);
+        
+        // Filter valid dates
+        const validDates = allTransactions
+          .map(t => new Date(t.date))
+          .filter(d => !isNaN(d.getTime()) && d >= threeYearsAgo && d <= oneYearAhead);
+        
+        if (validDates.length > 0) {
+          earliestDate = new Date(Math.min(...validDates));
+          latestDate = new Date(Math.max(...validDates));
+          
+          // Additional validation: if range is > 3 years, log warning
+          const daysDiff = (latestDate - earliestDate) / (1000 * 60 * 60 * 24);
+          if (daysDiff > 1095) { // More than 3 years
+            logger.warn(`Date range is ${Math.round(daysDiff)} days (${(daysDiff/365).toFixed(1)} years), which seems unrealistic.`);
+            logger.warn(`Earliest: ${earliestDate.toISOString()}, Latest: ${latestDate.toISOString()}`);
+            // Cap to 1 year from earliest for display
+            latestDate = new Date(earliestDate.getTime() + (365 * 24 * 60 * 60 * 1000));
+            logger.info(`Capped date range to 1 year for display: ${earliestDate.toISOString()} to ${latestDate.toISOString()}`);
+          }
+        }
+      }
+    }
+
     const summary = {
       overview: {
         totalDocuments: documents.length,
@@ -2945,10 +3015,8 @@ router.get('/analytics/document-summary', authenticate, async (req, res) => {
       categories: topCategories,
       monthlyTrends: monthlyData,
       dateRange: {
-        earliest: allTransactions.length > 0 ? 
-          new Date(Math.min(...allTransactions.map(t => new Date(t.date)))).toISOString() : null,
-        latest: allTransactions.length > 0 ? 
-          new Date(Math.max(...allTransactions.map(t => new Date(t.date)))).toISOString() : null
+        earliest: earliestDate ? earliestDate.toISOString() : null,
+        latest: latestDate ? latestDate.toISOString() : null
       }
     };
 

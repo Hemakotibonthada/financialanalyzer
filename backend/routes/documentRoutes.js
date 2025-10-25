@@ -579,6 +579,94 @@ router.post('/batch-process', authenticate, async (req, res) => {
 });
 
 /**
+ * @route DELETE /api/documents/clear/documents-only
+ * @desc Clear all documents but keep transactions
+ * @access Private
+ */
+router.delete('/clear/documents-only', authenticate, async (req, res) => {
+  try {
+    // Find all documents for this user
+    const documents = await Document.find({ userId: req.user.id });
+    
+    // Delete files from filesystem
+    let filesDeleted = 0;
+    for (const doc of documents) {
+      try {
+        await fs.unlink(doc.filePath);
+        filesDeleted++;
+      } catch (fileError) {
+        logger.warn(`Could not delete file ${doc.filePath}:`, fileError);
+      }
+    }
+
+    // Delete all document records (keep transactions)
+    const result = await Document.deleteMany({ userId: req.user.id });
+
+    logger.info(`Cleared ${result.deletedCount} documents for user ${req.user.id} (kept transactions)`);
+
+    res.json({
+      success: true,
+      message: `Cleared ${result.deletedCount} documents successfully`,
+      deletedCount: result.deletedCount,
+      filesDeleted
+    });
+
+  } catch (error) {
+    logger.error('Clear documents error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clear documents'
+    });
+  }
+});
+
+/**
+ * @route DELETE /api/documents/clear/all
+ * @desc Clear all documents and their transactions
+ * @access Private
+ */
+router.delete('/clear/all', authenticate, async (req, res) => {
+  try {
+    // Find all documents for this user
+    const documents = await Document.find({ userId: req.user.id });
+    
+    // Delete files from filesystem
+    let filesDeleted = 0;
+    for (const doc of documents) {
+      try {
+        await fs.unlink(doc.filePath);
+        filesDeleted++;
+      } catch (fileError) {
+        logger.warn(`Could not delete file ${doc.filePath}:`, fileError);
+      }
+    }
+
+    // Delete all transactions for this user
+    const transactionsResult = await Transaction.deleteMany({ userId: req.user._id });
+
+    // Delete all document records
+    const documentsResult = await Document.deleteMany({ userId: req.user.id });
+
+    logger.info(`Cleared ${documentsResult.deletedCount} documents and ${transactionsResult.deletedCount} transactions for user ${req.user.id}`);
+
+    res.json({
+      success: true,
+      message: `Cleared ${documentsResult.deletedCount} documents and ${transactionsResult.deletedCount} transactions successfully`,
+      documentsDeleted: documentsResult.deletedCount,
+      transactionsDeleted: transactionsResult.deletedCount,
+      filesDeleted
+    });
+
+  } catch (error) {
+    logger.error('Clear all data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clear all data'
+    });
+  }
+});
+
+/**
  * Helper function to categorize document (placeholder)
  */
 function categorizePlaceholder(filename) {

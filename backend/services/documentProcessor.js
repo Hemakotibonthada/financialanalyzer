@@ -322,7 +322,6 @@ const parseJSON = async (filePath) => {
  * Extract transactions from text (PDF or plain text)
  */
 const extractTransactionsFromText = (text) => {
-  const transactions = [];
   const lines = text.split('\n');
   
   // Detect ICICI bank statement format
@@ -333,8 +332,30 @@ const extractTransactionsFromText = (text) => {
 
   if (isICICIFormat) {
     logger.info('Detected ICICI bank statement format');
-    return extractICICIBankTransactions(text);
+    const result = extractICICIBankTransactions(text);
+    return {
+      transactions: result.transactions,
+      statementPeriod: result.statementPeriod
+    };
   }
+  
+  // Detect HDFC bank statement format
+  const isHDFCFormat = lines.some(line => 
+    /Statement From\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s+TO\s*:\s*\d{1,2}\/\d{1,2}\/\d{2,4}/i.test(line) ||
+    (/Date\s+Narration/i.test(line) && /Chq.*Ref.*No/i.test(line) && /Value Date/i.test(line)) ||
+    (/Withdrawal Amount/i.test(line) && /Deposit Amount/i.test(line) && /Closing Balance/i.test(line))
+  );
+
+  if (isHDFCFormat) {
+    logger.info('Detected HDFC bank statement format');
+    const result = extractHDFCBankTransactions(text);
+    return {
+      transactions: result.transactions,
+      statementPeriod: result.statementPeriod
+    };
+  }
+  
+  const transactions = [];
   
   // Common patterns for transaction data
   const datePattern = /(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/;
@@ -365,7 +386,7 @@ const extractTransactionsFromText = (text) => {
     }
   });
   
-  return transactions;
+  return { transactions, statementPeriod: null };
 };
 
 /**
@@ -381,6 +402,101 @@ const extractICICIBankTransactions = (text) => {
   logger.info(`${'='.repeat(70)}`);
   logger.info(`Total lines in document: ${lines.length}`);
   
+  // Extract statement period from header
+  let statementPeriod = null;
+  
+  // Try multiple patterns for statement period
+  const patterns = [
+    // Pattern 1: "13Oct2024 TO 12Oct2025"
+    {
+      regex: /(\d{1,2}[A-Za-z]{3}\d{4})\s+(?:TO|to|-)\s+(\d{1,2}[A-Za-z]{3}\d{4})/,
+      parser: (dateStr) => {
+        const match = dateStr.match(/(\d{1,2})([A-Za-z]{3})(\d{4})/);
+        if (match) {
+          const day = match[1].padStart(2, '0');
+          const monthMap = {
+            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
+            'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+          };
+          const month = monthMap[match[2]];
+          const year = match[3];
+          return new Date(`${year}-${month}-${day}`);
+        }
+        return null;
+      }
+    },
+    // Pattern 2: "13/10/24 TO 12/10/25" (DD/MM/YY format)
+    {
+      regex: /(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(?:TO|to|To|-)\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/,
+      parser: (dateStr) => {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          let year = parts[2];
+          // Handle 2-digit year
+          if (year.length === 2) {
+            const currentYear = new Date().getFullYear();
+            const currentCentury = Math.floor(currentYear / 100) * 100;
+            year = currentCentury + parseInt(year);
+            // If year is more than 10 years in future, assume previous century
+            if (year - currentYear > 10) {
+              year -= 100;
+            }
+          }
+          return new Date(`${year}-${month}-${day}`);
+        }
+        return null;
+      }
+    },
+    // Pattern 3: "October 13, 2024 - October 13, 2025" (Full text format)
+    {
+      regex: /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s+(\d{4})\s*-\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s+(\d{4})/,
+      parser: (dateStr, match) => {
+        // For this pattern, we'll parse from the full match
+        return null; // Will be handled specially below
+      }
+    }
+  ];
+  
+  for (let i = 0; i < Math.min(50, lines.length); i++) {
+    for (const pattern of patterns) {
+      const periodMatch = lines[i].match(pattern.regex);
+      if (periodMatch) {
+        let startDate, endDate;
+        
+        if (pattern.regex.source.includes('January|February')) {
+          // Full month name format
+          const monthMap = {
+            'January': '01', 'February': '02', 'March': '03', 'April': '04',
+            'May': '05', 'June': '06', 'July': '07', 'August': '08',
+            'September': '09', 'October': '10', 'November': '11', 'December': '12'
+          };
+          const startMonth = monthMap[periodMatch[1]];
+          const startDay = periodMatch[2].padStart(2, '0');
+          const startYear = periodMatch[3];
+          startDate = new Date(`${startYear}-${startMonth}-${startDay}`);
+          
+          const endMonth = monthMap[periodMatch[4]];
+          const endDay = periodMatch[5].padStart(2, '0');
+          const endYear = periodMatch[6];
+          endDate = new Date(`${endYear}-${endMonth}-${endDay}`);
+        } else {
+          startDate = pattern.parser(periodMatch[1]);
+          endDate = pattern.parser(periodMatch[2]);
+        }
+        
+        if (startDate && endDate && !isNaN(startDate) && !isNaN(endDate)) {
+          statementPeriod = { startDate, endDate };
+          logger.info(`📅 Statement Period Found: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
+          logger.info(`   Pattern matched: "${lines[i].trim()}"`);
+          break;
+        }
+      }
+    }
+    if (statementPeriod) break;
+  }
+  
   // Statistics tracking
   const stats = {
     totalLines: lines.length,
@@ -394,7 +510,8 @@ const extractICICIBankTransactions = (text) => {
     invalidDates: 0,
     processingErrors: 0,
     totalDeposits: 0,
-    totalWithdrawals: 0
+    totalWithdrawals: 0,
+    statementPeriod: statementPeriod
   };
   
   /**
@@ -492,7 +609,7 @@ const extractICICIBankTransactions = (text) => {
           withdrawalAmt = amount2;
         }
         
-        // Parse date
+        // Parse date with enhanced validation
         const [day, month, year] = dateStr.split('-');
         const transactionDate = new Date(`${year}-${month}-${day}`);
         
@@ -500,6 +617,29 @@ const extractICICIBankTransactions = (text) => {
           logger.warn(`Invalid date: ${dateStr}`);
           stats.invalidDates++;
           continue;
+        }
+        
+        // Validate date is within reasonable range
+        const now = new Date();
+        const threeYearsAgo = new Date(now.getFullYear() - 3, 0, 1);
+        const oneYearAhead = new Date(now.getFullYear() + 1, 11, 31);
+        
+        if (transactionDate < threeYearsAgo || transactionDate > oneYearAhead) {
+          logger.warn(`Date ${dateStr} outside reasonable range (3 years ago to 1 year ahead)`);
+          stats.invalidDates++;
+          continue;
+        }
+        
+        // If statement period is known, validate transaction date is within it (with 1 day tolerance)
+        if (stats.statementPeriod) {
+          const { startDate, endDate } = stats.statementPeriod;
+          const oneDayBefore = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+          const oneDayAfter = new Date(endDate.getTime() + 24 * 60 * 60 * 1000);
+          if (transactionDate < oneDayBefore || transactionDate > oneDayAfter) {
+            logger.warn(`Date ${dateStr} outside statement period (${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()})`);
+            stats.invalidDates++;
+            continue;
+          }
         }
         
         // Create transactions for both if amounts > 0
@@ -587,7 +727,7 @@ const extractICICIBankTransactions = (text) => {
           }
         }
         
-        // Parse date
+        // Parse date with enhanced validation
         const [day, month, year] = dateStr.split('-');
         const transactionDate = new Date(`${year}-${month}-${day}`);
         
@@ -595,6 +735,29 @@ const extractICICIBankTransactions = (text) => {
           logger.warn(`Invalid date: ${dateStr}`);
           stats.invalidDates++;
           continue;
+        }
+        
+        // Validate date is within reasonable range
+        const now = new Date();
+        const threeYearsAgo = new Date(now.getFullYear() - 3, 0, 1);
+        const oneYearAhead = new Date(now.getFullYear() + 1, 11, 31);
+        
+        if (transactionDate < threeYearsAgo || transactionDate > oneYearAhead) {
+          logger.warn(`Date ${dateStr} outside reasonable range (${dateStr})`);
+          stats.invalidDates++;
+          continue;
+        }
+        
+        // If statement period is known, validate transaction date is within it (with 1 day tolerance)
+        if (stats.statementPeriod) {
+          const { startDate, endDate } = stats.statementPeriod;
+          const oneDayBefore = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+          const oneDayAfter = new Date(endDate.getTime() + 24 * 60 * 60 * 1000);
+          if (transactionDate < oneDayBefore || transactionDate > oneDayAfter) {
+            logger.warn(`Date ${dateStr} outside statement period (${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()})`);
+            stats.invalidDates++;
+            continue;
+          }
         }
         
         const transactionDetails = extractTransactionDetails(description);
@@ -740,43 +903,350 @@ const extractICICIBankTransactions = (text) => {
     logger.info(`  💼 FINAL BALANCE: ₹${currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
   }
   
-  // Validation check against expected statement totals
-  // Expected from statement footer: TOTAL 27,41,145.82 26,72,243.25 44,488.82
-  logger.info(`\n✅ VALIDATION:`);
-  logger.info(`  Expected from statement footer:`);
-  logger.info(`    Total Deposits should be: ₹27,41,145.82`);
-  logger.info(`    Total Withdrawals should be: ₹26,72,243.25`);
-  logger.info(`    Final Balance should be: ₹44,488.82`);
-  logger.info(`  Actual extracted:`);
-  logger.info(`    Total Deposits: ₹${totalDeposits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
-  logger.info(`    Total Withdrawals: ₹${totalWithdrawals.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
-  if (currentBalance !== null) {
-    logger.info(`    Final Balance: ₹${currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  logger.info(`${'='.repeat(70)}\n`);
+  
+  return {
+    transactions,
+    statementPeriod: stats.statementPeriod
+  };
+};
+
+/**
+ * Extract transactions from HDFC bank statement format
+ * Format: Date | Narration | Chq./Ref No. | Value Date | Withdrawal Amount | Deposit Amount | Closing Balance
+ */
+const extractHDFCBankTransactions = (text) => {
+  const transactions = [];
+  const lines = text.split('\n');
+  
+  logger.info(`\n${'='.repeat(70)}`);
+  logger.info(`📄 STARTING HDFC BANK STATEMENT PROCESSING`);
+  logger.info(`${'='.repeat(70)}`);
+  logger.info(`Total lines in document: ${lines.length}`);
+  
+  // Extract statement period from header (Statement From : 13/10/24 TO : 12/10/25)
+  let statementPeriod = null;
+  
+  for (let i = 0; i < Math.min(50, lines.length); i++) {
+    const line = lines[i];
+    // Match: "Statement From : 13/10/24    TO : 12/10/25"
+    const periodMatch = line.match(/Statement From\s*:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s+TO\s*:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+    if (periodMatch) {
+      const parseDate = (dateStr) => {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          let year = parts[2];
+          if (year.length === 2) {
+            const currentYear = new Date().getFullYear();
+            const currentCentury = Math.floor(currentYear / 100) * 100;
+            year = currentCentury + parseInt(year);
+            if (year - currentYear > 10) year -= 100;
+          }
+          return new Date(`${year}-${month}-${day}`);
+        }
+        return null;
+      };
+      
+      const startDate = parseDate(periodMatch[1]);
+      const endDate = parseDate(periodMatch[2]);
+      if (startDate && endDate && !isNaN(startDate) && !isNaN(endDate)) {
+        statementPeriod = { startDate, endDate };
+        logger.info(`📅 Statement Period Found: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
+        logger.info(`   Pattern matched: "${line.trim()}"`);
+        break;
+      }
+    }
   }
   
-  // Calculate accuracy
-  const expectedDeposits = 2741145.82;
-  const expectedWithdrawals = 2672243.25;
-  const expectedBalance = 44488.82;
+  // Extract total summary (Debits, Credits, etc.)
+  let totalDebits = null;
+  let totalCredits = null;
+  let openingBalance = null;
+  let closingBalance = null;
   
-  const depositAccuracy = totalDeposits > 0 ? ((Math.min(totalDeposits, expectedDeposits) / Math.max(totalDeposits, expectedDeposits)) * 100) : 0;
-  const withdrawalAccuracy = totalWithdrawals > 0 ? ((Math.min(totalWithdrawals, expectedWithdrawals) / Math.max(totalWithdrawals, expectedWithdrawals)) * 100) : 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Match Opening Balance
+    if (/Opening Balance/i.test(line)) {
+      const amountMatch = line.match(/([\d,]+\.\d{2})/);
+      if (amountMatch) {
+        openingBalance = parseFloat(amountMatch[1].replace(/,/g, ''));
+        logger.info(`💼 Opening Balance: ₹${openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+      }
+    }
+    
+    // Match Closing Balance
+    if (/Closing Balance/i.test(line)) {
+      const amountMatch = line.match(/([\d,]+\.\d{2})/);
+      if (amountMatch) {
+        closingBalance = parseFloat(amountMatch[1].replace(/,/g, ''));
+        logger.info(`💼 Closing Balance: ₹${closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+      }
+    }
+    
+    // Match Debits
+    if (/^\s*Debits\s*$/i.test(line)) {
+      // Look in next few lines for amount
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const amountMatch = lines[j].match(/^\s*([\d,]+\.\d{2})\s*$/);
+        if (amountMatch) {
+          totalDebits = parseFloat(amountMatch[1].replace(/,/g, ''));
+          logger.info(`📤 Total Debits: ₹${totalDebits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+          break;
+        }
+      }
+    }
+    
+    // Match Credits
+    if (/^\s*Credits\s*$/i.test(line)) {
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const amountMatch = lines[j].match(/^\s*([\d,]+\.\d{2})\s*$/);
+        if (amountMatch) {
+          totalCredits = parseFloat(amountMatch[1].replace(/,/g, ''));
+          logger.info(`📥 Total Credits: ₹${totalCredits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+          break;
+        }
+      }
+    }
+  }
   
-  logger.info(`\n📊 ACCURACY:`);
-  logger.info(`  Deposits: ${depositAccuracy.toFixed(2)}%`);
-  logger.info(`  Withdrawals: ${withdrawalAccuracy.toFixed(2)}%`);
+  // Statistics tracking
+  const stats = {
+    totalLines: lines.length,
+    emptyLines: 0,
+    headerLines: 0,
+    validTransactionsExtracted: 0,
+    depositTransactions: 0,
+    withdrawalTransactions: 0,
+    invalidDates: 0,
+    processingErrors: 0,
+    totalDeposits: 0,
+    totalWithdrawals: 0,
+    statementPeriod: statementPeriod
+  };
   
-  if (depositAccuracy > 99 && withdrawalAccuracy > 99) {
-    logger.info(`  ✅ EXCELLENT! Extraction matches statement totals!`);
-  } else if (depositAccuracy > 95 && withdrawalAccuracy > 95) {
-    logger.info(`  ✅ GOOD! Extraction is close to statement totals.`);
-  } else {
-    logger.warn(`  ⚠️  REVIEW NEEDED: Extraction totals differ from statement.`);
+  // Transaction patterns for HDFC
+  // Format: Date | Narration | Ref No | Value Date | Withdrawal | Deposit | Balance
+  // Example: 13/10/2024 | UPI-KOTTHA MANOJ... | 428763826830 | 13/10/2024 | 20.00 | 0.00 | 2,336.72
+  
+  let currentLine = '';
+  let currentDate = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Skip empty lines
+    if (!line || line.length < 5) {
+      stats.emptyLines++;
+      continue;
+    }
+    
+    // Skip header lines
+    if (/^Date\s+Narration|^Chq\.?\s*\/\s*Ref|^Value Date|^Withdrawal Amount|^Deposit Amount|^Closing Balance/i.test(line) ||
+        /^STATEMENT SUMMARY|^Opening Balance|^Dr Count|^Cr Count|^Debits|^Credits|^\*\*END OF STATEMENT\*\*/i.test(line) ||
+        /^Page\s+\d+|^Statement From/i.test(line)) {
+      stats.headerLines++;
+      continue;
+    }
+    
+    try {
+      // Check if line starts with a date (DD/MM/YYYY format)
+      const dateMatch = line.match(/^(\d{1,2}\/\d{1,2}\/\d{4})/);
+      
+      if (dateMatch) {
+        // New transaction starts
+        currentDate = dateMatch[1];
+        currentLine = line;
+        
+        // Try to extract full transaction from current and next few lines
+        let fullTransaction = line;
+        let lookAhead = 1;
+        
+        // HDFC transactions can span multiple lines
+        // Keep appending until we find amounts or next date
+        while (i + lookAhead < lines.length && lookAhead < 10) {
+          const nextLine = lines[i + lookAhead].trim();
+          if (!nextLine) break;
+          
+          // Check if next line starts with a date (new transaction)
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(nextLine)) {
+            break;
+          }
+          
+          fullTransaction += ' ' + nextLine;
+          lookAhead++;
+          
+          // Check if we have all required fields (amounts and balance)
+          const amountCount = (fullTransaction.match(/\d+[,\d]*\.\d{2}/g) || []).length;
+          if (amountCount >= 3) { // Ref No, Withdrawal, Deposit, Balance (or at least amounts)
+            i += lookAhead - 1;
+            break;
+          }
+        }
+        
+        // Parse the full transaction line
+        // Expected format has: Date Narration RefNo ValueDate Withdrawal Deposit Balance
+        // Extract all numbers (amounts)
+        const amounts = fullTransaction.match(/\d+[,\d]*\.\d{2}/g);
+        
+        if (amounts && amounts.length >= 3) {
+          // Last 3 numbers should be: Withdrawal, Deposit, Balance
+          const withdrawalStr = amounts[amounts.length - 3];
+          const depositStr = amounts[amounts.length - 2];
+          const balanceStr = amounts[amounts.length - 1];
+          
+          const withdrawal = parseFloat(withdrawalStr.replace(/,/g, ''));
+          const deposit = parseFloat(depositStr.replace(/,/g, ''));
+          const balance = parseFloat(balanceStr.replace(/,/g, ''));
+          
+          // Extract date
+          const [day, month, year] = currentDate.split('/');
+          const transactionDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+          
+          if (isNaN(transactionDate.getTime())) {
+            logger.warn(`Invalid date: ${currentDate}`);
+            stats.invalidDates++;
+            continue;
+          }
+          
+          // Extract narration (between date and amounts)
+          let narration = fullTransaction.replace(/^\d{1,2}\/\d{1,2}\/\d{4}/, '').trim();
+          // Remove amounts from narration
+          amounts.forEach(amt => {
+            const idx = narration.lastIndexOf(amt);
+            if (idx !== -1) {
+              narration = narration.substring(0, idx).trim();
+            }
+          });
+          
+          // Create transaction for withdrawal
+          if (withdrawal > 0) {
+            transactions.push({
+              date: transactionDate,
+              description: narration.substring(0, 200) || 'Withdrawal',
+              amount: withdrawal,
+              type: 'debit',
+              balance: balance,
+              paymentMethod: extractPaymentMethod(narration),
+              referenceNumber: extractReferenceNumber(fullTransaction),
+              upi: extractUPIInfo(narration),
+              rawLine: fullTransaction.substring(0, 200),
+              source: 'bank_statement'
+            });
+            stats.withdrawalTransactions++;
+            stats.totalWithdrawals += withdrawal;
+          }
+          
+          // Create transaction for deposit
+          if (deposit > 0) {
+            transactions.push({
+              date: transactionDate,
+              description: narration.substring(0, 200) || 'Deposit',
+              amount: deposit,
+              type: 'credit',
+              balance: balance,
+              paymentMethod: extractPaymentMethod(narration),
+              referenceNumber: extractReferenceNumber(fullTransaction),
+              upi: extractUPIInfo(narration),
+              rawLine: fullTransaction.substring(0, 200),
+              source: 'bank_statement'
+            });
+            stats.depositTransactions++;
+            stats.totalDeposits += deposit;
+          }
+          
+          stats.validTransactionsExtracted++;
+          
+          if (stats.validTransactionsExtracted % 50 === 0) {
+            logger.info(`  ⏳ Progress: ${stats.validTransactionsExtracted} transaction lines processed...`);
+          }
+        }
+      }
+    } catch (error) {
+      stats.processingErrors++;
+      logger.error(`Error processing line ${i}: ${error.message}`);
+      logger.debug(`Problematic line: ${line.substring(0, 100)}`);
+    }
+  }
+  
+  // Comprehensive logging summary
+  logger.info(`\n${'='.repeat(70)}`);
+  logger.info(`📊 HDFC BANK STATEMENT PROCESSING COMPLETE`);
+  logger.info(`${'='.repeat(70)}`);
+  logger.info(`✅ Successfully extracted: ${transactions.length} transactions`);
+  logger.info(`\n📈 DETAILED STATISTICS:`);
+  logger.info(`  Total lines processed: ${stats.totalLines}`);
+  logger.info(`  Empty/short lines: ${stats.emptyLines}`);
+  logger.info(`  Header/footer lines: ${stats.headerLines}`);
+  logger.info(`  Transaction lines processed: ${stats.validTransactionsExtracted}`);
+  logger.info(`  Deposit transactions: ${stats.depositTransactions}`);
+  logger.info(`  Withdrawal transactions: ${stats.withdrawalTransactions}`);
+  logger.info(`  Invalid dates encountered: ${stats.invalidDates}`);
+  logger.info(`  Processing errors: ${stats.processingErrors}`);
+  
+  logger.info(`\n💰 FINANCIAL SUMMARY:`);
+  logger.info(`  📥 DEPOSITS (Credits):`);
+  logger.info(`     Count: ${stats.depositTransactions}`);
+  logger.info(`     Total: ₹${stats.totalDeposits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  if (totalCredits) {
+    logger.info(`     Statement Total: ₹${totalCredits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  }
+  logger.info(`  📤 WITHDRAWALS (Debits):`);
+  logger.info(`     Count: ${stats.withdrawalTransactions}`);
+  logger.info(`     Total: ₹${stats.totalWithdrawals.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  if (totalDebits) {
+    logger.info(`     Statement Total: ₹${totalDebits.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  }
+  
+  if (openingBalance !== null) {
+    logger.info(`  💼 Opening Balance: ₹${openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+  }
+  if (closingBalance !== null) {
+    logger.info(`  💼 Closing Balance: ₹${closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
   }
   
   logger.info(`${'='.repeat(70)}\n`);
   
-  return transactions;
+  return {
+    transactions,
+    statementPeriod: stats.statementPeriod
+  };
+};
+
+// Helper functions for HDFC parsing
+const extractPaymentMethod = (narration) => {
+  const upperNarration = narration.toUpperCase();
+  if (upperNarration.includes('UPI')) return 'UPI';
+  if (upperNarration.includes('NEFT')) return 'NEFT';
+  if (upperNarration.includes('RTGS')) return 'RTGS';
+  if (upperNarration.includes('IMPS')) return 'IMPS';
+  if (upperNarration.includes('ATM')) return 'ATM';
+  if (upperNarration.includes('MOBILE BANKING')) return 'Mobile Banking';
+  if (upperNarration.includes('INTERNET BANKING')) return 'Internet Banking';
+  if (upperNarration.includes('CASH')) return 'Cash';
+  if (upperNarration.includes('CHEQUE')) return 'Cheque';
+  return 'Other';
+};
+
+const extractReferenceNumber = (text) => {
+  // Extract reference numbers from patterns like: 428763826830, 465408357405
+  const refMatch = text.match(/\b\d{12,}\b/);
+  return refMatch ? refMatch[0] : null;
+};
+
+const extractUPIInfo = (narration) => {
+  // Extract UPI ID from patterns like: PAYTMQR5543JU@PAYTM, HEMAKOTIBONTHADA@IBL
+  const upiMatch = narration.match(/([A-Z0-9]+@[A-Z]+)/i);
+  if (upiMatch) {
+    return {
+      id: upiMatch[0],
+      provider: upiMatch[0].split('@')[1]
+    };
+  }
+  return null;
 };
 
 /**
@@ -1091,7 +1561,11 @@ const processDocumentFile = async (filePath, fileType, password = null, password
         info: pdfData.info,
         passwordUsed: pdfData.passwordUsed
       };
-      transactions = extractTransactionsFromText(pdfData.text);
+      const extractionResult = extractTransactionsFromText(pdfData.text);
+      transactions = extractionResult.transactions || extractionResult; // Handle both array and object return
+      if (extractionResult.statementPeriod) {
+        metadata.statementPeriod = extractionResult.statementPeriod;
+      }
       
     } else if (fileExtension === '.csv') {
       const csvData = await parseCSV(filePath);
@@ -1120,7 +1594,11 @@ const processDocumentFile = async (filePath, fileType, password = null, password
         type: 'word',
         messages: wordData.messages
       };
-      transactions = extractTransactionsFromText(wordData.text);
+      const extractionResult = extractTransactionsFromText(wordData.text);
+      transactions = extractionResult.transactions || extractionResult;
+      if (extractionResult.statementPeriod) {
+        metadata.statementPeriod = extractionResult.statementPeriod;
+      }
       
     } else if (['.jpg', '.jpeg', '.png'].includes(fileExtension)) {
       const ocrData = await parseImageWithOCR(filePath);
@@ -1129,7 +1607,11 @@ const processDocumentFile = async (filePath, fileType, password = null, password
         type: 'image',
         confidence: ocrData.confidence
       };
-      transactions = extractTransactionsFromText(ocrData.text);
+      const extractionResult = extractTransactionsFromText(ocrData.text);
+      transactions = extractionResult.transactions || extractionResult;
+      if (extractionResult.statementPeriod) {
+        metadata.statementPeriod = extractionResult.statementPeriod;
+      }
       
     } else if (fileExtension === '.json') {
       const jsonData = await parseJSON(filePath);
@@ -1411,7 +1893,8 @@ const categorizeTransaction = (description, customCategories = []) => {
     'Insurance': ['insurance', 'policy', 'premium', 'lic', 'health insurance', 'term insurance', 'motor insurance'],
     'Investment': ['mutual fund', 'stock', 'sip', 'investment', 'zerodha', 'groww', 'upstox', 'angel', 'icicidirect', 'kuvera', 'etmoney'],
     'Cryptocurrency': ['wazirx', 'coindcx', 'binance', 'coinbase', 'bitcoin', 'crypto', 'ethereum', 'trading'],
-    'Loans & EMI': ['loan', 'emi', 'installment', 'home loan', 'personal loan', 'car loan', 'credit card bill', 'bajaj finserv'],
+    'EMI': ['emi', 'equated monthly installment', 'monthly installment', 'emi payment', 'installment payment', 'emi debit', 'emi due'],
+    'Loan': ['loan', 'home loan', 'personal loan', 'car loan', 'vehicle loan', 'education loan', 'business loan', 'gold loan', 'loan repayment', 'loan disbursement', 'bajaj finserv', 'tata capital', 'hdfc loan', 'sbi loan', 'icici loan', 'axis loan', 'credit line', 'line of credit'],
     'Rent & Housing': ['rent', 'lease', 'housing', 'apartment', 'maintenance', 'society fee'],
     'Salary': ['salary', 'payroll', 'income', 'wages', 'bonus', 'pf', 'provident fund'],
     'Government & Taxes': ['tax', 'income tax', 'gst', 'tds', 'government fee', 'challan', 'fine'],
@@ -1501,11 +1984,28 @@ const generateCategoryInsights = (transactions, category) => {
   // Calculate averages
   insights.averageAmount = insights.totalAmount / insights.totalTransactions;
 
-  // Find date range
-  const validDates = transactions.filter(t => t.date).map(t => new Date(t.date));
+  // Find date range with validation
+  const validDates = transactions
+    .filter(t => t.date)
+    .map(t => new Date(t.date))
+    .filter(d => {
+      const now = new Date();
+      const threeYearsAgo = new Date(now.getFullYear() - 3, 0, 1);
+      const twoYearsAhead = new Date(now.getFullYear() + 2, 11, 31);
+      return d >= threeYearsAgo && d <= twoYearsAhead && !isNaN(d.getTime());
+    });
+    
   if (validDates.length > 0) {
     insights.dateRange.earliest = new Date(Math.min(...validDates));
     insights.dateRange.latest = new Date(Math.max(...validDates));
+    
+    // Additional validation: if date range is more than 3 years, cap it
+    const daysDiff = (insights.dateRange.latest - insights.dateRange.earliest) / (1000 * 60 * 60 * 24);
+    if (daysDiff > 1095) { // More than 3 years
+      logger.warn(`Date range is ${Math.round(daysDiff)} days, which seems unrealistic. Capping to 1 year.`);
+      // Cap to 1 year from earliest date
+      insights.dateRange.latest = new Date(insights.dateRange.earliest.getTime() + (365 * 24 * 60 * 60 * 1000));
+    }
   }
 
   // Category-specific insights

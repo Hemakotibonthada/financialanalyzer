@@ -196,7 +196,21 @@ const DocumentSummary = () => {
               {new Date(summary.dateRange.latest).toLocaleDateString()}
             </span>
             <span className="text-blue-700 font-medium">
-              {Math.ceil((new Date(summary.dateRange.latest) - new Date(summary.dateRange.earliest)) / (1000 * 60 * 60 * 24))} days
+              {(() => {
+                const days = Math.ceil((new Date(summary.dateRange.latest) - new Date(summary.dateRange.earliest)) / (1000 * 60 * 60 * 24));
+                // Cap at 365 days and show warning for unrealistic values
+                const displayDays = Math.min(Math.abs(days), 365);
+                const isUnrealistic = Math.abs(days) > 730; // More than 2 years
+                
+                return (
+                  <>
+                    {displayDays} days
+                    {isUnrealistic && (
+                      <span className="ml-2 text-xs text-red-600" title="Date range seems incorrect">⚠️</span>
+                    )}
+                  </>
+                );
+              })()}
             </span>
           </div>
         </div>

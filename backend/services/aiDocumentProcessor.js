@@ -542,12 +542,19 @@ class AIDocumentProcessor {
 
   categorizeTransaction(description) {
     const categories = {
-      'food_dining': ['restaurant', 'food', 'cafe', 'dining', 'starbucks', 'mcdonald'],
-      'shopping': ['amazon', 'store', 'shop', 'retail', 'walmart'],
-      'transportation': ['uber', 'taxi', 'gas', 'fuel', 'parking'],
-      'utilities': ['electric', 'water', 'internet', 'phone', 'utility'],
-      'healthcare': ['hospital', 'doctor', 'pharmacy', 'medical'],
-      'entertainment': ['movie', 'netflix', 'spotify', 'games']
+      'food_dining': ['restaurant', 'food', 'cafe', 'dining', 'starbucks', 'mcdonald', 'zomato', 'swiggy'],
+      'groceries': ['grocery', 'supermarket', 'bigbasket', 'dmart', 'reliance fresh', 'more'],
+      'shopping': ['amazon', 'store', 'shop', 'retail', 'walmart', 'flipkart', 'myntra'],
+      'transportation': ['uber', 'taxi', 'gas', 'fuel', 'parking', 'ola', 'rapido', 'metro'],
+      'utilities': ['electric', 'water', 'internet', 'phone', 'utility', 'electricity', 'broadband'],
+      'healthcare': ['hospital', 'doctor', 'pharmacy', 'medical', 'apollo', 'fortis', 'medlife'],
+      'entertainment': ['movie', 'netflix', 'spotify', 'games', 'prime', 'hotstar', 'youtube'],
+      'education': ['school', 'college', 'university', 'course', 'tuition', 'byju', 'unacademy'],
+      'travel': ['flight', 'hotel', 'booking', 'makemytrip', 'goibibo', 'airbnb'],
+      'subscriptions': ['subscription', 'membership', 'recurring', 'monthly plan'],
+      'investment': ['mutual fund', 'stocks', 'shares', 'sip', 'zerodha', 'groww', 'investment'],
+      'emi': ['emi', 'equated monthly', 'loan installment', 'monthly installment', 'emi payment'],
+      'loan': ['loan', 'credit', 'lending', 'borrowed', 'bajaj', 'hdfc loan', 'personal loan', 'home loan', 'car loan']
     };
 
     const descLower = description.toLowerCase();

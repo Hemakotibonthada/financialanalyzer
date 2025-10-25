@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Calendar, BarChart3, DollarSign, PiggyBank } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -6,13 +6,12 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 
 // Register Chart.js components
 ChartJS.register(
@@ -20,7 +19,6 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -28,8 +26,9 @@ ChartJS.register(
 );
 
 const MonthlyTrends = ({ trendsData }) => {
-  const [viewType, setViewType] = useState('line'); // 'line' or 'bar'
   const [showInvestments, setShowInvestments] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   if (!trendsData || !trendsData.trends || trendsData.trends.length === 0) {
     return (
@@ -42,15 +41,51 @@ const MonthlyTrends = ({ trendsData }) => {
 
   const { trends, summary } = trendsData;
 
-  // Prepare datasets
+  // Filter trends based on date range
+  const filteredTrends = useMemo(() => {
+    if (!startDate && !endDate) return trends;
+    
+    return trends.filter(trend => {
+      const trendDate = new Date(trend.month + '-01');
+      const start = startDate ? new Date(startDate + '-01') : null;
+      const end = endDate ? new Date(endDate + '-01') : null;
+      
+      if (start && end) {
+        return trendDate >= start && trendDate <= end;
+      } else if (start) {
+        return trendDate >= start;
+      } else if (end) {
+        return trendDate <= end;
+      }
+      return true;
+    });
+  }, [trends, startDate, endDate]);
+
+  // Recalculate summary for filtered data
+  const filteredSummary = useMemo(() => {
+    if (filteredTrends.length === 0) return summary;
+    
+    return {
+      totalMonths: filteredTrends.length,
+      averageSpending: filteredTrends.reduce((sum, t) => sum + (t.totalSpending || 0), 0) / filteredTrends.length,
+      averageIncome: filteredTrends.reduce((sum, t) => sum + (t.totalIncome || 0), 0) / filteredTrends.length,
+      averageInvestments: filteredTrends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0) / filteredTrends.length,
+      spendingTrend: filteredTrends.length >= 2 ? 
+        ((filteredTrends[filteredTrends.length - 1].totalSpending - filteredTrends[0].totalSpending) / filteredTrends[0].totalSpending * 100) : 0,
+      incomeTrend: filteredTrends.length >= 2 ? 
+        ((filteredTrends[filteredTrends.length - 1].totalIncome - filteredTrends[0].totalIncome) / filteredTrends[0].totalIncome * 100) : 0
+    };
+  }, [filteredTrends, summary]);
+
+  // Prepare datasets (always line chart)
   const datasets = [
     {
       label: 'Income',
-      data: trends.map(trend => trend.totalIncome || 0),
+      data: filteredTrends.map(trend => trend.totalIncome || 0),
       borderColor: '#10B981',
-      backgroundColor: viewType === 'bar' ? 'rgba(16, 185, 129, 0.8)' : 'rgba(16, 185, 129, 0.1)',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
       tension: 0.4,
-      fill: viewType === 'line',
+      fill: true,
       pointBackgroundColor: '#10B981',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
@@ -59,11 +94,11 @@ const MonthlyTrends = ({ trendsData }) => {
     },
     {
       label: 'Spending',
-      data: trends.map(trend => trend.totalSpending || 0),
+      data: filteredTrends.map(trend => trend.totalSpending || 0),
       borderColor: '#EF4444',
-      backgroundColor: viewType === 'bar' ? 'rgba(239, 68, 68, 0.8)' : 'rgba(239, 68, 68, 0.1)',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
       tension: 0.4,
-      fill: viewType === 'line',
+      fill: true,
       pointBackgroundColor: '#EF4444',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
@@ -73,14 +108,14 @@ const MonthlyTrends = ({ trendsData }) => {
   ];
 
   // Add investments dataset if available and visible
-  if (showInvestments && trends.some(t => t.totalInvestments > 0)) {
+  if (showInvestments && filteredTrends.some(t => t.totalInvestments > 0)) {
     datasets.push({
       label: 'Investments',
-      data: trends.map(trend => trend.totalInvestments || 0),
+      data: filteredTrends.map(trend => trend.totalInvestments || 0),
       borderColor: '#8B5CF6',
-      backgroundColor: viewType === 'bar' ? 'rgba(139, 92, 246, 0.8)' : 'rgba(139, 92, 246, 0.1)',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
       tension: 0.4,
-      fill: viewType === 'line',
+      fill: true,
       pointBackgroundColor: '#8B5CF6',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
@@ -89,27 +124,25 @@ const MonthlyTrends = ({ trendsData }) => {
     });
   }
 
-  // Add net savings for line view
-  if (viewType === 'line') {
-    datasets.push({
-      label: 'Net Savings',
-      data: trends.map(trend => (trend.totalIncome || 0) - (trend.totalSpending || 0)),
-      borderColor: '#3B82F6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      tension: 0.4,
-      fill: false,
-      pointBackgroundColor: '#3B82F6',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      borderDash: [5, 5]
-    });
-  }
+  // Add net savings (always show in line chart)
+  datasets.push({
+    label: 'Net Savings',
+    data: filteredTrends.map(trend => (trend.totalIncome || 0) - (trend.totalSpending || 0)),
+    borderColor: '#3B82F6',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    tension: 0.4,
+    fill: false,
+    pointBackgroundColor: '#3B82F6',
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    borderDash: [5, 5]
+  });
 
   // Chart.js configuration
   const chartData = {
-    labels: trends.map(trend => {
+    labels: filteredTrends.map(trend => {
       const date = new Date(trend.month + '-01');
       return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     }),
@@ -192,15 +225,19 @@ const MonthlyTrends = ({ trendsData }) => {
     }
   };
 
-  // Calculate additional insights
-  const latestMonth = trends[trends.length - 1];
-  const previousMonth = trends[trends.length - 2];
+  // Calculate additional insights using filtered data
+  const latestMonth = filteredTrends[filteredTrends.length - 1];
+  const previousMonth = filteredTrends[filteredTrends.length - 2];
   const monthOverMonthChange = previousMonth ? 
     ((latestMonth.totalSpending - previousMonth.totalSpending) / previousMonth.totalSpending * 100) : 0;
   
-  const totalInvestments = trends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0);
-  const avgSavingsRate = summary?.averageIncome > 0 ? 
-    ((summary.averageIncome - summary.averageSpending) / summary.averageIncome * 100) : 0;
+  const totalInvestments = filteredTrends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0);
+  const avgSavingsRate = filteredSummary?.averageIncome > 0 ? 
+    ((filteredSummary.averageIncome - filteredSummary.averageSpending) / filteredSummary.averageIncome * 100) : 0;
+
+  // Get min and max dates for date pickers
+  const minDate = trends.length > 0 ? trends[0].month : '';
+  const maxDate = trends.length > 0 ? trends[trends.length - 1].month : '';
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -210,33 +247,44 @@ const MonthlyTrends = ({ trendsData }) => {
             <h3 className="text-lg font-medium text-gray-900">Monthly Trends</h3>
             <p className="text-sm text-gray-600 mt-1">Income and spending over time</p>
           </div>
-          <div className="flex items-center space-x-3">
-            {/* View Type Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewType('line')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  viewType === 'line' 
-                    ? 'bg-white text-blue-600 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Line
-              </button>
-              <button
-                onClick={() => setViewType('bar')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  viewType === 'bar' 
-                    ? 'bg-white text-blue-600 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Bar
-              </button>
+          <div className="flex items-center flex-wrap gap-3">
+            {/* Date Range Filters */}
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <input
+                type="month"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                min={minDate}
+                max={endDate || maxDate}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Start"
+              />
+              <span className="text-gray-500">to</span>
+              <input
+                type="month"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || minDate}
+                max={maxDate}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="End"
+              />
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                >
+                  Clear
+                </button>
+              )}
             </div>
             
             {/* Show Investments Toggle */}
-            {trends.some(t => t.totalInvestments > 0) && (
+            {filteredTrends.some(t => t.totalInvestments > 0) && (
               <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -258,18 +306,18 @@ const MonthlyTrends = ({ trendsData }) => {
             <div className="flex items-center justify-between mb-2">
               <DollarSign className="w-8 h-8 text-green-600" />
               <div className={`flex items-center text-xs font-medium ${
-                summary?.incomeTrend >= 0 ? 'text-green-600' : 'text-red-600'
+                filteredSummary?.incomeTrend >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                {summary?.incomeTrend >= 0 ? (
+                {filteredSummary?.incomeTrend >= 0 ? (
                   <TrendingUp className="w-3 h-3 mr-1" />
                 ) : (
                   <TrendingDown className="w-3 h-3 mr-1" />
                 )}
-                {Math.abs(summary?.incomeTrend || 0).toFixed(1)}%
+                {Math.abs(filteredSummary?.incomeTrend || 0).toFixed(1)}%
               </div>
             </div>
             <p className="text-2xl font-bold text-green-700">
-              ₹{(summary?.averageIncome || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              ₹{(filteredSummary?.averageIncome || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <p className="text-xs text-green-600 mt-1">Avg Monthly Income</p>
           </div>
@@ -278,18 +326,18 @@ const MonthlyTrends = ({ trendsData }) => {
             <div className="flex items-center justify-between mb-2">
               <Calendar className="w-8 h-8 text-red-600" />
               <div className={`flex items-center text-xs font-medium ${
-                summary?.spendingTrend > 0 ? 'text-red-600' : 'text-green-600'
+                filteredSummary?.spendingTrend > 0 ? 'text-red-600' : 'text-green-600'
               }`}>
-                {summary?.spendingTrend > 0 ? (
+                {filteredSummary?.spendingTrend > 0 ? (
                   <TrendingUp className="w-3 h-3 mr-1" />
                 ) : (
                   <TrendingDown className="w-3 h-3 mr-1" />
                 )}
-                {Math.abs(summary?.spendingTrend || 0).toFixed(1)}%
+                {Math.abs(filteredSummary?.spendingTrend || 0).toFixed(1)}%
               </div>
             </div>
             <p className="text-2xl font-bold text-red-700">
-              ₹{(summary?.averageSpending || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              ₹{(filteredSummary?.averageSpending || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <p className="text-xs text-red-600 mt-1">Avg Monthly Spending</p>
           </div>
@@ -299,7 +347,7 @@ const MonthlyTrends = ({ trendsData }) => {
               <BarChart3 className="w-8 h-8 text-purple-600" />
               <div className="flex items-center text-xs font-medium text-purple-600">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                {trends.length} months
+                {filteredTrends.length} months
               </div>
             </div>
             <p className="text-2xl font-bold text-purple-700">
@@ -323,14 +371,14 @@ const MonthlyTrends = ({ trendsData }) => {
               </div>
             </div>
             <p className="text-2xl font-bold text-blue-700">
-              ₹{((summary?.averageIncome || 0) - (summary?.averageSpending || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              ₹{((filteredSummary?.averageIncome || 0) - (filteredSummary?.averageSpending || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <p className="text-xs text-blue-600 mt-1">Avg Savings Rate</p>
           </div>
         </div>
 
         {/* Month over Month Comparison */}
-        {previousMonth && (
+        {previousMonth && latestMonth && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -357,13 +405,9 @@ const MonthlyTrends = ({ trendsData }) => {
           </div>
         )}
 
-        {/* Interactive Chart */}
+        {/* Interactive Chart - Always Line Chart */}
         <div className="h-96 mt-6">
-          {viewType === 'line' ? (
-            <Line data={chartData} options={chartOptions} />
-          ) : (
-            <Bar data={chartData} options={chartOptions} />
-          )}
+          <Line data={chartData} options={chartOptions} />
         </div>
 
         {/* Insights Footer */}
@@ -373,7 +417,8 @@ const MonthlyTrends = ({ trendsData }) => {
               <p className="text-sm text-gray-600">Best Month</p>
               <p className="text-lg font-semibold text-green-600">
                 {(() => {
-                  const bestMonth = trends.reduce((max, t) => 
+                  if (filteredTrends.length === 0) return 'N/A';
+                  const bestMonth = filteredTrends.reduce((max, t) => 
                     ((t.totalIncome - t.totalSpending) > (max.totalIncome - max.totalSpending)) ? t : max
                   );
                   return new Date(bestMonth.month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -382,18 +427,19 @@ const MonthlyTrends = ({ trendsData }) => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Period</p>
-              <p className="text-lg font-semibold text-gray-900">{trends.length} months</p>
+              <p className="text-lg font-semibold text-gray-900">{filteredTrends.length} months</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Consistency Score</p>
               <p className="text-lg font-semibold text-blue-600">
                 {(() => {
-                  const variance = trends.reduce((sum, t) => {
-                    const diff = t.totalSpending - summary.averageSpending;
+                  if (filteredTrends.length === 0 || !filteredSummary.averageSpending) return '0%';
+                  const variance = filteredTrends.reduce((sum, t) => {
+                    const diff = t.totalSpending - filteredSummary.averageSpending;
                     return sum + (diff * diff);
-                  }, 0) / trends.length;
+                  }, 0) / filteredTrends.length;
                   const stdDev = Math.sqrt(variance);
-                  const consistency = Math.max(0, 100 - (stdDev / summary.averageSpending * 100));
+                  const consistency = Math.max(0, 100 - (stdDev / filteredSummary.averageSpending * 100));
                   return consistency.toFixed(0) + '%';
                 })()}
               </p>
