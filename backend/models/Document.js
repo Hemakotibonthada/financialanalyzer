@@ -27,6 +27,10 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  fileHash: {
+    type: String,
+    index: true  // Index for fast duplicate lookups
+  },
   source: {
     type: String,
     enum: ['upload', 'gmail', 'manual', 'gmail_email'],

@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth');
 const Document = require('../models/Document');
 const Transaction = require('../models/Transaction');
@@ -11,6 +12,16 @@ const { processDocumentById } = require('../services/documentProcessor');
 const { performFinancialAnalysis } = require('../services/financialAIService');
 const websocketService = require('../services/websocketService');
 const logger = require('../utils/logger');
+
+/**
+ * Calculate MD5 hash of a file
+ */
+const calculateFileHash = async (filePath) => {
+  const fileBuffer = await fs.readFile(filePath);
+  const hashSum = crypto.createHash('md5');
+  hashSum.update(fileBuffer);
+  return hashSum.digest('hex');
+};
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -59,15 +70,50 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
     }
 
     const uploadedDocuments = [];
+    
+    // Debug: Log entire request body
+    logger.info(`Upload request received. Files: ${req.files.length}`);
+    logger.info(`Request body keys: ${Object.keys(req.body).join(', ')}`);
+    logger.info(`Full request body: ${JSON.stringify(req.body)}`);
+    
     const password = req.body.password; // Get password from request body
     
-    logger.info(`Upload request received. Files: ${req.files.length}, Password provided: ${password ? 'YES' : 'NO'}`);
+    logger.info(`Password provided: ${password ? 'YES' : 'NO'}`);
     if (password) {
       logger.info(`Password value: ${password}`);
     }
     
     for (const file of req.files) {
       try {
+        // Calculate file hash for duplicate detection
+        const fileHash = await calculateFileHash(file.path);
+        
+        // Check if document with same hash already exists for this user
+        const existingDocument = await Document.findOne({
+          userId: req.user.id,
+          fileHash: fileHash
+        });
+        
+        if (existingDocument) {
+          // Duplicate document found - delete the uploaded file and skip
+          try {
+            await fs.unlink(file.path);
+          } catch (unlinkError) {
+            logger.warn(`Failed to delete duplicate file: ${file.path}`);
+          }
+          
+          logger.warn(`Duplicate document detected: ${file.originalname} (hash: ${fileHash})`);
+          
+          uploadedDocuments.push({
+            ...existingDocument.toObject(),
+            isDuplicate: true,
+            duplicateOf: existingDocument._id,
+            message: 'This document has already been processed'
+          });
+          
+          continue; // Skip to next file
+        }
+        
         const passwordHints = password ? [{
           source: 'user_provided',
           hint: password,
@@ -83,6 +129,7 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
           fileType: path.extname(file.originalname).substring(1).toLowerCase(),
           fileSize: file.size,
           filePath: file.path,
+          fileHash: fileHash,  // Store hash for future duplicate checks
           source: 'upload',
           category: categorizePlaceholder(file.originalname),
           processingStatus: 'pending',
@@ -92,8 +139,7 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
         await document.save();
         uploadedDocuments.push(document);
 
-        logger.info(`Document uploaded: ${file.originalname} for user ${req.user.id}${password ? ' (with password)' : ''}`);
-      } catch (error) {
+        logger.info(`Document uploaded: ${file.originalname} for user ${req.user.id}${password ? ' (with password)' : ''} (hash: ${fileHash})`);      } catch (error) {
         logger.error(`Error saving document ${file.originalname}:`, error);
       }
     }
@@ -218,6 +264,7 @@ router.get('/', authenticate, async (req, res) => {
         source: doc.source,
         isProcessed: doc.isProcessed,
         processingStatus: doc.processingStatus,
+        error: doc.error,
         transactionCount: doc.transactionCount,
         isPasswordProtected: doc.isPasswordProtected,
         createdAt: doc.createdAt,
@@ -331,6 +378,117 @@ router.get('/:id/transactions', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve document transactions'
+    });
+  }
+});
+
+/**
+ * @route POST /api/documents/batch-process
+ * @desc Process multiple documents
+ * @access Private
+ */
+/**
+ * @route POST /api/documents/:id/retry
+ * @desc Retry processing a failed document with password
+ * @access Private
+ */
+router.post('/:id/retry', authenticate, async (req, res) => {
+  try {
+    const { password } = req.body;
+    const documentId = req.params.id;
+
+    logger.info(`=== RETRY REQUEST ===`);
+    logger.info(`Document ID: ${documentId}`);
+    logger.info(`Password provided: ${password ? 'YES' : 'NO'}`);
+    logger.info(`User ID: ${req.user.id}`);
+
+    // Verify document belongs to user
+    const document = await Document.findOne({ _id: documentId, userId: req.user.id });
+    
+    if (!document) {
+      logger.error(`Document not found: ${documentId}`);
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    logger.info(`Document found: ${document.originalFileName}`);
+
+    // Add password hint if provided
+    if (password && password.trim()) {
+      document.passwordHints = document.passwordHints || [];
+      document.passwordHints.push({
+        source: 'user_provided',
+        hint: password.trim(),
+        extractedDate: new Date()
+      });
+      await document.save();
+      logger.info(`Password hint added. Total hints: ${document.passwordHints.length}`);
+    }
+
+    // Reset document status
+    document.processingStatus = 'processing';
+    document.error = null;
+    await document.save();
+
+    // Emit processing start
+    websocketService.emitDocumentStatus(req.user.id, documentId, 'processing', {
+      progress: 0,
+      message: 'Retrying with password...'
+    });
+
+    // Process document
+    try {
+      const result = await processDocumentById(documentId, password);
+      
+      res.json({
+        success: true,
+        message: 'Document processed successfully',
+        document: {
+          id: result.document._id,
+          originalName: result.document.originalFileName,
+          processingStatus: result.document.processingStatus,
+          transactionCount: result.transactions.length
+        },
+        transactionCount: result.transactions.length
+      });
+
+      // Emit success
+      websocketService.emitDocumentStatus(req.user.id, documentId, 'completed', {
+        transactionCount: result.transactions.length,
+        progress: 100
+      });
+
+    } catch (error) {
+      logger.error(`Retry processing error: ${error.message}`);
+      
+      // Update document status
+      document.processingStatus = error.message === 'PDF_PASSWORD_REQUIRED' ? 'password_required' : 'failed';
+      document.error = error.message;
+      await document.save();
+
+      // Emit error
+      websocketService.emitDocumentStatus(req.user.id, documentId, document.processingStatus, {
+        error: error.message
+      });
+
+      res.status(400).json({
+        success: false,
+        message: error.message === 'PDF_PASSWORD_REQUIRED' ? 'Invalid password or document still encrypted' : error.message,
+        requiresPassword: error.message === 'PDF_PASSWORD_REQUIRED'
+      });
+    }
+
+  } catch (error) {
+    logger.error('=== RETRY ERROR ===');
+    logger.error('Error type:', error.name);
+    logger.error('Error message:', error.message);
+    logger.error('Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retry document processing',
+      error: error.message
     });
   }
 });

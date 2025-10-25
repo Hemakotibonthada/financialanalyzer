@@ -41,6 +41,9 @@ const SpendingDashboard = () => {
   const [activeTimeFrame, setActiveTimeFrame] = useState('3months');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [uploadPassword, setUploadPassword] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [retryPassword, setRetryPassword] = useState('');
   
   // WebSocket integration
   const { isConnected, documentUpdates, analysisProgress, clearDocumentUpdate, clearAnalysisProgress } = useWebSocket();
@@ -165,10 +168,26 @@ const SpendingDashboard = () => {
       // Add password if provided
       if (uploadPassword && uploadPassword.trim()) {
         formData.append('password', uploadPassword.trim());
+        console.log('🔑 Password added to FormData:', uploadPassword.trim());
+      } else {
+        console.log('⚠️ No password provided');
+      }
+      
+      // Debug: Log FormData contents
+      console.log('📤 FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (key === 'password') {
+          console.log(`  ${key}: ${value}`);
+        } else {
+          console.log(`  ${key}: [File]`);
+        }
       }
 
+      // IMPORTANT: Delete Content-Type to let browser set it with boundary
       const uploadResponse = await api.post('/documents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': undefined  // This tells axios to let browser set it
+        }
       });
 
       if (uploadResponse.data.success) {
@@ -206,6 +225,41 @@ const SpendingDashboard = () => {
     } catch (error) {
       console.error('Error processing documents:', error);
       setMessage({ type: 'error', text: 'Failed to process documents' });
+    }
+  };
+
+  const handleRetryWithPassword = (doc) => {
+    setSelectedDocument(doc);
+    setRetryPassword('');
+    setShowPasswordModal(true);
+  };
+
+  const retryDocumentProcessing = async () => {
+    if (!selectedDocument || !retryPassword.trim()) {
+      setMessage({ type: 'error', text: 'Please enter a password' });
+      return;
+    }
+
+    try {
+      setMessage({ type: 'info', text: 'Retrying document processing...' });
+      
+      const response = await api.post(`/documents/${selectedDocument.id}/retry`, {
+        password: retryPassword.trim()
+      });
+
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Document is being reprocessed...' });
+        setShowPasswordModal(false);
+        setRetryPassword('');
+        setSelectedDocument(null);
+        loadData();
+      }
+    } catch (error) {
+      console.error('Error retrying document:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.message || 'Failed to retry document processing' 
+      });
     }
   };
 
@@ -647,6 +701,7 @@ const SpendingDashboard = () => {
                     <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">Transactions</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-900">Date</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -664,20 +719,36 @@ const SpendingDashboard = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          doc.processingStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                          doc.processingStatus === 'processing' ? 'bg-blue-100 text-blue-800' :
-                          doc.processingStatus === 'failed' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {doc.processingStatus}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            doc.processingStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                            doc.processingStatus === 'processing' ? 'bg-blue-100 text-blue-800' :
+                            doc.processingStatus === 'failed' ? 'bg-red-100 text-red-800' :
+                            doc.processingStatus === 'password_required' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {doc.processingStatus === 'password_required' ? 'Password Required' : doc.processingStatus}
+                          </span>
+                          {doc.error && (
+                            <span className="text-xs text-gray-500 mt-1">{doc.error}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
                         {doc.transactionCount || 0}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">
                         {new Date(doc.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        {(doc.processingStatus === 'failed' || doc.processingStatus === 'password_required') && (
+                          <button
+                            onClick={() => handleRetryWithPassword(doc)}
+                            className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                          >
+                            Retry with Password
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -702,6 +773,55 @@ const SpendingDashboard = () => {
               <button className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50">
                 Connect Gmail
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Password Modal */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Enter Document Password
+              </h3>
+              <p className="text-gray-600 mb-4">
+                The document "{selectedDocument?.originalName}" is password-protected. 
+                Please enter the password to process it.
+              </p>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={retryPassword}
+                  onChange={(e) => setRetryPassword(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && retryDocumentProcessing()}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter password"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setRetryPassword('');
+                    setSelectedDocument(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={retryDocumentProcessing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Retry Processing
+                </button>
+              </div>
             </div>
           </div>
         )}

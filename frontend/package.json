@@ -4,6 +4,10 @@
   "description": "Financial Analyzer - Complete Frontend",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
     "@types/chart.js": "^2.9.41",
     "axios": "^1.6.2",
     "chart.js": "^4.5.1",

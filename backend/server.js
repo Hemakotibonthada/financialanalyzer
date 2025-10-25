@@ -13,6 +13,15 @@ const websocketService = require('./services/websocketService');
 const envPath = path.join(__dirname, '.env');
 dotenv.config({ path: envPath });
 
+// Add QPDF to PATH if configured (must happen before requiring any modules that use qpdf)
+if (process.env.QPDF_PATH) {
+  const qpdfDir = path.dirname(process.env.QPDF_PATH);
+  process.env.PATH = `${qpdfDir}${path.delimiter}${process.env.PATH}`;
+  logger.info(`✅ QPDF binary directory added to PATH: ${qpdfDir}`);
+} else {
+  logger.warn('⚠️ QPDF_PATH not configured in environment variables');
+}
+
 // Ensure required directories exist
 const dirs = ['uploads/financial', 'uploads/receipts', 'logs'];
 dirs.forEach(dir => {
@@ -77,6 +86,7 @@ app.use('/api/gmail', require('./routes/gmailRoutes'));
 app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
+app.use('/api/emi', require('./routes/emiRoutes'));
 
 // Health check
 app.get('/health', (req, res) => {
