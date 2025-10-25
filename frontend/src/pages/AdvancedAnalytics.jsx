@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const AdvancedAnalytics = () => {
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ const AdvancedAnalytics = () => {
       setError(null);
       
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/analytics/advanced/complete-dashboard`, {
+      const response = await axios.get(`${API_URL}/analytics/advanced/complete-dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
