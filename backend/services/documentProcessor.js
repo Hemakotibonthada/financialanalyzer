@@ -144,12 +144,17 @@ const tryPasswordCombinations = async (filePath, passwordHints, userProfile) => 
 const generatePasswordCombinations = async (passwordHints, userProfile) => {
   const passwords = [];
   
+  logger.info(`Generating password combinations...`);
+  logger.info(`Password hints: ${JSON.stringify(passwordHints)}`);
+  logger.info(`User profile: ${userProfile ? userProfile.fullName : 'Not available'}`);
+  
   // Direct password hints from email or upload (HIGHEST PRIORITY)
   passwordHints.forEach(hint => {
     if (hint.hint && hint.hint.length >= 4) {
       passwords.push(hint.hint);
       passwords.push(hint.hint.toUpperCase());
       passwords.push(hint.hint.toLowerCase());
+      logger.info(`Added password hint: ${hint.hint.substring(0, 4)}***`);
     }
   });
   
@@ -221,7 +226,12 @@ const generatePasswordCombinations = async (passwordHints, userProfile) => {
   passwords.push(...commonPatterns);
   
   // Remove duplicates and return
-  return [...new Set(passwords)].filter(p => p && p.length >= 4);
+  const uniquePasswords = [...new Set(passwords)].filter(p => p && p.length >= 4);
+  logger.info(`Generated ${uniquePasswords.length} unique password combinations`);
+  if (uniquePasswords.length > 0) {
+    logger.info(`First 5 passwords: ${uniquePasswords.slice(0, 5).map(p => p.substring(0, 4) + '***').join(', ')}`);
+  }
+  return uniquePasswords;
 };
 
 /**
@@ -618,6 +628,17 @@ const processDocumentById = async (documentId, password = null) => {
 
     const userProfile = await FinancialProfile.findOne({ userId: document.userId });
     
+    // Log password information for debugging
+    logger.info(`Processing document ${document.originalFileName}`);
+    logger.info(`Password provided: ${password ? 'YES' : 'NO'}`);
+    logger.info(`Password hints available: ${document.passwordHints ? document.passwordHints.length : 0}`);
+    if (document.passwordHints && document.passwordHints.length > 0) {
+      logger.info(`Password hints: ${JSON.stringify(document.passwordHints)}`);
+    }
+    if (userProfile) {
+      logger.info(`User profile found: ${userProfile.fullName}, DOB: ${userProfile.dateOfBirth}`);
+    }
+    
     // Update processing status
     document.processingStatus = 'processing';
     await document.save();
@@ -718,20 +739,27 @@ const processDocumentFile = async (filePath, fileType, password = null, password
 
   const fileExtension = '.' + fileType.toLowerCase();
   
+  logger.info(`Processing file type: ${fileExtension}`);
+  logger.info(`Password provided: ${password ? 'YES' : 'NO'}`);
+  logger.info(`Password hints count: ${passwordHints ? passwordHints.length : 0}`);
+  
   try {
     if (fileExtension === '.pdf') {
       let pdfData;
       
       if (password) {
         // Try with provided password
+        logger.info('Trying with provided password');
         pdfData = await parsePDF(filePath, password);
       } else {
         try {
           // Try without password first
+          logger.info('Trying without password first');
           pdfData = await parsePDF(filePath);
         } catch (error) {
-          if (error.message === 'PDF_PASSWORD_REQUIRED' && passwordHints.length > 0) {
+          if (error.message === 'PDF_PASSWORD_REQUIRED' && passwordHints && passwordHints.length > 0) {
             // Try password combinations
+            logger.info(`PDF requires password, trying ${passwordHints.length} password hints`);
             pdfData = await tryPasswordCombinations(filePath, passwordHints, userProfile);
           } else {
             throw error;

@@ -61,6 +61,11 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
     const uploadedDocuments = [];
     const password = req.body.password; // Get password from request body
     
+    logger.info(`Upload request received. Files: ${req.files.length}, Password provided: ${password ? 'YES' : 'NO'}`);
+    if (password) {
+      logger.info(`Password value: ${password}`);
+    }
+    
     for (const file of req.files) {
       try {
         const passwordHints = password ? [{
@@ -68,6 +73,8 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
           hint: password,
           extractedDate: new Date()
         }] : [];
+
+        logger.info(`Creating document with ${passwordHints.length} password hints`);
 
         const document = new Document({
           userId: req.user.id,
