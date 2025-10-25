@@ -43,11 +43,16 @@ const Profile = () => {
     grantedScopes: []
   });
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    icon: '',
+    keywords: ''
+  });
 
   const categories = [
     'food_dining', 'groceries', 'transportation', 'fuel', 'utilities',
     'rent_mortgage', 'insurance', 'healthcare', 'entertainment', 'shopping',
-    'education', 'travel', 'subscriptions', 'investments', 'other'
+    'education', 'travel', 'subscriptions', 'investment', 'other'
   ];
 
   const currencies = [
@@ -198,6 +203,42 @@ const Profile = () => {
         [category]: parseFloat(amount) || 0
       }
     }));
+  };
+
+  const handleAddCustomCategory = () => {
+    if (!newCategory.name || !newCategory.icon) {
+      setMessage({ type: 'error', text: 'Please provide both name and icon for the category' });
+      return;
+    }
+
+    const keywordsArray = newCategory.keywords
+      .split(',')
+      .map(k => k.trim().toLowerCase())
+      .filter(k => k.length > 0);
+
+    const categoryToAdd = {
+      name: newCategory.name.trim(),
+      icon: newCategory.icon,
+      keywords: keywordsArray
+    };
+
+    setProfile(prev => ({
+      ...prev,
+      customCategories: [...(prev.customCategories || []), categoryToAdd]
+    }));
+
+    setNewCategory({ name: '', icon: '', keywords: '' });
+    setMessage({ type: 'success', text: 'Custom category added! Remember to save your profile.' });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
+
+  const handleRemoveCustomCategory = (index) => {
+    setProfile(prev => ({
+      ...prev,
+      customCategories: prev.customCategories.filter((_, i) => i !== index)
+    }));
+    setMessage({ type: 'success', text: 'Custom category removed! Remember to save your profile.' });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
   const saveProfile = async () => {
@@ -519,6 +560,106 @@ const Profile = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Custom Expense Categories */}
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Custom Expense Categories</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-gray-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <div>
+                        <h4 className="font-medium text-gray-900">Add your custom expense types</h4>
+                        <p className="text-gray-600 text-sm mt-1">
+                          Create custom categories to better track your specific spending patterns (e.g., Bills, Rent, Loans, Pet Care)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Add New Category Form */}
+                  <div className="bg-white border border-gray-300 rounded-lg p-4 mb-4">
+                    <h4 className="font-medium text-gray-900 mb-3">Add New Category</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Category Name
+                        </label>
+                        <input
+                          type="text"
+                          value={newCategory.name}
+                          onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="e.g., Rent, Bills, Loans"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Icon (Emoji)
+                        </label>
+                        <input
+                          type="text"
+                          value={newCategory.icon}
+                          onChange={(e) => setNewCategory({...newCategory, icon: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="🏠 💡 💳"
+                          maxLength="2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Keywords (comma-separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={newCategory.keywords}
+                          onChange={(e) => setNewCategory({...newCategory, keywords: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="rent, lease, apartment"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleAddCustomCategory}
+                      disabled={!newCategory.name || !newCategory.icon}
+                      className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Add Category
+                    </button>
+                  </div>
+
+                  {/* Existing Custom Categories */}
+                  {profile.customCategories && profile.customCategories.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">Your Custom Categories</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {profile.customCategories.map((category, index) => (
+                          <div key={index} className="bg-white border border-gray-300 rounded-lg p-3 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <span className="text-2xl mr-2">{category.icon}</span>
+                              <div>
+                                <p className="font-medium text-gray-900">{category.name}</p>
+                                {category.keywords && category.keywords.length > 0 && (
+                                  <p className="text-xs text-gray-500">{category.keywords.join(', ')}</p>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveCustomCategory(index)}
+                              className="text-red-600 hover:text-red-800"
+                              title="Remove category"
+                            >
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Savings Goal */}

@@ -47,6 +47,7 @@ class AnalyticsService {
           lastSyncDate: profile?.gmailSettings?.lastSync || null,
           financialHealthScore: financialHealth.score,
           monthlySpending: monthlyTrends.currentMonth?.totalSpending || 0,
+          monthlyInvestments: monthlyTrends.currentMonth?.totalInvestments || 0,
           monthlyIncome: monthlyIncomeData.amount,
           incomeSource: monthlyIncomeData.source,
           lastSalaryDate: monthlyIncomeData.lastSalaryDate
@@ -117,13 +118,23 @@ class AnalyticsService {
           month,
           totalSpending: 0,
           totalIncome: 0,
+          totalInvestments: 0,
           transactionCount: 0,
           categories: {}
         };
       }
 
+      // Investment category - count in BOTH spending and investments
+      const category = transaction.category || transaction.ai_category || 'other';
+      const isInvestment = category.toLowerCase() === 'investment';
+
       if (transaction.type === 'credit') {
         monthlyData[month].totalIncome += Math.abs(transaction.amount || 0);
+      } else if (isInvestment) {
+        // Investments count as both spending (money going out) and investments (asset building)
+        const amount = Math.abs(transaction.amount || 0);
+        monthlyData[month].totalInvestments += amount;
+        monthlyData[month].totalSpending += amount; // Also add to spending
       } else {
         monthlyData[month].totalSpending += Math.abs(transaction.amount || 0);
       }
@@ -131,7 +142,6 @@ class AnalyticsService {
       monthlyData[month].transactionCount += 1;
 
       // Aggregate categories
-      const category = transaction.category || transaction.ai_category || 'other';
       monthlyData[month].categories[category] = 
         (monthlyData[month].categories[category] || 0) + 1;
     });
@@ -149,6 +159,7 @@ class AnalyticsService {
         month: monthKey,
         totalSpending: 0,
         totalIncome: 0,
+        totalInvestments: 0,
         transactionCount: 0,
         categories: {}
       });
@@ -162,6 +173,7 @@ class AnalyticsService {
         totalMonths: trends.length,
         averageSpending: trends.reduce((sum, t) => sum + t.totalSpending, 0) / trends.length,
         averageIncome: trends.reduce((sum, t) => sum + t.totalIncome, 0) / trends.length,
+        averageInvestments: trends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0) / trends.length,
         spendingTrend: this.calculateTrend(trends.map(t => t.totalSpending)),
         incomeTrend: this.calculateTrend(trends.map(t => t.totalIncome))
       }
@@ -176,7 +188,7 @@ class AnalyticsService {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - monthsBack);
 
-    // Get transactions directly
+    // Get transactions directly (excluding investments from category breakdown)
     const transactions = await Transaction.find({
       userId,
       type: 'debit',
@@ -184,14 +196,21 @@ class AnalyticsService {
     }).lean();
 
     const categoryTotals = {};
+    const investmentTotal = { amount: 0, count: 0 };
     let grandTotal = 0;
 
     transactions.forEach(transaction => {
       const amount = Math.abs(transaction.amount || 0);
       const category = transaction.category || transaction.ai_category || 'other';
 
-      categoryTotals[category] = (categoryTotals[category] || 0) + amount;
-      grandTotal += amount;
+      // Track investments separately as they're savings, not spending
+      if (category.toLowerCase() === 'investment') {
+        investmentTotal.amount += amount;
+        investmentTotal.count += 1;
+      } else {
+        categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+        grandTotal += amount;
+      }
     });
 
     // Convert to chart format
@@ -206,9 +225,11 @@ class AnalyticsService {
 
     return {
       chartData,
+      investments: investmentTotal, // Track investments separately
       summary: {
         totalCategories: chartData.length,
         totalAmount: grandTotal,
+        totalInvestments: investmentTotal.amount,
         topCategory: chartData[0]?.category || 'No data',
         diversificationIndex: this.calculateDiversificationIndex(chartData)
       }
@@ -443,39 +464,70 @@ class AnalyticsService {
    * Calculate financial health score
    */
   async calculateFinancialHealth(userId) {
-    const profile = await FinancialProfile.findOne({ userId }).lean();
-    const monthlyTrends = await this.getMonthlyTrends(userId, 6);
-    const budgetAnalysis = await this.getBudgetAnalysis(userId);
-    
-    let score = 0;
-    const factors = [];
+    try {
+      const profile = await FinancialProfile.findOne({ userId }).lean();
+      const monthlyTrends = await this.getMonthlyTrends(userId, 6);
+      const budgetAnalysis = await this.getBudgetAnalysis(userId);
+      const monthlyIncomeData = await this.getMonthlyIncome(userId);
+      
+      logger.info(`📊 Calculating health for user ${userId}:`, {
+        income: monthlyIncomeData.amount,
+        trendCount: monthlyTrends.trends?.length,
+        budgetStatus: budgetAnalysis.status
+      });
+      
+      let score = 0;
+      const factors = [];
 
-    // Income stability (25 points)
-    const incomeStability = this.assessIncomeStability(monthlyTrends.trends);
-    score += incomeStability.score;
-    factors.push(incomeStability);
+      // Income stability (25 points)
+      const incomeStability = this.assessIncomeStability(monthlyTrends.trends, monthlyIncomeData.amount);
+      score += incomeStability.score;
+      factors.push(incomeStability);
+      logger.info(`  💰 Income Stability: ${incomeStability.score} points`);
 
-    // Spending discipline (25 points)
-    const spendingDiscipline = this.assessSpendingDiscipline(budgetAnalysis, monthlyTrends);
-    score += spendingDiscipline.score;
-    factors.push(spendingDiscipline);
+      // Spending discipline (25 points)
+      const spendingDiscipline = this.assessSpendingDiscipline(budgetAnalysis, monthlyTrends);
+      score += spendingDiscipline.score;
+      factors.push(spendingDiscipline);
+      logger.info(`  📊 Spending Discipline: ${spendingDiscipline.score} points`);
 
-    // Savings rate (25 points)
-    const savingsRate = this.assessSavingsRate(monthlyTrends.trends);
-    score += savingsRate.score;
-    factors.push(savingsRate);
+      // Savings rate (25 points)
+      const savingsRate = this.assessSavingsRate(monthlyTrends.trends, monthlyIncomeData.amount);
+      score += savingsRate.score;
+      factors.push(savingsRate);
+      logger.info(`  💵 Savings Rate: ${savingsRate.score} points`);
 
-    // Financial diversity (25 points)
-    const diversity = this.assessFinancialDiversity(userId);
-    score += diversity.score;
-    factors.push(diversity);
+      // Financial awareness & tracking (25 points)
+      const awareness = this.assessFinancialAwareness(userId, profile, monthlyTrends);
+      score += awareness.score;
+      factors.push(awareness);
+      logger.info(`  📱 Financial Awareness: ${awareness.score} points`);
 
-    return {
-      score: Math.round(score),
-      grade: this.getHealthGrade(score),
-      factors,
-      recommendations: this.generateHealthRecommendations(factors)
-    };
+      // Ensure score is between 0 and 100
+      const finalScore = Math.min(100, Math.max(0, Math.round(score)));
+      logger.info(`  ✅ Final Health Score: ${finalScore}/100 (Grade ${this.getHealthGrade(finalScore)})`);
+
+      return {
+        score: finalScore,
+        grade: this.getHealthGrade(finalScore),
+        factors,
+        recommendations: this.generateHealthRecommendations(factors, finalScore)
+      };
+    } catch (error) {
+      logger.error(`Error calculating financial health for user ${userId}:`, error);
+      // Return default health data
+      return {
+        score: 50,
+        grade: 'C',
+        factors: [
+          { factor: 'Income Stability', score: 12, description: 'Unable to calculate - insufficient data' },
+          { factor: 'Spending Discipline', score: 12, description: 'Unable to calculate - insufficient data' },
+          { factor: 'Savings Rate', score: 13, description: 'Unable to calculate - insufficient data' },
+          { factor: 'Financial Awareness', score: 13, description: 'Active financial tracking' }
+        ],
+        recommendations: ['Continue tracking your finances regularly', 'Set up budget categories for better insights']
+      };
+    }
   }
 
   /**
@@ -690,73 +742,215 @@ class AnalyticsService {
     return Math.round((amount * 30) / intervalDays);
   }
 
-  assessIncomeStability(trends) {
+  assessIncomeStability(trends, monthlyIncome = 0) {
     const incomes = trends.map(t => t.totalIncome).filter(i => i > 0);
-    if (incomes.length < 3) {
-      return { factor: 'Income Stability', score: 10, description: 'Insufficient income data' };
+    
+    // If we have profile income but no transaction incomes, use profile income
+    if (incomes.length === 0 && monthlyIncome > 0) {
+      return { 
+        factor: 'Income Stability', 
+        score: 20, 
+        description: `Monthly income: ₹${Math.round(monthlyIncome).toLocaleString('en-IN')}`
+      };
+    }
+    
+    if (incomes.length < 2) {
+      return { 
+        factor: 'Income Stability', 
+        score: 15, 
+        description: 'Limited income history - continue tracking'
+      };
     }
     
     const variance = this.calculateVariance(incomes);
     const mean = incomes.reduce((a, b) => a + b, 0) / incomes.length;
-    const stabilityRatio = variance / mean;
+    const coefficientOfVariation = Math.sqrt(variance) / mean;
     
     let score = 25;
-    if (stabilityRatio > 0.3) score = 10;
-    else if (stabilityRatio > 0.2) score = 15;
-    else if (stabilityRatio > 0.1) score = 20;
+    let description = 'Very stable income';
+    
+    if (coefficientOfVariation > 0.5) {
+      score = 10;
+      description = 'High income variability - consider stabilizing income sources';
+    } else if (coefficientOfVariation > 0.3) {
+      score = 15;
+      description = 'Moderate income fluctuations';
+    } else if (coefficientOfVariation > 0.15) {
+      score = 20;
+      description = 'Fairly stable income with minor fluctuations';
+    }
     
     return {
       factor: 'Income Stability',
       score,
-      description: `Income variance: ${Math.round(stabilityRatio * 100)}%`
+      description: `${description} (CV: ${(coefficientOfVariation * 100).toFixed(1)}%)`
     };
   }
 
   assessSpendingDiscipline(budgetAnalysis, monthlyTrends) {
     if (!budgetAnalysis.hasBudget) {
-      return { factor: 'Spending Discipline', score: 10, description: 'No budget set' };
+      // Give partial credit if spending is consistent even without budget
+      const expenses = monthlyTrends.trends.map(t => t.totalSpending).filter(e => e > 0);
+      if (expenses.length >= 3) {
+        const variance = this.calculateVariance(expenses);
+        const mean = expenses.reduce((a, b) => a + b, 0) / expenses.length;
+        const cv = Math.sqrt(variance) / mean;
+        
+        if (cv < 0.2) {
+          return { 
+            factor: 'Spending Discipline', 
+            score: 18, 
+            description: 'Consistent spending pattern - set budgets for better control'
+          };
+        }
+      }
+      
+      return { 
+        factor: 'Spending Discipline', 
+        score: 12, 
+        description: 'Set monthly budgets to improve spending control'
+      };
     }
     
     let score = 25;
-    if (budgetAnalysis.overallStatus === 'over') score = 5;
-    else if (budgetAnalysis.overallStatus === 'critical') score = 15;
-    else if (budgetAnalysis.overallStatus === 'warning') score = 20;
+    let description = 'Excellent budget adherence';
+    
+    if (budgetAnalysis.overallStatus === 'over') {
+      score = 8;
+      description = 'Over budget - review and cut unnecessary expenses';
+    } else if (budgetAnalysis.overallStatus === 'critical') {
+      score = 15;
+      description = 'Near budget limit - careful monitoring needed';
+    } else if (budgetAnalysis.overallStatus === 'warning') {
+      score = 20;
+      description = 'Good budget adherence - watch for overspending';
+    }
+    
+    // Bonus points for having multiple budget categories
+    const categoryCount = budgetAnalysis.categories?.length || 0;
+    if (categoryCount >= 5 && score >= 20) {
+      score = Math.min(25, score + 2);
+      description += ' with detailed category tracking';
+    }
     
     return {
       factor: 'Spending Discipline',
       score,
-      description: `Budget status: ${budgetAnalysis.overallStatus}`
+      description
     };
   }
 
-  assessSavingsRate(trends) {
-    const savingsRates = trends.map(t => {
-      if (t.totalIncome === 0) return 0;
-      return Math.max(0, (t.totalIncome - t.totalSpending) / t.totalIncome);
+  assessSavingsRate(trends, monthlyIncome = 0) {
+    // Calculate savings rate from trends (including investments as savings)
+    const recentTrends = trends.slice(-3); // Last 3 months
+    let totalIncome = 0;
+    let totalSpending = 0;
+    let totalInvestments = 0;
+    
+    recentTrends.forEach(t => {
+      totalIncome += t.totalIncome;
+      totalSpending += t.totalSpending;
+      totalInvestments += (t.totalInvestments || 0);
     });
     
-    const avgSavingsRate = savingsRates.reduce((a, b) => a + b, 0) / savingsRates.length;
+    // If no income in transactions, use profile income
+    if (totalIncome === 0 && monthlyIncome > 0) {
+      totalIncome = monthlyIncome * recentTrends.length;
+    }
+    
+    if (totalIncome === 0) {
+      return { 
+        factor: 'Savings Rate', 
+        score: 10, 
+        description: 'Track income to calculate savings rate'
+      };
+    }
+    
+    // Savings = Income - Spending + Investments (investments are treated as savings)
+    const totalSavings = totalIncome - totalSpending + totalInvestments;
+    const savingsRate = Math.max(0, totalSavings / totalIncome);
     
     let score = 5;
-    if (avgSavingsRate >= 0.3) score = 25;
-    else if (avgSavingsRate >= 0.2) score = 20;
-    else if (avgSavingsRate >= 0.1) score = 15;
-    else if (avgSavingsRate >= 0.05) score = 10;
+    let description = 'Very low savings - aim for at least 10%';
+    
+    if (savingsRate >= 0.5) {
+      score = 25;
+      description = `Exceptional ${Math.round(savingsRate * 100)}% savings rate!`;
+    } else if (savingsRate >= 0.3) {
+      score = 23;
+      description = `Excellent ${Math.round(savingsRate * 100)}% savings discipline`;
+    } else if (savingsRate >= 0.2) {
+      score = 20;
+      description = `Great ${Math.round(savingsRate * 100)}% savings rate - keep it up!`;
+    } else if (savingsRate >= 0.15) {
+      score = 17;
+      description = `Good ${Math.round(savingsRate * 100)}% savings habit`;
+    } else if (savingsRate >= 0.1) {
+      score = 14;
+      description = `Acceptable ${Math.round(savingsRate * 100)}% savings - try to increase`;
+    } else if (savingsRate >= 0.05) {
+      score = 10;
+      description = `Low ${Math.round(savingsRate * 100)}% savings rate - increase to 20%`;
+    }
+    
+    if (totalInvestments > 0) {
+      description += ` (includes ₹${totalInvestments.toFixed(0)} in investments)`;
+    }
     
     return {
       factor: 'Savings Rate',
       score,
-      description: `Average savings rate: ${Math.round(avgSavingsRate * 100)}%`
+      description: `${description} (${Math.round(savingsRate * 100)}%)`
     };
   }
 
-  assessFinancialDiversity(userId) {
-    // This would need more sophisticated analysis of investment accounts, etc.
-    // For now, return a basic score
+  assessFinancialAwareness(userId, profile, monthlyTrends) {
+    let score = 0;
+    const indicators = [];
+    
+    // Has budget set (5 points)
+    if (profile?.budgetLimits && profile.budgetLimits.size > 0) {
+      score += 5;
+      indicators.push('budgets');
+    }
+    
+    // Has savings goal (5 points)
+    if (profile?.savingsGoal?.amount > 0) {
+      score += 5;
+      indicators.push('savings goals');
+    }
+    
+    // Regular transaction tracking (5 points)
+    const recentMonthsWithData = monthlyTrends.trends.slice(-3).filter(t => t.transactionCount > 0).length;
+    if (recentMonthsWithData >= 2) {
+      score += 5;
+      indicators.push('active tracking');
+    }
+    
+    // Multiple transaction categories (5 points)
+    const uniqueCategories = new Set();
+    monthlyTrends.trends.forEach(t => {
+      Object.keys(t.categories || {}).forEach(cat => uniqueCategories.add(cat));
+    });
+    if (uniqueCategories.size >= 3) {
+      score += 5;
+      indicators.push('categorized spending');
+    }
+    
+    // Has profile information (5 points)
+    if (profile?.currency && profile?.name) {
+      score += 5;
+      indicators.push('complete profile');
+    }
+    
+    const description = indicators.length > 0 
+      ? `Good financial awareness: ${indicators.join(', ')}`
+      : 'Set up budgets and goals to improve awareness';
+    
     return {
-      factor: 'Financial Diversity',
-      score: 15,
-      description: 'Basic financial tracking in place'
+      factor: 'Financial Awareness',
+      score: Math.max(10, score), // Minimum 10 points for using the app
+      description
     };
   }
 
@@ -768,27 +962,54 @@ class AnalyticsService {
     return 'F';
   }
 
-  generateHealthRecommendations(factors) {
+  generateHealthRecommendations(factors, overallScore) {
     const recommendations = [];
     
+    // Score-based recommendations
+    if (overallScore < 40) {
+      recommendations.push('🚨 Critical: Immediate action needed - Review your financial situation carefully');
+    } else if (overallScore < 60) {
+      recommendations.push('⚠️ Focus on improving key financial habits for better health');
+    } else if (overallScore < 80) {
+      recommendations.push('👍 Good progress! Small improvements can boost your score significantly');
+    } else {
+      recommendations.push('🌟 Excellent financial health! Maintain your current habits');
+    }
+    
+    // Factor-specific recommendations
     factors.forEach(factor => {
       if (factor.score < 15) {
         switch (factor.factor) {
           case 'Income Stability':
-            recommendations.push('Work on stabilizing your income sources');
+            recommendations.push('💰 Stabilize income: Consider diversifying income sources or negotiating steady contracts');
             break;
           case 'Spending Discipline':
-            recommendations.push('Create and stick to a monthly budget');
+            recommendations.push('📊 Create detailed monthly budgets for each expense category');
             break;
           case 'Savings Rate':
-            recommendations.push('Increase your savings rate to at least 20% of income');
+            recommendations.push('💵 Target 20% savings rate - automate savings transfers on payday');
             break;
-          case 'Financial Diversity':
-            recommendations.push('Consider diversifying your financial portfolio');
+          case 'Financial Awareness':
+            recommendations.push('📱 Set up budgets, goals, and track transactions regularly');
+            break;
+        }
+      } else if (factor.score < 20) {
+        switch (factor.factor) {
+          case 'Savings Rate':
+            recommendations.push('💪 Increase your savings rate to 25-30% for long-term wealth building');
+            break;
+          case 'Spending Discipline':
+            recommendations.push('🎯 Fine-tune your budget - eliminate one unnecessary subscription this month');
             break;
         }
       }
     });
+    
+    // Always add actionable tips
+    if (recommendations.length < 3) {
+      recommendations.push('📈 Track all expenses for better insights into spending patterns');
+      recommendations.push('🎯 Set specific financial goals with deadlines');
+    }
     
     return recommendations;
   }
