@@ -59,9 +59,16 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
     }
 
     const uploadedDocuments = [];
+    const password = req.body.password; // Get password from request body
     
     for (const file of req.files) {
       try {
+        const passwordHints = password ? [{
+          source: 'user_provided',
+          hint: password,
+          extractedDate: new Date()
+        }] : [];
+
         const document = new Document({
           userId: req.user.id,
           fileName: file.filename,
@@ -71,13 +78,14 @@ router.post('/upload', authenticate, upload.array('documents', 10), async (req, 
           filePath: file.path,
           source: 'upload',
           category: categorizePlaceholder(file.originalname),
-          processingStatus: 'pending'
+          processingStatus: 'pending',
+          passwordHints: passwordHints
         });
 
         await document.save();
         uploadedDocuments.push(document);
 
-        logger.info(`Document uploaded: ${file.originalname} for user ${req.user.id}`);
+        logger.info(`Document uploaded: ${file.originalname} for user ${req.user.id}${password ? ' (with password)' : ''}`);
       } catch (error) {
         logger.error(`Error saving document ${file.originalname}:`, error);
       }

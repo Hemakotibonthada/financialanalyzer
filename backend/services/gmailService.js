@@ -1634,16 +1634,32 @@ class GmailService {
         }
       }
 
-      // Trigger automatic document processing for downloaded files
+      // Process downloaded files BEFORE returning (wait for transactions to be extracted)
       if (results.downloadedFiles.length > 0) {
-        logger.info(`Triggering automatic processing for ${results.downloadedFiles.length} downloaded files`);
-        // We'll process these files asynchronously
-        setImmediate(() => {
-          this.processDownloadedFiles(results.downloadedFiles, userId, runDate)
-            .catch(error => {
-              logger.error('Error in automatic document processing:', error);
-            });
-        });
+        logger.info(`Processing ${results.downloadedFiles.length} downloaded files immediately for analysis...`);
+        try {
+          const processingResults = await this.processDownloadedFiles(results.downloadedFiles, userId, runDate);
+          
+          // Add processing results to return data
+          results.processingResults = {
+            totalFiles: processingResults.totalFiles,
+            processedFiles: processingResults.processedFiles,
+            extractedTransactions: processingResults.extractedTransactions,
+            createdAnalyses: processingResults.createdAnalyses,
+            errors: processingResults.errors
+          };
+          
+          logger.info(`Document processing completed: ${processingResults.extractedTransactions} transactions extracted from ${processingResults.processedFiles} files`);
+        } catch (error) {
+          logger.error('Error in automatic document processing:', error);
+          results.processingResults = {
+            totalFiles: results.downloadedFiles.length,
+            processedFiles: 0,
+            extractedTransactions: 0,
+            createdAnalyses: 0,
+            errors: [{ error: error.message }]
+          };
+        }
       }
 
       // Don't update lastSync for analysis runs (keep regular sync separate)
@@ -1651,6 +1667,7 @@ class GmailService {
         runDate: runDate.toISOString(),
         totalEmails: results.totalEmails,
         downloadedAttachments: results.downloadedAttachments,
+        extractedTransactions: results.processingResults?.extractedTransactions || 0,
         errors: results.errors.length
       });
 
@@ -1899,78 +1916,15 @@ class GmailService {
 
       for (const file of files) {
         try {
-          // Build file path
-          const runDateFolder = runDate instanceof Date ? runDate.toISOString().split('T')[0] : runDate;
-          const baseDir = runDateFolder
-            ? path.join(process.cwd(), 'uploads', 'financial', runDateFolder)
-            : path.join(process.cwd(), 'uploads', 'financial', userId.toString());
-          const filePath = path.join(baseDir, file.filename);
-
-          // Check if file exists
-          if (!fse.existsSync(filePath)) {
-            logger.warn(`File not found for processing: ${filePath}`);
-            processingResults.errors.push({
-              filename: file.filename,
-              error: 'File not found'
-            });
-            continue;
-          }
-
-          // Process the document
-          const extractedData = await documentProcessor.processDocument(filePath, {
-            category: file.category,
-            priority: file.priority,
-            confidence: file.confidence,
-            emailMetadata: {
-              subject: file.emailSubject,
-              from: file.emailFrom,
-              date: file.emailDate
-            }
-          });
+          logger.info(`Processing document ID: ${file.documentId}, filename: ${file.originalFilename}`);
+          
+          // Process the document using documentProcessor.processDocumentById
+          // This will extract transactions and save them to the database
+          const extractedData = await documentProcessor.processDocumentById(file.documentId);
 
           if (extractedData && extractedData.transactions && extractedData.transactions.length > 0) {
-            // Create analysis record
-            const analysis = new Analysis({
-              userId: userId,
-              documentId: file.documentId,
-              analysisType: 'gmail_sync',
-              results: {
-                category: file.category,
-                extractedTransactions: extractedData.transactions.length,
-                totalAmount: extractedData.transactions.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0),
-                dateRange: {
-                  start: extractedData.transactions.reduce((earliest, t) => 
-                    !earliest || (t.date && new Date(t.date) < new Date(earliest)) ? t.date : earliest, null),
-                  end: extractedData.transactions.reduce((latest, t) => 
-                    !latest || (t.date && new Date(t.date) > new Date(latest)) ? t.date : latest, null)
-                },
-                categories: [...new Set(extractedData.transactions.map(t => t.category).filter(Boolean))],
-                insights: extractedData.insights || {}
-              },
-              metadata: {
-                source: 'gmail',
-                runDate: runDate,
-                originalFilename: file.originalFilename,
-                emailMetadata: {
-                  subject: file.emailSubject,
-                  from: file.emailFrom,
-                  date: file.emailDate
-                },
-                processingStats: {
-                  confidence: file.confidence,
-                  priority: file.priority,
-                  category: file.category
-                }
-              },
-              confidence: file.confidence || 0.5,
-              status: 'completed'
-            });
-
-            await analysis.save();
-
             processingResults.processedFiles++;
             processingResults.extractedTransactions += extractedData.transactions.length;
-            processingResults.createdAnalyses++;
 
             logger.info(`Successfully processed: ${file.originalFilename} (${extractedData.transactions.length} transactions)`);
           } else {
@@ -1985,36 +1939,6 @@ class GmailService {
             error: error.message
           });
         }
-      }
-    }
-
-    // Create summary analysis for the entire sync run
-    if (processingResults.createdAnalyses > 0) {
-      try {
-        const summaryAnalysis = new Analysis({
-          userId: userId,
-          analysisType: 'gmail_sync_summary',
-          results: {
-            syncDate: runDate,
-            totalFilesProcessed: processingResults.processedFiles,
-            totalTransactionsExtracted: processingResults.extractedTransactions,
-            totalAnalysesCreated: processingResults.createdAnalyses,
-            categoriesProcessed: categories,
-            processingStats: processingResults
-          },
-          metadata: {
-            source: 'gmail_summary',
-            runDate: runDate,
-            processingResults: processingResults
-          },
-          confidence: 1.0,
-          status: 'completed'
-        });
-
-        await summaryAnalysis.save();
-        logger.info(`Created summary analysis for Gmail sync run: ${runDate}`);
-      } catch (error) {
-        logger.error('Error creating summary analysis:', error);
       }
     }
 

@@ -1,4 +1,5 @@
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const pdfParse = require('pdf-parse');
 const csv = require('csv-parser');
 const { createReadStream } = require('fs');
@@ -6,6 +7,7 @@ const path = require('path');
 const sharp = require('sharp');
 const mammoth = require('mammoth');
 const { PDFDocument } = require('pdf-lib');
+const qpdf = require('node-qpdf2');
 const logger = require('../utils/logger');
 const Document = require('../models/Document');
 const Transaction = require('../models/Transaction');
@@ -19,21 +21,71 @@ const parsePDF = async (filePath, password = null) => {
   try {
     const dataBuffer = await fs.readFile(filePath);
     
-    // If password provided, try to decrypt first
+    // If password provided, decrypt the PDF first using qpdf
     if (password) {
       try {
-        const pdfDoc = await PDFDocument.load(dataBuffer, { password });
-        const pdfBytes = await pdfDoc.save();
-        const data = await pdfParse(Buffer.from(pdfBytes));
-        return {
-          text: data.text,
-          pages: data.numpages,
-          info: data.info,
-          passwordUsed: password
-        };
+        logger.info(`Attempting to decrypt PDF with password using qpdf...`);
+        
+        // Create temporary output path
+        const tempDir = path.join(path.dirname(filePath), 'temp');
+        await fs.mkdir(tempDir, { recursive: true });
+        const decryptedPath = path.join(tempDir, `decrypted_${Date.now()}.pdf`);
+        
+        try {
+          // Use qpdf to decrypt the PDF
+          await qpdf.decrypt(filePath, {
+            password: password,
+            output: decryptedPath
+          });
+          
+          logger.info(`✅ PDF decrypted successfully with qpdf`);
+          
+          // Parse the decrypted PDF
+          const decryptedBuffer = await fs.readFile(decryptedPath);
+          const data = await pdfParse(decryptedBuffer);
+          
+          // Clean up temp file
+          try {
+            await fs.unlink(decryptedPath);
+          } catch (cleanupError) {
+            logger.warn('Could not delete temp file:', cleanupError.message);
+          }
+          
+          logger.info(`✅ Extracted ${data.text.length} characters from decrypted PDF`);
+          return {
+            text: data.text,
+            pages: data.numpages,
+            info: data.info,
+            passwordUsed: password
+          };
+        } catch (qpdfError) {
+          logger.error('QPDF decryption error:', qpdfError.message);
+          
+          // Fallback to pdf-lib if qpdf fails
+          logger.info('Trying fallback method with pdf-lib...');
+          try {
+            const pdfDoc = await PDFDocument.load(dataBuffer, { 
+              password: password,
+              ignoreEncryption: false,
+              updateMetadata: false
+            });
+            const pdfBytes = await pdfDoc.save();
+            const data = await pdfParse(Buffer.from(pdfBytes));
+            logger.info(`✅ PDF decrypted with pdf-lib fallback, extracted ${data.text.length} characters`);
+            return {
+              text: data.text,
+              pages: data.numpages,
+              info: data.info,
+              passwordUsed: password
+            };
+          } catch (pdfLibError) {
+            logger.error('PDF-lib fallback error:', pdfLibError.message);
+            throw new Error(`Invalid password or unsupported encryption: ${qpdfError.message}`);
+          }
+        }
       } catch (passwordError) {
-        logger.error('PDF password error:', passwordError);
-        throw new Error('Invalid password for PDF file');
+        logger.error('PDF password error:', passwordError.message);
+        throw new Error('Invalid password for PDF file or unsupported encryption');
       }
     }
     
@@ -47,7 +99,9 @@ const parsePDF = async (filePath, password = null) => {
       };
     } catch (parseError) {
       // Check if it's a password-protected PDF
-      if (parseError.message.includes('password') || parseError.message.includes('encrypted')) {
+      if (parseError.message.includes('password') || 
+          parseError.message.includes('encrypted') ||
+          parseError.message.includes('Encrypted')) {
         throw new Error('PDF_PASSWORD_REQUIRED');
       }
       throw parseError;
@@ -57,7 +111,7 @@ const parsePDF = async (filePath, password = null) => {
     if (error.message === 'PDF_PASSWORD_REQUIRED') {
       throw error;
     }
-    throw new Error('Failed to parse PDF file');
+    throw new Error(`Failed to parse PDF file: ${error.message}`);
   }
 };
 
@@ -90,7 +144,7 @@ const tryPasswordCombinations = async (filePath, passwordHints, userProfile) => 
 const generatePasswordCombinations = async (passwordHints, userProfile) => {
   const passwords = [];
   
-  // Direct password hints from email
+  // Direct password hints from email or upload (HIGHEST PRIORITY)
   passwordHints.forEach(hint => {
     if (hint.hint && hint.hint.length >= 4) {
       passwords.push(hint.hint);
@@ -104,12 +158,38 @@ const generatePasswordCombinations = async (passwordHints, userProfile) => {
     const pan = userProfile.panNumber;
     const name = userProfile.fullName;
     
+    // ICICI Bank Pattern: First 4 letters of first name + DDMM from DOB
+    if (name && dob) {
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0];
+      const dobDate = new Date(dob);
+      const ddmm = dobDate.getDate().toString().padStart(2, '0') + 
+                   (dobDate.getMonth() + 1).toString().padStart(2, '0');
+      
+      // Generate ICICI pattern variations
+      const first4Upper = firstName.substring(0, 4).toUpperCase();
+      const first4Lower = firstName.substring(0, 4).toLowerCase();
+      const first4Title = firstName.substring(0, 1).toUpperCase() + firstName.substring(1, 4).toLowerCase();
+      
+      // Add all variations of ICICI pattern at the beginning
+      passwords.unshift(first4Upper + ddmm);  // BONT0906
+      passwords.unshift(first4Title + ddmm);  // Bont0906
+      passwords.unshift(first4Lower + ddmm);  // bont0906
+    }
+    
     // Date of birth combinations
     if (dob) {
       const dobDate = new Date(dob);
-      passwords.push(dobDate.getDate().toString().padStart(2, '0') + (dobDate.getMonth() + 1).toString().padStart(2, '0') + dobDate.getFullYear());
-      passwords.push(dobDate.getFullYear().toString());
-      passwords.push(dobDate.getDate().toString() + (dobDate.getMonth() + 1).toString() + dobDate.getFullYear().toString().substring(2));
+      const dd = dobDate.getDate().toString().padStart(2, '0');
+      const mm = (dobDate.getMonth() + 1).toString().padStart(2, '0');
+      const yyyy = dobDate.getFullYear().toString();
+      const yy = yyyy.substring(2);
+      
+      passwords.push(dd + mm + yyyy);  // DDMMYYYY
+      passwords.push(yyyy + mm + dd);  // YYYYMMDD
+      passwords.push(dd + mm + yy);    // DDMMYY
+      passwords.push(mm + dd + yyyy);  // MMDDYYYY
+      passwords.push(yyyy);            // YYYY only
     }
     
     // PAN number combinations
@@ -218,6 +298,17 @@ const extractTransactionsFromText = (text) => {
   const transactions = [];
   const lines = text.split('\n');
   
+  // Detect ICICI bank statement format
+  const isICICIFormat = lines.some(line => 
+    /DATE\s+MODE\*?\*?\s+PARTICULARS\s+DEPOSITS?\s+WITHDRAWALS?\s+BALANCE/i.test(line) ||
+    /\d{2}-\d{2}-\d{4}\s+.+\s+\d+[,\d]*\.\d{2}\s+\d+[,\d]*\.\d{2}/i.test(line)
+  );
+
+  if (isICICIFormat) {
+    logger.info('Detected ICICI bank statement format');
+    return extractICICIBankTransactions(text);
+  }
+  
   // Common patterns for transaction data
   const datePattern = /(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/;
   const amountPattern = /(\$|₹|€|£)?\s*(\d+[,\d]*\.?\d*)/;
@@ -247,6 +338,191 @@ const extractTransactionsFromText = (text) => {
     }
   });
   
+  return transactions;
+};
+
+/**
+ * Extract transactions from ICICI bank statement format
+ * Format: DATE MODE** PARTICULARS DEPOSITS WITHDRAWALS BALANCE
+ */
+const extractICICIBankTransactions = (text) => {
+  const transactions = [];
+  const lines = text.split('\n');
+  
+  // Pattern for ICICI transactions
+  // Example: 14-04-2025 ICICI CRM CAM/72041ORY/CASH DEP-Self/14-04-25/2488 15,500.00 35,555.55
+  // Example: 26-04-2025 MOBILE BANKING MMT/IMPS/511614818398/Hema Kotes/HDFC0002081 5,000.00 34,555.55
+  const transactionPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/;
+  
+  // Alternate pattern for withdrawals only
+  const withdrawalPattern = /^(\d{2}-\d{2}-\d{4})\s+(.*?)\s+([\d,]+\.\d{2})$/;
+  
+  // Pattern for balance brought forward
+  const balanceForwardPattern = /^(\d{2}-\d{2}-\d{4})\s+B\/F\s+([\d,]+\.\d{2})$/;
+  
+  let currentBalance = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    if (!line || /^DATE\s+MODE/i.test(line) || /^Page\s+\d+/i.test(line)) {
+      continue; // Skip headers and empty lines
+    }
+    
+    // Check for balance brought forward
+    const bfMatch = line.match(balanceForwardPattern);
+    if (bfMatch) {
+      currentBalance = parseFloat(bfMatch[2].replace(/,/g, ''));
+      logger.info(`Balance brought forward: ${currentBalance}`);
+      continue;
+    }
+    
+    // Try full transaction pattern (with deposit or withdrawal)
+    const txnMatch = line.match(transactionPattern);
+    if (txnMatch) {
+      const [, dateStr, description, amount1, amount2] = txnMatch;
+      
+      // Parse amounts
+      const amt1 = parseFloat(amount1.replace(/,/g, ''));
+      const amt2 = parseFloat(amount2.replace(/,/g, ''));
+      
+      // Determine if deposit or withdrawal
+      // If current balance + amt1 = amt2, then amt1 is deposit
+      // If current balance - amt1 = amt2, then amt1 is withdrawal
+      let type, amount, balance;
+      
+      if (currentBalance !== null) {
+        if (Math.abs((currentBalance + amt1) - amt2) < 0.01) {
+          // Deposit
+          type = 'credit';
+          amount = amt1;
+          balance = amt2;
+        } else if (Math.abs((currentBalance - amt1) - amt2) < 0.01) {
+          // Withdrawal
+          type = 'debit';
+          amount = amt1;
+          balance = amt2;
+        } else {
+          // Can't determine, assume based on pattern position
+          // Usually: DATE MODE PARTICULARS DEPOSITS WITHDRAWALS BALANCE
+          // So amt1 could be deposit, amt2 is always balance
+          type = 'credit';
+          amount = amt1;
+          balance = amt2;
+        }
+      } else {
+        // No previous balance, assume deposit
+        type = 'credit';
+        amount = amt1;
+        balance = amt2;
+      }
+      
+      currentBalance = balance;
+      
+      // Parse date (DD-MM-YYYY format)
+      const [day, month, year] = dateStr.split('-');
+      const transactionDate = new Date(`${year}-${month}-${day}`);
+      
+      // Clean description
+      let cleanDesc = description.trim();
+      
+      // Extract mode if present
+      let mode = 'Unknown';
+      if (cleanDesc.includes('ICICI CRM CAM')) {
+        mode = 'Cash Deposit';
+      } else if (cleanDesc.includes('MOBILE BANKING') || cleanDesc.includes('IMPS') || cleanDesc.includes('MMT')) {
+        mode = 'Mobile Banking - IMPS';
+      } else if (cleanDesc.includes('UPI')) {
+        mode = 'UPI';
+      } else if (cleanDesc.includes('NEFT')) {
+        mode = 'NEFT';
+      } else if (cleanDesc.includes('RTGS')) {
+        mode = 'RTGS';
+      } else if (cleanDesc.includes('ATM')) {
+        mode = 'ATM';
+      } else if (cleanDesc.includes('POS')) {
+        mode = 'POS';
+      }
+      
+      // Extract reference number
+      let referenceNumber = null;
+      const refMatch = cleanDesc.match(/\d{10,}/);
+      if (refMatch) {
+        referenceNumber = refMatch[0];
+      }
+      
+      // Extract UPI ID or account info if IMPS
+      let upiInfo = null;
+      const impsMatch = cleanDesc.match(/MMT\/IMPS\/(\d+)\/(.*?)\/(.*?)(?:\s|$)/);
+      if (impsMatch) {
+        upiInfo = {
+          transactionId: impsMatch[1],
+          beneficiaryName: impsMatch[2],
+          bankCode: impsMatch[3]
+        };
+      }
+      
+      transactions.push({
+        date: transactionDate,
+        description: cleanDesc,
+        amount: amount,
+        type: type,
+        balance: balance,
+        paymentMethod: mode.toLowerCase().replace(/\s+/g, '_'),
+        referenceNumber: referenceNumber,
+        upi: upiInfo,
+        rawLine: line,
+        source: 'bank_statement'
+      });
+      
+      logger.debug(`Extracted ICICI transaction: ${dateStr} - ${type} - ${amount} - ${cleanDesc.substring(0, 50)}`);
+      continue;
+    }
+    
+    // Try withdrawal-only pattern (some statements may have deposits and withdrawals in separate columns)
+    const withdrawMatch = line.match(withdrawalPattern);
+    if (withdrawMatch) {
+      const [, dateStr, descAndAmount, balance] = withdrawMatch;
+      
+      // Try to separate description from amount
+      const parts = descAndAmount.trim().split(/\s+/);
+      const balanceVal = parseFloat(balance.replace(/,/g, ''));
+      
+      // Last numeric part before balance might be withdrawal amount
+      let amount = null;
+      let description = descAndAmount;
+      
+      for (let j = parts.length - 1; j >= 0; j--) {
+        const cleanPart = parts[j].replace(/,/g, '');
+        if (/^\d+\.\d{2}$/.test(cleanPart)) {
+          amount = parseFloat(cleanPart);
+          description = parts.slice(0, j).join(' ');
+          break;
+        }
+      }
+      
+      if (amount) {
+        // Parse date (DD-MM-YYYY format)
+        const [day, month, year] = dateStr.split('-');
+        const transactionDate = new Date(`${year}-${month}-${day}`);
+        
+        transactions.push({
+          date: transactionDate,
+          description: description.trim(),
+          amount: amount,
+          type: 'debit',
+          balance: balanceVal,
+          rawLine: line,
+          source: 'bank_statement'
+        });
+        
+        currentBalance = balanceVal;
+        logger.debug(`Extracted ICICI withdrawal: ${dateStr} - ${amount} - ${description.substring(0, 50)}`);
+      }
+    }
+  }
+  
+  logger.info(`Extracted ${transactions.length} transactions from ICICI bank statement`);
   return transactions;
 };
 
@@ -1026,6 +1302,7 @@ module.exports = {
   categorizeTransaction,
   detectRecurringTransactions,
   extractTransactionsFromText,
+  extractICICIBankTransactions,
   extractTransactionsFromCSV,
   extractTransactionsFromJSON,
   tryPasswordCombinations,

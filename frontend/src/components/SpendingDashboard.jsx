@@ -40,6 +40,7 @@ const SpendingDashboard = () => {
   const [analysis, setAnalysis] = useState(null);
   const [activeTimeFrame, setActiveTimeFrame] = useState('3months');
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [uploadPassword, setUploadPassword] = useState('');
   
   // WebSocket integration
   const { isConnected, documentUpdates, analysisProgress, clearDocumentUpdate, clearAnalysisProgress } = useWebSocket();
@@ -160,6 +161,11 @@ const SpendingDashboard = () => {
       acceptedFiles.forEach(file => {
         formData.append('documents', file);
       });
+      
+      // Add password if provided
+      if (uploadPassword && uploadPassword.trim()) {
+        formData.append('password', uploadPassword.trim());
+      }
 
       const uploadResponse = await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -170,6 +176,9 @@ const SpendingDashboard = () => {
           type: 'success', 
           text: `${acceptedFiles.length} documents uploaded successfully. Processing...` 
         });
+
+        // Clear password after successful upload
+        setUploadPassword('');
 
         // Process documents
         const documentIds = uploadResponse.data.documents.map(doc => doc.id);
@@ -218,7 +227,7 @@ const SpendingDashboard = () => {
         // Poll for analysis completion
         const pollInterval = setInterval(async () => {
           try {
-            const statusRes = await api.get(`/api/financial/reports/${analysisId}`);
+            const statusRes = await api.get(`/financial/reports/${analysisId}`);
             
             if (statusRes.data.success && statusRes.data.data.report.status === 'completed') {
               clearInterval(pollInterval);
@@ -434,6 +443,23 @@ const SpendingDashboard = () => {
             </p>
             <p className="text-sm text-gray-400 mt-2">
               Supported: Bank statements, credit card statements, receipts, invoices
+            </p>
+          </div>
+
+          {/* Password field for encrypted documents */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password (Optional - for password-protected PDFs)
+            </label>
+            <input
+              type="password"
+              value={uploadPassword}
+              onChange={(e) => setUploadPassword(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter document password if required"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              If your document is password-protected, enter the password here before uploading
             </p>
           </div>
         </div>

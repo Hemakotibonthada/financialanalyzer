@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, TrendingUp, TrendingDown, PiggyBank, CreditCard } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, PiggyBank, CreditCard, TrendingUpIcon } from 'lucide-react';
 
 const FinancialSummary = ({ summary }) => {
   if (!summary) {
@@ -11,6 +11,7 @@ const FinancialSummary = ({ summary }) => {
     );
   }
 
+  // Net Savings = Income - Spending (investments already included in spending)
   const netSavings = (summary.monthlyIncome || 0) - (summary.monthlySpending || 0);
   const savingsRate = summary.monthlyIncome > 0 ? 
     Math.round((netSavings / summary.monthlyIncome) * 100) : 0;
@@ -30,6 +31,14 @@ const FinancialSummary = ({ summary }) => {
       icon: CreditCard,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
+      prefix: '₹'
+    },
+    {
+      title: 'Monthly Investments',
+      value: summary.monthlyInvestments || 0,
+      icon: TrendingUpIcon,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
       prefix: '₹'
     },
     {
@@ -58,18 +67,18 @@ const FinancialSummary = ({ summary }) => {
       </div>
       
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {summaryCards.map((card, index) => {
             const Icon = card.icon;
             return (
               <div key={index} className="relative">
-                <div className="flex items-center">
-                  <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${card.bgColor}`}>
+                <div className="flex flex-col">
+                  <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${card.bgColor} mb-3`}>
                     <Icon className={`w-6 h-6 ${card.color}`} />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                    <p className={`text-2xl font-bold ${card.color}`}>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
+                    <p className={`text-xl font-bold ${card.color}`}>
                       {card.prefix && card.prefix}
                       {Math.abs(card.value).toLocaleString('en-IN', {
                         minimumFractionDigits: card.prefix ? 2 : 0,
