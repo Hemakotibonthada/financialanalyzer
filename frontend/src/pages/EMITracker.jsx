@@ -76,6 +76,21 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
+// Chart card hover effect
+const chartCardHoverEffect = {
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    transform: 'scale(1.02)',
+    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+    borderTop: '4px solid',
+    borderColor: 'primary.main',
+    '& .chart-title': {
+      color: 'primary.main',
+      transform: 'translateX(8px)'
+    }
+  }
+};
+
 const EMITracker = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -199,8 +214,22 @@ const EMITracker = () => {
 
   if (loading && !overview) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="400px"
+        sx={{
+          '& .MuiCircularProgress-root': {
+            animation: 'pulse 1.5s ease-in-out infinite',
+            '@keyframes pulse': {
+              '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+              '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+            }
+          }
+        }}
+      >
+        <CircularProgress size={60} thickness={4} />
       </Box>
     );
   }
@@ -209,8 +238,19 @@ const EMITracker = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" gutterBottom>
-          EMI Tracker
+        <Typography 
+          variant="h4" 
+          gutterBottom 
+          sx={{
+            fontWeight: 'bold',
+            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            backgroundClip: 'text',
+            textFillColor: 'transparent',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
+          💳 EMI Tracker
         </Typography>
         <Box>
           <Button
@@ -218,7 +258,15 @@ const EMITracker = () => {
             startIcon={<RefreshIcon />}
             onClick={fetchAllData}
             disabled={loading}
-            sx={{ mr: 2 }}
+            sx={{ 
+              mr: 2,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                boxShadow: 4,
+                borderWidth: 2
+              }
+            }}
           >
             Refresh
           </Button>
@@ -227,6 +275,15 @@ const EMITracker = () => {
             startIcon={<DownloadIcon />}
             onClick={() => setSyncDialogOpen(true)}
             disabled={syncing}
+            sx={{
+              transition: 'all 0.3s ease',
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                boxShadow: 6,
+                background: 'linear-gradient(45deg, #1976D2 30%, #00BCD4 90%)'
+              }
+            }}
           >
             {syncing ? 'Syncing...' : 'Sync Statements'}
           </Button>
@@ -234,7 +291,18 @@ const EMITracker = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              boxShadow: 4,
+              transform: 'scale(1.01)'
+            }
+          }} 
+          onClose={() => setError(null)}
+        >
           {error}
         </Alert>
       )}
@@ -243,13 +311,29 @@ const EMITracker = () => {
       {overview && (
         <Grid container spacing={3} mb={4}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card 
+              elevation={4}
+              sx={{ 
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': { 
+                  transform: 'translateY(-8px)', 
+                  boxShadow: 8,
+                  bgcolor: 'primary.light',
+                  '& .MuiTypography-h3': {
+                    transform: 'scale(1.1)',
+                    transition: 'transform 0.3s ease'
+                  }
+                }
+              }}
+            >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
-                  <CreditCardIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Active EMIs</Typography>
+                  <CreditCardIcon color="primary" sx={{ mr: 1, fontSize: 32 }} />
+                  <Typography variant="h6" fontWeight="bold">Active EMIs</Typography>
                 </Box>
-                <Typography variant="h3">{overview.overview.totalActiveEMIs}</Typography>
+                <Typography variant="h3" sx={{ transition: 'transform 0.3s ease' }}>
+                  {overview.overview.totalActiveEMIs}
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {overview.overview.totalCompletedEMIs} completed
                 </Typography>
@@ -258,13 +342,27 @@ const EMITracker = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card 
+              elevation={4}
+              sx={{ 
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': { 
+                  transform: 'translateY(-8px)', 
+                  boxShadow: 8,
+                  bgcolor: 'error.light',
+                  '& .MuiTypography-h3': {
+                    transform: 'scale(1.1)',
+                    transition: 'transform 0.3s ease'
+                  }
+                }
+              }}
+            >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
-                  <AccountBalanceIcon color="error" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Outstanding</Typography>
+                  <AccountBalanceIcon color="error" sx={{ mr: 1, fontSize: 32 }} />
+                  <Typography variant="h6" fontWeight="bold">Outstanding</Typography>
                 </Box>
-                <Typography variant="h3" color="error">
+                <Typography variant="h3" color="error" sx={{ transition: 'transform 0.3s ease' }}>
                   {formatCurrency(overview.overview.totalOutstanding)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -275,13 +373,27 @@ const EMITracker = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card 
+              elevation={4}
+              sx={{ 
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': { 
+                  transform: 'translateY(-8px)', 
+                  boxShadow: 8,
+                  bgcolor: 'warning.light',
+                  '& .MuiTypography-h3': {
+                    transform: 'scale(1.1)',
+                    transition: 'transform 0.3s ease'
+                  }
+                }
+              }}
+            >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
-                  <TrendingUpIcon color="warning" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Monthly Burden</Typography>
+                  <TrendingUpIcon color="warning" sx={{ mr: 1, fontSize: 32 }} />
+                  <Typography variant="h6" fontWeight="bold">Monthly Burden</Typography>
                 </Box>
-                <Typography variant="h3" color="warning.main">
+                <Typography variant="h3" color="warning.main" sx={{ transition: 'transform 0.3s ease' }}>
                   {formatCurrency(overview.overview.monthlyBurden)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -292,13 +404,27 @@ const EMITracker = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card 
+              elevation={4}
+              sx={{ 
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': { 
+                  transform: 'translateY(-8px)', 
+                  boxShadow: 8,
+                  bgcolor: 'success.light',
+                  '& .MuiTypography-h3': {
+                    transform: 'scale(1.1)',
+                    transition: 'transform 0.3s ease'
+                  }
+                }
+              }}
+            >
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
-                  <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Total Paid</Typography>
+                  <CheckCircleIcon color="success" sx={{ mr: 1, fontSize: 32 }} />
+                  <Typography variant="h6" fontWeight="bold">Total Paid</Typography>
                 </Box>
-                <Typography variant="h3" color="success.main">
+                <Typography variant="h3" color="success.main" sx={{ transition: 'transform 0.3s ease' }}>
                   {formatCurrency(overview.overview.totalAmountPaid)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -313,8 +439,17 @@ const EMITracker = () => {
       {/* Insights */}
       {insights.length > 0 && (
         <Box mb={4}>
-          <Typography variant="h6" gutterBottom>
-            Insights & Recommendations
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            💡 Insights & Recommendations
           </Typography>
           <Grid container spacing={2}>
             {insights.map((insight, index) => (
@@ -327,8 +462,15 @@ const EMITracker = () => {
                       <Chip label={insight.action} size="small" />
                     )
                   }
+                  sx={{
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateX(8px)',
+                      boxShadow: 4
+                    }
+                  }}
                 >
-                  <Typography variant="subtitle2">{insight.title}</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">{insight.title}</Typography>
                   <Typography variant="body2">{insight.description}</Typography>
                 </Alert>
               </Grid>
@@ -339,7 +481,22 @@ const EMITracker = () => {
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{
+            '& .MuiTab-root': {
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                color: 'primary.main'
+              }
+            },
+            '& .Mui-selected': {
+              fontWeight: 'bold'
+            }
+          }}
+        >
           <Tab label="Overview" icon={<AssessmentIcon />} iconPosition="start" />
           <Tab label="Upcoming Payments" icon={<CalendarIcon />} iconPosition="start" />
           <Tab label="Active EMIs" icon={<CreditCardIcon />} iconPosition="start" />
@@ -351,10 +508,25 @@ const EMITracker = () => {
         <Grid container spacing={3} direction="column">
           {/* Pie Chart - Distribution by Provider */}
           <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-            <Card elevation={3}>
+            <Card 
+              elevation={3}
+              sx={{
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                  boxShadow: 12,
+                  borderTop: '4px solid',
+                  borderColor: 'primary.main'
+                }
+              }}
+            >
               <CardContent>
-                <Typography variant="h5" gutterBottom fontWeight="bold">
-                  EMI Distribution by Card Provider
+                <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  📊 EMI Distribution by Card Provider
                 </Typography>
                 <ResponsiveContainer width="100%" height={450}>
                   <PieChart>
@@ -382,11 +554,26 @@ const EMITracker = () => {
 
           {/* Bar Chart - Monthly Burden */}
           <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-            <Card elevation={3}>
+            <Card 
+              elevation={3}
+              sx={{
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                  boxShadow: 12,
+                  borderTop: '4px solid',
+                  borderColor: 'secondary.main'
+                }
+              }}
+            >
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h5" fontWeight="bold">
-                    Monthly EMI Burden
+                  <Typography variant="h5" fontWeight="bold" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    📈 Monthly EMI Burden
                   </Typography>
                   <FormControl size="small" sx={{ minWidth: 120 }}>
                     <Select
@@ -416,10 +603,15 @@ const EMITracker = () => {
           {/* Stacked Bar Chart - Principal vs Interest */}
           {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Principal vs Interest Breakdown
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    💰 Principal vs Interest Breakdown
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <BarChart data={chartData.stackedBarChart}>
@@ -440,10 +632,15 @@ const EMITracker = () => {
           {/* Line Chart - EMI Completion Timeline */}
           {chartData.lineChart && chartData.lineChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    EMI Completion Progress
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    📉 EMI Completion Progress
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <LineChart data={chartData.lineChart}>
@@ -469,10 +666,15 @@ const EMITracker = () => {
           {/* Area Chart - Payment Trend */}
           {chartData.barChart && chartData.barChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Payment Trend Analysis
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    📊 Payment Trend Analysis
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <AreaChart data={chartData.barChart}>
@@ -498,10 +700,15 @@ const EMITracker = () => {
           {/* Composed Chart - Multi-metric Analysis */}
           {chartData.barChart && chartData.barChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Monthly Burden with EMI Count
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    📊 Monthly Burden with EMI Count
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <ComposedChart data={chartData.barChart}>
@@ -528,10 +735,15 @@ const EMITracker = () => {
           {/* Scatter Chart - EMI Distribution Analysis */}
           {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Principal vs Interest Scatter Analysis
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🎯 Principal vs Interest Scatter Analysis
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <ScatterChart>
@@ -559,10 +771,15 @@ const EMITracker = () => {
           {/* Radar Chart - Card Provider Analysis */}
           {chartData.pieChart && chartData.pieChart.length > 0 && chartData.pieChart.length <= 8 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Card Provider 360° Comparison
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🕸️ Card Provider 360° Comparison
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <RadarChart data={chartData.pieChart}>
@@ -582,10 +799,15 @@ const EMITracker = () => {
           {/* Merchant Comparison Chart */}
           {chartData.merchantChart && chartData.merchantChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Top Merchants by Outstanding Amount
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🏪 Top Merchants by Outstanding Amount
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <ComposedChart data={chartData.merchantChart}>
@@ -613,10 +835,15 @@ const EMITracker = () => {
           {/* Interest Rate Distribution */}
           {chartData.rateDistribution && chartData.rateDistribution.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    Interest Rate Distribution
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    📊 Interest Rate Distribution
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <BarChart data={chartData.rateDistribution}>
@@ -640,10 +867,15 @@ const EMITracker = () => {
           {/* EMI Progress Funnel */}
           {chartData.lineChart && chartData.lineChart.length > 0 && (
             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Card elevation={3}>
+              <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
-                  <Typography variant="h5" gutterBottom fontWeight="bold">
-                    EMI Progress Overview
+                  <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    transition: 'all 0.3s ease'
+                  }}>
+                    🎯 EMI Progress Overview
                   </Typography>
                   <ResponsiveContainer width="100%" height={450}>
                     <BarChart data={chartData.lineChart.slice(0, 10)} layout="vertical">
@@ -676,7 +908,18 @@ const EMITracker = () => {
           {/* Monthly Breakdown */}
           {upcomingPayments.monthlyBreakdown.map((month, index) => (
             <Grid item xs={12} md={6} key={index}>
-              <Card>
+              <Card
+                elevation={3}
+                sx={{
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-8px)',
+                    boxShadow: 8,
+                    borderTop: '4px solid',
+                    borderColor: 'primary.main'
+                  }
+                }}
+              >
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Typography variant="h6">
@@ -730,7 +973,18 @@ const EMITracker = () => {
         <Grid container spacing={3}>
           {overview.activeEMIs.map((emi) => (
             <Grid item xs={12} md={6} lg={4} key={emi.id}>
-              <Card>
+              <Card 
+                elevation={3}
+                sx={{
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.03)',
+                    boxShadow: 8,
+                    borderLeft: '4px solid',
+                    borderColor: 'primary.main'
+                  }
+                }}
+              >
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
                     <Box>
@@ -798,31 +1052,94 @@ const EMITracker = () => {
       )}
 
       {/* Sync Dialog */}
-      <Dialog open={syncDialogOpen} onClose={() => setSyncDialogOpen(false)}>
-        <DialogTitle>Sync Credit Card Statements</DialogTitle>
-        <DialogContent>
+      <Dialog 
+        open={syncDialogOpen} 
+        onClose={() => setSyncDialogOpen(false)}
+        TransitionProps={{
+          style: {
+            transition: 'all 0.3s ease'
+          }
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+          color: 'white',
+          fontWeight: 'bold'
+        }}>
+          📥 Sync Credit Card Statements
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
           <Typography gutterBottom>
             This will fetch credit card statements from your Gmail and automatically extract EMI information.
           </Typography>
           
           {userProfile?.gmailConnected ? (
-            <Alert severity="success" sx={{ mt: 2 }}>
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mt: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: 4,
+                  transform: 'scale(1.02)'
+                }
+              }}
+            >
               ✓ Gmail is connected and ready to sync
             </Alert>
           ) : (
-            <Alert severity="warning" sx={{ mt: 2 }}>
+            <Alert 
+              severity="warning" 
+              sx={{ 
+                mt: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: 4,
+                  transform: 'scale(1.02)'
+                }
+              }}
+            >
               ⚠ Gmail not connected. Please go to Profile → Settings to connect Gmail first.
             </Alert>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSyncDialogOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button 
+            onClick={() => setSyncDialogOpen(false)}
+            sx={{
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                backgroundColor: 'grey.100'
+              }
+            }}
+          >
+            Cancel
+          </Button>
           <Button 
             onClick={handleSyncStatements} 
             variant="contained" 
             disabled={syncing || !userProfile?.gmailConnected}
+            sx={{
+              transition: 'all 0.3s ease',
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                boxShadow: 6,
+                background: 'linear-gradient(45deg, #1976D2 30%, #00BCD4 90%)'
+              },
+              '&:disabled': {
+                background: 'grey.300'
+              }
+            }}
           >
-            {syncing ? 'Syncing...' : 'Start Sync'}
+            {syncing ? '⏳ Syncing...' : '🚀 Start Sync'}
           </Button>
         </DialogActions>
       </Dialog>
