@@ -10,8 +10,8 @@ backend/logs/
 
 # Environment and credentials
 *.env
-backend/.env*
-frontend/.env*
+backend/.env
+frontend/.env
 Helper/credentials.json
 Helper/token.json
 
