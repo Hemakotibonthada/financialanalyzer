@@ -184,9 +184,11 @@ const AdvancedAnalytics = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-gray-900">30-Day Spending Forecast</h2>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getConfidenceColor(forecast.confidence)}`}>
-                    {forecast.confidence.toUpperCase()} Confidence
-                  </span>
+                  {forecast.confidence && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getConfidenceColor(forecast.confidence)}`}>
+                      {forecast.confidence.toUpperCase()} Confidence
+                    </span>
+                  )}
                 </div>
                 
                 {forecast.summary && (
@@ -279,20 +281,22 @@ const AdvancedAnalytics = () => {
               {/* Summary */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Unusual Transactions Detected</h2>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-gray-900">{anomalies.summary.totalAnomalies}</div>
-                    <div className="text-sm text-gray-600">Total Anomalies</div>
+                {anomalies.summary ? (
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="text-3xl font-bold text-gray-900">{anomalies.summary.totalAnomalies || 0}</div>
+                      <div className="text-sm text-gray-600">Total Anomalies</div>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                      <div className="text-3xl font-bold text-red-600">{anomalies.summary.highSeverity || 0}</div>
+                      <div className="text-sm text-gray-600">High Severity</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                      <div className="text-3xl font-bold text-yellow-600">{anomalies.summary.mediumSeverity || 0}</div>
+                      <div className="text-sm text-gray-600">Medium Severity</div>
+                    </div>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-red-600">{anomalies.summary.highSeverity}</div>
-                    <div className="text-sm text-gray-600">High Severity</div>
-                  </div>
-                  <div className="bg-yellow-50 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-yellow-600">{anomalies.summary.mediumSeverity}</div>
-                    <div className="text-sm text-gray-600">Medium Severity</div>
-                  </div>
-                </div>
+                ) : null}
 
                 {/* Anomaly List */}
                 {anomalies.detected.length === 0 ? (
