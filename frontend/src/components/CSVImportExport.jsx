@@ -31,16 +31,24 @@ import {
   FormControlLabel,
   Checkbox,
   Divider,
-  TextField
+  TextField,
+  Tab,
+  Tabs,
+  TableContainer,
+  LinearProgress
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
   Download as DownloadIcon,
   Visibility as PreviewIcon,
   CheckCircle as SuccessIcon,
+  CheckCircle,
   Error as ErrorIcon,
   Info as InfoIcon,
-  GetApp as TemplateIcon
+  GetApp as TemplateIcon,
+  FileUpload as FileUploadIcon,
+  InsertDriveFile as FileIcon,
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -264,7 +272,7 @@ const CSVImportExport = () => {
   // Render import tab
   const renderImportTab = () => (
     <Box>
-      <Stepper activeStep={importStep} sx={{ mb: 4 }}>
+      <Stepper activeStep={importStep} sx={{ mb: 4 }} alternativeLabel>
         {steps.map((label) => (
           <Step key={label}>
             <StepLabel>{label}</StepLabel>
@@ -274,38 +282,69 @@ const CSVImportExport = () => {
 
       {importStep === 0 && (
         <Box>
-          <input
-            accept=".csv"
-            style={{ display: 'none' }}
-            id="csv-file-input"
-            type="file"
-            onChange={handleFileSelect}
-          />
-          <label htmlFor="csv-file-input">
-            <Button
-              variant="contained"
-              component="span"
-              startIcon={<UploadIcon />}
-              fullWidth
-              size="large"
-              sx={{ mb: 2 }}
-            >
-              Select CSV File
-            </Button>
-          </label>
+          {/* File Upload Section */}
+          <Paper 
+            sx={{ 
+              p: 4, 
+              mb: 3, 
+              border: '2px dashed', 
+              borderColor: selectedFile ? 'success.main' : 'grey.300',
+              bgcolor: selectedFile ? 'success.50' : 'grey.50',
+              textAlign: 'center',
+              transition: 'all 0.3s'
+            }}
+          >
+            <input
+              accept=".csv"
+              style={{ display: 'none' }}
+              id="csv-file-input"
+              type="file"
+              onChange={handleFileSelect}
+            />
+            <label htmlFor="csv-file-input">
+              <FileUploadIcon 
+                sx={{ 
+                  fontSize: 64, 
+                  color: selectedFile ? 'success.main' : 'grey.400', 
+                  mb: 2 
+                }} 
+              />
+              <Typography variant="h6" gutterBottom>
+                {selectedFile ? 'File Selected' : 'Drop CSV file here or click to browse'}
+              </Typography>
+              <Button
+                variant="contained"
+                component="span"
+                startIcon={<UploadIcon />}
+                size="large"
+                sx={{ mt: 2 }}
+              >
+                {selectedFile ? 'Change File' : 'Select CSV File'}
+              </Button>
+            </label>
+          </Paper>
 
           {selectedFile && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+            <Alert 
+              severity="success" 
+              sx={{ mb: 3 }}
+              icon={<CheckCircle />}
+            >
+              <Typography variant="subtitle2" fontWeight="bold">
+                {selectedFile.name}
+              </Typography>
+              <Typography variant="body2">
+                Size: {(selectedFile.size / 1024).toFixed(2)} KB
+              </Typography>
             </Alert>
           )}
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Bank Format</InputLabel>
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Bank Statement Format</InputLabel>
             <Select
               value={bankFormat}
               onChange={(e) => setBankFormat(e.target.value)}
-              label="Bank Format"
+              label="Bank Statement Format"
             >
               {availableFormats.map((format) => (
                 <MenuItem key={format.id} value={format.id}>
@@ -315,51 +354,72 @@ const CSVImportExport = () => {
             </Select>
           </FormControl>
 
-          <Button
-            variant="outlined"
-            startIcon={<TemplateIcon />}
-            onClick={handleDownloadTemplate}
-            fullWidth
-            sx={{ mb: 2 }}
-          >
-            Download CSV Template
-          </Button>
-
-          <Button
-            variant="contained"
-            startIcon={<PreviewIcon />}
-            onClick={handlePreview}
-            disabled={!selectedFile || loading}
-            fullWidth
-          >
-            {loading ? <CircularProgress size={24} /> : 'Preview File'}
-          </Button>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Button
+                variant="outlined"
+                startIcon={<TemplateIcon />}
+                onClick={handleDownloadTemplate}
+                fullWidth
+                size="large"
+              >
+                Download Template
+              </Button>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Button
+                variant="contained"
+                startIcon={<PreviewIcon />}
+                onClick={handlePreview}
+                disabled={!selectedFile || loading}
+                fullWidth
+                size="large"
+              >
+                {loading ? <CircularProgress size={24} /> : 'Preview & Continue'}
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
       )}
 
       {importStep === 1 && previewData && (
         <Box>
-          <Alert severity="success" sx={{ mb: 2 }}>
-            <Typography variant="subtitle2">File Preview</Typography>
+          <Alert severity="success" sx={{ mb: 3 }} icon={<InfoIcon />}>
+            <Typography variant="subtitle2" fontWeight="bold">
+              File Preview - {selectedFile?.name}
+            </Typography>
             <Typography variant="body2">
-              Detected Format: <strong>{previewData.detectedFormat}</strong>
+              Detected Format: <Chip label={previewData.detectedFormat} size="small" color="primary" sx={{ ml: 1 }} />
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Showing first 5 rows of your data
             </Typography>
           </Alert>
 
-          <Paper sx={{ overflow: 'auto', mb: 2 }}>
-            <Table size="small">
+          <TableContainer component={Paper} sx={{ mb: 3, maxHeight: 400 }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
                   {previewData.headers.map((header, index) => (
-                    <TableCell key={index}>
-                      <strong>{header}</strong>
+                    <TableCell 
+                      key={index}
+                      sx={{ 
+                        bgcolor: 'primary.main', 
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {header}
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {previewData.preview.map((row, rowIndex) => (
-                  <TableRow key={rowIndex}>
+                  <TableRow 
+                    key={rowIndex}
+                    sx={{ '&:nth-of-type(odd)': { bgcolor: 'grey.50' } }}
+                  >
                     {previewData.headers.map((header, colIndex) => (
                       <TableCell key={colIndex}>{row[header]}</TableCell>
                     ))}
@@ -367,25 +427,33 @@ const CSVImportExport = () => {
                 ))}
               </TableBody>
             </Table>
-          </Paper>
+          </TableContainer>
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => setImportStep(0)}
-              disabled={loading}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleValidate}
-              disabled={loading}
-              fullWidth
-            >
-              {loading ? <CircularProgress size={24} /> : 'Validate & Continue'}
-            </Button>
-          </Box>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+              <Button
+                variant="outlined"
+                onClick={() => setImportStep(0)}
+                disabled={loading}
+                fullWidth
+                size="large"
+              >
+                Back
+              </Button>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Button
+                variant="contained"
+                onClick={handleValidate}
+                disabled={loading}
+                fullWidth
+                size="large"
+                startIcon={loading ? <CircularProgress size={20} /> : <CheckCircle />}
+              >
+                {loading ? 'Validating...' : 'Validate & Continue'}
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
       )}
 
@@ -499,97 +567,183 @@ const CSVImportExport = () => {
   // Render export tab
   const renderExportTab = () => (
     <Box>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
         Export Transactions to CSV
       </Typography>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Start Date"
-            type="date"
-            value={exportFilters.startDate}
-            onChange={(e) => setExportFilters({ ...exportFilters, startDate: e.target.value })}
-            InputLabelProps={{ shrink: true }}
-          />
+      <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+        <Typography variant="subtitle2" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
+          Filter Options (Optional)
+        </Typography>
+        
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Start Date"
+              type="date"
+              value={exportFilters.startDate}
+              onChange={(e) => setExportFilters({ ...exportFilters, startDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="End Date"
+              type="date"
+              value={exportFilters.endDate}
+              onChange={(e) => setExportFilters({ ...exportFilters, endDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
+              <InputLabel>Transaction Type</InputLabel>
+              <Select
+                value={exportFilters.type}
+                onChange={(e) => setExportFilters({ ...exportFilters, type: e.target.value })}
+                label="Transaction Type"
+              >
+                <MenuItem value="">All Types</MenuItem>
+                <MenuItem value="debit">Debit Only</MenuItem>
+                <MenuItem value="credit">Credit Only</MenuItem>
+                <MenuItem value="transfer">Transfers Only</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Category Filter"
+              value={exportFilters.category}
+              onChange={(e) => setExportFilters({ ...exportFilters, category: e.target.value })}
+              placeholder="e.g., Food, Transport"
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="End Date"
-            type="date"
-            value={exportFilters.endDate}
-            onChange={(e) => setExportFilters({ ...exportFilters, endDate: e.target.value })}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Transaction Type</InputLabel>
-            <Select
-              value={exportFilters.type}
-              onChange={(e) => setExportFilters({ ...exportFilters, type: e.target.value })}
-              label="Transaction Type"
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="debit">Debit</MenuItem>
-              <MenuItem value="credit">Credit</MenuItem>
-              <MenuItem value="transfer">Transfer</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Category"
-            value={exportFilters.category}
-            onChange={(e) => setExportFilters({ ...exportFilters, category: e.target.value })}
-          />
-        </Grid>
-      </Grid>
+      </Paper>
+
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          Leave filters empty to export all transactions. The exported file will be in CSV format compatible with Excel and other spreadsheet applications.
+        </Typography>
+      </Alert>
 
       <Button
         variant="contained"
         color="primary"
-        startIcon={<DownloadIcon />}
+        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
         onClick={handleExport}
         disabled={loading}
         fullWidth
         size="large"
+        sx={{ py: 1.5 }}
       >
-        {loading ? <CircularProgress size={24} /> : 'Export to CSV'}
+        {loading ? 'Generating Export...' : 'Export to CSV'}
       </Button>
     </Box>
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        CSV Import/Export
-      </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', pt: 12 }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <AssessmentIcon sx={{ fontSize: 48, color: 'primary.main', mr: 2 }} />
+            <Typography variant="h3" fontWeight="bold" color="primary">
+              CSV Import/Export
+            </Typography>
+          </Box>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
+            Seamlessly import transactions from bank statements or export your data for analysis
+          </Typography>
+        </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Button
-          variant={activeTab === 'import' ? 'contained' : 'text'}
-          onClick={() => setActiveTab('import')}
-          sx={{ mr: 1 }}
+        {/* Tab Navigation */}
+        <Paper sx={{ mb: 3, borderRadius: 2, overflow: 'hidden' }}>
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            variant="fullWidth"
+            sx={{
+              bgcolor: 'background.paper',
+              '& .MuiTab-root': {
+                fontSize: '1rem',
+                fontWeight: 600,
+                py: 2
+              }
+            }}
+          >
+            <Tab 
+              value="import" 
+              label="Import Data" 
+              icon={<UploadIcon />} 
+              iconPosition="start"
+            />
+            <Tab 
+              value="export" 
+              label="Export Data" 
+              icon={<DownloadIcon />} 
+              iconPosition="start"
+            />
+          </Tabs>
+        </Paper>
+
+        {/* Content Card */}
+        <Card 
+          elevation={3} 
+          sx={{ 
+            borderRadius: 3,
+            overflow: 'hidden',
+            background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)'
+          }}
         >
-          Import
-        </Button>
-        <Button
-          variant={activeTab === 'export' ? 'contained' : 'text'}
-          onClick={() => setActiveTab('export')}
-        >
-          Export
-        </Button>
+          <CardContent sx={{ p: 4 }}>
+            {activeTab === 'import' ? renderImportTab() : renderExportTab()}
+          </CardContent>
+        </Card>
+
+        {/* Info Section */}
+        <Paper sx={{ mt: 3, p: 3, borderRadius: 2, bgcolor: 'info.50' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ textAlign: 'center' }}>
+                <FileUploadIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Multiple Formats
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Support for various bank statement formats
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ textAlign: 'center' }}>
+                <CheckCircle sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Data Validation
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Automatic validation and error detection
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ textAlign: 'center' }}>
+                <FileIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Templates Available
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Download templates for easy formatting
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </Paper>
       </Box>
-
-      <Card>
-        <CardContent>
-          {activeTab === 'import' ? renderImportTab() : renderExportTab()}
-        </CardContent>
-      </Card>
     </Box>
   );
 };

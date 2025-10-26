@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
@@ -20,9 +20,18 @@ export const WebSocketProvider = ({ children }) => {
   const [documentUpdates, setDocumentUpdates] = useState({});
   const [analysisProgress, setAnalysisProgress] = useState({});
   const [notifications, setNotifications] = useState([]);
+  const socketRef = useRef(null);
+  const isConnectingRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple connections
+    if (isConnectingRef.current || socketRef.current) {
+      return;
+    }
+
     if (isAuthenticated && user) {
+      isConnectingRef.current = true;
+      
       // Get WebSocket URL from environment or construct from API URL
       const getWebSocketURL = () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -37,8 +46,12 @@ export const WebSocketProvider = ({ children }) => {
       const socketInstance = io(wsUrl, {
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionAttempts: 10,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        timeout: 20000,
+        transports: ['websocket', 'polling'],
+        upgrade: true
       });
 
       // Connection handlers
@@ -46,33 +59,70 @@ export const WebSocketProvider = ({ children }) => {
         console.log('✅ WebSocket connected:', socketInstance.id);
         setIsConnected(true);
         setSocket(socketInstance);
+        socketRef.current = socketInstance;
+        isConnectingRef.current = false;
         
         // Join user-specific room
         socketInstance.emit('join-user-room', user._id || user.id);
         
-        // Show connection notification
+        // Show connection notification (only once)
         toast.success('Real-time updates enabled', { 
           position: 'bottom-right',
-          autoClose: 2000 
+          autoClose: 2000,
+          toastId: 'ws-connect'
         });
       });
 
-      socketInstance.on('disconnect', () => {
-        console.log('❌ WebSocket disconnected');
+      socketInstance.on('disconnect', (reason) => {
+        console.log('❌ WebSocket disconnected:', reason);
         setIsConnected(false);
-        toast.warning('Real-time updates disconnected', { 
+        
+        // Clear socket ref on permanent disconnect
+        if (reason === 'io client disconnect' || reason === 'io server disconnect') {
+          socketRef.current = null;
+          isConnectingRef.current = false;
+        }
+        
+        // Only show toast for unexpected disconnections
+        if (reason !== 'io client disconnect') {
+          toast.warning('Real-time updates disconnected. Reconnecting...', { 
+            position: 'bottom-right',
+            autoClose: 3000,
+            toastId: 'ws-disconnect'
+          });
+        }
+      });
+
+      socketInstance.on('reconnect', (attemptNumber) => {
+        console.log(`✅ WebSocket reconnected after ${attemptNumber} attempts`);
+        toast.success('Real-time updates reconnected', { 
           position: 'bottom-right',
-          autoClose: 3000 
+          autoClose: 2000,
+          toastId: 'ws-reconnect'
+        });
+      });
+
+      socketInstance.on('reconnect_attempt', (attemptNumber) => {
+        console.log(`🔄 Reconnection attempt ${attemptNumber}`);
+      });
+
+      socketInstance.on('reconnect_error', (error) => {
+        console.error('Reconnection error:', error);
+      });
+
+      socketInstance.on('reconnect_failed', () => {
+        console.error('❌ Failed to reconnect after all attempts');
+        toast.error('Unable to connect to server. Please refresh the page.', { 
+          position: 'bottom-right',
+          autoClose: false,
+          toastId: 'ws-failed'
         });
       });
 
       socketInstance.on('connect_error', (error) => {
         console.error('WebSocket connection error:', error);
         setIsConnected(false);
-        toast.error('Failed to connect real-time updates', { 
-          position: 'bottom-right',
-          autoClose: 5000 
-        });
+        // Don't spam with error toasts during reconnection attempts
       });
 
       // Document processing updates
@@ -193,7 +243,11 @@ export const WebSocketProvider = ({ children }) => {
 
       return () => {
         console.log('🔌 Cleaning up WebSocket connection');
-        socketInstance.disconnect();
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+        }
+        isConnectingRef.current = false;
       };
     }
   }, [isAuthenticated, user]);

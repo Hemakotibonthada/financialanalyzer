@@ -104,10 +104,12 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
       const response = await api.get('/financial/expense-history', { params });
       
       if (response.data.success) {
-        setAllExpenses(response.data.data.expenses || []);
+        // Backend returns expenses directly in response.data.expenses
+        setAllExpenses(response.data.expenses || []);
       }
     } catch (error) {
       console.error('Error loading expense history:', error);
+      setAllExpenses([]);
     }
   };
 
@@ -115,10 +117,12 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
     try {
       const response = await api.get('/financial/expense-templates');
       if (response.data.success) {
-        setTemplates(response.data.data.templates || []);
+        // Backend returns templates directly in response.data.templates
+        setTemplates(response.data.templates || []);
       }
     } catch (error) {
       console.error('Error loading templates:', error);
+      setTemplates([]);
     }
   };
 
@@ -616,119 +620,183 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                 <div className="space-y-4">
                   {/* Search and Filters */}
                   <div className="space-y-3">
+                    {/* Search Bar */}
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
                         type="text"
-                        placeholder="Search expenses..."
+                        placeholder="Search by description or category..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && loadAllExpenses()}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      />
+                    </div>
 
-                <div className="flex gap-2">
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map(cat => (
-                      <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={filterDateRange}
-                    onChange={(e) => setFilterDateRange(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="3months">Last 3 Months</option>
-                    <option value="year">This Year</option>
-                    <option value="all">All Time</option>
-                  </select>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={loadAllExpenses}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Search className="w-4 h-4" />
-                    Apply Filters
-                  </button>
-                  <button
-                    onClick={handleExportExpenses}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export CSV
-                  </button>
-                </div>
-              </div>
-
-              {/* Expense History List */}
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {allExpenses.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No expenses found</p>
-                  </div>
-                ) : (
-                  allExpenses.map((exp) => (
-                    <div
-                      key={exp._id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg">
-                            {categories.find(c => c.value === exp.category)?.icon || '💰'}
-                          </span>
-                          <span className="font-medium text-gray-900">{exp.description}</span>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {categories.find(c => c.value === exp.category)?.label || 'Other'} • 
-                          {new Date(exp.date).toLocaleDateString('en-IN', { 
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(exp.amount)}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteExpense(exp._id)}
-                          className="text-red-500 hover:text-red-700"
-                          title="Delete expense"
+                    {/* Filter Pills */}
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex-1 min-w-[200px]">
+                        <select
+                          value={filterCategory}
+                          onChange={(e) => setFilterCategory(e.target.value)}
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
+                          <option value="all">🔍 All Categories</option>
+                          {categories.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex-1 min-w-[200px]">
+                        <select
+                          value={filterDateRange}
+                          onChange={(e) => setFilterDateRange(e.target.value)}
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="week">📅 This Week</option>
+                          <option value="month">📅 This Month</option>
+                          <option value="3months">📅 Last 3 Months</option>
+                          <option value="year">📅 This Year</option>
+                          <option value="all">📅 All Time</option>
+                        </select>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
 
-              {allExpenses.length > 0 && (
-                <div className="pt-3 border-t border-gray-200">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Total ({allExpenses.length} expenses)</span>
-                    <span className="font-bold text-lg text-gray-900">
-                      {formatCurrency(allExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
-                    </span>
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={loadAllExpenses}
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg font-medium"
+                      >
+                        <Search className="w-5 h-5" />
+                        Apply Filters
+                      </button>
+                      <button
+                        onClick={handleExportExpenses}
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg font-medium"
+                      >
+                        <Download className="w-5 h-5" />
+                        Export CSV
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Expense History List */}
+                  <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                    {allExpenses.length === 0 ? (
+                      <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                        <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
+                          <Calendar className="w-10 h-10 text-gray-400" />
+                        </div>
+                        <p className="text-lg font-medium text-gray-700">No expenses found</p>
+                        <p className="text-sm text-gray-500 mt-2">Try adjusting your filters or add your first expense</p>
+                      </div>
+                    ) : (
+                      <>
+                        {allExpenses.map((exp, index) => (
+                          <div
+                            key={exp._id}
+                            className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200"
+                            style={{
+                              animation: `slideIn 0.3s ease-out ${index * 0.05}s both`
+                            }}
+                          >
+                            <div className="flex items-center space-x-3 flex-1">
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center text-2xl shadow-sm">
+                                {categories.find(c => c.value === exp.category)?.icon || '💰'}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                  {exp.description}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                                    {categories.find(c => c.value === exp.category)?.label || 'Other'}
+                                  </span>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {new Date(exp.date).toLocaleDateString('en-IN', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <div className="text-right">
+                                <div className="font-bold text-lg text-gray-900">
+                                  {formatCurrency(exp.amount)}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {exp.currency || 'INR'}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteExpense(exp._id)}
+                                className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-lg transition-all"
+                                title="Delete expense"
+                              >
+                                <X className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Summary Footer */}
+                  {allExpenses.length > 0 && (
+                    <div className="sticky bottom-0 pt-4 border-t-2 border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 shadow-md">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="text-sm text-gray-600 font-medium">Total Expenses</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{allExpenses.length} transactions</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                            {formatCurrency(allExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            Avg: {formatCurrency(allExpenses.reduce((sum, exp) => sum + exp.amount, 0) / allExpenses.length)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <style jsx>{`
+                    @keyframes slideIn {
+                      from {
+                        opacity: 0;
+                        transform: translateY(10px);
+                      }
+                      to {
+                        opacity: 1;
+                        transform: translateY(0);
+                      }
+                    }
+                    .custom-scrollbar::-webkit-scrollbar {
+                      width: 8px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                      background: #f1f1f1;
+                      border-radius: 10px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                      background: #888;
+                      border-radius: 10px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                      background: #555;
+                    }
+                  `}</style>
                 </div>
               )}
-            </div>
-          )}
 
           {/* Templates Tab */}
           {activeTab === 'templates' && (

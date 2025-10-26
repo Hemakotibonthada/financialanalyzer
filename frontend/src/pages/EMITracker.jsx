@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
 import EMIMonthlyTrends from '../components/EMIMonthlyTrends';
 import {
   Box,
@@ -951,7 +952,10 @@ const EMITracker = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
+    <>
+      <Sidebar />
+      <Box className="lg:ml-72 min-h-screen bg-gray-50">
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
       {/* Enhanced Header with Gradient Background */}
       <Box 
         sx={{
@@ -4501,6 +4505,8 @@ const EMITracker = () => {
         </DialogActions>
       </Dialog>
     </Container>
+      </Box>
+    </>
   );
 };
 

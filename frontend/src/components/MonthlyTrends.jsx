@@ -34,12 +34,20 @@ const MonthlyTrends = ({ trendsData }) => {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
-        <p className="text-gray-500">No trend data available yet. Upload some documents to see your financial trends.</p>
+        <p className="text-gray-500">No trend data available yet. Upload bank statements to see your financial trends.</p>
       </div>
     );
   }
 
   const { trends, summary } = trendsData;
+  
+  // Log data source for debugging
+  console.log('📊 Monthly Trends - Data Source:', {
+    trendsCount: trends?.length,
+    hasRealData: trends && trends.length > 0,
+    dataSource: 'Backend API (/api/analytics/dashboard)',
+    basedOn: 'Bank Statements & Profile Settings'
+  });
 
   // Filter trends based on date range
   const filteredTrends = useMemo(() => {
@@ -65,14 +73,19 @@ const MonthlyTrends = ({ trendsData }) => {
   const filteredSummary = useMemo(() => {
     if (filteredTrends.length === 0) return summary;
     
+    const totalSpending = filteredTrends.reduce((sum, t) => sum + (t.totalSpending || 0), 0);
+    const totalIncome = filteredTrends.reduce((sum, t) => sum + (t.totalIncome || 0), 0);
+    const totalInvestments = filteredTrends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0);
+    const monthCount = filteredTrends.length;
+    
     return {
-      totalMonths: filteredTrends.length,
-      averageSpending: filteredTrends.reduce((sum, t) => sum + (t.totalSpending || 0), 0) / filteredTrends.length,
-      averageIncome: filteredTrends.reduce((sum, t) => sum + (t.totalIncome || 0), 0) / filteredTrends.length,
-      averageInvestments: filteredTrends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0) / filteredTrends.length,
-      spendingTrend: filteredTrends.length >= 2 ? 
+      totalMonths: monthCount,
+      averageSpending: monthCount > 0 ? totalSpending / monthCount : 0,
+      averageIncome: monthCount > 0 ? totalIncome / monthCount : 0,
+      averageInvestments: monthCount > 0 ? totalInvestments / monthCount : 0,
+      spendingTrend: filteredTrends.length >= 2 && filteredTrends[0].totalSpending > 0 ? 
         ((filteredTrends[filteredTrends.length - 1].totalSpending - filteredTrends[0].totalSpending) / filteredTrends[0].totalSpending * 100) : 0,
-      incomeTrend: filteredTrends.length >= 2 ? 
+      incomeTrend: filteredTrends.length >= 2 && filteredTrends[0].totalIncome > 0 ? 
         ((filteredTrends[filteredTrends.length - 1].totalIncome - filteredTrends[0].totalIncome) / filteredTrends[0].totalIncome * 100) : 0
     };
   }, [filteredTrends, summary]);
@@ -324,9 +337,22 @@ const MonthlyTrends = ({ trendsData }) => {
       </div>
       
       <div className="p-6">
-        {/* Enhanced Summary Stats with 4 cards */}
+        {/* Data Source Indicator */}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-sm text-blue-800">
+            <strong>Real Data:</strong> All values below are calculated from your actual bank statements and transaction history.
+          </p>
+        </div>
+
+        {/* Enhanced Summary Stats with 4 cards - Data from Bank Statements */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+          <div 
+            className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 cursor-help" 
+            title="Calculated from your bank statements and credit transactions"
+          >
             <div className="flex items-center justify-between mb-2">
               <DollarSign className="w-8 h-8 text-green-600" />
               <div className={`flex items-center text-xs font-medium ${
@@ -344,9 +370,13 @@ const MonthlyTrends = ({ trendsData }) => {
               ₹{(filteredSummary?.averageIncome || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <p className="text-xs text-green-600 mt-1">Avg Monthly Income</p>
+            <p className="text-[10px] text-green-500 mt-1 opacity-75">From bank statements</p>
           </div>
 
-          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
+          <div 
+            className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200 cursor-help"
+            title="Calculated from your bank statements and debit transactions"
+          >
             <div className="flex items-center justify-between mb-2">
               <Calendar className="w-8 h-8 text-red-600" />
               <div className={`flex items-center text-xs font-medium ${
@@ -364,9 +394,13 @@ const MonthlyTrends = ({ trendsData }) => {
               ₹{(filteredSummary?.averageSpending || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <p className="text-xs text-red-600 mt-1">Avg Monthly Spending</p>
+            <p className="text-[10px] text-red-500 mt-1 opacity-75">From bank statements</p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+          <div 
+            className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200 cursor-help"
+            title="Total investment transactions from your bank statements"
+          >
             <div className="flex items-center justify-between mb-2">
               <BarChart3 className="w-8 h-8 text-purple-600" />
               <div className="flex items-center text-xs font-medium text-purple-600">
@@ -378,9 +412,13 @@ const MonthlyTrends = ({ trendsData }) => {
               ₹{totalInvestments.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <p className="text-xs text-purple-600 mt-1">Total Investments</p>
+            <p className="text-[10px] text-purple-500 mt-1 opacity-75">From bank statements</p>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+          <div 
+            className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200 cursor-help"
+            title="Average savings calculated as Income - Spending from your transactions"
+          >
             <div className="flex items-center justify-between mb-2">
               <PiggyBank className="w-8 h-8 text-blue-600" />
               <div className={`flex items-center text-xs font-medium ${
@@ -397,7 +435,8 @@ const MonthlyTrends = ({ trendsData }) => {
             <p className="text-2xl font-bold text-blue-700">
               ₹{((filteredSummary?.averageIncome || 0) - (filteredSummary?.averageSpending || 0)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <p className="text-xs text-blue-600 mt-1">Avg Savings Rate</p>
+            <p className="text-xs text-blue-600 mt-1">Avg Savings Amount</p>
+            <p className="text-[10px] text-blue-500 mt-1 opacity-75">From bank statements</p>
           </div>
         </div>
 

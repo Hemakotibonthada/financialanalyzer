@@ -32,6 +32,8 @@ const LenderDashboard = lazy(() => import('./pages/LenderDashboardEnhanced'));
 const InvestmentPortfolio = lazy(() => import('./pages/InvestmentPortfolio'));
 const FinancialGoals = lazy(() => import('./pages/FinancialGoals'));
 const NetWorthTracker = lazy(() => import('./pages/NetWorthTracker'));
+const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+const ContactSupport = lazy(() => import('./pages/ContactSupport'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -69,6 +71,12 @@ function App() {
               <Route path="/register" element={<Register />} />
               
               <Route path="/" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
@@ -155,6 +163,24 @@ function App() {
               <Route path="/import-export" element={
                 <ProtectedRoute>
                   <CSVImportExport />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/help" element={
+                <ProtectedRoute>
+                  <HelpCenter />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/contact" element={
+                <ProtectedRoute>
+                  <ContactSupport />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/docs" element={
+                <ProtectedRoute>
+                  <HelpCenter />
                 </ProtectedRoute>
               } />
               

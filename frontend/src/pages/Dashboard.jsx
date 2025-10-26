@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BarChart3, TrendingUp, DollarSign, FileText, Plus, LogOut, User, RefreshCw, Mail, Sparkles, CreditCard, Shield, Search, Upload, Target, PieChart, Wallet, Menu, X, ChevronDown, Home, LayoutDashboard } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, FileText, Plus, LogOut, User, RefreshCw, Mail, Sparkles, CreditCard, Shield, Search, Upload, Target, PieChart, Wallet, Menu, X, ChevronDown, Home, LayoutDashboard, Settings, Bell, Lock, HelpCircle, FileQuestion, Phone, BookOpen, Globe, Palette, Database, Key, Users, Activity, Download, Share2, Building2 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import NotificationBell from '../components/NotificationBell';
+import Sidebar from '../components/Sidebar';
 import FinancialSummary from '../components/FinancialSummary';
 import MonthlyTrends from '../components/MonthlyTrends';
 import CategoryBreakdown from '../components/CategoryBreakdown';
@@ -19,28 +20,34 @@ import QuickExpenseEntry from '../components/QuickExpenseEntry';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
+    
+    // Close profile dropdown when clicking outside
     const handleClickOutside = (event) => {
-      if (profileDropdownOpen && !event.target.closest('.profile-dropdown')) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
         setProfileDropdownOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [profileDropdownOpen]);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -51,8 +58,16 @@ const Dashboard = () => {
       setDashboardData(response.data.data);
       
     } catch (error) {
-      setError('Failed to load dashboard data');
+      const errorMessage = error.message || 'Failed to load dashboard data';
+      setError(errorMessage);
       console.error('Dashboard error:', error);
+      
+      // Show user-friendly error message
+      if (error.code === 'ERR_NETWORK') {
+        setError('Cannot connect to server. Please ensure the backend is running on port 5001.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try refreshing the page.');
+      }
     } finally {
       setLoading(false);
     }
@@ -167,397 +182,426 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header */}
-      <nav className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            {/* Logo and Brand */}
-            <div className="flex items-center space-x-3">
-              <div className="bg-white p-2 rounded-lg shadow-md">
-                <BarChart3 className="w-6 h-6 text-blue-600" />
+    <>
+      {/* Sidebar Navigation */}
+      <Sidebar />
+
+      {/* Main Content Area */}
+      <div className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+        {/* Clean Header - Only Essential Items */}
+        <header className="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 lg:left-72 z-40 shadow-sm">
+          <div className="px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              {/* Page Title */}
+              <div className="flex items-center space-x-4">
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+                  <p className="text-sm text-gray-500">Welcome back, {user?.name}!</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">Financial Analyzer</h1>
-                <p className="text-xs text-blue-100 hidden sm:block">Smart Money Management</p>
-              </div>
-            </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-2">
-              <Link 
-                to="/dashboard" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <Home className="w-4 h-4 mr-1.5" />
-                Dashboard
-              </Link>
-              
-              <Link 
-                to="/search" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <Search className="w-4 h-4 mr-1.5" />
-                Search
-              </Link>
-              
-              <Link 
-                to="/emi-tracker" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <CreditCard className="w-4 h-4 mr-1.5" />
-                EMI
-              </Link>
-              
-              <Link 
-                to="/investments" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <PieChart className="w-4 h-4 mr-1.5" />
-                Investments
-              </Link>
-              
-              <Link 
-                to="/goals" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <Target className="w-4 h-4 mr-1.5" />
-                Goals
-              </Link>
-              
-              <Link 
-                to="/networth" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <Wallet className="w-4 h-4 mr-1.5" />
-                Net Worth
-              </Link>
-              
-              {(user?.role === 'lender' || user?.role === 'admin') && (
-                <Link 
-                  to="/lender-dashboard" 
-                  className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                >
-                  <DollarSign className="w-4 h-4 mr-1.5" />
-                  Lender
-                </Link>
-              )}
-              
-              <Link 
-                to="/advanced-analytics" 
-                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <Sparkles className="w-4 h-4 mr-1.5" />
-                Analytics
-              </Link>
+              {/* Right Side Actions */}
+              <div className="flex items-center space-x-3">
+                {/* Notifications */}
+                <NotificationBell />
+                
+                {/* Theme Toggle */}
+                <ThemeToggle />
 
-              {user?.role === 'admin' && (
-                <Link 
-                  to="/admin" 
-                  className="flex items-center px-3 py-2 bg-white/10 text-white border border-white/30 rounded-lg hover:bg-white/20 transition-all"
-                >
-                  <Shield className="w-4 h-4 mr-1.5" />
-                  Admin
-                </Link>
-              )}
-            </div>
+                {/* Quick Actions Dropdown */}
+                <div className="hidden sm:flex items-center space-x-2">
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all"
+                    title="Refresh Data"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                  
+                  <button
+                    onClick={triggerGmailSync}
+                    disabled={refreshing}
+                    className="inline-flex items-center px-3 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-all"
+                    title="Sync Gmail"
+                  >
+                    <Mail className="h-4 w-4" />
+                  </button>
+                  
+                  <Link
+                    to="/analyze"
+                    className="inline-flex items-center px-3 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-all"
+                    title="New Analysis"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Link>
+                </div>
 
-            {/* Right Side Actions */}
-            <div className="flex items-center space-x-3">
-              <Link 
-                to="/import-export" 
-                className="hidden md:flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-              >
-                <Upload className="w-4 h-4 mr-1.5" />
-                Import
-              </Link>
-              
-              <NotificationBell />
-              <ThemeToggle />
-              
-              {/* Profile Dropdown */}
-              <div className="relative profile-dropdown">
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                >
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <span className="hidden md:block font-medium">{user?.name?.split(' ')[0]}</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-
-                {/* Dropdown Menu */}
-                {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
-                      <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                        {user?.role}
-                      </span>
+                {/* Profile Dropdown */}
+                <div className="relative" ref={profileDropdownRef}>
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 transition-all"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white">
+                      {user?.name?.charAt(0).toUpperCase()}
                     </div>
-                    
-                    <Link 
-                      to="/profile" 
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setProfileDropdownOpen(false)}
-                    >
-                      <User className="w-4 h-4 mr-3 text-gray-400" />
-                      My Profile
-                    </Link>
-                    
-                    <button 
-                      onClick={() => {
-                        setProfileDropdownOpen(false);
-                        logout();
-                      }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+                    <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 text-white hover:bg-white/20 rounded-lg"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
+                  {/* Dropdown Menu */}
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 max-h-[85vh] overflow-y-auto">
+                      {/* Company Branding */}
+                      <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Building2 className="w-5 h-5" />
+                          <span className="font-bold text-sm">Circuvent Technologies</span>
+                        </div>
+                        <p className="text-xs text-blue-100">Enterprise Financial Management</p>
+                      </div>
+
+                      {/* User Info */}
+                      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                            {user?.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
+                            <p className="text-xs text-gray-600 truncate">{user?.email}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                            {user?.role}
+                          </span>
+                          <span className="text-xs text-gray-500">ID: {user?._id?.slice(-6)}</span>
+                        </div>
+                      </div>
+
+                      {/* Account Section */}
+                      <div className="py-2">
+                        <div className="px-4 py-1">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</p>
+                        </div>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Profile Settings</p>
+                            <p className="text-xs text-gray-500">Manage your account</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Bell className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Notifications</p>
+                            <p className="text-xs text-gray-500">Alerts & preferences</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Lock className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Security & Privacy</p>
+                            <p className="text-xs text-gray-500">Password & 2FA</p>
+                          </div>
+                        </Link>
+                      </div>
+
+                      {/* Preferences Section */}
+                      <div className="py-2 border-t border-gray-200">
+                        <div className="px-4 py-1">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Preferences</p>
+                        </div>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">General Settings</p>
+                            <p className="text-xs text-gray-500">App configuration</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Palette className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Appearance</p>
+                            <p className="text-xs text-gray-500">Theme & display</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Globe className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Language & Region</p>
+                            <p className="text-xs text-gray-500">Localization</p>
+                          </div>
+                        </Link>
+                      </div>
+
+                      {/* Data & Integrations */}
+                      <div className="py-2 border-t border-gray-200">
+                        <div className="px-4 py-1">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Data & Integrations</p>
+                        </div>
+                        <Link
+                          to="/import-export"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Database className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Data Management</p>
+                            <p className="text-xs text-gray-500">Import & export</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Key className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">API & Integrations</p>
+                            <p className="text-xs text-gray-500">Connect services</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Backup & Restore</p>
+                            <p className="text-xs text-gray-500">Data protection</p>
+                          </div>
+                        </Link>
+                      </div>
+
+                      {/* Help & Support */}
+                      <div className="py-2 border-t border-gray-200">
+                        <div className="px-4 py-1">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Help & Support</p>
+                        </div>
+                        <Link
+                          to="/help"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <HelpCircle className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Help Center</p>
+                            <p className="text-xs text-gray-500">FAQs & guides</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/docs"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Documentation</p>
+                            <p className="text-xs text-gray-500">User manual</p>
+                          </div>
+                        </Link>
+                        <Link
+                          to="/contact"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        >
+                          <Phone className="w-4 h-4" />
+                          <div className="flex-1">
+                            <p className="font-medium">Contact Support</p>
+                            <p className="text-xs text-gray-500">Get assistance</p>
+                          </div>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            // Open feedback modal
+                          }}
+                          className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors w-full"
+                        >
+                          <FileQuestion className="w-4 h-4" />
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">Send Feedback</p>
+                            <p className="text-xs text-gray-500">Share your thoughts</p>
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* Enterprise Features (Admin/Lender only) */}
+                      {(user?.role === 'admin' || user?.role === 'lender') && (
+                        <div className="py-2 border-t border-gray-200 bg-purple-50">
+                          <div className="px-4 py-1">
+                            <p className="text-xs font-semibold text-purple-700 uppercase tracking-wider">Enterprise</p>
+                          </div>
+                          {user?.role === 'admin' && (
+                            <Link
+                              to="/admin"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center space-x-3 px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-100 transition-colors"
+                            >
+                              <Shield className="w-4 h-4" />
+                              <div className="flex-1">
+                                <p className="font-medium">Admin Console</p>
+                                <p className="text-xs text-purple-600">System management</p>
+                              </div>
+                            </Link>
+                          )}
+                          <Link
+                            to="/profile"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center space-x-3 px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-100 transition-colors"
+                          >
+                            <Users className="w-4 h-4" />
+                            <div className="flex-1">
+                              <p className="font-medium">Team Management</p>
+                              <p className="text-xs text-purple-600">Manage users</p>
+                            </div>
+                          </Link>
+                          <Link
+                            to="/profile"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center space-x-3 px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-100 transition-colors"
+                          >
+                            <Activity className="w-4 h-4" />
+                            <div className="flex-1">
+                              <p className="font-medium">Activity Logs</p>
+                              <p className="text-xs text-purple-600">Audit trail</p>
+                            </div>
+                          </Link>
+                        </div>
+                      )}
+
+                      {/* App Info */}
+                      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Version 2.0.0</span>
+                          <span>© 2025 Circuvent Technologies</span>
+                        </div>
+                      </div>
+
+                      {/* Logout */}
+                      <div className="border-t border-gray-200 pt-2">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
+        </header>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden pb-4 space-y-2 animate-in slide-in-from-top">
-              <Link 
-                to="/dashboard" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Home className="w-4 h-4 inline mr-2" />
-                Dashboard
-              </Link>
-              
-              <Link 
-                to="/search" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Search className="w-4 h-4 inline mr-2" />
-                Search
-              </Link>
-              
-              <Link 
-                to="/import-export" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Upload className="w-4 h-4 inline mr-2" />
-                Import/Export
-              </Link>
-              
-              <Link 
-                to="/emi-tracker" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <CreditCard className="w-4 h-4 inline mr-2" />
-                EMI Tracker
-              </Link>
-              
-              <Link 
-                to="/investments" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <PieChart className="w-4 h-4 inline mr-2" />
-                Investments
-              </Link>
-              
-              <Link 
-                to="/goals" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Target className="w-4 h-4 inline mr-2" />
-                Financial Goals
-              </Link>
-              
-              <Link 
-                to="/networth" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Wallet className="w-4 h-4 inline mr-2" />
-                Net Worth
-              </Link>
-              
-              {(user?.role === 'lender' || user?.role === 'admin') && (
-                <Link 
-                  to="/lender-dashboard" 
-                  className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <DollarSign className="w-4 h-4 inline mr-2" />
-                  Lender Dashboard
-                </Link>
-              )}
-              
-              <Link 
-                to="/advanced-analytics" 
-                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Sparkles className="w-4 h-4 inline mr-2" />
-                Advanced Analytics
-              </Link>
+        {/* Dashboard Content */}
+        <main className="pt-20 px-4 sm:px-6 lg:px-8 py-8">
+          {/* Financial Summary */}
+          <div className="mb-8">
+            <FinancialSummary summary={dashboardData?.summary} />
+          </div>
 
-              {user?.role === 'admin' && (
-                <Link 
-                  to="/admin" 
-                  className="block px-3 py-2 bg-white/10 text-white border border-white/30 rounded-lg hover:bg-white/20 transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Shield className="w-4 h-4 inline mr-2" />
-                  Admin Panel
-                </Link>
-              )}
+          {/* Financial Health Score */}
+          <div className="mb-8">
+            <FinancialHealth healthData={dashboardData?.charts?.financialHealth} />
+          </div>
+
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Monthly Trends */}
+            <div className="lg:col-span-2">
+              <MonthlyTrends trendsData={dashboardData?.charts?.monthlyTrends} />
             </div>
-          )}
-        </div>
-      </nav>
-
-      {/* Dashboard Header with Actions */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+            
+            {/* Category Breakdown */}
             <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name}!</h2>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
-              </div>
-              <p className="text-gray-600 mt-1">
-                {dashboardData?.summary?.lastSyncDate ? 
-                  `Last sync: ${new Date(dashboardData.summary.lastSyncDate).toLocaleString()}` :
-                  'Here\'s your comprehensive financial overview'
-                }
-              </p>
+              <CategoryBreakdown categoryData={dashboardData?.charts?.categoryBreakdown} />
             </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 shadow-sm transition-all"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-              <button
-                onClick={triggerGmailSync}
-                disabled={refreshing}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-sm transition-all"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Sync Gmail
-              </button>
-              <Link
-                to="/analyze"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-sm transition-all"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Analysis
-              </Link>
+            
+            {/* Spending Patterns */}
+            <div>
+              <SpendingPatterns patternsData={dashboardData?.charts?.spendingPatterns} />
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Financial Summary */}
-        <div className="mb-8">
-          <FinancialSummary summary={dashboardData?.summary} />
-        </div>
-
-        {/* Financial Health Score */}
-        <div className="mb-8">
-          <FinancialHealth healthData={dashboardData?.charts?.financialHealth} />
-        </div>
-
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Monthly Trends */}
-          <div className="lg:col-span-2">
-            <MonthlyTrends trendsData={dashboardData?.charts?.monthlyTrends} />
+          {/* Budget, Savings, and Credit Score */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <BudgetTracker budgetData={dashboardData?.charts?.budgetAnalysis} />
+            <SavingsGoals savingsData={dashboardData?.insights?.savingsGoals} />
+            <CreditScoreCard />
           </div>
-          
-          {/* Category Breakdown */}
-          <div>
-            <CategoryBreakdown categoryData={dashboardData?.charts?.categoryBreakdown} />
-          </div>
-          
-          {/* Spending Patterns */}
-          <div>
-            <SpendingPatterns patternsData={dashboardData?.charts?.spendingPatterns} />
-          </div>
-        </div>
 
-        {/* Budget, Savings, and Credit Score */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <BudgetTracker budgetData={dashboardData?.charts?.budgetAnalysis} />
-          <SavingsGoals savingsData={dashboardData?.insights?.savingsGoals} />
-          <CreditScoreCard />
-        </div>
-
-        {/* Insights Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recommendations */}
-          <div className="lg:col-span-2">
-            <RecommendationsPanel recommendations={dashboardData?.insights?.recommendations} />
+          {/* Insights Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Recommendations */}
+            <div className="lg:col-span-2">
+              <RecommendationsPanel recommendations={dashboardData?.insights?.recommendations} />
+            </div>
+            
+            {/* Recurring Transactions */}
+            <div>
+              <RecurringTransactions recurringData={dashboardData?.insights?.recurringTransactions} />
+            </div>
           </div>
-          
-          {/* Recurring Transactions */}
-          <div>
-            <RecurringTransactions recurringData={dashboardData?.insights?.recurringTransactions} />
-          </div>
-        </div>
 
-        {/* Recent Activity */}
-        {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
-          <div className="mt-8">
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Recent Analysis Activity</h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  {dashboardData.recentActivity.slice(0, 5).map((activity) => (
-                    <div key={activity._id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center space-x-3">
-                        <div className={`h-2 w-2 rounded-full ${
-                          activity.status === 'completed' ? 'bg-green-500' : 
-                          activity.status === 'processing' ? 'bg-yellow-500' : 
-                          activity.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
-                        }`}></div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 capitalize">
-                            {activity.analysisType?.replace(/_/g, ' ')}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {activity.status === 'completed' && activity.transactionsAnalyzed ? 
-                              `${activity.transactionsAnalyzed} transactions analyzed` : 
-                              activity.status === 'processing' ? 'Processing...' :
-                              activity.status === 'failed' ? 'Failed' :
-                              'Pending...'
-                            }
-                          </p>
+          {/* Recent Activity */}
+          {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
+            <div className="mt-8">
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">Recent Analysis Activity</h3>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                    {dashboardData.recentActivity.slice(0, 5).map((activity) => (
+                      <div key={activity._id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center space-x-3">
+                          <div className={`h-2 w-2 rounded-full ${
+                            activity.status === 'completed' ? 'bg-green-500' : 
+                            activity.status === 'processing' ? 'bg-yellow-500' : 
+                            activity.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                          }`}></div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 capitalize">
+                              {activity.analysisType?.replace(/_/g, ' ')}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {activity.status === 'completed' && activity.transactionsAnalyzed ? 
+                                `${activity.transactionsAnalyzed} transactions analyzed` : 
+                                activity.status === 'processing' ? 'Processing...' :
+                                activity.status === 'failed' ? 'Failed' :
+                                'Pending...'
+                              }
+                            </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -577,12 +621,13 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        )}
-      </div>
+          )}
+        </main>
 
-      {/* Quick Expense Entry - Floating Button */}
-      <QuickExpenseEntry onExpenseAdded={fetchDashboardData} />
-    </div>
+        {/* Quick Expense Entry - Floating Button */}
+        <QuickExpenseEntry onExpenseAdded={fetchDashboardData} />
+      </div>
+    </>
   );
 };
 

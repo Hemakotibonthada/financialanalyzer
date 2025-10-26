@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
@@ -109,13 +110,13 @@ function InvestmentPortfolio() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [investmentsRes, portfolioRes, maturitiesRes, allocationRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/investments`, {
+        axios.get(`${import.meta.env.VITE_API_URL}/investments`, {
           headers,
           params: filters
         }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/investments/portfolio`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/investments/maturities?days=90`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/investments/analytics/allocation`, { headers })
+        axios.get(`${import.meta.env.VITE_API_URL}/investments/portfolio`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/investments/maturities?days=90`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/investments/analytics/allocation`, { headers })
       ]);
 
       setInvestments(investmentsRes.data.data || []);
@@ -136,13 +137,13 @@ function InvestmentPortfolio() {
 
       if (editingInvestment) {
         await axios.put(
-          `${import.meta.env.VITE_API_URL}/api/investments/${editingInvestment._id}`,
+          `${import.meta.env.VITE_API_URL}/investments/${editingInvestment._id}`,
           formData,
           { headers }
         );
       } else {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/investments`,
+          `${import.meta.env.VITE_API_URL}/investments`,
           formData,
           { headers }
         );
@@ -162,7 +163,7 @@ function InvestmentPortfolio() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/investments/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/investments/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();
@@ -243,134 +244,201 @@ function InvestmentPortfolio() {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography>Loading portfolio...</Typography>
-      </Container>
+      <>
+        <Sidebar />
+        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+          <Typography>Loading portfolio...</Typography>
+        </Box>
+      </>
     );
   }
 
+  const totalInvested = portfolio?.totalInvested || 0;
+  const currentValue = portfolio?.currentValue || 0;
+  const totalReturns = currentValue - totalInvested;
+  const returnsPercentage = totalInvested > 0 ? (totalReturns / totalInvested) * 100 : 0;
+
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Investment Portfolio
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            color="primary"
-          >
-            Export
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              resetForm();
-              setOpenAddDialog(true);
-            }}
-          >
-            Add Investment
-          </Button>
+    <>
+      <Sidebar />
+      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+        {/* Enhanced Header with Gradient */}
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: 0,
+            p: 4,
+            mb: 3,
+            boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
+          }}
+        >
+          <Container maxWidth="xl">
+            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+              <Box>
+                <Typography 
+                  variant="h3" 
+                  sx={{
+                    fontWeight: 800,
+                    color: 'white',
+                    mb: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}
+                >
+                  📊 Investment Portfolio
+                </Typography>
+                <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                  Track and manage your investment portfolio with advanced analytics
+                </Typography>
+              </Box>
+              <Box display="flex" gap={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' }
+                  }}
+                >
+                  Export
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    resetForm();
+                    setOpenAddDialog(true);
+                  }}
+                  sx={{
+                    bgcolor: 'white',
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
+                  }}
+                >
+                  Add Investment
+                </Button>
+              </Box>
+            </Box>
+          </Container>
         </Box>
-      </Box>
 
-      {/* Summary Cards */}
-      {portfolio && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <AccountBalanceIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Total Invested
-                  </Typography>
-                </Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {formatCurrency(portfolio.totalInvested || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
+        <Container maxWidth="xl">
+          {/* Enhanced Summary Cards with Gradients */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total Invested
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalInvested)}
+                      </Typography>
+                    </Box>
+                    <AccountBalanceIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Current Value
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(currentValue)}
+                      </Typography>
+                    </Box>
+                    <ShowChartIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: totalReturns >= 0 
+                  ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+                  : 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total Returns
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalReturns)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>
+                        {returnsPercentage >= 0 ? '+' : ''}{returnsPercentage.toFixed(2)}%
+                      </Typography>
+                    </Box>
+                    {totalReturns >= 0 ? (
+                      <TrendingUpIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                    ) : (
+                      <TrendingDownIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total Assets
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {investments.length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>
+                        {INVESTMENT_TYPES.length} Types
+                      </Typography>
+                    </Box>
+                    <AssessmentIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <ShowChartIcon color="success" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Current Value
-                  </Typography>
-                </Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {formatCurrency(portfolio.currentValue || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  {portfolio.absoluteReturn >= 0 ? (
-                    <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                  ) : (
-                    <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                  )}
-                  <Typography variant="body2" color="text.secondary">
-                    Total Returns
-                  </Typography>
-                </Box>
-                <Typography 
-                  variant="h5" 
-                  fontWeight="bold"
-                  color={portfolio.absoluteReturn >= 0 ? 'success.main' : 'error.main'}
-                >
-                  {formatCurrency(portfolio.absoluteReturn || 0)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatPercent(portfolio.returnPercentage || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <AssessmentIcon color="info" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Day Change
-                  </Typography>
-                </Box>
-                <Typography 
-                  variant="h5" 
-                  fontWeight="bold"
-                  color={portfolio.dayChange >= 0 ? 'success.main' : 'error.main'}
-                >
-                  {formatCurrency(portfolio.dayChange || 0)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatPercent(portfolio.dayChangePercent || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
-
-      {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Holdings" />
-          <Tab label="Asset Allocation" />
-          <Tab label="Performance" />
-          <Tab label="Upcoming Maturities" />
+          {/* Tabs */}
+          <Paper sx={{ mb: 3 }}>
+            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+              <Tab label="Holdings" />
+              <Tab label="Asset Allocation" />
+              <Tab label="Performance" />
+              <Tab label="Upcoming Maturities" />
         </Tabs>
       </Paper>
 
@@ -904,7 +972,9 @@ function InvestmentPortfolio() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+        </Container>
+      </Box>
+    </>
   );
 }
 
