@@ -77,33 +77,35 @@ const MonthlyTrends = ({ trendsData }) => {
     };
   }, [filteredTrends, summary]);
 
-  // Prepare datasets (always line chart)
+  // Prepare datasets (always line chart with area fills)
   const datasets = [
     {
       label: 'Income',
       data: filteredTrends.map(trend => trend.totalIncome || 0),
       borderColor: '#10B981',
-      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      backgroundColor: 'rgba(16, 185, 129, 0.2)',
       tension: 0.4,
       fill: true,
       pointBackgroundColor: '#10B981',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
-      pointRadius: 5,
-      pointHoverRadius: 7
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2
     },
     {
       label: 'Spending',
       data: filteredTrends.map(trend => trend.totalSpending || 0),
-      borderColor: '#EF4444',
-      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderColor: '#F97316',
+      backgroundColor: 'rgba(249, 115, 22, 0.2)',
       tension: 0.4,
       fill: true,
-      pointBackgroundColor: '#EF4444',
+      pointBackgroundColor: '#F97316',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
-      pointRadius: 5,
-      pointHoverRadius: 7
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2
     }
   ];
 
@@ -112,24 +114,25 @@ const MonthlyTrends = ({ trendsData }) => {
     datasets.push({
       label: 'Investments',
       data: filteredTrends.map(trend => trend.totalInvestments || 0),
-      borderColor: '#8B5CF6',
-      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      borderColor: '#A855F7',
+      backgroundColor: 'rgba(168, 85, 247, 0.2)',
       tension: 0.4,
       fill: true,
-      pointBackgroundColor: '#8B5CF6',
+      pointBackgroundColor: '#A855F7',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
-      pointRadius: 5,
-      pointHoverRadius: 7
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2
     });
   }
 
-  // Add net savings (always show in line chart)
+  // Add net savings (dashed line)
   datasets.push({
     label: 'Net Savings',
-    data: filteredTrends.map(trend => (trend.totalIncome || 0) - (trend.totalSpending || 0)),
+    data: filteredTrends.map(trend => (trend.totalIncome || 0) - (trend.totalSpending || 0) - (trend.totalInvestments || 0)),
     borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    backgroundColor: 'transparent',
     tension: 0.4,
     fill: false,
     pointBackgroundColor: '#3B82F6',
@@ -137,7 +140,8 @@ const MonthlyTrends = ({ trendsData }) => {
     pointBorderWidth: 2,
     pointRadius: 4,
     pointHoverRadius: 6,
-    borderDash: [5, 5]
+    borderDash: [5, 5],
+    borderWidth: 2
   });
 
   // Chart.js configuration
@@ -154,29 +158,37 @@ const MonthlyTrends = ({ trendsData }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'bottom',
+        align: 'center',
         labels: {
-          padding: 20,
+          padding: 15,
           usePointStyle: true,
+          pointStyle: 'circle',
           font: {
-            size: 12,
-            weight: '500'
-          }
+            size: 13,
+            weight: '500',
+            family: "'Inter', 'system-ui', sans-serif"
+          },
+          color: '#374151',
+          boxWidth: 8,
+          boxHeight: 8
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         titleColor: '#fff',
         bodyColor: '#fff',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
         borderWidth: 1,
         padding: 12,
         displayColors: true,
+        boxPadding: 6,
+        usePointStyle: true,
         callbacks: {
           label: function(context) {
             const label = context.dataset.label || '';
             const value = context.parsed.y || 0;
-            return `${label}: ₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return `${label}: ₹${value.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
           }
         }
       }
@@ -184,35 +196,46 @@ const MonthlyTrends = ({ trendsData }) => {
     scales: {
       x: {
         grid: {
-          display: false
+          display: false,
+          drawBorder: false
         },
         border: {
           display: false
         },
         ticks: {
           font: {
-            size: 11
-          }
+            size: 12,
+            family: "'Inter', 'system-ui', sans-serif"
+          },
+          color: '#6B7280',
+          padding: 8
         }
       },
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(0, 0, 0, 0.05)'
+          color: 'rgba(0, 0, 0, 0.05)',
+          drawBorder: false
         },
         border: {
-          display: false
+          display: false,
+          dash: [3, 3]
         },
         ticks: {
           callback: function(value) {
-            if (value >= 1000) {
+            if (value >= 100000) {
+              return '₹' + (value / 100000).toFixed(0) + 'L';
+            } else if (value >= 1000) {
               return '₹' + (value / 1000).toFixed(0) + 'k';
             }
             return '₹' + value.toLocaleString('en-IN');
           },
           font: {
-            size: 11
-          }
+            size: 11,
+            family: "'Inter', 'system-ui', sans-serif"
+          },
+          color: '#6B7280',
+          padding: 10
         }
       }
     },
@@ -221,7 +244,8 @@ const MonthlyTrends = ({ trendsData }) => {
       mode: 'index'
     },
     animation: {
-      duration: 1000
+      duration: 1000,
+      easing: 'easeInOutQuart'
     }
   };
 
@@ -406,7 +430,7 @@ const MonthlyTrends = ({ trendsData }) => {
         )}
 
         {/* Interactive Chart - Always Line Chart */}
-        <div className="h-96 mt-6">
+        <div className="h-[500px] mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
           <Line data={chartData} options={chartOptions} />
         </div>
 

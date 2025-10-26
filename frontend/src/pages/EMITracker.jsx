@@ -75,7 +75,8 @@ import {
   Save as SaveIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Payment as PaymentIcon
+  Payment as PaymentIcon,
+  AttachMoney as MoneyIcon
 } from '@mui/icons-material';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -124,6 +125,11 @@ const EMITracker = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [animateCards, setAnimateCards] = useState(false);
   
+  // Monthly Trends State
+  const [monthlyTrends, setMonthlyTrends] = useState(null);
+  const [trendsMonths, setTrendsMonths] = useState(6);
+  const [trendsLoading, setTrendsLoading] = useState(false);
+  
   // Manual EMI Dialog State
   const [manualEMIDialogOpen, setManualEMIDialogOpen] = useState(false);
   const [manualEMILoading, setManualEMILoading] = useState(false);
@@ -154,6 +160,66 @@ const EMITracker = () => {
   // Upcoming Payments State
   const [upcomingMonthsToShow, setUpcomingMonthsToShow] = useState(1); // Default show next month only
 
+  // Loans Given State
+  const [loansGiven, setLoansGiven] = useState([]);
+  const [loansGivenSummary, setLoansGivenSummary] = useState(null);
+  const [loansGivenLoading, setLoansGivenLoading] = useState(false);
+  const [loanGivenDialogOpen, setLoanGivenDialogOpen] = useState(false);
+  const [selectedLoanGiven, setSelectedLoanGiven] = useState(null);
+  const [loanGivenFormData, setLoanGivenFormData] = useState({
+    borrowerName: '',
+    relationship: 'Friend',
+    amount: '',
+    loanDate: new Date().toISOString().split('T')[0],
+    expectedRepaymentDate: '',
+    purpose: '',
+    contactDetails: {
+      phone: '',
+      email: ''
+    },
+    hasInterest: false,
+    interestRate: 0,
+    notes: '',
+    priority: 'medium',
+    tags: []
+  });
+  const [repaymentDialogOpen, setRepaymentDialogOpen] = useState(false);
+  const [repaymentData, setRepaymentData] = useState({
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    method: 'cash',
+    transactionId: '',
+    notes: ''
+  });
+
+  // Personal Loans State (Loans TAKEN from friends/family)
+  const [personalLoans, setPersonalLoans] = useState([]);
+  const [personalLoansSummary, setPersonalLoansSummary] = useState(null);
+  const [personalLoansLoading, setPersonalLoansLoading] = useState(false);
+  const [personalLoanDialogOpen, setPersonalLoanDialogOpen] = useState(false);
+  const [selectedPersonalLoan, setSelectedPersonalLoan] = useState(null);
+  const [personalLoanFormData, setPersonalLoanFormData] = useState({
+    lenderName: '',
+    relationship: 'Friend',
+    principalAmount: '',
+    loanTakenDate: new Date().toISOString().split('T')[0],
+    interestRate: 0,
+    interestType: 'none',
+    purpose: '',
+    contactDetails: {
+      phone: '',
+      email: ''
+    },
+    notes: '',
+    priority: 'medium',
+    tags: []
+  });
+  const [personalLoanRepaymentDialogOpen, setPersonalLoanRepaymentDialogOpen] = useState(false);
+  const [personalLoanRepaymentData, setPersonalLoanRepaymentData] = useState({
+    amount: '',
+    notes: ''
+  });
+
   // Export Report State
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState('pdf');
@@ -166,9 +232,21 @@ const EMITracker = () => {
   useEffect(() => {
     fetchAllData();
     fetchUserProfile();
+    fetchMonthlyTrends(trendsMonths);
     // Trigger card animations after component mount
     setTimeout(() => setAnimateCards(true), 100);
-  }, [selectedPeriod]);
+  }, [selectedPeriod, trendsMonths]);
+
+  useEffect(() => {
+    // Fetch loans given when tab 6 is active
+    if (activeTab === 6) {
+      fetchLoansGiven();
+    }
+    // Fetch personal loans when tab 7 is active
+    if (activeTab === 7) {
+      fetchPersonalLoans();
+    }
+  }, [activeTab]);
 
   const fetchUserProfile = async () => {
     try {
@@ -210,6 +288,326 @@ const EMITracker = () => {
       setError(err.response?.data?.message || 'Failed to fetch EMI data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMonthlyTrends = async (months = 6) => {
+    setTrendsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      const response = await axios.get(`${API_URL}/emi/monthly-trends?months=${months}`, config);
+      setMonthlyTrends(response.data.data);
+    } catch (err) {
+      console.error('Error fetching monthly trends:', err);
+      setError(err.response?.data?.message || 'Failed to fetch monthly trends');
+    } finally {
+      setTrendsLoading(false);
+    }
+  };
+
+  const handleExportMonthlyTrends = async (format) => {
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        months: trendsMonths,
+        format: format
+      });
+      
+      const response = await axios.get(`${API_URL}/emi/monthly-trends/export?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const fileExtension = format === 'pdf' ? 'pdf' : 'xlsx';
+      const fileName = `Monthly_Trends_${trendsMonths}months_${new Date().toISOString().slice(0, 10)}.${fileExtension}`;
+      link.setAttribute('download', fileName);
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      // Show success message
+      setError(null);
+      alert(`Monthly Trends report exported successfully as ${format.toUpperCase()}!`);
+    } catch (err) {
+      console.error('Error exporting monthly trends:', err);
+      setError(err.response?.data?.message || 'Failed to export monthly trends');
+      alert('Failed to export report. Please try again.');
+    }
+  };
+
+  // Fetch loans given
+  const fetchLoansGiven = async () => {
+    setLoansGivenLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      const [loansResponse, summaryResponse] = await Promise.all([
+        axios.get(`${API_URL}/loans-given`, config),
+        axios.get(`${API_URL}/loans-given/summary`, config)
+      ]);
+      
+      setLoansGiven(loansResponse.data.data);
+      setLoansGivenSummary(summaryResponse.data.data);
+    } catch (err) {
+      console.error('Error fetching loans given:', err);
+      setError(err.response?.data?.message || 'Failed to fetch loans given');
+    } finally {
+      setLoansGivenLoading(false);
+    }
+  };
+
+  // Add or update loan given
+  const handleSaveLoanGiven = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      if (selectedLoanGiven) {
+        // Update existing loan
+        await axios.put(`${API_URL}/loans-given/${selectedLoanGiven._id}`, loanGivenFormData, config);
+        alert('Loan updated successfully!');
+      } else {
+        // Create new loan
+        await axios.post(`${API_URL}/loans-given`, loanGivenFormData, config);
+        alert('Loan recorded successfully!');
+      }
+      
+      setLoanGivenDialogOpen(false);
+      setSelectedLoanGiven(null);
+      setLoanGivenFormData({
+        borrowerName: '',
+        relationship: 'Friend',
+        amount: '',
+        loanDate: new Date().toISOString().split('T')[0],
+        expectedRepaymentDate: '',
+        purpose: '',
+        contactDetails: { phone: '', email: '' },
+        hasInterest: false,
+        interestRate: 0,
+        notes: '',
+        priority: 'medium',
+        tags: []
+      });
+      fetchLoansGiven();
+    } catch (err) {
+      console.error('Error saving loan:', err);
+      alert(err.response?.data?.message || 'Failed to save loan');
+    }
+  };
+
+  // Add repayment to loan
+  const handleAddRepayment = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      await axios.post(`${API_URL}/loans-given/${selectedLoanGiven._id}/repayment`, repaymentData, config);
+      alert('Repayment added successfully!');
+      
+      setRepaymentDialogOpen(false);
+      setRepaymentData({
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        method: 'cash',
+        transactionId: '',
+        notes: ''
+      });
+      fetchLoansGiven();
+    } catch (err) {
+      console.error('Error adding repayment:', err);
+      alert(err.response?.data?.message || 'Failed to add repayment');
+    }
+  };
+
+  // Delete loan given
+  const handleDeleteLoanGiven = async (loanId) => {
+    if (!confirm('Are you sure you want to delete this loan record?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      await axios.delete(`${API_URL}/loans-given/${loanId}`, config);
+      alert('Loan deleted successfully!');
+      fetchLoansGiven();
+    } catch (err) {
+      console.error('Error deleting loan:', err);
+      alert(err.response?.data?.message || 'Failed to delete loan');
+    }
+  };
+
+  // Write off loan
+  const handleWriteOffLoan = async (loanId) => {
+    if (!confirm('Are you sure you want to write off this loan? This action marks it as unrecoverable.')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      await axios.put(`${API_URL}/loans-given/${loanId}/write-off`, {}, config);
+      alert('Loan written off successfully!');
+      fetchLoansGiven();
+    } catch (err) {
+      console.error('Error writing off loan:', err);
+      alert(err.response?.data?.message || 'Failed to write off loan');
+    }
+  };
+
+  // ==================== PERSONAL LOANS FUNCTIONS ====================
+  // Fetch personal loans (loans TAKEN from friends/family)
+  const fetchPersonalLoans = async () => {
+    try {
+      setPersonalLoansLoading(true);
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      const [loansRes, summaryRes] = await Promise.all([
+        axios.get(`${API_URL}/personal-loans`, config),
+        axios.get(`${API_URL}/personal-loans/summary`, config)
+      ]);
+      
+      setPersonalLoans(loansRes.data.loans || []);
+      setPersonalLoansSummary(summaryRes.data.summary || null);
+    } catch (err) {
+      console.error('Error fetching personal loans:', err);
+      setError(err.response?.data?.message || 'Failed to fetch personal loans');
+    } finally {
+      setPersonalLoansLoading(false);
+    }
+  };
+
+  // Save personal loan (create or update)
+  const handleSavePersonalLoan = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      if (selectedPersonalLoan) {
+        // Update existing loan
+        await axios.put(`${API_URL}/personal-loans/${selectedPersonalLoan._id}`, personalLoanFormData, config);
+        alert('Personal loan updated successfully!');
+      } else {
+        // Create new loan
+        await axios.post(`${API_URL}/personal-loans`, personalLoanFormData, config);
+        alert('Personal loan added successfully!');
+      }
+      
+      setPersonalLoanDialogOpen(false);
+      setSelectedPersonalLoan(null);
+      setPersonalLoanFormData({
+        lenderName: '',
+        relationship: 'Friend',
+        principalAmount: '',
+        loanTakenDate: new Date().toISOString().split('T')[0],
+        interestRate: 0,
+        interestType: 'none',
+        purpose: '',
+        contactDetails: {
+          phone: '',
+          email: ''
+        },
+        notes: '',
+        priority: 'medium',
+        tags: []
+      });
+      fetchPersonalLoans();
+    } catch (err) {
+      console.error('Error saving personal loan:', err);
+      alert(err.response?.data?.message || 'Failed to save personal loan');
+    }
+  };
+
+  // Add repayment to personal loan
+  const handleAddPersonalLoanRepayment = async () => {
+    if (!selectedPersonalLoan) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      await axios.post(
+        `${API_URL}/personal-loans/${selectedPersonalLoan._id}/repayment`, 
+        { amount: parseFloat(personalLoanRepaymentData.amount) },
+        config
+      );
+      
+      alert('Repayment added successfully!');
+      setPersonalLoanRepaymentDialogOpen(false);
+      setSelectedPersonalLoan(null);
+      setPersonalLoanRepaymentData({
+        amount: '',
+        notes: ''
+      });
+      fetchPersonalLoans();
+    } catch (err) {
+      console.error('Error adding repayment:', err);
+      alert(err.response?.data?.message || 'Failed to add repayment');
+    }
+  };
+
+  // Mark personal loan as fully repaid
+  const handleMarkPersonalLoanRepaid = async (loanId) => {
+    if (!confirm('Mark this loan as fully repaid?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      await axios.put(`${API_URL}/personal-loans/${loanId}/mark-repaid`, {}, config);
+      alert('Loan marked as repaid successfully!');
+      fetchPersonalLoans();
+    } catch (err) {
+      console.error('Error marking loan as repaid:', err);
+      alert(err.response?.data?.message || 'Failed to mark loan as repaid');
+    }
+  };
+
+  // Delete personal loan
+  const handleDeletePersonalLoan = async (loanId) => {
+    if (!confirm('Are you sure you want to delete this personal loan record?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      await axios.delete(`${API_URL}/personal-loans/${loanId}`, config);
+      alert('Personal loan deleted successfully!');
+      fetchPersonalLoans();
+    } catch (err) {
+      console.error('Error deleting personal loan:', err);
+      alert(err.response?.data?.message || 'Failed to delete personal loan');
     }
   };
 
@@ -857,7 +1255,7 @@ const EMITracker = () => {
                         textShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}
                     >
-                      {formatCurrency(overview.overview.totalOutstanding)}
+                      {formatCurrency(overview.overview.totalOutstanding + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0))}
                     </Typography>
                   </Box>
                   <Box 
@@ -878,6 +1276,11 @@ const EMITracker = () => {
                     Total remaining debt
                   </Typography>
                 </Box>
+                {personalLoansSummary && personalLoansSummary.totalOutstanding > 0 && (
+                  <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: 400, mt: 0.5, display: 'block' }}>
+                    (EMI: {formatCurrency(overview.overview.totalOutstanding)} + Personal Loans: {formatCurrency(personalLoansSummary.totalOutstanding)})
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -1162,6 +1565,11 @@ const EMITracker = () => {
             iconPosition="start"
           />
           <Tab 
+            label="Monthly Trends" 
+            icon={<TrendingUpIcon />} 
+            iconPosition="start"
+          />
+          <Tab 
             label="Reports" 
             icon={<TrendingUpIcon />} 
             iconPosition="start"
@@ -1179,6 +1587,16 @@ const EMITracker = () => {
           <Tab 
             label="Completed EMIs" 
             icon={<CheckCircleIcon />} 
+            iconPosition="start"
+          />
+          <Tab 
+            label="Loans Given" 
+            icon={<PaymentIcon />} 
+            iconPosition="start"
+          />
+          <Tab 
+            label="Personal Loans" 
+            icon={<MoneyIcon />} 
             iconPosition="start"
           />
         </Tabs>
@@ -1305,7 +1723,445 @@ const EMITracker = () => {
       )}
 
       {/* Reports Tab */}
-      {activeTab === 1 && chartData && (
+      {/* Monthly Trends Tab */}
+      {activeTab === 1 && monthlyTrends && (
+        <Box sx={{ p: 3 }}>
+          {/* Header Section */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+              Monthly Trends
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Income and spending over time
+            </Typography>
+          </Box>
+
+          {/* Date Range and Controls */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            mb: 3,
+            flexWrap: 'wrap',
+            gap: 2 
+          }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <TextField
+                type="month"
+                size="small"
+                defaultValue={new Date().toISOString().slice(0, 7)}
+                sx={{ width: 150 }}
+              />
+              <Typography variant="body2">to</Typography>
+              <TextField
+                type="month"
+                size="small"
+                defaultValue={new Date().toISOString().slice(0, 7)}
+                sx={{ width: 150 }}
+              />
+              <Button variant="text" size="small">Clear</Button>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Chip 
+                label="Show Investments" 
+                icon={<CheckCircleIcon />}
+                color="primary" 
+                size="small"
+              />
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <Select value={trendsMonths} onChange={(e) => setTrendsMonths(e.target.value)}>
+                  <MenuItem value={3}>3 Months</MenuItem>
+                  <MenuItem value={5}>5 Months</MenuItem>
+                  <MenuItem value={6}>6 Months</MenuItem>
+                  <MenuItem value={12}>12 Months</MenuItem>
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                startIcon={<DownloadIcon />}
+                onClick={() => handleExportMonthlyTrends('pdf')}
+                sx={{ ml: 1 }}
+              >
+                Export PDF
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={() => handleExportMonthlyTrends('excel')}
+              >
+                Export Excel
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Summary Cards Row */}
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#d4f4dd',
+                borderRadius: 2,
+                border: '1px solid #a8e6b8'
+              }}>
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      💵 Avg Monthly Income
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#2e7d32', fontWeight: 600 }}>
+                      ↗ {monthlyTrends.analysis.incomeChange >= 0 ? '+' : ''}{monthlyTrends.analysis.incomeChange}%
+                    </Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#2e7d32' }}>
+                    ₹{Math.round(monthlyTrends.summary.avgMonthlyIncome).toLocaleString('en-IN')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#fde8e8',
+                borderRadius: 2,
+                border: '1px solid #f8b4b4'
+              }}>
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      📅 Avg Monthly Spending
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#c62828', fontWeight: 600 }}>
+                      ↗ {monthlyTrends.analysis.spendingChange >= 0 ? '+' : ''}{Math.abs(monthlyTrends.analysis.spendingChange)}%
+                    </Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#c62828' }}>
+                    ₹{Math.round(monthlyTrends.summary.avgMonthlySpendings).toLocaleString('en-IN')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#f0e6f6',
+                borderRadius: 2,
+                border: '1px solid #d4b5e8'
+              }}>
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      📊 Total Investments
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#6a1b9a', fontWeight: 600 }}>
+                      ↗ {trendsMonths} months
+                    </Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#6a1b9a' }}>
+                    ₹{Math.round(monthlyTrends.summary.totalInvestments).toLocaleString('en-IN')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#e3f2fd',
+                borderRadius: 2,
+                border: '1px solid #90caf9'
+              }}>
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      🐷 Avg Savings Rate
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#1565c0', fontWeight: 600 }}>
+                      ↘ {Math.abs(monthlyTrends.summary.avgSavingsRate)}%
+                    </Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#1565c0' }}>
+                    ₹{Math.round(monthlyTrends.summary.totalNetSavings / trendsMonths).toLocaleString('en-IN')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Month-over-Month Change Banner */}
+          <Card elevation={0} sx={{ 
+            mb: 3, 
+            bgcolor: '#fafafa',
+            border: '1px solid #e0e0e0',
+            borderRadius: 2
+          }}>
+            <CardContent sx={{ p: 2 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    Month-over-Month Change
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Comparing {monthlyTrends.monthlyTrends[monthlyTrends.monthlyTrends.length - 1]?.monthName} vs {monthlyTrends.monthlyTrends[monthlyTrends.monthlyTrends.length - 2]?.monthName}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 3 }}>
+                    <Box>
+                      <Typography variant="h6" sx={{ color: '#c62828', fontWeight: 700 }}>
+                        {monthlyTrends.analysis.spendingChange >= 0 ? '+' : ''}Infinity%
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Spending Change
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        ₹{Math.round(Math.abs(monthlyTrends.analysis.difference)).toLocaleString('en-IN')}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Difference
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Main Comprehensive Chart */}
+          <Card elevation={0} sx={{ 
+            borderRadius: 2,
+            border: '1px solid #e0e0e0',
+            mb: 3
+          }}>
+            <CardContent sx={{ p: 3 }}>
+              <ResponsiveContainer width="100%" height={500}>
+                <ComposedChart data={monthlyTrends.monthlyTrends}>
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4caf50" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#4caf50" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorSpending" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f44336" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f44336" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorInvestments" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#9c27b0" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#9c27b0" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorNetSavings" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2196f3" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#2196f3" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  
+                  <XAxis 
+                    dataKey="monthName" 
+                    tick={{ fontSize: 12 }}
+                    axisLine={{ stroke: '#e0e0e0' }}
+                  />
+                  
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    axisLine={{ stroke: '#e0e0e0' }}
+                    tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  />
+                  
+                  <RechartsTooltip 
+                    formatter={(value, name) => [formatCurrency(value), name]}
+                    contentStyle={{ 
+                      borderRadius: 8, 
+                      border: '1px solid #e0e0e0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  
+                  <Legend 
+                    wrapperStyle={{ paddingTop: 20 }}
+                    iconType="circle"
+                  />
+                  
+                  {/* Income Line */}
+                  <Area
+                    type="monotone"
+                    dataKey="income"
+                    stroke="#4caf50"
+                    strokeWidth={2}
+                    fill="url(#colorIncome)"
+                    name="Income"
+                    dot={{ fill: '#4caf50', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  
+                  {/* Spending Line */}
+                  <Area
+                    type="monotone"
+                    dataKey="spendings"
+                    stroke="#f44336"
+                    strokeWidth={2}
+                    fill="url(#colorSpending)"
+                    name="Spending"
+                    dot={{ fill: '#f44336', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  
+                  {/* Investments Line */}
+                  <Area
+                    type="monotone"
+                    dataKey="investments"
+                    stroke="#9c27b0"
+                    strokeWidth={2}
+                    fill="url(#colorInvestments)"
+                    name="Investments"
+                    dot={{ fill: '#9c27b0', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  
+                  {/* Net Savings Line with Dashed Style */}
+                  <Line
+                    type="monotone"
+                    dataKey="netSavings"
+                    stroke="#2196f3"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="Net Savings"
+                    dot={{ fill: '#2196f3', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Bottom Summary Cards */}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#fafafa',
+                borderRadius: 2,
+                border: '1px solid #e0e0e0'
+              }}>
+                <CardContent>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Best Month
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#4caf50' }}>
+                    {monthlyTrends.analysis.bestMonth || 'N/A'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#fafafa',
+                borderRadius: 2,
+                border: '1px solid #e0e0e0'
+              }}>
+                <CardContent>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Total Period
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {trendsMonths} months
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Card elevation={0} sx={{ 
+                bgcolor: '#fafafa',
+                borderRadius: 2,
+                border: '1px solid #e0e0e0'
+              }}>
+                <CardContent>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Consistency Score
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#2196f3' }}>
+                    {monthlyTrends.analysis.consistencyScore}%
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Detailed Breakdown Table */}
+          <Card elevation={0} sx={{ 
+            mt: 3,
+            borderRadius: 2,
+            border: '1px solid #e0e0e0'
+          }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                Monthly Breakdown Details
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: '#fafafa' }}>
+                      <TableCell sx={{ fontWeight: 700 }}>Month</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Income</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Spendings</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>EMI</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Investments</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Loans</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Commitments</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Net Savings</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Savings %</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {monthlyTrends.monthlyTrends.map((row, idx) => (
+                      <TableRow 
+                        key={idx} 
+                        hover
+                        sx={{ '&:hover': { bgcolor: '#f5f5f5' } }}
+                      >
+                        <TableCell sx={{ fontWeight: 600 }}>
+                          {row.monthName} {row.year}
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: '#4caf50', fontWeight: 600 }}>
+                          ₹{Math.round(row.income).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: '#f44336' }}>
+                          ₹{Math.round(row.spendings).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: '#2196f3' }}>
+                          ₹{Math.round(row.emiPayments).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: '#9c27b0' }}>
+                          ₹{Math.round(row.investments).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: '#ff9800' }}>
+                          ₹{Math.round(row.loanPayments).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>
+                          ₹{Math.round(row.monthlyCommitments).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ 
+                          color: row.netSavings >= 0 ? '#4caf50' : '#f44336', 
+                          fontWeight: 600 
+                        }}>
+                          ₹{Math.round(row.netSavings).toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>
+                          {row.savingsRate}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
+
+      {/* Reports Tab */}
+      {activeTab === 2 && chartData && (
         <Grid container spacing={3} direction="column">
           {/* Bar Chart - Monthly EMI Burden */}
           <Grid item xs={12}>
@@ -1685,7 +2541,8 @@ const EMITracker = () => {
         </Grid>
       )}
 
-      {activeTab === 2 && upcomingPayments && (
+      {/* Upcoming Payments Tab */}
+      {activeTab === 3 && upcomingPayments && (
         <Box>
           {/* Time Period Selector */}
           <Card elevation={2} sx={{ mb: 3, p: 2 }}>
@@ -1845,7 +2702,8 @@ const EMITracker = () => {
         </Box>
       )}
 
-      {activeTab === 3 && overview && (
+      {/* Active EMIs Tab */}
+      {activeTab === 4 && overview && (
         <Grid container spacing={3}>
           {overview.activeEMIs.map((emi) => (
             <Grid item xs={12} md={6} lg={4} key={emi.id}>
@@ -1992,8 +2850,8 @@ const EMITracker = () => {
         </Grid>
       )}
 
-      {/* Tab 4: Completed EMIs */}
-      {activeTab === 4 && overview && (
+      {/* Tab 5: Completed EMIs */}
+      {activeTab === 5 && overview && (
         <>
           {overview.completedEMIs && overview.completedEMIs.length === 0 ? (
             <Box 
@@ -2122,6 +2980,440 @@ const EMITracker = () => {
             </Grid>
           )}
         </>
+      )}
+
+      {/* Tab 6: Loans Given to Friends & Family */}
+      {activeTab === 6 && (
+        <Box>
+          {/* Summary Cards */}
+          {loansGivenSummary && (
+            <Grid container spacing={3} mb={4}>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Total Lent</Typography>
+                    <Typography variant="h4">₹{loansGivenSummary.totalLent.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Outstanding</Typography>
+                    <Typography variant="h4">₹{loansGivenSummary.totalOutstanding.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Repaid</Typography>
+                    <Typography variant="h4">₹{loansGivenSummary.totalRepaid.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Active Loans</Typography>
+                    <Typography variant="h4">{loansGivenSummary.activeLoansCount}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          )}
+
+          {/* Add New Loan Button */}
+          <Box mb={3}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setSelectedLoanGiven(null);
+                setLoanGivenFormData({
+                  borrowerName: '',
+                  relationship: 'Friend',
+                  amount: '',
+                  loanDate: new Date().toISOString().split('T')[0],
+                  expectedRepaymentDate: '',
+                  purpose: '',
+                  contactDetails: { phone: '', email: '' },
+                  hasInterest: false,
+                  interestRate: 0,
+                  notes: '',
+                  priority: 'medium',
+                  tags: []
+                });
+                setLoanGivenDialogOpen(true);
+              }}
+              sx={{ background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)' }}
+            >
+              Add Loan Given
+            </Button>
+          </Box>
+
+          {/* Loans List */}
+          {loansGivenLoading ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
+            </Box>
+          ) : loansGiven.length === 0 ? (
+            <Box textAlign="center" py={8}>
+              <PaymentIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h5" gutterBottom>No Loans Recorded</Typography>
+              <Typography color="text.secondary">
+                Track money lent to friends and family here
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {loansGiven.map((loan) => (
+                <Grid item xs={12} md={6} lg={4} key={loan._id}>
+                  <Card elevation={3} sx={{ '&:hover': { boxShadow: 6 } }}>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                        <Box>
+                          <Typography variant="h6">{loan.borrowerName}</Typography>
+                          <Chip label={loan.relationship} size="small" sx={{ mt: 0.5 }} />
+                        </Box>
+                        <Chip
+                          label={loan.status.replace('_', ' ').toUpperCase()}
+                          size="small"
+                          color={
+                            loan.status === 'fully_paid' ? 'success' :
+                            loan.status === 'overdue' ? 'error' :
+                            loan.status === 'partially_paid' ? 'warning' : 'default'
+                          }
+                        />
+                      </Box>
+
+                      <Typography variant="h4" color="primary" gutterBottom>
+                        ₹{loan.amount.toLocaleString()}
+                      </Typography>
+
+                      {loan.totalRepaid > 0 && (
+                        <Box my={2}>
+                          <Box display="flex" justifyContent="space-between" mb={1}>
+                            <Typography variant="body2">Repaid</Typography>
+                            <Typography variant="body2" fontWeight="bold">
+                              {loan.repaymentPercentage}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={parseFloat(loan.repaymentPercentage)}
+                            sx={{ height: 6, borderRadius: 3 }}
+                          />
+                        </Box>
+                      )}
+
+                      <Box mt={2}>
+                        <Typography variant="body2" color="text.secondary">
+                          Outstanding: ₹{loan.remainingAmount.toLocaleString()}
+                        </Typography>
+                        {loan.expectedRepaymentDate && (
+                          <Typography variant="body2" color="text.secondary">
+                            Expected: {new Date(loan.expectedRepaymentDate).toLocaleDateString()}
+                          </Typography>
+                        )}
+                        {loan.daysOverdue > 0 && (
+                          <Typography variant="body2" color="error">
+                            Overdue by {loan.daysOverdue} days
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box display="flex" gap={1} mt={2}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            setSelectedLoanGiven(loan);
+                            setRepaymentDialogOpen(true);
+                          }}
+                          disabled={loan.status === 'fully_paid' || loan.status === 'written_off'}
+                        >
+                          Add Repayment
+                        </Button>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedLoanGiven(loan);
+                            setLoanGivenFormData({
+                              ...loan,
+                              loanDate: new Date(loan.loanDate).toISOString().split('T')[0],
+                              expectedRepaymentDate: loan.expectedRepaymentDate ? 
+                                new Date(loan.expectedRepaymentDate).toISOString().split('T')[0] : ''
+                            });
+                            setLoanGivenDialogOpen(true);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteLoanGiven(loan._id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+
+      {/* Tab 7: Personal Loans (Loans TAKEN from Friends & Family) */}
+      {activeTab === 7 && (
+        <Box>
+          {/* Summary Cards */}
+          {personalLoansSummary && (
+            <Grid container spacing={3} mb={4}>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Total Borrowed</Typography>
+                    <Typography variant="h4">₹{personalLoansSummary.totalBorrowed.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Total Outstanding</Typography>
+                    <Typography variant="h4">₹{personalLoansSummary.totalOutstanding.toLocaleString()}</Typography>
+                    <Typography variant="caption">Principal + Interest</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Current Interest</Typography>
+                    <Typography variant="h4">₹{personalLoansSummary.totalInterest.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Active Loans</Typography>
+                    <Typography variant="h4">{personalLoansSummary.activeLoansCount}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          )}
+
+          {/* Add New Personal Loan Button */}
+          <Box mb={3}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setSelectedPersonalLoan(null);
+                setPersonalLoanFormData({
+                  lenderName: '',
+                  relationship: 'Friend',
+                  principalAmount: '',
+                  loanTakenDate: new Date().toISOString().split('T')[0],
+                  interestRate: 0,
+                  interestType: 'none',
+                  purpose: '',
+                  contactDetails: { phone: '', email: '' },
+                  notes: '',
+                  priority: 'medium',
+                  tags: []
+                });
+                setPersonalLoanDialogOpen(true);
+              }}
+              sx={{ background: 'linear-gradient(45deg, #f093fb 30%, #f5576c 90%)' }}
+            >
+              Add Personal Loan
+            </Button>
+          </Box>
+
+          {/* Personal Loans List */}
+          {personalLoansLoading ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
+            </Box>
+          ) : personalLoans.filter(loan => loan.status === 'active').length === 0 ? (
+            <Box textAlign="center" py={8}>
+              <MoneyIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h5" gutterBottom>No Active Personal Loans</Typography>
+              <Typography color="text.secondary">
+                Track money borrowed from friends and family here
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {personalLoans.filter(loan => loan.status === 'active').map((loan) => {
+                const daysSinceTaken = Math.floor((new Date() - new Date(loan.loanTakenDate)) / (1000 * 60 * 60 * 24));
+                return (
+                  <Grid item xs={12} md={6} lg={4} key={loan._id}>
+                    <Card elevation={3} sx={{ 
+                      '&:hover': { boxShadow: 6 },
+                      border: loan.priority === 'urgent' ? '2px solid #f44336' : 
+                              loan.priority === 'high' ? '2px solid #ff9800' : 'none'
+                    }}>
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                          <Box>
+                            <Typography variant="h6">{loan.lenderName}</Typography>
+                            <Chip label={loan.relationship} size="small" sx={{ mt: 0.5 }} />
+                          </Box>
+                          <Chip
+                            label={loan.priority.toUpperCase()}
+                            size="small"
+                            color={
+                              loan.priority === 'urgent' ? 'error' :
+                              loan.priority === 'high' ? 'warning' :
+                              loan.priority === 'medium' ? 'info' : 'default'
+                            }
+                          />
+                        </Box>
+
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Principal Amount
+                        </Typography>
+                        <Typography variant="h5" color="primary" gutterBottom>
+                          ₹{loan.principalAmount.toLocaleString()}
+                        </Typography>
+
+                        {loan.currentInterest > 0 && (
+                          <Box mb={2}>
+                            <Typography variant="body2" color="warning.main" gutterBottom>
+                              Current Interest ({loan.interestRate}% p.a.)
+                            </Typography>
+                            <Typography variant="h6" color="warning.dark">
+                              + ₹{loan.currentInterest.toLocaleString()}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        <Box 
+                          sx={{ 
+                            bgcolor: 'error.light', 
+                            color: 'error.contrastText',
+                            p: 2, 
+                            borderRadius: 2,
+                            mt: 2
+                          }}
+                        >
+                          <Typography variant="body2" gutterBottom>
+                            Total Outstanding
+                          </Typography>
+                          <Typography variant="h4" fontWeight="bold">
+                            ₹{loan.outstandingAmount.toLocaleString()}
+                          </Typography>
+                        </Box>
+
+                        <Box mt={2}>
+                          <Typography variant="body2" color="text.secondary">
+                            Borrowed: {new Date(loan.loanTakenDate).toLocaleDateString()}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Days since: {daysSinceTaken} days
+                          </Typography>
+                          {loan.totalRepaid > 0 && (
+                            <Typography variant="body2" color="success.main">
+                              Repaid: ₹{loan.totalRepaid.toLocaleString()}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        <Box display="flex" gap={1} mt={2} flexWrap="wrap">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            onClick={() => {
+                              setSelectedPersonalLoan(loan);
+                              setPersonalLoanRepaymentData({ amount: '', notes: '' });
+                              setPersonalLoanRepaymentDialogOpen(true);
+                            }}
+                          >
+                            Add Repayment
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => handleMarkPersonalLoanRepaid(loan._id)}
+                          >
+                            Mark Repaid
+                          </Button>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setSelectedPersonalLoan(loan);
+                              setPersonalLoanFormData({
+                                ...loan,
+                                loanTakenDate: new Date(loan.loanTakenDate).toISOString().split('T')[0]
+                              });
+                              setPersonalLoanDialogOpen(true);
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeletePersonalLoan(loan._id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+
+          {/* Completed Personal Loans */}
+          {personalLoans.filter(loan => loan.status === 'repaid').length > 0 && (
+            <Box mt={4}>
+              <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CheckCircleIcon color="success" />
+                Completed Repayments
+              </Typography>
+              <Grid container spacing={2} mt={1}>
+                {personalLoans.filter(loan => loan.status === 'repaid').map((loan) => (
+                  <Grid item xs={12} md={6} key={loan._id}>
+                    <Card elevation={1} sx={{ opacity: 0.8 }}>
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between">
+                          <Box>
+                            <Typography variant="h6">{loan.lenderName}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Principal: ₹{loan.principalAmount.toLocaleString()}
+                            </Typography>
+                            {loan.currentInterest > 0 && (
+                              <Typography variant="body2" color="text.secondary">
+                                Interest Paid: ₹{loan.currentInterest.toLocaleString()}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Chip label="REPAID" color="success" size="small" />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" mt={1}>
+                          Repaid on: {loan.repaymentDate ? new Date(loan.repaymentDate).toLocaleDateString() : 'N/A'}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Box>
       )}
 
       {/* Sync Dialog */}
@@ -2819,6 +4111,392 @@ const EMITracker = () => {
             }}
           >
             {exportLoading ? 'Exporting...' : 'Export Report'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add/Edit Loan Given Dialog */}
+      <Dialog open={loanGivenDialogOpen} onClose={() => setLoanGivenDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {selectedLoanGiven ? 'Edit Loan' : 'Add New Loan Given'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Borrower Name *"
+              fullWidth
+              value={loanGivenFormData.borrowerName}
+              onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, borrowerName: e.target.value })}
+            />
+            
+            <FormControl fullWidth>
+              <InputLabel>Relationship</InputLabel>
+              <Select
+                value={loanGivenFormData.relationship}
+                onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, relationship: e.target.value })}
+                label="Relationship"
+              >
+                <MenuItem value="Friend">Friend</MenuItem>
+                <MenuItem value="Family">Family</MenuItem>
+                <MenuItem value="Colleague">Colleague</MenuItem>
+                <MenuItem value="Relative">Relative</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Amount *"
+              type="number"
+              fullWidth
+              value={loanGivenFormData.amount}
+              onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, amount: e.target.value })}
+              InputProps={{ startAdornment: '₹' }}
+            />
+
+            <TextField
+              label="Loan Date"
+              type="date"
+              fullWidth
+              value={loanGivenFormData.loanDate}
+              onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, loanDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              label="Expected Repayment Date"
+              type="date"
+              fullWidth
+              value={loanGivenFormData.expectedRepaymentDate}
+              onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, expectedRepaymentDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              label="Purpose"
+              fullWidth
+              multiline
+              rows={2}
+              value={loanGivenFormData.purpose}
+              onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, purpose: e.target.value })}
+            />
+
+            <Box display="flex" gap={2}>
+              <TextField
+                label="Phone Number"
+                fullWidth
+                value={loanGivenFormData.contactDetails.phone}
+                onChange={(e) => setLoanGivenFormData({
+                  ...loanGivenFormData,
+                  contactDetails: { ...loanGivenFormData.contactDetails, phone: e.target.value }
+                })}
+              />
+              <TextField
+                label="Email"
+                fullWidth
+                type="email"
+                value={loanGivenFormData.contactDetails.email}
+                onChange={(e) => setLoanGivenFormData({
+                  ...loanGivenFormData,
+                  contactDetails: { ...loanGivenFormData.contactDetails, email: e.target.value }
+                })}
+              />
+            </Box>
+
+            <FormControl fullWidth>
+              <InputLabel>Priority</InputLabel>
+              <Select
+                value={loanGivenFormData.priority}
+                onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, priority: e.target.value })}
+                label="Priority"
+              >
+                <MenuItem value="low">Low</MenuItem>
+                <MenuItem value="medium">Medium</MenuItem>
+                <MenuItem value="high">High</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Notes"
+              fullWidth
+              multiline
+              rows={3}
+              value={loanGivenFormData.notes}
+              onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, notes: e.target.value })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLoanGivenDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSaveLoanGiven} variant="contained" color="primary">
+            {selectedLoanGiven ? 'Update' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Repayment Dialog */}
+      <Dialog open={repaymentDialogOpen} onClose={() => setRepaymentDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Repayment</DialogTitle>
+        <DialogContent>
+          {selectedLoanGiven && (
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>{selectedLoanGiven.borrowerName}</strong>
+                  <br />
+                  Outstanding: ₹{selectedLoanGiven.remainingAmount.toLocaleString()}
+                </Typography>
+              </Alert>
+
+              <TextField
+                label="Repayment Amount *"
+                type="number"
+                fullWidth
+                value={repaymentData.amount}
+                onChange={(e) => setRepaymentData({ ...repaymentData, amount: e.target.value })}
+                InputProps={{ startAdornment: '₹' }}
+                helperText={`Max: ₹${selectedLoanGiven.remainingAmount.toLocaleString()}`}
+              />
+
+              <TextField
+                label="Repayment Date"
+                type="date"
+                fullWidth
+                value={repaymentData.date}
+                onChange={(e) => setRepaymentData({ ...repaymentData, date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>Payment Method</InputLabel>
+                <Select
+                  value={repaymentData.method}
+                  onChange={(e) => setRepaymentData({ ...repaymentData, method: e.target.value })}
+                  label="Payment Method"
+                >
+                  <MenuItem value="cash">Cash</MenuItem>
+                  <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
+                  <MenuItem value="upi">UPI</MenuItem>
+                  <MenuItem value="cheque">Cheque</MenuItem>
+                  <MenuItem value="other">Other</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                label="Transaction ID"
+                fullWidth
+                value={repaymentData.transactionId}
+                onChange={(e) => setRepaymentData({ ...repaymentData, transactionId: e.target.value })}
+              />
+
+              <TextField
+                label="Notes"
+                fullWidth
+                multiline
+                rows={2}
+                value={repaymentData.notes}
+                onChange={(e) => setRepaymentData({ ...repaymentData, notes: e.target.value })}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRepaymentDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleAddRepayment} variant="contained" color="primary">
+            Add Repayment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add/Edit Personal Loan Dialog */}
+      <Dialog 
+        open={personalLoanDialogOpen} 
+        onClose={() => setPersonalLoanDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedPersonalLoan ? 'Edit Personal Loan' : 'Add Personal Loan'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Lender Name"
+              required
+              fullWidth
+              value={personalLoanFormData.lenderName}
+              onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, lenderName: e.target.value })}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Relationship</InputLabel>
+              <Select
+                value={personalLoanFormData.relationship}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, relationship: e.target.value })}
+                label="Relationship"
+              >
+                <MenuItem value="Friend">Friend</MenuItem>
+                <MenuItem value="Family">Family</MenuItem>
+                <MenuItem value="Colleague">Colleague</MenuItem>
+                <MenuItem value="Relative">Relative</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Principal Amount"
+              type="number"
+              required
+              fullWidth
+              value={personalLoanFormData.principalAmount}
+              onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, principalAmount: e.target.value })}
+              InputProps={{ startAdornment: '₹' }}
+            />
+
+            <TextField
+              label="Loan Taken Date"
+              type="date"
+              fullWidth
+              value={personalLoanFormData.loanTakenDate}
+              onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, loanTakenDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Interest Type</InputLabel>
+              <Select
+                value={personalLoanFormData.interestType}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, interestType: e.target.value })}
+                label="Interest Type"
+              >
+                <MenuItem value="none">No Interest</MenuItem>
+                <MenuItem value="simple">Simple Interest</MenuItem>
+              </Select>
+            </FormControl>
+
+            {personalLoanFormData.interestType === 'simple' && (
+              <TextField
+                label="Interest Rate (% per annum)"
+                type="number"
+                fullWidth
+                value={personalLoanFormData.interestRate}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, interestRate: parseFloat(e.target.value) || 0 })}
+                InputProps={{ endAdornment: '%' }}
+              />
+            )}
+
+            <TextField
+              label="Purpose"
+              fullWidth
+              multiline
+              rows={2}
+              value={personalLoanFormData.purpose}
+              onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, purpose: e.target.value })}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Priority</InputLabel>
+              <Select
+                value={personalLoanFormData.priority}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, priority: e.target.value })}
+                label="Priority"
+              >
+                <MenuItem value="low">Low</MenuItem>
+                <MenuItem value="medium">Medium</MenuItem>
+                <MenuItem value="high">High</MenuItem>
+                <MenuItem value="urgent">Urgent</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Contact Phone"
+              fullWidth
+              value={personalLoanFormData.contactDetails.phone}
+              onChange={(e) => setPersonalLoanFormData({
+                ...personalLoanFormData,
+                contactDetails: { ...personalLoanFormData.contactDetails, phone: e.target.value }
+              })}
+            />
+
+            <TextField
+              label="Contact Email"
+              fullWidth
+              type="email"
+              value={personalLoanFormData.contactDetails.email}
+              onChange={(e) => setPersonalLoanFormData({
+                ...personalLoanFormData,
+                contactDetails: { ...personalLoanFormData.contactDetails, email: e.target.value }
+              })}
+            />
+
+            <TextField
+              label="Notes"
+              fullWidth
+              multiline
+              rows={3}
+              value={personalLoanFormData.notes}
+              onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, notes: e.target.value })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPersonalLoanDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSavePersonalLoan} variant="contained" color="primary">
+            {selectedPersonalLoan ? 'Update' : 'Add'} Loan
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Repayment to Personal Loan Dialog */}
+      <Dialog 
+        open={personalLoanRepaymentDialogOpen} 
+        onClose={() => setPersonalLoanRepaymentDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add Repayment</DialogTitle>
+        <DialogContent>
+          {selectedPersonalLoan && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Lender:</strong> {selectedPersonalLoan.lenderName}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Outstanding:</strong> ₹{selectedPersonalLoan.outstandingAmount.toLocaleString()}
+                </Typography>
+                {selectedPersonalLoan.currentInterest > 0 && (
+                  <Typography variant="body2" color="warning.main">
+                    <strong>Current Interest:</strong> ₹{selectedPersonalLoan.currentInterest.toLocaleString()}
+                  </Typography>
+                )}
+              </Alert>
+
+              <TextField
+                label="Repayment Amount"
+                type="number"
+                required
+                fullWidth
+                value={personalLoanRepaymentData.amount}
+                onChange={(e) => setPersonalLoanRepaymentData({ ...personalLoanRepaymentData, amount: e.target.value })}
+                InputProps={{ startAdornment: '₹' }}
+                helperText={`Max: ₹${selectedPersonalLoan.outstandingAmount.toLocaleString()}`}
+              />
+
+              <TextField
+                label="Notes"
+                fullWidth
+                multiline
+                rows={2}
+                value={personalLoanRepaymentData.notes}
+                onChange={(e) => setPersonalLoanRepaymentData({ ...personalLoanRepaymentData, notes: e.target.value })}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPersonalLoanRepaymentDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleAddPersonalLoanRepayment} variant="contained" color="success">
+            Add Repayment
           </Button>
         </DialogActions>
       </Dialog>

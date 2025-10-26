@@ -9,6 +9,7 @@ const { authenticate } = require('../middleware/auth');
 const EMI = require('../models/EMI');
 const User = require('../models/User');
 const FinancialProfile = require('../models/FinancialProfile');
+const PersonalLoan = require('../models/PersonalLoan');
 const logger = require('../utils/logger');
 const CreditCardStatementService = require('../services/creditCardStatementService');
 const EMIExtractionService = require('../services/emiExtractionService');
@@ -38,6 +39,961 @@ router.get('/overview', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch EMI overview',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route GET /api/emi/monthly-trends
+ * @desc Get comprehensive monthly trends including income, expenses, EMI, investments, savings, loans
+ * @access Private
+ * @note Income: Profile settings + Bank statements (credit transactions)
+ * @note Spending/Investments: Combined from EMI Tracker + Expense Tracker
+ */
+router.get('/monthly-trends', authenticate, async (req, res) => {
+  try {
+    const { months = 6 } = req.query;
+    const userId = req.user._id;
+    
+    logger.info(`Fetching EMI monthly trends for user: ${userId}, months: ${months}`);
+    
+    const Transaction = require('../models/Transaction');
+    const FinancialProfile = require('../models/FinancialProfile');
+    
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - parseInt(months));
+    
+    // Get financial profile for monthly income
+    const profile = await FinancialProfile.findOne({ userId });
+    const profileMonthlyIncome = profile?.monthlyIncome || 0;
+    
+    // Get all EMIs for the user
+    const allEMIs = await EMI.find({ userId }).sort({ startDate: 1 });
+    
+    // Get all transactions for the user in the date range (Bank statements + Expense Tracker)
+    const transactions = await Transaction.aggregate([
+      {
+        $match: {
+          userId,
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type',
+            category: '$category',
+            source: '$source' // Track source: quick_entry (Expense Tracker) vs bank statement
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+    
+    // Process monthly data
+    const monthlyData = {};
+    const monthsArray = [];
+    
+    // Generate month array
+    for (let i = parseInt(months) - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      monthsArray.push(monthKey);
+      
+      monthlyData[monthKey] = {
+        month: monthKey,
+        year: date.getFullYear(),
+        monthNum: date.getMonth() + 1,
+        monthName: date.toLocaleString('default', { month: 'short' }),
+        income: profileMonthlyIncome, // Initialize with profile income
+        incomeFromBankStatements: 0, // Track bank statement credits
+        incomeFromProfile: profileMonthlyIncome,
+        spendings: 0,
+        spendingsFromBankStatements: 0, // Track bank statement debits
+        spendingsFromExpenseTracker: 0, // Track manual expenses
+        investments: 0,
+        investmentsFromBankStatements: 0,
+        investmentsFromExpenseTracker: 0,
+        emiPayments: 0,
+        loanPayments: 0,
+        savings: 0,
+        netSavings: 0,
+        savingsRate: 0,
+        monthlyCommitments: 0,
+        transactionCount: 0,
+        categories: {}
+      };
+    }
+    
+    // Process transaction data
+    transactions.forEach(item => {
+      const monthKey = `${item._id.year}-${item._id.month.toString().padStart(2, '0')}`;
+      
+      if (monthlyData[monthKey]) {
+        const data = monthlyData[monthKey];
+        const category = item._id.category || 'Uncategorized';
+        const source = item._id.source || 'unknown';
+        const isFromExpenseTracker = source === 'quick_entry' || source === 'manual';
+        
+        if (item._id.type === 'credit') {
+          // Income from bank statements (credits)
+          data.incomeFromBankStatements += item.totalAmount;
+          // Total income = profile income + bank statement credits
+          data.income = data.incomeFromProfile + data.incomeFromBankStatements;
+        } else if (item._id.type === 'debit') {
+          // Categorize spending based on category and source
+          if (category.toLowerCase().includes('investment') || 
+              category.toLowerCase().includes('mutual fund') || 
+              category.toLowerCase().includes('stock') ||
+              category.toLowerCase().includes('sip')) {
+            // Investments
+            if (isFromExpenseTracker) {
+              data.investmentsFromExpenseTracker += item.totalAmount;
+            } else {
+              data.investmentsFromBankStatements += item.totalAmount;
+            }
+            data.investments += item.totalAmount;
+          } else if (category.toLowerCase().includes('emi') || 
+                     category.toLowerCase().includes('installment')) {
+            // EMI Payments
+            data.emiPayments += item.totalAmount;
+          } else if (category.toLowerCase().includes('loan')) {
+            // Loan Payments
+            data.loanPayments += item.totalAmount;
+          } else if (category.toLowerCase().includes('saving') || 
+                     category.toLowerCase().includes('deposit') ||
+                     category.toLowerCase().includes('fd') ||
+                     category.toLowerCase().includes('fixed deposit')) {
+            // Savings
+            data.savings += item.totalAmount;
+          } else {
+            // Regular spending
+            if (isFromExpenseTracker) {
+              data.spendingsFromExpenseTracker += item.totalAmount;
+            } else {
+              data.spendingsFromBankStatements += item.totalAmount;
+            }
+            data.spendings += item.totalAmount;
+          }
+          
+          // Track categories
+          data.categories[category] = (data.categories[category] || 0) + item.totalAmount;
+        }
+        
+        data.transactionCount += item.count;
+      }
+    });
+    
+    // Process EMI data for each month
+    allEMIs.forEach(emi => {
+      if (emi.status !== 'active' && emi.status !== 'completed') return;
+      
+      const emiStartDate = new Date(emi.startDate);
+      
+      monthsArray.forEach(monthKey => {
+        const [year, month] = monthKey.split('-').map(Number);
+        const monthDate = new Date(year, month - 1, 1);
+        
+        // Check if EMI is active in this month
+        const monthsSinceStart = (monthDate.getFullYear() - emiStartDate.getFullYear()) * 12 
+                                + (monthDate.getMonth() - emiStartDate.getMonth());
+        
+        if (monthsSinceStart >= 0 && monthsSinceStart < emi.totalTenure) {
+          if (emi.status === 'active' || (emi.status === 'completed' && monthsSinceStart < emi.totalTenure)) {
+            monthlyData[monthKey].emiPayments += emi.emiAmount || 0;
+            monthlyData[monthKey].monthlyCommitments += emi.emiAmount || 0;
+          }
+        }
+      });
+    });
+    
+    // Calculate derived metrics for each month
+    const trendsArray = monthsArray.map(monthKey => {
+      const data = monthlyData[monthKey];
+      
+      // Calculate net savings (income - all expenses including EMI)
+      data.netSavings = data.income - (data.spendings + data.emiPayments + data.loanPayments + data.investments);
+      
+      // Calculate savings rate
+      if (data.income > 0) {
+        data.savingsRate = ((data.netSavings / data.income) * 100).toFixed(2);
+      }
+      
+      // Total monthly commitments (EMI + Loan payments)
+      data.monthlyCommitments = data.emiPayments + data.loanPayments;
+      
+      return data;
+    });
+    
+    // Calculate summary statistics
+    const totalIncome = trendsArray.reduce((sum, t) => sum + t.income, 0);
+    const totalSpendings = trendsArray.reduce((sum, t) => sum + t.spendings, 0);
+    const totalEMI = trendsArray.reduce((sum, t) => sum + t.emiPayments, 0);
+    const totalInvestments = trendsArray.reduce((sum, t) => sum + t.investments, 0);
+    const totalLoans = trendsArray.reduce((sum, t) => sum + t.loanPayments, 0);
+    const totalSavings = trendsArray.reduce((sum, t) => sum + t.savings, 0);
+    const totalNetSavings = trendsArray.reduce((sum, t) => sum + t.netSavings, 0);
+    const totalCommitments = trendsArray.reduce((sum, t) => sum + t.monthlyCommitments, 0);
+    
+    const avgMonthlyIncome = trendsArray.length > 0 ? totalIncome / trendsArray.length : 0;
+    const avgMonthlySpendings = trendsArray.length > 0 ? totalSpendings / trendsArray.length : 0;
+    const avgMonthlyEMI = trendsArray.length > 0 ? totalEMI / trendsArray.length : 0;
+    const avgMonthlyInvestments = trendsArray.length > 0 ? totalInvestments / trendsArray.length : 0;
+    const avgMonthlyCommitments = trendsArray.length > 0 ? totalCommitments / trendsArray.length : 0;
+    const avgSavingsRate = trendsArray.length > 0 
+      ? trendsArray.reduce((sum, t) => sum + parseFloat(t.savingsRate), 0) / trendsArray.length 
+      : 0;
+    
+    // Calculate month-over-month changes
+    let spendingChange = 0;
+    let incomeChange = 0;
+    if (trendsArray.length >= 2) {
+      const currentMonth = trendsArray[trendsArray.length - 1];
+      const previousMonth = trendsArray[trendsArray.length - 2];
+      
+      if (previousMonth.spendings > 0) {
+        spendingChange = ((currentMonth.spendings - previousMonth.spendings) / previousMonth.spendings) * 100;
+      }
+      if (previousMonth.income > 0) {
+        incomeChange = ((currentMonth.income - previousMonth.income) / previousMonth.income) * 100;
+      }
+    }
+    
+    // Find best and worst months
+    const sortedByNet = [...trendsArray].sort((a, b) => b.netSavings - a.netSavings);
+    const bestMonth = sortedByNet[0];
+    const worstMonth = sortedByNet[sortedByNet.length - 1];
+    
+    // Calculate consistency score (lower variation = higher consistency)
+    const avgIncome = trendsArray.reduce((sum, t) => sum + t.income, 0) / trendsArray.length;
+    const variance = trendsArray.reduce((sum, t) => sum + Math.pow(t.income - avgIncome, 2), 0) / trendsArray.length;
+    const stdDev = Math.sqrt(variance);
+    const consistencyScore = avgIncome > 0 ? Math.max(0, 100 - (stdDev / avgIncome * 100)) : 0;
+    
+    res.json({
+      success: true,
+      data: {
+        monthlyTrends: trendsArray,
+        summary: {
+          totalIncome,
+          totalSpendings,
+          totalEMI,
+          totalInvestments,
+          totalLoans,
+          totalSavings,
+          totalNetSavings,
+          totalCommitments,
+          avgMonthlyIncome,
+          avgMonthlySpendings,
+          avgMonthlyEMI,
+          avgMonthlyInvestments,
+          avgMonthlyCommitments,
+          avgSavingsRate: parseFloat(avgSavingsRate.toFixed(2)),
+          monthsAnalyzed: trendsArray.length
+        },
+        analysis: {
+          spendingChange: parseFloat(spendingChange.toFixed(2)),
+          incomeChange: parseFloat(incomeChange.toFixed(2)),
+          difference: totalIncome - (totalSpendings + totalEMI + totalInvestments + totalLoans),
+          bestMonth: bestMonth ? bestMonth.month : null,
+          worstMonth: worstMonth ? worstMonth.month : null,
+          consistencyScore: parseFloat(consistencyScore.toFixed(2))
+        },
+        currentEMIStatus: {
+          activeEMIs: allEMIs.filter(e => e.status === 'active').length,
+          totalOutstanding: allEMIs.filter(e => e.status === 'active').reduce((sum, e) => sum + (e.emiAmount * e.remainingInstallments), 0),
+          monthlyBurden: allEMIs.filter(e => e.status === 'active').reduce((sum, e) => sum + e.emiAmount, 0)
+        }
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Get EMI monthly trends error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch EMI monthly trends',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route GET /api/emi/monthly-trends/export
+ * @desc Export monthly trends report to PDF or Excel
+ * @access Private
+ */
+router.get('/monthly-trends/export', authenticate, async (req, res) => {
+  try {
+    const { months = 6, format = 'pdf' } = req.query;
+    const userId = req.user._id;
+    
+    logger.info(`Exporting monthly trends report for user: ${userId}, format: ${format}`);
+    
+    const Transaction = require('../models/Transaction');
+    const PDFDocument = require('pdfkit');
+    const ExcelJS = require('exceljs');
+    
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - parseInt(months));
+    
+    // Get financial profile
+    const profile = await FinancialProfile.findOne({ userId });
+    const profileMonthlyIncome = profile?.monthlyIncome || 0;
+    
+    // Get all EMIs
+    const allEMIs = await EMI.find({ userId }).sort({ startDate: 1 });
+    
+    // Get all transactions
+    const transactions = await Transaction.aggregate([
+      {
+        $match: {
+          userId,
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type',
+            category: '$category',
+            source: '$source'
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+    
+    // Process monthly data (same logic as monthly-trends route)
+    const monthlyData = {};
+    const monthsArray = [];
+    
+    for (let i = parseInt(months) - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      monthsArray.push(monthKey);
+      
+      monthlyData[monthKey] = {
+        month: monthKey,
+        year: date.getFullYear(),
+        monthNum: date.getMonth() + 1,
+        monthName: date.toLocaleString('default', { month: 'short' }),
+        income: profileMonthlyIncome,
+        incomeFromBankStatements: 0,
+        incomeFromProfile: profileMonthlyIncome,
+        spendings: 0,
+        spendingsFromBankStatements: 0,
+        spendingsFromExpenseTracker: 0,
+        investments: 0,
+        investmentsFromBankStatements: 0,
+        investmentsFromExpenseTracker: 0,
+        emiPayments: 0,
+        loanPayments: 0,
+        savings: 0,
+        netSavings: 0,
+        savingsRate: 0,
+        monthlyCommitments: 0,
+        transactionCount: 0,
+        categories: {}
+      };
+    }
+    
+    // Process transactions
+    transactions.forEach(item => {
+      const monthKey = `${item._id.year}-${item._id.month.toString().padStart(2, '0')}`;
+      
+      if (monthlyData[monthKey]) {
+        const data = monthlyData[monthKey];
+        const category = item._id.category || 'Uncategorized';
+        const source = item._id.source || 'unknown';
+        const isFromExpenseTracker = source === 'quick_entry' || source === 'manual';
+        
+        if (item._id.type === 'credit') {
+          data.incomeFromBankStatements += item.totalAmount;
+          data.income = data.incomeFromProfile + data.incomeFromBankStatements;
+        } else if (item._id.type === 'debit') {
+          if (category.toLowerCase().includes('investment') || 
+              category.toLowerCase().includes('mutual fund') || 
+              category.toLowerCase().includes('stock') ||
+              category.toLowerCase().includes('sip')) {
+            if (isFromExpenseTracker) {
+              data.investmentsFromExpenseTracker += item.totalAmount;
+            } else {
+              data.investmentsFromBankStatements += item.totalAmount;
+            }
+            data.investments += item.totalAmount;
+          } else if (category.toLowerCase().includes('emi') || 
+                     category.toLowerCase().includes('installment')) {
+            data.emiPayments += item.totalAmount;
+          } else if (category.toLowerCase().includes('loan')) {
+            data.loanPayments += item.totalAmount;
+          } else if (category.toLowerCase().includes('saving') || 
+                     category.toLowerCase().includes('deposit') ||
+                     category.toLowerCase().includes('fd') ||
+                     category.toLowerCase().includes('fixed deposit')) {
+            data.savings += item.totalAmount;
+          } else {
+            if (isFromExpenseTracker) {
+              data.spendingsFromExpenseTracker += item.totalAmount;
+            } else {
+              data.spendingsFromBankStatements += item.totalAmount;
+            }
+            data.spendings += item.totalAmount;
+          }
+          data.categories[category] = (data.categories[category] || 0) + item.totalAmount;
+        }
+        data.transactionCount += item.count;
+      }
+    });
+    
+    // Process EMI data
+    allEMIs.forEach(emi => {
+      if (emi.status !== 'active' && emi.status !== 'completed') return;
+      
+      const emiStartDate = new Date(emi.startDate);
+      
+      monthsArray.forEach(monthKey => {
+        const [year, month] = monthKey.split('-').map(Number);
+        const monthDate = new Date(year, month - 1, 1);
+        
+        const monthsSinceStart = (monthDate.getFullYear() - emiStartDate.getFullYear()) * 12 
+                                + (monthDate.getMonth() - emiStartDate.getMonth());
+        
+        if (monthsSinceStart >= 0 && monthsSinceStart < emi.totalTenure) {
+          if (emi.status === 'active' || (emi.status === 'completed' && monthsSinceStart < emi.totalTenure)) {
+            monthlyData[monthKey].emiPayments += emi.emiAmount || 0;
+            monthlyData[monthKey].monthlyCommitments += emi.emiAmount || 0;
+          }
+        }
+      });
+    });
+    
+    // Calculate derived metrics
+    const trendsArray = monthsArray.map(monthKey => {
+      const data = monthlyData[monthKey];
+      data.netSavings = data.income - (data.spendings + data.emiPayments + data.loanPayments + data.investments);
+      if (data.income > 0) {
+        data.savingsRate = ((data.netSavings / data.income) * 100).toFixed(2);
+      }
+      data.monthlyCommitments = data.emiPayments + data.loanPayments;
+      return data;
+    });
+    
+    // Calculate summary statistics
+    const totalIncome = trendsArray.reduce((sum, t) => sum + t.income, 0);
+    const totalSpendings = trendsArray.reduce((sum, t) => sum + t.spendings, 0);
+    const totalEMI = trendsArray.reduce((sum, t) => sum + t.emiPayments, 0);
+    const totalInvestments = trendsArray.reduce((sum, t) => sum + t.investments, 0);
+    const totalLoans = trendsArray.reduce((sum, t) => sum + t.loanPayments, 0);
+    const totalNetSavings = trendsArray.reduce((sum, t) => sum + t.netSavings, 0);
+    const totalCommitments = trendsArray.reduce((sum, t) => sum + t.monthlyCommitments, 0);
+    
+    const avgMonthlyIncome = trendsArray.length > 0 ? totalIncome / trendsArray.length : 0;
+    const avgMonthlySpendings = trendsArray.length > 0 ? totalSpendings / trendsArray.length : 0;
+    const avgMonthlyEMI = trendsArray.length > 0 ? totalEMI / trendsArray.length : 0;
+    const avgMonthlyInvestments = trendsArray.length > 0 ? totalInvestments / trendsArray.length : 0;
+    const avgMonthlyCommitments = trendsArray.length > 0 ? totalCommitments / trendsArray.length : 0;
+    const avgSavingsRate = trendsArray.length > 0 
+      ? trendsArray.reduce((sum, t) => sum + parseFloat(t.savingsRate), 0) / trendsArray.length 
+      : 0;
+    
+    // Export based on format
+    if (format === 'excel') {
+      // Create Excel workbook
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Monthly Trends');
+      
+      // Add title
+      worksheet.mergeCells('A1:K1');
+      const titleRow = worksheet.getCell('A1');
+      titleRow.value = 'Monthly Trends Report';
+      titleRow.font = { size: 16, bold: true };
+      titleRow.alignment = { horizontal: 'center' };
+      
+      // Add metadata
+      worksheet.getCell('A2').value = `Generated on: ${new Date().toLocaleDateString()}`;
+      worksheet.getCell('A3').value = `Period: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`;
+      worksheet.getCell('A4').value = `User: ${profile?.fullName || 'Unknown'}`;
+      
+      // Add summary section
+      worksheet.getCell('A6').value = 'Summary Statistics';
+      worksheet.getCell('A6').font = { bold: true, size: 14 };
+      
+      const summaryData = [
+        ['Total Income', `₹${totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Spending', `₹${totalSpendings.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total EMI Payments', `₹${totalEMI.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Investments', `₹${totalInvestments.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Loan Payments', `₹${totalLoans.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Net Savings', `₹${totalNetSavings.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Monthly Income', `₹${avgMonthlyIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Monthly Spending', `₹${avgMonthlySpendings.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Monthly Investments', `₹${avgMonthlyInvestments.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Savings Rate', `${avgSavingsRate.toFixed(2)}%`]
+      ];
+      
+      summaryData.forEach((row, index) => {
+        worksheet.getCell(`A${7 + index}`).value = row[0];
+        worksheet.getCell(`B${7 + index}`).value = row[1];
+        worksheet.getCell(`A${7 + index}`).font = { bold: true };
+      });
+      
+      // Add monthly data table
+      const dataStartRow = 19;
+      worksheet.getCell(`A${dataStartRow}`).value = 'Monthly Breakdown';
+      worksheet.getCell(`A${dataStartRow}`).font = { bold: true, size: 14 };
+      
+      // Headers
+      const headers = ['Month', 'Income', 'Spendings', 'EMI', 'Investments', 'Loans', 'Commitments', 'Net Savings', 'Savings %', 'Transactions'];
+      const headerRow = worksheet.getRow(dataStartRow + 1);
+      headers.forEach((header, index) => {
+        const cell = headerRow.getCell(index + 1);
+        cell.value = header;
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+      });
+      
+      // Data rows
+      trendsArray.forEach((trend, index) => {
+        const row = worksheet.getRow(dataStartRow + 2 + index);
+        row.values = [
+          `${trend.monthName} ${trend.year}`,
+          trend.income,
+          trend.spendings,
+          trend.emiPayments,
+          trend.investments,
+          trend.loanPayments,
+          trend.monthlyCommitments,
+          trend.netSavings,
+          `${trend.savingsRate}%`,
+          trend.transactionCount
+        ];
+        
+        // Format currency cells
+        for (let col = 2; col <= 8; col++) {
+          row.getCell(col).numFmt = '₹#,##0.00';
+        }
+      });
+      
+      // Auto-fit columns
+      worksheet.columns.forEach((column) => {
+        column.width = 15;
+      });
+      
+      // Add Chart Sheet
+      const chartSheet = workbook.addWorksheet('Visual Chart');
+      
+      // Add chart title
+      chartSheet.mergeCells('A1:J1');
+      const chartTitle = chartSheet.getCell('A1');
+      chartTitle.value = 'Monthly Financial Trends - Visual Representation';
+      chartTitle.font = { size: 16, bold: true };
+      chartTitle.alignment = { horizontal: 'center' };
+      
+      // Add chart data for visualization
+      chartSheet.getCell('A3').value = 'Month';
+      chartSheet.getCell('B3').value = 'Income';
+      chartSheet.getCell('C3').value = 'Spending';
+      chartSheet.getCell('D3').value = 'Investments';
+      chartSheet.getCell('E3').value = 'Net Savings';
+      
+      // Style headers
+      ['A3', 'B3', 'C3', 'D3', 'E3'].forEach(cell => {
+        chartSheet.getCell(cell).font = { bold: true };
+        chartSheet.getCell(cell).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF4472C4' }
+        };
+        chartSheet.getCell(cell).font.color = { argb: 'FFFFFFFF' };
+      });
+      
+      // Add data
+      trendsArray.forEach((trend, index) => {
+        const row = 4 + index;
+        chartSheet.getCell(`A${row}`).value = `${trend.monthName} ${trend.year}`;
+        chartSheet.getCell(`B${row}`).value = trend.income;
+        chartSheet.getCell(`C${row}`).value = trend.spendings;
+        chartSheet.getCell(`D${row}`).value = trend.investments;
+        chartSheet.getCell(`E${row}`).value = trend.netSavings;
+        
+        // Format currency
+        ['B', 'C', 'D', 'E'].forEach(col => {
+          chartSheet.getCell(`${col}${row}`).numFmt = '₹#,##0.00';
+        });
+      });
+      
+      // Add Excel chart
+      chartSheet.addImage(workbook.addImage({
+        base64: '',
+        extension: 'png',
+      }), {
+        tl: { col: 0, row: 4 + trendsArray.length + 1 },
+        ext: { width: 600, height: 400 }
+      });
+      
+      // Add a line chart using Excel's built-in charting
+      const chartData = trendsArray.map((trend, index) => ({
+        month: `${trend.monthName} ${trend.year}`,
+        income: trend.income,
+        spending: trend.spendings,
+        investments: trend.investments,
+        netSavings: trend.netSavings
+      }));
+      
+      // Add visual representation with colored cells
+      const chartStartRow = 4 + trendsArray.length + 3;
+      chartSheet.getCell(`A${chartStartRow}`).value = 'Visual Bar Representation';
+      chartSheet.getCell(`A${chartStartRow}`).font = { bold: true, size: 14 };
+      
+      chartSheet.getCell(`A${chartStartRow + 1}`).value = 'Month';
+      chartSheet.getCell(`B${chartStartRow + 1}`).value = 'Income (₹)';
+      chartSheet.getCell(`C${chartStartRow + 1}`).value = 'Spending (₹)';
+      chartSheet.getCell(`D${chartStartRow + 1}`).value = 'Investments (₹)';
+      chartSheet.getCell(`E${chartStartRow + 1}`).value = 'Net Savings (₹)';
+      
+      trendsArray.forEach((trend, index) => {
+        const row = chartStartRow + 2 + index;
+        chartSheet.getCell(`A${row}`).value = `${trend.monthName}`;
+        
+        // Create bar chart effect with colored cells
+        const maxValue = Math.max(trend.income, trend.spendings, trend.investments, Math.abs(trend.netSavings));
+        
+        // Income bar (green)
+        chartSheet.getCell(`B${row}`).value = trend.income;
+        chartSheet.getCell(`B${row}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF4CAF50' }
+        };
+        
+        // Spending bar (red)
+        chartSheet.getCell(`C${row}`).value = trend.spendings;
+        chartSheet.getCell(`C${row}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF44336' }
+        };
+        
+        // Investments bar (purple)
+        chartSheet.getCell(`D${row}`).value = trend.investments;
+        chartSheet.getCell(`D${row}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF9C27B0' }
+        };
+        
+        // Net Savings bar (blue)
+        chartSheet.getCell(`E${row}`).value = trend.netSavings;
+        chartSheet.getCell(`E${row}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF2196F3' }
+        };
+        
+        // Format all as currency with white text
+        ['B', 'C', 'D', 'E'].forEach(col => {
+          chartSheet.getCell(`${col}${row}`).numFmt = '₹#,##0';
+          chartSheet.getCell(`${col}${row}`).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          chartSheet.getCell(`${col}${row}`).alignment = { horizontal: 'center' };
+        });
+      });
+      
+      // Auto-fit chart sheet columns
+      chartSheet.columns.forEach((column) => {
+        column.width = 18;
+      });
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=monthly-trends-${Date.now()}.xlsx`);
+      
+      // Write to response
+      await workbook.xlsx.write(res);
+      res.end();
+      
+    } else {
+      // Create PDF with charts
+      const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=monthly-trends-${Date.now()}.pdf`);
+      
+      // Pipe PDF to response
+      doc.pipe(res);
+      
+      // Title
+      doc.fontSize(20).font('Helvetica-Bold').text('Monthly Trends Report', { align: 'center' });
+      doc.moveDown();
+      
+      // Metadata
+      doc.fontSize(10).font('Helvetica')
+        .text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'right' })
+        .text(`Period: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`, { align: 'right' })
+        .text(`User: ${profile?.fullName || 'Unknown'}`, { align: 'right' });
+      
+      doc.moveDown(2);
+      
+      // Summary section
+      doc.fontSize(14).font('Helvetica-Bold').text('Summary Statistics');
+      doc.moveDown(0.5);
+      
+      doc.fontSize(10).font('Helvetica');
+      const summaryItems = [
+        ['Total Income:', `₹${totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Spending:', `₹${totalSpendings.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total EMI Payments:', `₹${totalEMI.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Investments:', `₹${totalInvestments.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Loan Payments:', `₹${totalLoans.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Total Net Savings:', `₹${totalNetSavings.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Monthly Income:', `₹${avgMonthlyIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Monthly Spending:', `₹${avgMonthlySpendings.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Monthly Investments:', `₹${avgMonthlyInvestments.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
+        ['Avg Savings Rate:', `${avgSavingsRate.toFixed(2)}%`]
+      ];
+      
+      summaryItems.forEach(([label, value]) => {
+        doc.text(`${label} ${value}`, { continued: false });
+      });
+      
+      doc.moveDown(2);
+      
+      // Generate chart image
+      try {
+        const chartJSNodeCanvas = new ChartJSNodeCanvas({ 
+          width: 500, 
+          height: 300,
+          backgroundColour: 'white'
+        });
+        
+        // Prepare chart data
+        const chartLabels = trendsArray.map(t => `${t.monthName} ${t.year}`);
+        const incomeData = trendsArray.map(t => t.income);
+        const spendingData = trendsArray.map(t => t.spendings);
+        const investmentData = trendsArray.map(t => t.investments);
+        const netSavingsData = trendsArray.map(t => t.netSavings);
+        
+        // Chart configuration
+        const configuration = {
+          type: 'line',
+          data: {
+            labels: chartLabels,
+            datasets: [
+              {
+                label: 'Income',
+                data: incomeData,
+                borderColor: 'rgba(76, 175, 80, 1)',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2
+              },
+              {
+                label: 'Spending',
+                data: spendingData,
+                borderColor: 'rgba(244, 67, 54, 1)',
+                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2
+              },
+              {
+                label: 'Investments',
+                data: investmentData,
+                borderColor: 'rgba(156, 39, 176, 1)',
+                backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2
+              },
+              {
+                label: 'Net Savings',
+                data: netSavingsData,
+                borderColor: 'rgba(33, 150, 243, 1)',
+                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                fill: false,
+                tension: 0.4,
+                borderWidth: 2,
+                borderDash: [5, 5]
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Monthly Financial Trends',
+                font: {
+                  size: 16,
+                  weight: 'bold'
+                }
+              },
+              legend: {
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true,
+                  padding: 15
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return '₹' + (value / 1000).toFixed(0) + 'K';
+                  }
+                },
+                title: {
+                  display: true,
+                  text: 'Amount (₹)'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Month'
+                }
+              }
+            }
+          }
+        };
+        
+        // Render chart to buffer
+        const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
+        
+        // Add chart to PDF
+        doc.fontSize(14).font('Helvetica-Bold').text('Visual Trends Chart');
+        doc.moveDown(0.5);
+        
+        const chartWidth = 500;
+        const chartHeight = 300;
+        const pageWidth = doc.page.width - 100; // Account for margins
+        const scaleFactor = pageWidth / chartWidth;
+        
+        doc.image(imageBuffer, {
+          fit: [pageWidth, chartHeight * scaleFactor],
+          align: 'center'
+        });
+        
+        doc.moveDown(2);
+      } catch (chartError) {
+        logger.warn('Could not generate chart for PDF:', chartError);
+        // Continue without chart
+      }
+      
+      // Monthly breakdown table
+      doc.fontSize(14).font('Helvetica-Bold').text('Monthly Breakdown');
+      doc.moveDown(0.5);
+      
+      // Table headers
+      const tableTop = doc.y;
+      const colWidths = [60, 70, 70, 60, 70, 60, 50, 50];
+      const headers = ['Month', 'Income', 'Spending', 'EMI', 'Investment', 'Loans', 'Net Savings', 'Rate'];
+      
+      doc.fontSize(9).font('Helvetica-Bold');
+      let xPos = 50;
+      headers.forEach((header, i) => {
+        doc.text(header, xPos, tableTop, { width: colWidths[i], align: 'left' });
+        xPos += colWidths[i];
+      });
+      
+      doc.moveDown(0.3);
+      
+      // Table rows
+      doc.fontSize(8).font('Helvetica');
+      trendsArray.forEach((trend, index) => {
+        const yPos = doc.y;
+        xPos = 50;
+        
+        const rowData = [
+          `${trend.monthName} ${trend.year}`,
+          `₹${(trend.income / 1000).toFixed(0)}K`,
+          `₹${(trend.spendings / 1000).toFixed(0)}K`,
+          `₹${(trend.emiPayments / 1000).toFixed(0)}K`,
+          `₹${(trend.investments / 1000).toFixed(0)}K`,
+          `₹${(trend.loanPayments / 1000).toFixed(0)}K`,
+          `₹${(trend.netSavings / 1000).toFixed(0)}K`,
+          `${trend.savingsRate}%`
+        ];
+        
+        rowData.forEach((data, i) => {
+          doc.text(data, xPos, yPos, { width: colWidths[i], align: 'left' });
+          xPos += colWidths[i];
+        });
+        
+        doc.moveDown(0.3);
+        
+        // Add new page if needed
+        if (doc.y > 700) {
+          doc.addPage();
+        }
+      });
+      
+      // Footer
+      doc.fontSize(8).font('Helvetica').text(
+        'Financial Analyzer - Monthly Trends Report',
+        50,
+        doc.page.height - 50,
+        { align: 'center' }
+      );
+      
+      // Finalize PDF
+      doc.end();
+    }
+    
+  } catch (error) {
+    logger.error('Export monthly trends error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export monthly trends',
       error: error.message
     });
   }
@@ -1017,11 +1973,16 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     }
     
     // Fetch all required data
-    const [overview, allEMIs, upcomingData] = await Promise.all([
+    const Transaction = require('../models/Transaction');
+    const [overview, allEMIs, upcomingData, personalLoans, personalLoansSummary] = await Promise.all([
       emiAnalyticsService.getEMIOverview(userId),
       EMI.find(dateFilter).sort({ startDate: -1 }),
-      emiAnalyticsService.getUpcomingPayments(userId, 36) // Get 36 months of upcoming payments
+      emiAnalyticsService.getUpcomingPayments(userId, 36), // Get 36 months of upcoming payments
+      PersonalLoan.find({ userId }).sort({ loanTakenDate: -1 }),
+      PersonalLoan.getSummary(userId)
     ]);
+    
+    logger.info(`Personal Loans fetched: ${personalLoans ? personalLoans.length : 0}, Summary: ${JSON.stringify(personalLoansSummary)}`);
 
     // Extract upcoming payments array from the returned object
     const upcomingPayments = upcomingData.upcomingPayments || [];
@@ -1115,9 +2076,194 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       else interestRateRanges['20%+']++;
     });
 
+    // Fetch Monthly Trends Data (Income, Spending, Investments, Savings)
+    logger.info('Fetching monthly trends data for comprehensive chart...');
+    const profileData = await FinancialProfile.findOne({ userId });
+    const profileMonthlyIncome = profileData?.monthlyIncome || 0;
+    
+    // Calculate date range for trends (last 6 months)
+    const trendsEndDate = new Date();
+    const trendsStartDate = new Date();
+    trendsStartDate.setMonth(trendsStartDate.getMonth() - 6);
+    
+    // Get all transactions for monthly trends
+    const transactions = await Transaction.aggregate([
+      {
+        $match: {
+          userId,
+          date: { $gte: trendsStartDate, $lte: trendsEndDate }
+        }
+      },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type',
+            category: '$category'
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+    
+    // Process monthly trends data
+    const monthlyTrendsData = {};
+    const trendsMonthsArray = [];
+    
+    // Generate months array
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      trendsMonthsArray.push(monthKey);
+      monthlyTrendsData[monthKey] = {
+        income: profileMonthlyIncome,
+        spendings: 0,
+        emiPayments: 0,
+        investments: 0,
+        loanPayments: 0
+      };
+    }
+    
+    // Process transactions
+    transactions.forEach(item => {
+      const monthKey = `${item._id.year}-${String(item._id.month).padStart(2, '0')}`;
+      if (!monthlyTrendsData[monthKey]) return;
+      
+      const type = item._id.type;
+      const category = item._id.category;
+      const amount = item.totalAmount || 0;
+      
+      if (type === 'credit') {
+        monthlyTrendsData[monthKey].income += amount;
+      } else if (type === 'debit') {
+        if (category === 'investment') {
+          monthlyTrendsData[monthKey].investments += amount;
+        } else if (category === 'loan_payment') {
+          monthlyTrendsData[monthKey].loanPayments += amount;
+        } else {
+          monthlyTrendsData[monthKey].spendings += amount;
+        }
+      }
+    });
+    
+    // Process EMI data for trends
+    allEMIs.forEach(emi => {
+      if (emi.status !== 'active') return;
+      const emiStart = new Date(emi.startDate);
+      
+      trendsMonthsArray.forEach(monthKey => {
+        const [year, month] = monthKey.split('-').map(Number);
+        const monthDate = new Date(year, month - 1, 1);
+        
+        if (monthDate >= emiStart && emi.remainingInstallments > 0) {
+          monthlyTrendsData[monthKey].emiPayments += emi.emiAmount || 0;
+        }
+      });
+    });
+    
+    // Prepare chart data arrays
+    const trendsLabels = trendsMonthsArray.map(key => {
+      const [year, month] = key.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    });
+    
+    const incomeData = trendsMonthsArray.map(key => monthlyTrendsData[key].income);
+    const spendingsData = trendsMonthsArray.map(key => monthlyTrendsData[key].spendings);
+    const investmentsData = trendsMonthsArray.map(key => monthlyTrendsData[key].investments);
+    const netSavingsData = trendsMonthsArray.map(key => 
+      monthlyTrendsData[key].income - monthlyTrendsData[key].spendings - monthlyTrendsData[key].investments
+    );
+    
+    logger.info(`Monthly trends data processed: ${trendsLabels.length} months`);
+
     // Generate charts
     const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
     const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 800, height: 400, backgroundColour: 'white' });
+
+    // Chart 0: Financial Monthly Trends (Income, Spending, Investments, Net Savings)
+    const financialMonthlyTrendsConfig = {
+      type: 'line',
+      data: {
+        labels: trendsLabels,
+        datasets: [{
+          label: 'Income',
+          data: incomeData,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2
+        }, {
+          label: 'Spending',
+          data: spendingsData,
+          borderColor: '#F97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.2)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2
+        }, {
+          label: 'Investments',
+          data: investmentsData,
+          borderColor: '#A855F7',
+          backgroundColor: 'rgba(168, 85, 247, 0.2)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2
+        }, {
+          label: 'Net Savings',
+          data: netSavingsData,
+          borderColor: '#3B82F6',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.4,
+          borderWidth: 2,
+          borderDash: [5, 5]
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Financial Monthly Trends',
+            font: { size: 18, weight: 'bold' }
+          },
+          legend: {
+            display: true,
+            position: 'bottom'
+          }
+        },
+        scales: {
+          y: { 
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                if (value >= 100000) return '₹' + (value / 100000).toFixed(0) + 'L';
+                if (value >= 1000) return '₹' + (value / 1000).toFixed(0) + 'k';
+                return '₹' + value;
+              }
+            }
+          }
+        }
+      }
+    };
 
     // Chart 1: EMI Monthly Trends (Line + Bar Combo)
     const monthlyTrendsConfig = {
@@ -1463,10 +2609,12 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     };
 
     // Generate all chart images
+    logger.info('Starting chart generation for EMI export PDF...');
     const [
-      chart1, chart2, chart3, chart4, chart5, chart6,
+      chart0, chart1, chart2, chart3, chart4, chart5, chart6,
       chart7, chart8, chart9, chart10, chart11, chart12
     ] = await Promise.all([
+      chartJSNodeCanvas.renderToBuffer(financialMonthlyTrendsConfig),
       chartJSNodeCanvas.renderToBuffer(monthlyTrendsConfig),
       chartJSNodeCanvas.renderToBuffer(provider360Config),
       chartJSNodeCanvas.renderToBuffer(providerDistributionConfig),
@@ -1480,6 +2628,8 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       chartJSNodeCanvas.renderToBuffer(interestRateConfig),
       chartJSNodeCanvas.renderToBuffer(progressOverviewConfig)
     ]);
+    logger.info('All 13 charts generated successfully!');
+    logger.info(`Chart sizes: ${[chart0, chart1, chart2, chart3, chart4, chart5, chart6, chart7, chart8, chart9, chart10, chart11, chart12].map(c => c.length).join(', ')} bytes`);
 
     // Generate proper PDF using PDFKit
     const PDFDocument = require('pdfkit');
@@ -1510,38 +2660,110 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     doc.text(`Foreclosed EMIs: ${calculatedOverview.foreClosedCount}`);
     doc.moveDown(0.5);
     doc.text(`Total Monthly EMI: ${calculatedOverview.totalMonthlyEMI.toLocaleString('en-IN')}`);
-    doc.text(`Total Outstanding: ${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`);
+    doc.text(`Total Outstanding (EMI): ${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`);
+    if (personalLoansSummary && personalLoansSummary.totalOutstanding > 0) {
+      doc.text(`Personal Loans Outstanding: ${personalLoansSummary.totalOutstanding.toLocaleString('en-IN')}`);
+      doc.text(`Combined Outstanding: ${(calculatedOverview.totalOutstanding + personalLoansSummary.totalOutstanding).toLocaleString('en-IN')}`, { underline: true });
+    }
     doc.text(`Total Principal: ${calculatedOverview.totalPrincipal.toLocaleString('en-IN')}`);
     doc.text(`Average Interest Rate: ${calculatedOverview.averageInterestRate.toFixed(2)}%`);
     doc.moveDown(2);
     
-    // CHARTS SECTION - All 12 comprehensive charts
+    // CHARTS SECTION - All 13 comprehensive charts
+    logger.info('Embedding charts in PDF...');
+    
+    // Chart 0: Financial Monthly Trends (Income, Spending, Investments, Net Savings)
+    doc.addPage();
+    doc.fontSize(14).font('Courier-Bold').text('FINANCIAL MONTHLY TRENDS', { align: 'center', underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(9).font('Courier').text('Income, Spending, Investments & Net Savings (Last 6 Months)', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.image(chart0, { fit: [500, 300], align: 'center' });
+    doc.moveDown(1);
+    logger.info('Chart 0 (Financial Monthly Trends) embedded');
+    
+    // Add data table for Financial Monthly Trends
+    doc.fontSize(10).font('Courier-Bold').text('Monthly Values:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    doc.text('Month'.padEnd(15) + 'Income'.padEnd(15) + 'Spending'.padEnd(15) + 'Investments'.padEnd(15) + 'Net Savings');
+    doc.text('-'.repeat(75));
+    trendsLabels.forEach((label, index) => {
+      const income = incomeData[index] || 0;
+      const spending = spendingsData[index] || 0;
+      const investment = investmentsData[index] || 0;
+      const netSaving = netSavingsData[index] || 0;
+      doc.text(
+        label.padEnd(15) + 
+        `${(income/1000).toFixed(0)}k`.padEnd(15) + 
+        `${(spending/1000).toFixed(0)}k`.padEnd(15) + 
+        `${(investment/1000).toFixed(0)}k`.padEnd(15) + 
+        `${(netSaving/1000).toFixed(0)}k`
+      );
+    });
+    doc.moveDown(1);
     
     // Chart 1: EMI Monthly Trends
     doc.addPage();
     doc.fontSize(12).font('Courier-Bold').text('EMI MONTHLY TRENDS', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart1, { fit: [500, 300], align: 'center' });
-    doc.moveDown(2);
+    doc.moveDown(1);
+    logger.info('Chart 1 embedded');
+    
+    // Add data table for EMI Monthly Trends
+    doc.fontSize(10).font('Courier-Bold').text('Monthly Payment Data:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    const monthlyBurdenEntries = Object.entries(monthlyBurdenMap).slice(0, 12);
+    doc.text('Month'.padEnd(20) + 'Payment Amount'.padEnd(20) + 'EMI Count');
+    doc.text('-'.repeat(60));
+    monthlyBurdenEntries.forEach(([month, amount]) => {
+      const count = emiCountByMonth[month] || 0;
+      doc.text(
+        month.padEnd(20) + 
+        `₹${amount.toLocaleString('en-IN')}`.padEnd(20) + 
+        count.toString()
+      );
+    });
+    doc.moveDown(1);
     
     // Chart 2: Card Provider 360° Comparison
     doc.fontSize(12).font('Courier-Bold').text('CARD PROVIDER 360° COMPARISON', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart2, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
+    logger.info('Chart 2 embedded');
     
     // Chart 3: EMI Distribution by Card Provider
     doc.addPage();
     doc.fontSize(12).font('Courier-Bold').text('EMI DISTRIBUTION BY CARD PROVIDER', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart3, { fit: [500, 300], align: 'center' });
-    doc.moveDown(2);
+    doc.moveDown(1);
+    logger.info('Chart 3 embedded');
+    
+    // Add data table for Provider Distribution
+    doc.fontSize(10).font('Courier-Bold').text('Provider Distribution Data:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    doc.text('Provider'.padEnd(25) + 'EMI Count'.padEnd(15) + 'Outstanding');
+    doc.text('-'.repeat(55));
+    Object.entries(providerMap).forEach(([provider, data]) => {
+      doc.text(
+        provider.substring(0, 24).padEnd(25) + 
+        data.count.toString().padEnd(15) + 
+        `₹${data.outstanding.toLocaleString('en-IN')}`
+      );
+    });
+    doc.moveDown(1);
     
     // Chart 4: Monthly EMI Burden
     doc.fontSize(12).font('Courier-Bold').text('MONTHLY EMI BURDEN', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart4, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
+    logger.info('Chart 4 embedded');
     
     // Chart 5: Payment Trend Analysis
     doc.addPage();
@@ -1549,25 +2771,54 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     doc.moveDown(0.5);
     doc.image(chart5, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
+    logger.info('Chart 5 embedded');
+    doc.moveDown(2);
     
     // Chart 6: Monthly Burden with EMI Count
     doc.fontSize(12).font('Courier-Bold').text('MONTHLY BURDEN WITH EMI COUNT', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart6, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
+    logger.info('Chart 6 embedded');
     
     // Chart 7: Principal vs Interest Breakdown
     doc.addPage();
     doc.fontSize(12).font('Courier-Bold').text('PRINCIPAL VS INTEREST BREAKDOWN', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart7, { fit: [500, 300], align: 'center' });
-    doc.moveDown(2);
+    doc.moveDown(1);
+    logger.info('Chart 7 embedded');
+    
+    // Add data table for Principal vs Interest
+    doc.fontSize(10).font('Courier-Bold').text('Principal vs Interest Data:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    doc.text('Type'.padEnd(25) + 'Amount'.padEnd(20) + 'Percentage');
+    doc.text('-'.repeat(60));
+    const totalAmount = totalPrincipal + totalInterest;
+    doc.text(
+      'Principal'.padEnd(25) + 
+      `₹${totalPrincipal.toLocaleString('en-IN')}`.padEnd(20) + 
+      `${((totalPrincipal / totalAmount) * 100).toFixed(1)}%`
+    );
+    doc.text(
+      'Interest'.padEnd(25) + 
+      `₹${totalInterest.toLocaleString('en-IN')}`.padEnd(20) + 
+      `${((totalInterest / totalAmount) * 100).toFixed(1)}%`
+    );
+    doc.text(
+      'Total Payable'.padEnd(25) + 
+      `₹${totalAmount.toLocaleString('en-IN')}`.padEnd(20) + 
+      '100.0%'
+    );
+    doc.moveDown(1);
     
     // Chart 8: EMI Completion Progress
     doc.fontSize(12).font('Courier-Bold').text('EMI COMPLETION PROGRESS', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart8, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
+    logger.info('Chart 8 embedded');
     
     // Chart 9: Principal vs Interest Scatter Analysis
     doc.addPage();
@@ -1575,24 +2826,83 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     doc.moveDown(0.5);
     doc.image(chart9, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
+    logger.info('Chart 9 embedded');
     
     // Chart 10: Top Merchants by Outstanding Amount
     doc.fontSize(12).font('Courier-Bold').text('TOP MERCHANTS BY OUTSTANDING AMOUNT', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart10, { fit: [500, 300], align: 'center' });
-    doc.moveDown(2);
+    doc.moveDown(1);
+    logger.info('Chart 10 embedded');
+    
+    // Add data table for Top Merchants
+    doc.fontSize(10).font('Courier-Bold').text('Top Merchants Data:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    doc.text('Rank'.padEnd(8) + 'Merchant'.padEnd(30) + 'Outstanding Amount');
+    doc.text('-'.repeat(60));
+    topMerchants.forEach(([merchant, data], index) => {
+      doc.text(
+        `${index + 1}.`.padEnd(8) + 
+        merchant.substring(0, 29).padEnd(30) + 
+        `₹${data.outstanding.toLocaleString('en-IN')}`
+      );
+    });
+    doc.moveDown(1);
     
     // Chart 11: Interest Rate Distribution
     doc.addPage();
     doc.fontSize(12).font('Courier-Bold').text('INTEREST RATE DISTRIBUTION', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart11, { fit: [500, 300], align: 'center' });
-    doc.moveDown(2);
+    doc.moveDown(1);
+    logger.info('Chart 11 embedded');
+    
+    // Add data table for Interest Rate Distribution
+    doc.fontSize(10).font('Courier-Bold').text('Interest Rate Distribution Data:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    doc.text('Interest Rate Range'.padEnd(25) + 'Number of EMIs');
+    doc.text('-'.repeat(50));
+    Object.entries(interestRateRanges).forEach(([range, count]) => {
+      doc.text(range.padEnd(25) + count.toString());
+    });
+    doc.moveDown(1);
     
     // Chart 12: EMI Progress Overview
     doc.fontSize(12).font('Courier-Bold').text('EMI PROGRESS OVERVIEW', { underline: true });
     doc.moveDown(0.5);
     doc.image(chart12, { fit: [500, 300], align: 'center' });
+    doc.moveDown(1);
+    logger.info('Chart 12 embedded');
+    
+    // Add data table for EMI Progress Overview
+    doc.fontSize(10).font('Courier-Bold').text('EMI Status Summary:', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font('Courier');
+    doc.text('Status'.padEnd(20) + 'Count'.padEnd(15) + 'Outstanding Amount');
+    doc.text('-'.repeat(60));
+    doc.text(
+      'Active'.padEnd(20) + 
+      calculatedOverview.activeCount.toString().padEnd(15) + 
+      `₹${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`
+    );
+    doc.text(
+      'Completed'.padEnd(20) + 
+      calculatedOverview.completedCount.toString().padEnd(15) + 
+      '₹0'
+    );
+    doc.text(
+      'Foreclosed'.padEnd(20) + 
+      calculatedOverview.foreClosedCount.toString().padEnd(15) + 
+      '₹0'
+    );
+    doc.text(
+      'Total'.padEnd(20) + 
+      calculatedOverview.totalEMIs.toString().padEnd(15) + 
+      `₹${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`
+    );
+    logger.info('All 13 charts embedded in PDF successfully!');
     doc.moveDown(2);
     
     // Active EMIs Section
@@ -1660,6 +2970,70 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       doc.moveDown();
     }
 
+    // Personal Loans Section
+    logger.info(`Checking personal loans for PDF: ${personalLoans ? personalLoans.length : 'null'}`);
+    if (personalLoans && personalLoans.length > 0) {
+      logger.info('Adding Personal Loans section to PDF...');
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('PERSONAL LOANS (BORROWED)', { underline: true });
+      doc.moveDown(0.5);
+      
+      // Personal Loans Summary
+      doc.fontSize(11).font('Courier-Bold').text('Summary:');
+      doc.fontSize(9).font('Courier');
+      doc.text(`  Total Borrowed: ${personalLoansSummary.totalBorrowed.toLocaleString('en-IN')}`, { indent: 10 });
+      doc.text(`  Total Outstanding: ${personalLoansSummary.totalOutstanding.toLocaleString('en-IN')}`, { indent: 10 });
+      doc.text(`  Current Interest Accrued: ${personalLoansSummary.totalInterest.toLocaleString('en-IN')}`, { indent: 10 });
+      doc.text(`  Active Loans: ${personalLoansSummary.activeCount}`, { indent: 10 });
+      doc.moveDown(1);
+      
+      // Active Personal Loans
+      const activePersonalLoans = personalLoans.filter(loan => loan.status === 'active');
+      if (activePersonalLoans.length > 0) {
+        doc.fontSize(11).font('Courier-Bold').text('Active Loans:');
+        doc.moveDown(0.3);
+        doc.fontSize(9).font('Courier');
+        
+        activePersonalLoans.forEach((loan, index) => {
+          doc.text(`${index + 1}. ${loan.lenderName} (${loan.relationship || 'N/A'})`);
+          doc.text(`   Principal: ${loan.principalAmount.toLocaleString('en-IN')}`, { indent: 10 });
+          doc.text(`   Borrowed On: ${new Date(loan.loanTakenDate).toLocaleDateString('en-IN')}`, { indent: 10 });
+          doc.text(`   Days Since: ${loan.daysSinceTaken} days`, { indent: 10 });
+          if (loan.interestType === 'fixed' && loan.interestRate > 0) {
+            doc.text(`   Interest Rate: ${loan.interestRate}% per annum`, { indent: 10 });
+            doc.text(`   Current Interest: ${loan.currentInterest.toLocaleString('en-IN')}`, { indent: 10 });
+          }
+          doc.text(`   Total Repaid: ${loan.totalRepaid.toLocaleString('en-IN')}`, { indent: 10 });
+          doc.text(`   Outstanding: ${loan.outstandingAmount.toLocaleString('en-IN')}`, { indent: 10 });
+          if (loan.priority) {
+            doc.text(`   Priority: ${loan.priority.toUpperCase()}`, { indent: 10 });
+          }
+          if (loan.purpose) {
+            doc.text(`   Purpose: ${loan.purpose}`, { indent: 10 });
+          }
+          doc.moveDown(0.3);
+        });
+        doc.moveDown(0.5);
+      }
+      
+      // Repaid Personal Loans
+      const repaidPersonalLoans = personalLoans.filter(loan => loan.status === 'repaid');
+      if (repaidPersonalLoans.length > 0) {
+        doc.fontSize(11).font('Courier-Bold').text(`Repaid Loans (${repaidPersonalLoans.length}):`);
+        doc.moveDown(0.3);
+        doc.fontSize(9).font('Courier');
+        
+        repaidPersonalLoans.forEach((loan, index) => {
+          doc.text(`${index + 1}. ${loan.lenderName} - ${loan.principalAmount.toLocaleString('en-IN')} (Repaid: ${loan.totalRepaid.toLocaleString('en-IN')})`);
+          doc.moveDown(0.2);
+        });
+      }
+      doc.moveDown();
+      logger.info('Personal Loans section added to PDF successfully!');
+    } else {
+      logger.info('No personal loans to add to PDF');
+    }
+
     // Provider Summary
     if (allEMIs.length > 0) {
       doc.addPage();
@@ -1722,274 +3096,182 @@ router.get('/export/excel', authenticate, async (req, res) => {
       return new Date(payment.dueDate) <= new Date(endDate);
     });
 
-    // Create workbook
-    const workbook = new ExcelJS.Workbook();
-    pdfContent += '╚════════════════════════════════════════════════════════════════════════════════╝\n\n';
-    pdfContent += `📅 Generated: ${new Date().toLocaleString()}\n`;
-    pdfContent += `📊 Date Range: ${startDate || 'All'} to ${endDate || 'All'}\n`;
-    pdfContent += `👤 User ID: ${userId}\n\n`;
+    // ============= CHART GENERATION =============
+    // Prepare data for charts
+    const activeEMIs = allEMIs.filter(emi => emi.status === 'active');
     
-    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-    pdfContent += '                              OVERVIEW SUMMARY\n';
-    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
-    pdfContent += `📊 Total EMIs: ${allEMIs.length}\n`;
-    pdfContent += `✅ Active EMIs: ${activeEMIs.length}\n`;
-    pdfContent += `✔️  Completed EMIs: ${completedEMIs.length}\n`;
-    pdfContent += `🔒 Foreclosed EMIs: ${foreClosedEMIs.length}\n\n`;
-    pdfContent += `💰 Total Monthly EMI: ₹${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}\n`;
-    pdfContent += `📈 Total Outstanding: ₹${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}\n`;
-    pdfContent += `💵 Total Principal: ₹${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}\n`;
-    pdfContent += `📊 Average Interest Rate: ${(overview?.averageInterestRate || 0).toFixed(2)}%\n\n`;
-    
-    // Active EMIs Section
-    if (activeEMIs.length > 0) {
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-      pdfContent += '                              ACTIVE EMIs\n';
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
-      activeEMIs.forEach((emi, index) => {
-        pdfContent += `${index + 1}. ${emi.merchantName || 'Unknown Merchant'}\n`;
-        pdfContent += `   └─ Card: ${emi.cardProvider} ****${emi.cardLastFourDigits || 'N/A'}\n`;
-        pdfContent += `   └─ Product: ${emi.productDescription || 'N/A'}\n`;
-        pdfContent += `   └─ Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')}\n`;
-        pdfContent += `   └─ Interest Rate: ${emi.interestRate || 0}%\n`;
-        pdfContent += `   └─ EMI Amount: ₹${(emi.emiAmount || 0).toLocaleString('en-IN')}\n`;
-        pdfContent += `   └─ Tenure: ${emi.remainingInstallments || 0}/${emi.totalTenure || 0} remaining\n`;
-        pdfContent += `   └─ Start Date: ${new Date(emi.startDate).toLocaleDateString('en-IN')}\n`;
-        pdfContent += `   └─ Outstanding: ₹${((emi.emiAmount || 0) * (emi.remainingInstallments || 0)).toLocaleString('en-IN')}\n\n`;
-      });
-    }
+    // Provider-wise data
+    const providerMap = {};
+    allEMIs.forEach(emi => {
+      const provider = emi.cardProvider || 'Unknown';
+      if (!providerMap[provider]) {
+        providerMap[provider] = { 
+          count: 0, 
+          totalPrincipal: 0, 
+          totalOutstanding: 0,
+          avgInterestRate: 0,
+          totalInterest: 0
+        };
+      }
+      providerMap[provider].count++;
+      providerMap[provider].totalPrincipal += (emi.principalAmount || 0);
+      providerMap[provider].totalOutstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+      providerMap[provider].totalInterest += (emi.interestRate || 0);
+    });
 
-    // Upcoming Payments Section
-    if (filteredUpcoming.length > 0) {
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-      pdfContent += '                           UPCOMING PAYMENTS SCHEDULE\n';
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
-      
-      // Group by month
-      const paymentsByMonth = {};
-      filteredUpcoming.forEach(payment => {
-        const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
-        if (!paymentsByMonth[monthKey]) {
-          paymentsByMonth[monthKey] = [];
+    // Calculate average interest rates
+    Object.keys(providerMap).forEach(provider => {
+      providerMap[provider].avgInterestRate = providerMap[provider].totalInterest / providerMap[provider].count;
+    });
+
+    // Merchant-wise data
+    const merchantMap = {};
+    allEMIs.forEach(emi => {
+      const merchant = emi.merchantName || 'Unknown';
+      if (!merchantMap[merchant]) {
+        merchantMap[merchant] = { count: 0, principal: 0, outstanding: 0 };
+      }
+      merchantMap[merchant].count++;
+      merchantMap[merchant].principal += (emi.principalAmount || 0);
+      merchantMap[merchant].outstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+    });
+
+    // Monthly burden data
+    const monthlyBurdenMap = {};
+    const emiCountByMonth = {};
+    filteredUpcoming.forEach(payment => {
+      const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' });
+      monthlyBurdenMap[monthKey] = (monthlyBurdenMap[monthKey] || 0) + (payment.amount || 0);
+      emiCountByMonth[monthKey] = (emiCountByMonth[monthKey] || 0) + 1;
+    });
+
+    // EMI completion progress
+    const completionProgress = allEMIs.map(emi => ({
+      name: `${emi.merchantName || 'Unknown'} (${emi.cardProvider})`,
+      completed: ((emi.totalTenure - emi.remainingInstallments) / emi.totalTenure * 100) || 0,
+      remaining: (emi.remainingInstallments / emi.totalTenure * 100) || 0
+    })).slice(0, 10);
+
+    // Top merchants by outstanding
+    const topMerchants = Object.entries(merchantMap)
+      .sort((a, b) => b[1].outstanding - a[1].outstanding)
+      .slice(0, 10);
+
+    // Interest rate distribution
+    const interestRateRanges = { '0-5%': 0, '5-10%': 0, '10-15%': 0, '15-20%': 0, '20%+': 0 };
+    allEMIs.forEach(emi => {
+      const rate = emi.interestRate || 0;
+      if (rate <= 5) interestRateRanges['0-5%']++;
+      else if (rate <= 10) interestRateRanges['5-10%']++;
+      else if (rate <= 15) interestRateRanges['10-15%']++;
+      else if (rate <= 20) interestRateRanges['15-20%']++;
+      else interestRateRanges['20%+']++;
+    });
+
+    // Generate charts
+    const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 800, height: 400, backgroundColour: 'white' });
+
+    // Chart 1: EMI Monthly Trends
+    const chart1Buffer = await chartJSNodeCanvas.renderToBuffer({
+      type: 'bar',
+      data: {
+        labels: Object.keys(monthlyBurdenMap).slice(0, 12),
+        datasets: [{
+          type: 'line',
+          label: 'Payment Amount (₹)',
+          data: Object.values(monthlyBurdenMap).slice(0, 12),
+          borderColor: '#FF5722',
+          backgroundColor: 'rgba(255, 87, 34, 0.1)',
+          yAxisID: 'y',
+          tension: 0.4
+        }, {
+          type: 'bar',
+          label: 'EMI Count',
+          data: Object.values(emiCountByMonth).slice(0, 12),
+          backgroundColor: '#2196F3',
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        plugins: { title: { display: true, text: 'EMI Monthly Trends', font: { size: 16 } } },
+        scales: {
+          y: { type: 'linear', position: 'left', title: { display: true, text: 'Amount (₹)' } },
+          y1: { type: 'linear', position: 'right', title: { display: true, text: 'Count' }, grid: { drawOnChartArea: false } }
         }
-        paymentsByMonth[monthKey].push(payment);
-      });
+      }
+    });
 
-      Object.entries(paymentsByMonth).forEach(([month, payments]) => {
-        const monthTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        pdfContent += `📅 ${month} - Total: ₹${monthTotal.toLocaleString('en-IN')} (${payments.length} payments)\n`;
-        pdfContent += '─'.repeat(80) + '\n';
-        payments.forEach((payment, idx) => {
-          pdfContent += `   ${idx + 1}. ${new Date(payment.dueDate).toLocaleDateString('en-IN')} - ${payment.merchantName || 'N/A'}\n`;
-          pdfContent += `      Amount: ₹${(payment.amount || 0).toLocaleString('en-IN')} | `;
-          pdfContent += `Card: ${payment.cardProvider || 'N/A'} | `;
-          pdfContent += `Installment: ${payment.installmentNumber || 0}/${payment.totalTenure || 0}\n`;
-        });
-        pdfContent += '\n';
-      });
-    }
+    // Chart 2: Provider Comparison (Radar)
+    const chart2Buffer = await chartJSNodeCanvas.renderToBuffer({
+      type: 'radar',
+      data: {
+        labels: Object.keys(providerMap),
+        datasets: [
+          { label: 'EMI Count', data: Object.values(providerMap).map(p => p.count), backgroundColor: 'rgba(255, 99, 132, 0.2)', borderColor: 'rgb(255, 99, 132)' },
+          { label: 'Avg Interest Rate (%)', data: Object.values(providerMap).map(p => p.avgInterestRate), backgroundColor: 'rgba(54, 162, 235, 0.2)', borderColor: 'rgb(54, 162, 235)' }
+        ]
+      },
+      options: { plugins: { title: { display: true, text: 'Card Provider 360° Comparison', font: { size: 16 } } } }
+    });
 
-    // Completed EMIs Section
-    if (completedEMIs.length > 0) {
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-      pdfContent += '                            COMPLETED EMIs\n';
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
-      completedEMIs.forEach((emi, index) => {
-        pdfContent += `${index + 1}. ${emi.merchantName || 'Unknown'} - ${emi.cardProvider}\n`;
-        pdfContent += `   Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')} | `;
-        pdfContent += `Total Paid: ₹${((emi.emiAmount || 0) * (emi.totalTenure || 0)).toLocaleString('en-IN')}\n`;
-        pdfContent += `   Period: ${new Date(emi.startDate).toLocaleDateString('en-IN')} to ${new Date(emi.endDate || emi.startDate).toLocaleDateString('en-IN')}\n\n`;
-      });
-    }
+    // Chart 3: Provider Distribution (Doughnut)
+    const chart3Buffer = await chartJSNodeCanvas.renderToBuffer({
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(providerMap),
+        datasets: [{
+          data: Object.values(providerMap).map(p => p.count),
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'EMI Distribution by Provider', font: { size: 16 } } } }
+    });
 
-    // Provider-wise Summary
-    if (allEMIs.length > 0) {
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-      pdfContent += '                         PROVIDER-WISE BREAKDOWN\n';
-      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
-      
-      const providerMap = {};
-      allEMIs.forEach(emi => {
-        const provider = emi.cardProvider || 'Unknown';
-        if (!providerMap[provider]) {
-          providerMap[provider] = { count: 0, totalAmount: 0, totalPrincipal: 0 };
-        }
-        providerMap[provider].count++;
-        providerMap[provider].totalAmount += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
-        providerMap[provider].totalPrincipal += (emi.principalAmount || 0);
-      });
+    // Chart 4: Top Merchants (Horizontal Bar)
+    const chart4Buffer = await chartJSNodeCanvas.renderToBuffer({
+      type: 'bar',
+      data: {
+        labels: topMerchants.map(([name]) => name),
+        datasets: [{
+          label: 'Outstanding Amount (₹)',
+          data: topMerchants.map(([, data]) => data.outstanding),
+          backgroundColor: '#FF6384'
+        }]
+      },
+      options: { 
+        indexAxis: 'y',
+        plugins: { title: { display: true, text: 'Top Merchants by Outstanding', font: { size: 16 } } }
+      }
+    });
 
-      Object.entries(providerMap).forEach(([provider, data]) => {
-        pdfContent += `🏦 ${provider}:\n`;
-        pdfContent += `   EMIs: ${data.count} | Principal: ₹${data.totalPrincipal.toLocaleString('en-IN')} | `;
-        pdfContent += `Outstanding: ₹${data.totalAmount.toLocaleString('en-IN')}\n\n`;
-      });
-    }
+    // Chart 5: Interest Rate Distribution
+    const chart5Buffer = await chartJSNodeCanvas.renderToBuffer({
+      type: 'bar',
+      data: {
+        labels: Object.keys(interestRateRanges),
+        datasets: [{
+          label: 'Number of EMIs',
+          data: Object.values(interestRateRanges),
+          backgroundColor: '#4BC0C0'
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'Interest Rate Distribution', font: { size: 16 } } } }
+    });
 
-    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-    pdfContent += '                           END OF REPORT\n';
-    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
-
-    // Generate proper PDF using PDFKit
-    const PDFDocument = require('pdfkit');
-    const doc = new PDFDocument({ margin: 50 });
-    
-    // Set response headers for PDF download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=EMI_Report_${startDate || 'All'}_to_${endDate || 'All'}.pdf`);
-    
-    // Pipe PDF to response
-    doc.pipe(res);
-    
-    // Add content
-    doc.fontSize(16).font('Courier-Bold').text('EMI TRACKER COMPREHENSIVE REPORT', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(10).font('Courier').text(`Generated: ${new Date().toLocaleString()}`);
-    doc.text(`Date Range: ${startDate || 'All'} to ${endDate || 'All'}`);
-    doc.text(`User ID: ${userId}`);
-    doc.moveDown();
-    
-    // Overview Section
-    doc.fontSize(14).font('Courier-Bold').text('OVERVIEW SUMMARY', { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(10).font('Courier');
-    doc.text(`Total EMIs: ${allEMIs.length}`);
-    doc.text(`Active EMIs: ${activeEMIs.length}`);
-    doc.text(`Completed EMIs: ${completedEMIs.length}`);
-    doc.text(`Foreclosed EMIs: ${foreClosedEMIs.length}`);
-    doc.moveDown(0.5);
-    doc.text(`Total Monthly EMI: ₹${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}`);
-    doc.text(`Total Outstanding: ₹${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}`);
-    doc.text(`Total Principal: ₹${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}`);
-    doc.text(`Average Interest Rate: ${(overview?.averageInterestRate || 0).toFixed(2)}%`);
-    doc.moveDown();
-    
-    // Active EMIs Section
-    if (activeEMIs.length > 0) {
-      doc.fontSize(14).font('Courier-Bold').text('ACTIVE EMIs', { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(9).font('Courier');
-      activeEMIs.forEach((emi, index) => {
-        doc.text(`${index + 1}. ${emi.merchantName || 'Unknown Merchant'}`);
-        doc.text(`   Card: ${emi.cardProvider} ****${emi.cardLastFourDigits || 'N/A'}`, { indent: 10 });
-        doc.text(`   Product: ${emi.productDescription || 'N/A'}`, { indent: 10 });
-        doc.text(`   Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')} | Interest: ${emi.interestRate || 0}%`, { indent: 10 });
-        doc.text(`   EMI: ₹${(emi.emiAmount || 0).toLocaleString('en-IN')} | Tenure: ${emi.remainingInstallments || 0}/${emi.totalTenure || 0}`, { indent: 10 });
-        doc.text(`   Outstanding: ₹${((emi.emiAmount || 0) * (emi.remainingInstallments || 0)).toLocaleString('en-IN')}`, { indent: 10 });
-        doc.moveDown(0.3);
-      });
-      doc.moveDown();
-    }
-    
-    // Upcoming Payments Section
-    if (filteredUpcoming.length > 0) {
-      doc.addPage();
-      doc.fontSize(14).font('Courier-Bold').text('UPCOMING PAYMENTS SCHEDULE', { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(9).font('Courier');
-      
-      // Group by month
-      const paymentsByMonth = {};
-      filteredUpcoming.forEach(payment => {
-        const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
-        if (!paymentsByMonth[monthKey]) {
-          paymentsByMonth[monthKey] = [];
-        }
-        paymentsByMonth[monthKey].push(payment);
-      });
-
-      Object.entries(paymentsByMonth).slice(0, 12).forEach(([month, payments]) => {
-        const monthTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        doc.fontSize(11).font('Courier-Bold').text(`${month} - Total: ₹${monthTotal.toLocaleString('en-IN')}`);
-        doc.fontSize(9).font('Courier');
-        payments.slice(0, 10).forEach((payment, idx) => {
-          doc.text(`  ${new Date(payment.dueDate).toLocaleDateString('en-IN')} - ${payment.merchantName || 'N/A'}`);
-          doc.text(`    Amount: ₹${(payment.amount || 0).toLocaleString('en-IN')} | ${payment.cardProvider || 'N/A'} | ${payment.installmentNumber || 0}/${payment.totalTenure || 0}`, { indent: 10 });
-        });
-        if (payments.length > 10) {
-          doc.text(`  ... and ${payments.length - 10} more payments`);
-        }
-        doc.moveDown(0.5);
-      });
-    }
-    
-    // Completed EMIs Section
-    if (completedEMIs.length > 0) {
-      doc.addPage();
-      doc.fontSize(14).font('Courier-Bold').text('COMPLETED EMIs', { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(9).font('Courier');
-      completedEMIs.forEach((emi, index) => {
-        doc.text(`${index + 1}. ${emi.merchantName || 'Unknown'} - ${emi.cardProvider}`);
-        doc.text(`   Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')} | Total Paid: ₹${((emi.emiAmount || 0) * (emi.totalTenure || 0)).toLocaleString('en-IN')}`, { indent: 10 });
-        doc.moveDown(0.3);
-      });
-      doc.moveDown();
-    }
-
-    // Provider Summary
-    if (allEMIs.length > 0) {
-      doc.addPage();
-      doc.fontSize(14).font('Courier-Bold').text('PROVIDER-WISE BREAKDOWN', { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(9).font('Courier');
-
-      Object.entries(providerMap).forEach(([provider, data]) => {
-        doc.text(`${provider}`);
-        doc.text(`  EMIs: ${data.count || 0} | Principal: ${(data.principal || 0).toLocaleString('en-IN')} | Outstanding: ${(data.outstanding || 0).toLocaleString('en-IN')}`, { indent: 10 });
-        doc.moveDown(0.3);
-      });
-    }
-    
-    // Finalize PDF
-    doc.end();
-    
-  } catch (error) {
-    logger.error('Export PDF error:', error);
-    // Check if response has already been sent
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to export PDF report',
-        error: error.message
-      });
-    }
-  }
-});
-
-/**
- * @route GET /api/emi/export/excel
- * @desc Export EMI report as Excel
- * @access Private
- */
-router.get('/export/excel', authenticate, async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { startDate, endDate } = req.query;
-    logger.info(`Exporting EMI Excel report for user: ${userId}, Date range: ${startDate} to ${endDate}`);
-    
-    const ExcelJS = require('exceljs');
-    
-    // Build date filter
-    const dateFilter = { userId };
-    if (startDate) {
-      dateFilter.startDate = { $gte: new Date(startDate) };
-    }
-    
-    // Fetch all required data
-    const [overview, allEMIs, upcomingData] = await Promise.all([
-      emiAnalyticsService.getEMIOverview(userId),
-      EMI.find(dateFilter).sort({ startDate: -1 }),
-      emiAnalyticsService.getUpcomingPayments(userId, 36)
-    ]);
-
-    // Extract upcoming payments array from the returned object
-    const upcomingPayments = upcomingData.upcomingPayments || [];
-
-    // Filter upcoming payments by end date
-    const filteredUpcoming = upcomingPayments.filter(payment => {
-      if (!endDate) return true;
-      return new Date(payment.dueDate) <= new Date(endDate);
+    // Chart 6: Principal vs Interest (Pie)
+    const totalPrincipal = allEMIs.reduce((sum, emi) => sum + (emi.principalAmount || 0), 0);
+    const totalInterest = allEMIs.reduce((sum, emi) => sum + ((emi.emiAmount || 0) * (emi.totalTenure || 0) - (emi.principalAmount || 0)), 0);
+    const chart6Buffer = await chartJSNodeCanvas.renderToBuffer({
+      type: 'pie',
+      data: {
+        labels: ['Principal', 'Interest'],
+        datasets: [{
+          data: [totalPrincipal, totalInterest],
+          backgroundColor: ['#36A2EB', '#FF6384']
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'Principal vs Interest Breakdown', font: { size: 16 } } } }
     });
 
     // Create workbook
@@ -2129,25 +3411,19 @@ router.get('/export/excel', authenticate, async (req, res) => {
       { header: 'Total Outstanding', key: 'outstanding', width: 18 }
     ];
 
-    const providerMap = {};
-    allEMIs.forEach(emi => {
-      const provider = emi.cardProvider || 'Unknown';
-      if (!providerMap[provider]) {
-        providerMap[provider] = { count: 0, active: 0, totalPrincipal: 0, totalOutstanding: 0 };
-      }
-      providerMap[provider].count++;
-      if (emi.status === 'active') providerMap[provider].active++;
-      providerMap[provider].totalPrincipal += (emi.principalAmount || 0);
-      providerMap[provider].totalOutstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
-    });
-
-    Object.entries(providerMap).forEach(([provider, data]) => {
+    // Reuse providerMap from chart generation, but recalculate with active count
+    Object.keys(providerMap).forEach(provider => {
+      // Count active EMIs for this provider
+      const providerActiveCount = allEMIs.filter(emi => 
+        (emi.cardProvider || 'Unknown') === provider && emi.status === 'active'
+      ).length;
+      
       providerSheet.addRow({
         provider,
-        count: data.count,
-        active: data.active,
-        principal: data.totalPrincipal,
-        outstanding: data.totalOutstanding
+        count: providerMap[provider].count,
+        active: providerActiveCount,
+        principal: providerMap[provider].totalPrincipal,
+        outstanding: providerMap[provider].totalOutstanding
       });
     });
 
@@ -2162,6 +3438,78 @@ router.get('/export/excel', authenticate, async (req, res) => {
     providerSheet.getRow(1).height = 22;
     providerSheet.getColumn('principal').numFmt = '#,##0.00';
     providerSheet.getColumn('outstanding').numFmt = '#,##0.00';
+
+    // Sheet 5: Charts
+    const chartsSheet = workbook.addWorksheet('Charts');
+    
+    // Add chart images to the workbook
+    const chart1Id = workbook.addImage({
+      buffer: chart1Buffer,
+      extension: 'png',
+    });
+    const chart2Id = workbook.addImage({
+      buffer: chart2Buffer,
+      extension: 'png',
+    });
+    const chart3Id = workbook.addImage({
+      buffer: chart3Buffer,
+      extension: 'png',
+    });
+    const chart4Id = workbook.addImage({
+      buffer: chart4Buffer,
+      extension: 'png',
+    });
+    const chart5Id = workbook.addImage({
+      buffer: chart5Buffer,
+      extension: 'png',
+    });
+    const chart6Id = workbook.addImage({
+      buffer: chart6Buffer,
+      extension: 'png',
+    });
+
+    // Add title
+    chartsSheet.mergeCells('A1:J1');
+    chartsSheet.getCell('A1').value = 'EMI ANALYTICS CHARTS';
+    chartsSheet.getCell('A1').font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
+    chartsSheet.getCell('A1').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    };
+    chartsSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+    chartsSheet.getRow(1).height = 30;
+
+    // Embed chart images in the Charts sheet
+    chartsSheet.addImage(chart1Id, {
+      tl: { col: 0, row: 2 },
+      ext: { width: 600, height: 300 }
+    });
+
+    chartsSheet.addImage(chart2Id, {
+      tl: { col: 0, row: 22 },
+      ext: { width: 600, height: 300 }
+    });
+
+    chartsSheet.addImage(chart3Id, {
+      tl: { col: 0, row: 42 },
+      ext: { width: 600, height: 300 }
+    });
+
+    chartsSheet.addImage(chart4Id, {
+      tl: { col: 0, row: 62 },
+      ext: { width: 600, height: 300 }
+    });
+
+    chartsSheet.addImage(chart5Id, {
+      tl: { col: 0, row: 82 },
+      ext: { width: 600, height: 300 }
+    });
+
+    chartsSheet.addImage(chart6Id, {
+      tl: { col: 0, row: 102 },
+      ext: { width: 600, height: 300 }
+    });
 
     // Generate Excel file
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
