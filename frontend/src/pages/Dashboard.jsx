@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BarChart3, TrendingUp, DollarSign, FileText, Plus, LogOut, User, RefreshCw, Mail, Sparkles, CreditCard, Shield, Search, Upload } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, FileText, Plus, LogOut, User, RefreshCw, Mail, Sparkles, CreditCard, Shield, Search, Upload, Target, PieChart, Wallet, Menu, X, ChevronDown, Home, LayoutDashboard } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import NotificationBell from '../components/NotificationBell';
 import FinancialSummary from '../components/FinancialSummary';
@@ -23,10 +23,24 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileDropdownOpen && !event.target.closest('.profile-dropdown')) {
+        setProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileDropdownOpen]);
 
   const fetchDashboardData = async () => {
     try {
@@ -154,80 +168,283 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <nav className="bg-white shadow-sm">
+      {/* Enhanced Header */}
+      <nav className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <h1 className="text-2xl font-bold text-blue-600">Financial Analyzer</h1>
-            <div className="flex items-center space-x-4">
-              <NotificationBell />
-              <ThemeToggle />
+            {/* Logo and Brand */}
+            <div className="flex items-center space-x-3">
+              <div className="bg-white p-2 rounded-lg shadow-md">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">Financial Analyzer</h1>
+                <p className="text-xs text-blue-100 hidden sm:block">Smart Money Management</p>
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-2">
+              <Link 
+                to="/dashboard" 
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+              >
+                <Home className="w-4 h-4 mr-1.5" />
+                Dashboard
+              </Link>
+              
               <Link 
                 to="/search" 
-                className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
               >
-                <Search className="w-5 h-5 mr-1" />
+                <Search className="w-4 h-4 mr-1.5" />
                 Search
               </Link>
-              <Link 
-                to="/import-export" 
-                className="flex items-center px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
-              >
-                <Upload className="w-5 h-5 mr-1" />
-                Import/Export
-              </Link>
-              {user?.role === 'admin' && (
-                <Link 
-                  to="/admin" 
-                  className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-purple-600 to-indigo-700 rounded-lg hover:from-purple-700 hover:to-indigo-800 transition-all shadow-sm"
-                >
-                  <Shield className="w-5 h-5 mr-1" />
-                  Admin Panel
-                </Link>
-              )}
+              
               <Link 
                 to="/emi-tracker" 
-                className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
               >
-                <CreditCard className="w-5 h-5 mr-1" />
-                EMI Tracker
+                <CreditCard className="w-4 h-4 mr-1.5" />
+                EMI
               </Link>
+              
+              <Link 
+                to="/investments" 
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+              >
+                <PieChart className="w-4 h-4 mr-1.5" />
+                Investments
+              </Link>
+              
+              <Link 
+                to="/goals" 
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+              >
+                <Target className="w-4 h-4 mr-1.5" />
+                Goals
+              </Link>
+              
+              <Link 
+                to="/networth" 
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+              >
+                <Wallet className="w-4 h-4 mr-1.5" />
+                Net Worth
+              </Link>
+              
               {(user?.role === 'lender' || user?.role === 'admin') && (
                 <Link 
                   to="/lender-dashboard" 
-                  className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-green-600 to-teal-600 rounded-lg hover:from-green-700 hover:to-teal-700 transition-all shadow-sm"
+                  className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
                 >
-                  <DollarSign className="w-5 h-5 mr-1" />
-                  Lender Dashboard
+                  <DollarSign className="w-4 h-4 mr-1.5" />
+                  Lender
                 </Link>
               )}
+              
               <Link 
                 to="/advanced-analytics" 
-                className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm"
+                className="flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
               >
-                <Sparkles className="w-5 h-5 mr-1" />
-                Advanced Analytics
+                <Sparkles className="w-4 h-4 mr-1.5" />
+                Analytics
               </Link>
-              <Link to="/profile" className="flex items-center text-gray-700 hover:text-blue-600">
-                <User className="w-5 h-5 mr-1" />
-                Profile
+
+              {user?.role === 'admin' && (
+                <Link 
+                  to="/admin" 
+                  className="flex items-center px-3 py-2 bg-white/10 text-white border border-white/30 rounded-lg hover:bg-white/20 transition-all"
+                >
+                  <Shield className="w-4 h-4 mr-1.5" />
+                  Admin
+                </Link>
+              )}
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-3">
+              <Link 
+                to="/import-export" 
+                className="hidden md:flex items-center px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+              >
+                <Upload className="w-4 h-4 mr-1.5" />
+                Import
               </Link>
-              <button onClick={logout} className="flex items-center text-gray-700 hover:text-red-600">
-                <LogOut className="w-5 h-5 mr-1" />
-                Logout
+              
+              <NotificationBell />
+              <ThemeToggle />
+              
+              {/* Profile Dropdown */}
+              <div className="relative profile-dropdown">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                >
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <span className="hidden md:block font-medium">{user?.name?.split(' ')[0]}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                      <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                        {user?.role}
+                      </span>
+                    </div>
+                    
+                    <Link 
+                      to="/profile" 
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setProfileDropdownOpen(false)}
+                    >
+                      <User className="w-4 h-4 mr-3 text-gray-400" />
+                      My Profile
+                    </Link>
+                    
+                    <button 
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut className="w-4 h-4 mr-3" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 text-white hover:bg-white/20 rounded-lg"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden pb-4 space-y-2 animate-in slide-in-from-top">
+              <Link 
+                to="/dashboard" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Home className="w-4 h-4 inline mr-2" />
+                Dashboard
+              </Link>
+              
+              <Link 
+                to="/search" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Search className="w-4 h-4 inline mr-2" />
+                Search
+              </Link>
+              
+              <Link 
+                to="/import-export" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Upload className="w-4 h-4 inline mr-2" />
+                Import/Export
+              </Link>
+              
+              <Link 
+                to="/emi-tracker" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <CreditCard className="w-4 h-4 inline mr-2" />
+                EMI Tracker
+              </Link>
+              
+              <Link 
+                to="/investments" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <PieChart className="w-4 h-4 inline mr-2" />
+                Investments
+              </Link>
+              
+              <Link 
+                to="/goals" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Target className="w-4 h-4 inline mr-2" />
+                Financial Goals
+              </Link>
+              
+              <Link 
+                to="/networth" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Wallet className="w-4 h-4 inline mr-2" />
+                Net Worth
+              </Link>
+              
+              {(user?.role === 'lender' || user?.role === 'admin') && (
+                <Link 
+                  to="/lender-dashboard" 
+                  className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <DollarSign className="w-4 h-4 inline mr-2" />
+                  Lender Dashboard
+                </Link>
+              )}
+              
+              <Link 
+                to="/advanced-analytics" 
+                className="block px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Sparkles className="w-4 h-4 inline mr-2" />
+                Advanced Analytics
+              </Link>
+
+              {user?.role === 'admin' && (
+                <Link 
+                  to="/admin" 
+                  className="block px-3 py-2 bg-white/10 text-white border border-white/30 rounded-lg hover:bg-white/20 transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Shield className="w-4 h-4 inline mr-2" />
+                  Admin Panel
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Dashboard Header */}
+      {/* Dashboard Header with Actions */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name}!</h2>
-              <p className="text-gray-600">
+              <div className="flex items-center space-x-2">
+                <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name}!</h2>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Active
+                </span>
+              </div>
+              <p className="text-gray-600 mt-1">
                 {dashboardData?.summary?.lastSyncDate ? 
                   `Last sync: ${new Date(dashboardData.summary.lastSyncDate).toLocaleString()}` :
                   'Here\'s your comprehensive financial overview'
@@ -238,7 +455,7 @@ const Dashboard = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 shadow-sm transition-all"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
@@ -246,14 +463,14 @@ const Dashboard = () => {
               <button
                 onClick={triggerGmailSync}
                 disabled={refreshing}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-sm transition-all"
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Sync Gmail
               </button>
               <Link
                 to="/analyze"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-sm transition-all"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 New Analysis
