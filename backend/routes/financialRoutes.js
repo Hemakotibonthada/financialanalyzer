@@ -526,7 +526,7 @@ router.get('/transactions', authenticate, async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 50,
+      limit = 10000, // Increase default limit to support all transactions
       category,
       type,
       startDate,

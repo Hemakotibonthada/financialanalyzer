@@ -40,14 +40,6 @@ const MonthlyTrends = ({ trendsData }) => {
   }
 
   const { trends, summary } = trendsData;
-  
-  // Log data source for debugging
-  console.log('📊 Monthly Trends - Data Source:', {
-    trendsCount: trends?.length,
-    hasRealData: trends && trends.length > 0,
-    dataSource: 'Backend API (/api/analytics/dashboard)',
-    basedOn: 'Bank Statements & Profile Settings'
-  });
 
   // Filter trends based on date range
   const filteredTrends = useMemo(() => {
