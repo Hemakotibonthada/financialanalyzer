@@ -2722,7 +2722,7 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       const count = emiCountByMonth[month] || 0;
       doc.text(
         month.padEnd(20) + 
-        `₹${amount.toLocaleString('en-IN')}`.padEnd(20) + 
+        `${amount.toLocaleString('en-IN')}`.padEnd(20) + 
         count.toString()
       );
     });
@@ -2753,7 +2753,7 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       doc.text(
         provider.substring(0, 24).padEnd(25) + 
         data.count.toString().padEnd(15) + 
-        `₹${data.outstanding.toLocaleString('en-IN')}`
+        `${data.outstanding.toLocaleString('en-IN')}`
       );
     });
     doc.moveDown(1);
@@ -2798,17 +2798,17 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     const totalAmount = totalPrincipal + totalInterest;
     doc.text(
       'Principal'.padEnd(25) + 
-      `₹${totalPrincipal.toLocaleString('en-IN')}`.padEnd(20) + 
+      `${totalPrincipal.toLocaleString('en-IN')}`.padEnd(20) + 
       `${((totalPrincipal / totalAmount) * 100).toFixed(1)}%`
     );
     doc.text(
       'Interest'.padEnd(25) + 
-      `₹${totalInterest.toLocaleString('en-IN')}`.padEnd(20) + 
+      `${totalInterest.toLocaleString('en-IN')}`.padEnd(20) + 
       `${((totalInterest / totalAmount) * 100).toFixed(1)}%`
     );
     doc.text(
       'Total Payable'.padEnd(25) + 
-      `₹${totalAmount.toLocaleString('en-IN')}`.padEnd(20) + 
+      `${totalAmount.toLocaleString('en-IN')}`.padEnd(20) + 
       '100.0%'
     );
     doc.moveDown(1);
@@ -2845,7 +2845,7 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       doc.text(
         `${index + 1}.`.padEnd(8) + 
         merchant.substring(0, 29).padEnd(30) + 
-        `₹${data.outstanding.toLocaleString('en-IN')}`
+        `${data.outstanding.toLocaleString('en-IN')}`
       );
     });
     doc.moveDown(1);
@@ -2885,22 +2885,22 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     doc.text(
       'Active'.padEnd(20) + 
       calculatedOverview.activeCount.toString().padEnd(15) + 
-      `₹${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`
+      `${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`
     );
     doc.text(
       'Completed'.padEnd(20) + 
       calculatedOverview.completedCount.toString().padEnd(15) + 
-      '₹0'
+      '0'
     );
     doc.text(
       'Foreclosed'.padEnd(20) + 
       calculatedOverview.foreClosedCount.toString().padEnd(15) + 
-      '₹0'
+      '0'
     );
     doc.text(
       'Total'.padEnd(20) + 
       calculatedOverview.totalEMIs.toString().padEnd(15) + 
-      `₹${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`
+      `${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`
     );
     logger.info('All 13 charts embedded in PDF successfully!');
     doc.moveDown(2);
