@@ -149,6 +149,9 @@ app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
 app.use('/api/emi', require('./routes/emiRoutes'));
 app.use('/api/loans-given', require('./routes/loansGivenRoutes'));
 app.use('/api/personal-loans', require('./routes/personalLoanRoutes'));
+app.use('/api/lenders', require('./routes/lenderRoutes'));
+app.use('/api/lender-loans', require('./routes/lenderLoanRoutes'));
+app.use('/api/lender-payments', require('./routes/lenderPaymentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 
 // 404 handler

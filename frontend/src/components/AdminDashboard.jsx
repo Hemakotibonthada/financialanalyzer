@@ -220,6 +220,61 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleQuickRoleChange = async (userId, newRole) => {
+    try {
+      const response = await api.put(`/admin/users/${userId}`, { role: newRole });
+      if (response.data.success) {
+        setMessage({ type: 'success', text: `Role changed to ${newRole}` });
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Error changing role:', error);
+      setMessage({ type: 'error', text: 'Failed to change role' });
+    }
+  };
+
+  const handleGenerateReport = async (reportType) => {
+    try {
+      const response = await api.get(`/admin/reports/${reportType}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      setMessage({ type: 'success', text: 'Report generated successfully' });
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setMessage({ type: 'error', text: 'Failed to generate report' });
+    }
+  };
+
+  const handleBulkAction = async (action, userIds) => {
+    if (!window.confirm(`Are you sure you want to ${action} ${userIds.length} users?`)) {
+      return;
+    }
+    
+    try {
+      const response = await api.post('/admin/users/bulk-action', {
+        action,
+        userIds
+      });
+      
+      if (response.data.success) {
+        setMessage({ type: 'success', text: `Bulk ${action} completed successfully` });
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Error performing bulk action:', error);
+      setMessage({ type: 'error', text: 'Failed to perform bulk action' });
+    }
+  };
+
   const handleSystemCleanup = async () => {
     if (!window.confirm('Run system cleanup? This will remove orphaned files and invalid data.')) {
       return;
@@ -510,6 +565,19 @@ const AdminDashboard = () => {
               </div>
             </button>
             <button
+              onClick={() => setActiveTab('reports')}
+              className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'reports'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Download className="w-4 h-4" />
+                <span>Reports</span>
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab('cache')}
               className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'cache'
@@ -520,6 +588,19 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-2">
                 <Database className="w-4 h-4" />
                 <span>Cache Management</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'settings'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
               </div>
             </button>
           </div>
@@ -594,14 +675,21 @@ const AdminDashboard = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-700' 
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {user.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
-                          {user.role}
-                        </span>
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleQuickRoleChange(user._id, e.target.value)}
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${
+                            user.role === 'admin' 
+                              ? 'bg-purple-100 text-purple-700' 
+                              : user.role === 'lender'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
+                          <option value="user">User</option>
+                          <option value="lender">Lender</option>
+                          <option value="admin">Admin</option>
+                        </select>
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -1352,6 +1440,291 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Reports Tab */}
+      {activeTab === 'reports' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Generate Reports</h2>
+            <p className="text-gray-600">Export comprehensive reports for analysis and compliance</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Users Report */}
+            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <Users className="w-8 h-8 text-blue-600 mr-3" />
+                <h3 className="text-lg font-semibold">Users Report</h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Complete user data including registration dates, activity levels, and status
+              </p>
+              <button
+                onClick={() => handleGenerateReport('users')}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Generate CSV
+              </button>
+            </div>
+
+            {/* Transactions Report */}
+            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <Activity className="w-8 h-8 text-green-600 mr-3" />
+                <h3 className="text-lg font-semibold">Transactions Report</h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                All transactions with amounts, categories, dates, and user information
+              </p>
+              <button
+                onClick={() => handleGenerateReport('transactions')}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Generate CSV
+              </button>
+            </div>
+
+            {/* Documents Report */}
+            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <FileText className="w-8 h-8 text-purple-600 mr-3" />
+                <h3 className="text-lg font-semibold">Documents Report</h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Document processing stats, types, statuses, and upload history
+              </p>
+              <button
+                onClick={() => handleGenerateReport('documents')}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Generate CSV
+              </button>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <TrendingUp className="w-8 h-8 text-orange-600 mr-3" />
+                <h3 className="text-lg font-semibold">Financial Summary</h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Aggregate financial data including income, expenses, and trends
+              </p>
+              <button
+                onClick={() => handleGenerateReport('financial-summary')}
+                className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Generate CSV
+              </button>
+            </div>
+
+            {/* Lender Report */}
+            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <BarChart3 className="w-8 h-8 text-red-600 mr-3" />
+                <h3 className="text-lg font-semibold">Lender Report</h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Lender details, active loans, borrowers, and payment statistics
+              </p>
+              <button
+                onClick={() => handleGenerateReport('lenders')}
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Generate CSV
+              </button>
+            </div>
+
+            {/* System Activity */}
+            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <Shield className="w-8 h-8 text-indigo-600 mr-3" />
+                <h3 className="text-lg font-semibold">System Activity</h3>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Login history, failed attempts, and security events
+              </p>
+              <button
+                onClick={() => handleGenerateReport('activity')}
+                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Generate CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Custom Report Builder */}
+          <div className="mt-8 border-t pt-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Custom Report Builder</h3>
+            <div className="bg-gray-50 rounded-lg p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option>All Data</option>
+                    <option>Users Only</option>
+                    <option>Transactions Only</option>
+                    <option>Financial Analysis</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
+                    <option>Last 90 Days</option>
+                    <option>Last Year</option>
+                    <option>All Time</option>
+                  </select>
+                </div>
+              </div>
+              <button className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium">
+                Generate Custom Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Settings</h2>
+            <p className="text-gray-600">Configure system-wide settings and preferences</p>
+          </div>
+
+          {/* System Configuration */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Settings className="w-5 h-5 mr-2" />
+              System Configuration
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-gray-900">Maintenance Mode</h4>
+                  <p className="text-sm text-gray-600">Disable user access for system maintenance</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-gray-900">User Registration</h4>
+                  <p className="text-sm text-gray-600">Allow new users to register accounts</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-gray-900">Email Notifications</h4>
+                  <p className="text-sm text-gray-600">Send system notifications to users via email</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Security Settings */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Shield className="w-5 h-5 mr-2" />
+              Security Settings
+            </h3>
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Session Timeout (minutes)
+                </label>
+                <input
+                  type="number"
+                  defaultValue={30}
+                  className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximum Login Attempts
+                </label>
+                <input
+                  type="number"
+                  defaultValue={5}
+                  className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
+                  <p className="text-sm text-gray-600">Require 2FA for all admin accounts</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Email Templates */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Bell className="w-5 h-5 mr-2" />
+              Email Templates
+            </h3>
+            <div className="space-y-3">
+              <button className="w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-lg text-left flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">Welcome Email</h4>
+                  <p className="text-sm text-gray-600">Sent when new users register</p>
+                </div>
+                <Edit2 className="w-5 h-5 text-gray-400" />
+              </button>
+              
+              <button className="w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-lg text-left flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">Password Reset</h4>
+                  <p className="text-sm text-gray-600">Sent when users request password reset</p>
+                </div>
+                <Edit2 className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button className="w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-lg text-left flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">EMI Reminder</h4>
+                  <p className="text-sm text-gray-600">Sent before EMI due dates</p>
+                </div>
+                <Edit2 className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium">
+              Save Settings
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Cache Management Tab */}
       {activeTab === 'cache' && (
         <div className="bg-white rounded-lg shadow-md">
@@ -1363,3 +1736,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
