@@ -44,6 +44,7 @@ import {
   EmojiEvents as TrophyIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
 
 const GOAL_CATEGORIES = [
   { value: 'retirement', label: 'Retirement', icon: '🏖️' },
@@ -108,8 +109,8 @@ function FinancialGoals() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [goalsRes, summaryRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/goals`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/goals/summary`, { headers })
+        axios.get(`${import.meta.env.VITE_API_URL}/goals`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/goals/summary`, { headers })
       ]);
 
       setGoals(goalsRes.data.data || []);
@@ -128,13 +129,13 @@ function FinancialGoals() {
 
       if (editingGoal) {
         await axios.put(
-          `${import.meta.env.VITE_API_URL}/api/goals/${editingGoal._id}`,
+          `${import.meta.env.VITE_API_URL}/goals/${editingGoal._id}`,
           formData,
           { headers }
         );
       } else {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/goals`,
+          `${import.meta.env.VITE_API_URL}/goals`,
           formData,
           { headers }
         );
@@ -154,7 +155,7 @@ function FinancialGoals() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/goals/${goalId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/goals/${goalId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();
@@ -167,7 +168,7 @@ function FinancialGoals() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/goals/${selectedGoal._id}/contribute`,
+        `${import.meta.env.VITE_API_URL}/goals/${selectedGoal._id}/contribute`,
         contributionData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -184,7 +185,7 @@ function FinancialGoals() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/goals/${selectedGoal._id}/milestone`,
+        `${import.meta.env.VITE_API_URL}/goals/${selectedGoal._id}/milestone`,
         milestoneData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -264,102 +265,173 @@ function FinancialGoals() {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography>Loading goals...</Typography>
-      </Container>
+      <>
+        <Sidebar />
+        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+          <Typography>Loading goals...</Typography>
+        </Box>
+      </>
     );
   }
 
+  const totalTarget = summary?.totalTargetAmount || 0;
+  const totalSaved = summary?.totalCurrentAmount || 0;
+  const totalProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Financial Goals
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setOpenDialog(true);
+    <>
+      <Sidebar />
+      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+        {/* Enhanced Header with Gradient */}
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: 0,
+            p: 4,
+            mb: 3,
+            boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
           }}
         >
-          Add Goal
-        </Button>
-      </Box>
+          <Container maxWidth="xl">
+            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+              <Box>
+                <Typography 
+                  variant="h3" 
+                  sx={{
+                    fontWeight: 800,
+                    color: 'white',
+                    mb: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}
+                >
+                  🎯 Financial Goals
+                </Typography>
+                <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                  Set, track, and achieve your financial aspirations
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  resetForm();
+                  setOpenDialog(true);
+                }}
+                sx={{
+                  bgcolor: 'white',
+                  color: 'primary.main',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
+                }}
+              >
+                Add Goal
+              </Button>
+            </Box>
+          </Container>
+        </Box>
 
-      {/* Summary Cards */}
-      {summary && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <FlagIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Total Target
-                  </Typography>
-                </Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {formatCurrency(summary.totalTargetAmount || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Container maxWidth="xl">
+          {/* Enhanced Summary Cards with Gradients */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total Target
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalTarget)}
+                      </Typography>
+                    </Box>
+                    <FlagIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Current Progress
-                  </Typography>
-                </Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {formatCurrency(summary.totalCurrentAmount || 0)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {summary.averageProgress?.toFixed(1)}% Complete
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Current Progress
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalSaved)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>
+                        {totalProgress.toFixed(1)}% Complete
+                      </Typography>
+                    </Box>
+                    <TrendingUpIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <AttachMoneyIcon color="warning" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Shortfall
-                  </Typography>
-                </Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {formatCurrency(summary.totalShortfall || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Remaining
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalTarget - totalSaved)}
+                      </Typography>
+                    </Box>
+                    <AttachMoneyIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <AccessTimeIcon color="info" sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Monthly Required
-                  </Typography>
-                </Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {formatCurrency(summary.totalMonthlySavingsRequired || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Active Goals
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {goals.length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>
+                        {goals.filter(g => g.status === 'completed').length} Completed
+                      </Typography>
+                    </Box>
+                    <TrophyIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-        </Grid>
-      )}
 
       {/* Goals Grid */}
       {goals.length === 0 ? (
@@ -791,7 +863,9 @@ function FinancialGoals() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+        </Container>
+      </Box>
+    </>
   );
 }
 

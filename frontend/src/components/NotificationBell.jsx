@@ -228,11 +228,39 @@ const NotificationBell = () => {
         <IconButton
           onClick={handleClick}
           size="large"
-          sx={{ color: 'inherit' }}
+          sx={{ 
+            color: 'white',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.1)'
+            }
+          }}
         >
-          <Badge badgeContent={unreadCount} color="error" max={99}>
+          <Badge 
+            badgeContent={unreadCount} 
+            color="error" 
+            max={99}
+            sx={{
+              '& .MuiBadge-badge': {
+                animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%': {
+                    transform: 'scale(1)',
+                    opacity: 1,
+                  },
+                  '50%': {
+                    transform: 'scale(1.1)',
+                    opacity: 0.8,
+                  },
+                  '100%': {
+                    transform: 'scale(1)',
+                    opacity: 1,
+                  },
+                }
+              }
+            }}
+          >
             {unreadCount > 0 ? (
-              <NotificationsIcon />
+              <NotificationsIcon sx={{ animation: 'bell-ring 0.5s ease-in-out' }} />
             ) : (
               <NotificationsNoneIcon />
             )}
@@ -246,15 +274,22 @@ const NotificationBell = () => {
         onClose={handleClose}
         PaperProps={{
           sx: {
-            width: 400,
+            width: 420,
             maxHeight: 600,
             overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
           }
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        slotProps={{
+          paper: {
+            elevation: 8
+          }
+        }}
       >
         {/* Header */}
         <Box sx={{ p: 2, pb: 1 }}>

@@ -7,7 +7,8 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 30000 // 30 seconds timeout
 });
 
 // Request interceptor - Add token to requests
@@ -34,12 +35,30 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle network errors
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout');
+      error.message = 'Request timeout. Please try again.';
+    } else if (error.code === 'ERR_NETWORK') {
+      console.error('Network error - Backend may be offline');
+      error.message = 'Network error. Please check your connection and ensure the backend server is running.';
+    } else if (!error.response) {
+      console.error('No response from server');
+      error.message = 'Unable to connect to server. Please try again.';
+    }
+
+    // Handle specific HTTP status codes
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    } else if (error.response?.status === 503) {
+      error.message = 'Service temporarily unavailable. Please try again later.';
+    } else if (error.response?.status >= 500) {
+      error.message = 'Server error. Please try again later.';
     }
+
     return Promise.reject(error);
   }
 );

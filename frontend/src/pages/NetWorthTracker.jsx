@@ -53,6 +53,7 @@ import {
   Cell
 } from 'recharts';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -112,10 +113,10 @@ function NetWorthTracker() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [latestRes, historyRes, trendRes, comparisonRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/networth/latest`, { headers }).catch(() => ({ data: { data: null } })),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/networth/history?months=12`, { headers }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/networth/trend?period=monthly&count=12`, { headers }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/networth/comparison`, { headers }).catch(() => ({ data: { data: null } }))
+        axios.get(`${import.meta.env.VITE_API_URL}/networth/latest`, { headers }).catch(() => ({ data: { data: null } })),
+        axios.get(`${import.meta.env.VITE_API_URL}/networth/history?months=12`, { headers }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${import.meta.env.VITE_API_URL}/networth/trend?period=monthly&count=12`, { headers }).catch(() => ({ data: { data: [] } })),
+        axios.get(`${import.meta.env.VITE_API_URL}/networth/comparison`, { headers }).catch(() => ({ data: { data: null } }))
       ]);
 
       setLatestSnapshot(latestRes.data.data);
@@ -133,7 +134,7 @@ function NetWorthTracker() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/networth/auto-generate`,
+        `${import.meta.env.VITE_API_URL}/networth/auto-generate`,
         { period: 'monthly' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -148,7 +149,7 @@ function NetWorthTracker() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/networth/snapshot`,
+        `${import.meta.env.VITE_API_URL}/networth/snapshot`,
         snapshotData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -219,43 +220,56 @@ function NetWorthTracker() {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography>Loading net worth data...</Typography>
-      </Container>
+      <>
+        <Sidebar />
+        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+          <Typography>Loading net worth data...</Typography>
+        </Box>
+      </>
     );
   }
 
   if (!latestSnapshot) {
     return (
-      <Container maxWidth="md" sx={{ mt: 8, textAlign: 'center' }}>
-        <AccountBalanceIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-        <Typography variant="h4" gutterBottom>
-          Start Tracking Your Net Worth
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Create your first net worth snapshot to begin tracking your financial journey
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<AutoGraphIcon />}
-            onClick={handleAutoGenerate}
-          >
-            Auto-Generate from Data
-          </Button>
-          <Button
-            variant="outlined"
-            size="large"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
-          >
-            Create Manually
-          </Button>
+      <>
+        <Sidebar />
+        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+          <Container maxWidth="md" sx={{ textAlign: 'center', py: 8 }}>
+            <AccountBalanceIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h4" gutterBottom>
+              Start Tracking Your Net Worth
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              Create your first net worth snapshot to begin tracking your financial journey
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<AutoGraphIcon />}
+                onClick={handleAutoGenerate}
+              >
+                Auto-Generate from Data
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenDialog(true)}
+              >
+                Create Manually
+              </Button>
+            </Box>
+          </Container>
         </Box>
-      </Container>
+      </>
     );
   }
+
+  const netWorth = latestSnapshot?.netWorth || 0;
+  const totalAssets = latestSnapshot?.totalAssets || 0;
+  const totalLiabilities = latestSnapshot?.totalLiabilities || 0;
+  const debtToAssetRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
 
   const allocationData = latestSnapshot.assetAllocation ? [
     { name: 'Liquid Assets', value: latestSnapshot.assetAllocation.liquidAssets },
@@ -265,180 +279,181 @@ function NetWorthTracker() {
   ] : [];
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Net Worth Tracker
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<AutoGraphIcon />}
-            onClick={handleAutoGenerate}
-          >
-            Auto-Generate
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
-          >
-            Create Snapshot
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Current Net Worth Display */}
-      <Paper 
-        sx={{ 
-          p: 4, 
-          mb: 3, 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          Current Net Worth
-        </Typography>
-        <Typography variant="h2" fontWeight="bold" gutterBottom>
-          {formatCurrency(latestSnapshot.netWorth)}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 4, mt: 2 }}>
-          <Box>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              Total Assets
-            </Typography>
-            <Typography variant="h6">
-              {formatCurrency(latestSnapshot.assets?.totalAssets || 0)}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              Total Liabilities
-            </Typography>
-            <Typography variant="h6">
-              {formatCurrency(latestSnapshot.liabilities?.totalLiabilities || 0)}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              Last Updated
-            </Typography>
-            <Typography variant="h6">
-              {new Date(latestSnapshot.date).toLocaleDateString()}
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Key Metrics */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Debt-to-Asset Ratio
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {(latestSnapshot.metrics?.debtToAssetRatio * 100 || 0).toFixed(1)}%
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {latestSnapshot.metrics?.debtToAssetRatio < 0.3 ? 'Excellent' : 
-                 latestSnapshot.metrics?.debtToAssetRatio < 0.5 ? 'Good' : 'Needs Improvement'}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Liquidity Ratio
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {(latestSnapshot.metrics?.liquidityRatio * 100 || 0).toFixed(1)}%
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Emergency Coverage
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {comparison?.monthAgo && (
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  {comparison.monthAgo.change.netWorth >= 0 ? (
-                    <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                  ) : (
-                    <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                  )}
-                  <Typography variant="body2" color="text.secondary">
-                    Month Change
-                  </Typography>
-                </Box>
+    <>
+      <Sidebar />
+      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+        {/* Enhanced Header with Gradient */}
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: 0,
+            p: 4,
+            mb: 3,
+            boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
+          }}
+        >
+          <Container maxWidth="xl">
+            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+              <Box>
                 <Typography 
-                  variant="h5" 
-                  fontWeight="bold"
-                  color={comparison.monthAgo.change.netWorth >= 0 ? 'success.main' : 'error.main'}
+                  variant="h3" 
+                  sx={{
+                    fontWeight: 800,
+                    color: 'white',
+                    mb: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}
                 >
-                  {formatCurrency(comparison.monthAgo.change.netWorth)}
+                  💰 Net Worth Tracker
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatPercent(parseFloat(comparison.monthAgo.change.netWorthPercent))}
+                <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                  Monitor your assets, liabilities, and overall financial health
                 </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
-
-        {comparison?.yearAgo && (
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  {comparison.yearAgo.change.netWorth >= 0 ? (
-                    <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                  ) : (
-                    <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-                  )}
-                  <Typography variant="body2" color="text.secondary">
-                    Year Change
-                  </Typography>
-                </Box>
-                <Typography 
-                  variant="h5" 
-                  fontWeight="bold"
-                  color={comparison.yearAgo.change.netWorth >= 0 ? 'success.main' : 'error.main'}
+              </Box>
+              <Box display="flex" gap={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<AutoGraphIcon />}
+                  onClick={handleAutoGenerate}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' }
+                  }}
                 >
-                  {formatCurrency(comparison.yearAgo.change.netWorth)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatPercent(parseFloat(comparison.yearAgo.change.netWorthPercent))}
-                </Typography>
-              </CardContent>
-            </Card>
+                  Auto Generate
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setOpenDialog(true)}
+                  sx={{
+                    bgcolor: 'white',
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
+                  }}
+                >
+                  Add Snapshot
+                </Button>
+              </Box>
+            </Box>
+          </Container>
+        </Box>
+
+        <Container maxWidth="xl">
+          {/* Enhanced Summary Cards with Gradients */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Net Worth
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(netWorth)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>
+                        {new Date(latestSnapshot.date).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                    <AccountBalanceIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total Assets
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalAssets)}
+                      </Typography>
+                    </Box>
+                    <TrendingUpIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Total Liabilities
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(totalLiabilities)}
+                      </Typography>
+                    </Box>
+                    <TrendingDownIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ 
+                height: '100%',
+                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                color: 'white',
+                '&:hover': { transform: 'translateY(-4px)', transition: 'all 0.3s' }
+              }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                        Debt-to-Asset Ratio
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                        {debtToAssetRatio.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                    <CompareIcon sx={{ fontSize: 40, opacity: 0.7 }} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-        )}
-      </Grid>
 
-      {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Asset Breakdown" />
-          <Tab label="Trend Analysis" />
-          <Tab label="History" />
-        </Tabs>
-      </Paper>
+          {/* Tabs */}
+          <Paper sx={{ mb: 3 }}>
+            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+              <Tab label="Overview" />
+              <Tab label="Trend Analysis" />
+              <Tab label="Asset Details" />
+            </Tabs>
+          </Paper>
 
-      {/* Tab Content */}
-      {activeTab === 0 && (
-        <Grid container spacing={3}>
-          {/* Assets Breakdown */}
+          {/* Tab Content */}
+          {activeTab === 0 && (
+            <Grid container spacing={3}>
+              {/* Assets Breakdown */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="success.main">
@@ -865,7 +880,9 @@ function NetWorthTracker() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+        </Container>
+      </Box>
+    </>
   );
 }
 
