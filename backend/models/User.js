@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const encryptionService = require('../services/encryptionService');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -36,9 +37,70 @@ const userSchema = new mongoose.Schema({
   profile: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FinancialProfile'
+  },
+  twoFactorAuth: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    secret: {
+      type: String,
+      select: false
+    },
+    backupCodes: [{
+      code: String,
+      used: {
+        type: Boolean,
+        default: false
+      }
+    }],
+    verified: {
+      type: Boolean,
+      default: false
+    }
   }
 }, {
   timestamps: true
+});
+
+// Indexes for efficient querying (email already has unique index from schema)
+userSchema.index({ isActive: 1 });
+userSchema.index({ lastLogin: -1 });
+userSchema.index({ createdAt: -1 });
+
+// Encrypt 2FA secret before saving
+userSchema.pre('save', function(next) {
+  try {
+    if (this.isModified('twoFactorAuth.secret') && this.twoFactorAuth.secret && !encryptionService.isEncrypted(this.twoFactorAuth.secret)) {
+      this.twoFactorAuth.secret = encryptionService.encrypt(this.twoFactorAuth.secret);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Decrypt 2FA secret after finding
+userSchema.post('find', function(docs) {
+  docs.forEach(doc => {
+    if (doc.twoFactorAuth?.secret && encryptionService.isEncrypted(doc.twoFactorAuth.secret)) {
+      try {
+        doc.twoFactorAuth.secret = encryptionService.decrypt(doc.twoFactorAuth.secret);
+      } catch (error) {
+        console.error('Error decrypting 2FA secret:', error);
+      }
+    }
+  });
+});
+
+userSchema.post('findOne', function(doc) {
+  if (doc?.twoFactorAuth?.secret && encryptionService.isEncrypted(doc.twoFactorAuth.secret)) {
+    try {
+      doc.twoFactorAuth.secret = encryptionService.decrypt(doc.twoFactorAuth.secret);
+    } catch (error) {
+      console.error('Error decrypting 2FA secret:', error);
+    }
+  }
 });
 
 // Hash password before saving

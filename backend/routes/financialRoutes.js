@@ -8,12 +8,14 @@ const Transaction = require('../models/Transaction');
 const Document = require('../models/Document');
 const BillReminder = require('../models/BillReminder');
 const { authenticate } = require('../middleware/auth');
+const { invalidateCacheMiddleware, cacheMiddleware } = require('../middleware/cacheMiddleware');
 const { processMultipleDocuments, categorizeTransaction, detectRecurringTransactions } = require('../services/documentProcessor');
 const { performFinancialAnalysis } = require('../services/financialAIService');
 const gmailService = require('../services/gmailService');
 const cibilService = require('../services/cibilService');
 const websocketService = require('../services/websocketService');
 const currencyService = require('../services/currencyService');
+const TransactionFilterService = require('../services/transactionFilterService');
 const logger = require('../utils/logger');
 const fs = require('fs').promises;
 const path = require('path');
@@ -598,6 +600,62 @@ router.get('/transactions', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve transactions'
+    });
+  }
+});
+
+/**
+ * @route GET /api/financial/transactions/filters
+ * @desc Get available filter values for transactions
+ * @access Private
+ */
+router.get('/transactions/filters', authenticate, async (req, res) => {
+  try {
+    const filters = await TransactionFilterService.getAvailableFilters(
+      Transaction,
+      req.user._id.toString()
+    );
+
+    res.json({
+      success: true,
+      filters
+    });
+  } catch (error) {
+    logger.error('Get transaction filters error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve filter options',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route GET /api/financial/transactions/analytics
+ * @desc Get transaction analytics with grouping
+ * @access Private
+ */
+router.get('/transactions/analytics', authenticate, async (req, res) => {
+  try {
+    const pipeline = TransactionFilterService.buildAnalyticsPipeline(
+      req.user._id,
+      req.query
+    );
+
+    const results = await Transaction.aggregate(pipeline);
+
+    res.json({
+      success: true,
+      data: results,
+      groupBy: req.query.groupBy || 'none',
+      count: results.length
+    });
+  } catch (error) {
+    logger.error('Transaction analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate analytics',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -1872,7 +1930,13 @@ router.get('/test', async (req, res) => {
  * @desc    Add a quick expense entry
  * @access  Private
  */
-router.post('/quick-expense', authenticate, async (req, res) => {
+router.post('/quick-expense', authenticate, invalidateCacheMiddleware([
+  'dashboard:*',
+  'budget:*',
+  'transactions:*',
+  'analytics:*',
+  'api::userId:*'
+]), async (req, res) => {
   try {
     const { description, amount, category, date, currency } = req.body;
 

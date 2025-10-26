@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 import { DollarSign, Mail, Lock, User } from 'lucide-react';
 
 const Register = () => {
@@ -26,11 +27,20 @@ const Register = () => {
     }
 
     setLoading(true);
-    const result = await register(name, email, password);
-    setLoading(false);
-
-    if (result.success) {
-      navigate('/');
+    
+    try {
+      const result = await register(name, email, password);
+      
+      if (result.success) {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

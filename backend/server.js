@@ -5,6 +5,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./utils/logger');
 const websocketService = require('./services/websocketService');
@@ -35,7 +37,47 @@ dirs.forEach(dir => {
 // Connect to MongoDB
 connectDB();
 
+// Initialize Cache Service
+const cacheService = require('./services/cacheService');
+cacheService.initialize().catch(err => {
+  logger.warn('Cache service initialization failed:', err.message);
+});
+
 const app = express();
+
+// Security: Helmet middleware for security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Security: Rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
+  message: 'Too many authentication attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful requests
+});
+
+// Apply general rate limiter to all routes
+app.use(generalLimiter);
 
 // Middleware
 app.use(cors({
@@ -75,11 +117,29 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Activity logging middleware (after auth, before routes)
+const { activityLogger } = require('./middleware/activityLogger');
+app.use(activityLogger({
+  excludePaths: ['/api/health', '/api/auth/refresh'],
+  excludeSuccessful: false,
+  logRequestBody: false
+}));
+
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
 
 // API Routes
-app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/auth', authLimiter, require('./routes/authRoutes')); // Apply stricter rate limit to auth
+app.use('/api/2fa', authLimiter, require('./routes/twoFactorAuthRoutes')); // 2FA management
+app.use('/api/health', require('./routes/healthRoutes')); // Health checks (no auth required)
+app.use('/api/export', require('./routes/exportRoutes')); // Export functionality
+app.use('/api/budgets', require('./routes/budgetRoutes')); // Budget tracking
+app.use('/api/activity-logs', require('./routes/activityLogRoutes')); // Activity logging
+app.use('/api/search', require('./routes/searchRoutes')); // Search functionality
+app.use('/api/csv', require('./routes/csvRoutes')); // CSV import/export
+app.use('/api/notifications', require('./routes/notificationRoutes')); // Notifications
+app.use('/api/cache', require('./routes/cacheRoutes')); // Cache management
+app.use('/api/recurring', require('./routes/recurringRoutes')); // Recurring transactions
 app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/financial', require('./routes/financialRoutes'));
 app.use('/api/gmail', require('./routes/gmailRoutes'));
@@ -88,15 +148,6 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
 app.use('/api/emi', require('./routes/emiRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Financial Analyzer API is running',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // 404 handler
 app.use((req, res) => {
