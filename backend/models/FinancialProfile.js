@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const encryptionService = require('../services/encryptionService');
 
 const financialProfileSchema = new mongoose.Schema({
   userId: {
@@ -235,6 +236,107 @@ const financialProfileSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indexes for efficient querying (userId already has unique index from schema)
+financialProfileSchema.index({ 'gmailSettings.isConnected': 1 });
+financialProfileSchema.index({ 'gmailSettings.lastSync': -1 });
+financialProfileSchema.index({ isProfileComplete: 1 });
+
+// Encrypt sensitive fields before saving
+financialProfileSchema.pre('save', function(next) {
+  try {
+    // Encrypt PAN number if modified and not already encrypted
+    if (this.isModified('panNumber') && this.panNumber && !encryptionService.isEncrypted(this.panNumber)) {
+      this.panNumber = encryptionService.encrypt(this.panNumber);
+    }
+
+    // Encrypt OpenAI key if modified and not already encrypted
+    if (this.isModified('preferences.openAIKey') && this.preferences.openAIKey && !encryptionService.isEncrypted(this.preferences.openAIKey)) {
+      this.preferences.openAIKey = encryptionService.encrypt(this.preferences.openAIKey);
+    }
+
+    // Encrypt Gmail tokens if modified and not already encrypted
+    if (this.isModified('gmailSettings.accessToken') && this.gmailSettings.accessToken && !encryptionService.isEncrypted(this.gmailSettings.accessToken)) {
+      this.gmailSettings.accessToken = encryptionService.encrypt(this.gmailSettings.accessToken);
+    }
+
+    if (this.isModified('gmailSettings.refreshToken') && this.gmailSettings.refreshToken && !encryptionService.isEncrypted(this.gmailSettings.refreshToken)) {
+      this.gmailSettings.refreshToken = encryptionService.encrypt(this.gmailSettings.refreshToken);
+    }
+
+    // Encrypt credit card numbers if modified and not already encrypted
+    if (this.isModified('cibilData.creditCards')) {
+      this.cibilData.creditCards.forEach((card, index) => {
+        if (card.cardNumber && !encryptionService.isEncrypted(card.cardNumber)) {
+          this.cibilData.creditCards[index].cardNumber = encryptionService.encrypt(card.cardNumber);
+        }
+      });
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Decrypt sensitive fields after finding
+financialProfileSchema.post('find', function(docs) {
+  docs.forEach(doc => decryptProfileFields(doc));
+});
+
+financialProfileSchema.post('findOne', function(doc) {
+  if (doc) decryptProfileFields(doc);
+});
+
+financialProfileSchema.post('findOneAndUpdate', function(doc) {
+  if (doc) decryptProfileFields(doc);
+});
+
+// Helper function to decrypt profile fields
+function decryptProfileFields(doc) {
+  try {
+    // Decrypt PAN number
+    if (doc.panNumber && encryptionService.isEncrypted(doc.panNumber)) {
+      doc.panNumber = encryptionService.decrypt(doc.panNumber);
+    }
+
+    // Decrypt OpenAI key
+    if (doc.preferences?.openAIKey && encryptionService.isEncrypted(doc.preferences.openAIKey)) {
+      doc.preferences.openAIKey = encryptionService.decrypt(doc.preferences.openAIKey);
+    }
+
+    // Decrypt Gmail tokens
+    if (doc.gmailSettings?.accessToken && encryptionService.isEncrypted(doc.gmailSettings.accessToken)) {
+      doc.gmailSettings.accessToken = encryptionService.decrypt(doc.gmailSettings.accessToken);
+    }
+
+    if (doc.gmailSettings?.refreshToken && encryptionService.isEncrypted(doc.gmailSettings.refreshToken)) {
+      doc.gmailSettings.refreshToken = encryptionService.decrypt(doc.gmailSettings.refreshToken);
+    }
+
+    // Decrypt credit card numbers
+    if (doc.cibilData?.creditCards) {
+      doc.cibilData.creditCards.forEach((card, index) => {
+        if (card.cardNumber && encryptionService.isEncrypted(card.cardNumber)) {
+          doc.cibilData.creditCards[index].cardNumber = encryptionService.decrypt(card.cardNumber);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error decrypting profile fields:', error);
+    // Don't throw error, just log it
+  }
+}
+
+// Method to get masked credit card numbers for display
+financialProfileSchema.methods.getMaskedCardNumbers = function() {
+  if (!this.cibilData?.creditCards) return [];
+  
+  return this.cibilData.creditCards.map(card => ({
+    ...card.toObject(),
+    cardNumber: card.cardNumber ? encryptionService.maskCardNumber(card.cardNumber) : null
+  }));
+};
 
 // Check if profile is complete
 financialProfileSchema.pre('save', function(next) {

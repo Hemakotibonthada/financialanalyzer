@@ -14,12 +14,19 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    const result = await login(email, password);
-    
-    setLoading(false);
-
-    if (result.success) {
-      navigate('/');
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

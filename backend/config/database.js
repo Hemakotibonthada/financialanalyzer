@@ -11,7 +11,7 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       // Removed deprecated options for MongoDB Driver 4.0+
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
       family: 4 // Use IPv4, skip trying IPv6
     });

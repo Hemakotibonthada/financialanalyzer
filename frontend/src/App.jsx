@@ -1,97 +1,138 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { CircularProgress, Box } from '@mui/material';
 
 import { AuthProvider } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { KeyboardShortcutsProvider } from './context/KeyboardShortcutsContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 
+// Eager load auth pages (small, frequently used)
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import Analyzer from './pages/Analyzer';
-import Reports from './pages/Reports';
-import ReportDetail from './pages/ReportDetail';
-import CreditScoreDetail from './pages/CreditScoreDetail';
-import AdvancedAnalytics from './pages/AdvancedAnalytics';
-import EMITracker from './pages/EMITracker';
-import AdminDashboard from './components/AdminDashboard';
+
+// Lazy load all other pages for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Analyzer = lazy(() => import('./pages/Analyzer'));
+const Reports = lazy(() => import('./pages/Reports'));
+const ReportDetail = lazy(() => import('./pages/ReportDetail'));
+const CreditScoreDetail = lazy(() => import('./pages/CreditScoreDetail'));
+const AdvancedAnalytics = lazy(() => import('./pages/AdvancedAnalytics'));
+const EMITracker = lazy(() => import('./pages/EMITracker'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const TransactionSearch = lazy(() => import('./components/TransactionSearch'));
+const CSVImportExport = lazy(() => import('./components/CSVImportExport'));
+
+// Loading component
+const LoadingFallback = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f5'
+    }}
+  >
+    <CircularProgress size={60} />
+  </Box>
+);
 
 function App() {
   return (
-    <AuthProvider>
-      <WebSocketProvider>
-        <NotificationProvider>
-          <Router
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true
-            }}
-          >
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/analyze" element={
-              <ProtectedRoute>
-                <Analyzer />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/reports" element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/reports/:id" element={
-              <ProtectedRoute>
-                <ReportDetail />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/credit-score-detail" element={
-              <ProtectedRoute>
-                <CreditScoreDetail />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/advanced-analytics" element={
-              <ProtectedRoute>
-                <AdvancedAnalytics />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/emi-tracker" element={
-              <ProtectedRoute>
-                <EMITracker />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <WebSocketProvider>
+          <NotificationProvider>
+            <Router
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true
+              }}
+            >
+              <KeyboardShortcutsProvider>
+                <KeyboardShortcutsHelp />
+                <div className="min-h-screen bg-gray-50">
+                  <Suspense fallback={<LoadingFallback />}>
+                    <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/analyze" element={
+                <ProtectedRoute>
+                  <Analyzer />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/reports" element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/reports/:id" element={
+                <ProtectedRoute>
+                  <ReportDetail />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/credit-score-detail" element={
+                <ProtectedRoute>
+                  <CreditScoreDetail />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/advanced-analytics" element={
+                <ProtectedRoute>
+                  <AdvancedAnalytics />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/emi-tracker" element={
+                <ProtectedRoute>
+                  <EMITracker />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/search" element={
+                <ProtectedRoute>
+                  <TransactionSearch />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/import-export" element={
+                <ProtectedRoute>
+                  <CSVImportExport />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
           
           <ToastContainer
             position="top-right"
@@ -105,10 +146,12 @@ function App() {
             pauseOnHover
           />
         </div>
+              </KeyboardShortcutsProvider>
       </Router>
       </NotificationProvider>
       </WebSocketProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

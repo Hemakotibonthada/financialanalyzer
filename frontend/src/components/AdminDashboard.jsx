@@ -7,6 +7,7 @@ import {
   MessageSquare, Bell, Eye, Edit2, Lock, Unlock, User
 } from 'lucide-react';
 import api from '../services/api';
+import CacheManagementPanel from './CacheManagementPanel';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -506,6 +507,19 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-2">
                 <Server className="w-4 h-4" />
                 <span>System Health</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('cache')}
+              className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'cache'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Database className="w-4 h-4" />
+                <span>Cache Management</span>
               </div>
             </button>
           </div>
@@ -1335,6 +1349,13 @@ const AdminDashboard = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Cache Management Tab */}
+      {activeTab === 'cache' && (
+        <div className="bg-white rounded-lg shadow-md">
+          <CacheManagementPanel />
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ const router = express.Router();
 const analyticsService = require('../services/analyticsService');
 const advancedAnalyticsService = require('../services/advancedAnalyticsService');
 const { authenticate } = require('../middleware/auth');
+const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 const logger = require('../utils/logger');
 
 /**
@@ -17,7 +18,7 @@ router.get('/test', (req, res) => {
  * GET /api/analytics/dashboard
  * Get comprehensive financial dashboard
  */
-router.get('/dashboard', authenticate, async (req, res) => {
+router.get('/dashboard', authenticate, cacheMiddleware(300), async (req, res) => {
   try {
     logger.info(`Dashboard request from user: ${req.user._id}`);
     

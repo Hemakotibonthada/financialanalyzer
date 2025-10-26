@@ -36,7 +36,7 @@ const CreditScoreCard = () => {
         }
 
         // Check monthly fetch limit (disabled in development)
-        if (process.env.NODE_ENV === 'production' && lastCreditUpdate) {
+        if (import.meta.env.MODE === 'production' && lastCreditUpdate) {
           const lastUpdate = new Date(lastCreditUpdate);
           const now = new Date();
           const daysSinceLastFetch = (now - lastUpdate) / (1000 * 60 * 60 * 24);
@@ -100,7 +100,7 @@ const CreditScoreCard = () => {
         setCreditData(creditScore);
         
         // Update monthly limit tracking (disabled in development)
-        if (process.env.NODE_ENV === 'production' && creditScore.lastUpdated) {
+        if (import.meta.env.MODE === 'production' && creditScore.lastUpdated) {
           const lastUpdate = new Date(creditScore.lastUpdated);
           const now = new Date();
           const daysSinceLastFetch = (now - lastUpdate) / (1000 * 60 * 60 * 24);
@@ -123,7 +123,7 @@ const CreditScoreCard = () => {
 
   const fetchCreditScore = async () => {
     // Check monthly limit before fetching (disabled in development)
-    if (process.env.NODE_ENV === 'production' && !canFetchThisMonth) {
+    if (import.meta.env.MODE === 'production' && !canFetchThisMonth) {
       const nextFetchDate = new Date(lastFetchDate);
       nextFetchDate.setDate(nextFetchDate.getDate() + 30);
       setError(`You can fetch your credit score again after ${nextFetchDate.toLocaleDateString()}. Credit scores are limited to once per month to protect your credit profile.`);

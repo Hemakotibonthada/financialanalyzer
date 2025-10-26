@@ -999,4 +999,868 @@ router.post('/:id/foreclose', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/emi/export/pdf
+ * @desc Export EMI report as PDF
+ * @access Private
+ */
+router.get('/export/pdf', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { startDate, endDate } = req.query;
+    logger.info(`Exporting EMI PDF report for user: ${userId}, Date range: ${startDate} to ${endDate}`);
+    
+    // Build date filter
+    const dateFilter = { userId };
+    if (startDate) {
+      dateFilter.startDate = { $gte: new Date(startDate) };
+    }
+    
+    // Fetch all required data
+    const [overview, allEMIs, upcomingData] = await Promise.all([
+      emiAnalyticsService.getEMIOverview(userId),
+      EMI.find(dateFilter).sort({ startDate: -1 }),
+      emiAnalyticsService.getUpcomingPayments(userId, 36) // Get 36 months of upcoming payments
+    ]);
+
+    // Extract upcoming payments array from the returned object
+    const upcomingPayments = upcomingData.upcomingPayments || [];
+    
+    // Filter upcoming payments by end date
+    const filteredUpcoming = upcomingPayments.filter(payment => {
+      if (!endDate) return true;
+      return new Date(payment.dueDate) <= new Date(endDate);
+    });
+
+    // Group EMIs by status
+    const activeEMIs = allEMIs.filter(e => e.status === 'active');
+    const completedEMIs = allEMIs.filter(e => e.status === 'completed');
+    const foreClosedEMIs = allEMIs.filter(e => e.status === 'foreclosed');
+
+    // Calculate provider map (used in both charts and summary)
+    const providerMap = {};
+    allEMIs.forEach(emi => {
+      const provider = emi.cardProvider || 'Unknown';
+      if (!providerMap[provider]) {
+        providerMap[provider] = { count: 0, principal: 0, outstanding: 0 };
+      }
+      providerMap[provider].count++;
+      providerMap[provider].principal += emi.principalAmount || 0;
+      providerMap[provider].outstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+    });
+
+    // Generate charts
+    const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 800, height: 400, backgroundColour: 'white' });
+
+    // Chart 1: EMI Status Distribution (Pie Chart)
+    const statusChartConfig = {
+      type: 'pie',
+      data: {
+        labels: ['Active', 'Completed', 'Foreclosed'],
+        datasets: [{
+          data: [activeEMIs.length, completedEMIs.length, foreClosedEMIs.length],
+          backgroundColor: ['#4CAF50', '#2196F3', '#FF9800']
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'EMI Status Distribution',
+            font: { size: 18 }
+          },
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    };
+
+    // Chart 2: Provider-wise Distribution (Bar Chart)
+    const providerChartConfig = {
+      type: 'bar',
+      data: {
+        labels: Object.keys(providerMap),
+        datasets: [{
+          label: 'Number of EMIs',
+          data: Object.values(providerMap).map(p => p.count || 0),
+          backgroundColor: '#4CAF50'
+        }, {
+          label: 'Outstanding Amount',
+          data: Object.values(providerMap).map(p => p.outstanding || 0),
+          backgroundColor: '#2196F3'
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Provider-wise EMI Distribution',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
+
+    // Chart 3: Monthly Payment Trend (Line Chart)
+    const paymentsByMonth = {};
+    filteredUpcoming.slice(0, 12 * 6).forEach(payment => { // Next 6 months
+      const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' });
+      if (!paymentsByMonth[monthKey]) {
+        paymentsByMonth[monthKey] = 0;
+      }
+      paymentsByMonth[monthKey] += payment.amount || 0;
+    });
+
+    const monthlyChartConfig = {
+      type: 'line',
+      data: {
+        labels: Object.keys(paymentsByMonth).slice(0, 12),
+        datasets: [{
+          label: 'Monthly EMI Payments',
+          data: Object.values(paymentsByMonth).slice(0, 12),
+          borderColor: '#FF5722',
+          backgroundColor: 'rgba(255, 87, 34, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Upcoming Monthly Payment Trend',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
+
+    // Generate chart images
+    const [statusChartImage, providerChartImage, monthlyChartImage] = await Promise.all([
+      chartJSNodeCanvas.renderToBuffer(statusChartConfig),
+      chartJSNodeCanvas.renderToBuffer(providerChartConfig),
+      chartJSNodeCanvas.renderToBuffer(monthlyChartConfig)
+    ]);
+
+    // Generate proper PDF using PDFKit
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=EMI_Report_${startDate || 'All'}_to_${endDate || 'All'}.pdf`);
+    
+    // Pipe PDF to response
+    doc.pipe(res);
+    
+    // Add content
+    doc.fontSize(16).font('Courier-Bold').text('EMI TRACKER COMPREHENSIVE REPORT', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(10).font('Courier').text(`Generated: ${new Date().toLocaleString()}`);
+    doc.text(`Date Range: ${startDate || 'All'} to ${endDate || 'All'}`);
+    doc.text(`User ID: ${userId}`);
+    doc.moveDown();
+    
+    // Overview Section
+    doc.fontSize(14).font('Courier-Bold').text('OVERVIEW SUMMARY', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Courier');
+    doc.text(`Total EMIs: ${allEMIs.length}`);
+    doc.text(`Active EMIs: ${activeEMIs.length}`);
+    doc.text(`Completed EMIs: ${completedEMIs.length}`);
+    doc.text(`Foreclosed EMIs: ${foreClosedEMIs.length}`);
+    doc.moveDown(0.5);
+    doc.text(`Total Monthly EMI: ${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}`);
+    doc.text(`Total Outstanding: ${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}`);
+    doc.text(`Total Principal: ${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}`);
+    doc.text(`Average Interest Rate: ${(overview?.averageInterestRate || 0).toFixed(2)}%`);
+    doc.moveDown(2);
+    
+    // Add Status Distribution Chart
+    doc.fontSize(12).font('Courier-Bold').text('EMI STATUS DISTRIBUTION', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(statusChartImage, {
+      fit: [500, 300],
+      align: 'center'
+    });
+    doc.moveDown(2);
+    
+    // Active EMIs Section
+    if (activeEMIs.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('ACTIVE EMIs', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+      activeEMIs.forEach((emi, index) => {
+        doc.text(`${index + 1}. ${emi.merchantName || 'Unknown Merchant'}`);
+        doc.text(`   Card: ${emi.cardProvider} ****${emi.cardLastFourDigits || 'N/A'}`, { indent: 10 });
+        doc.text(`   Product: ${emi.productDescription || 'N/A'}`, { indent: 10 });
+        doc.text(`   Principal: ${(emi.principalAmount || 0).toLocaleString('en-IN')} | Interest: ${emi.interestRate || 0}%`, { indent: 10 });
+        doc.text(`   EMI: ${(emi.emiAmount || 0).toLocaleString('en-IN')} | Tenure: ${emi.remainingInstallments || 0}/${emi.totalTenure || 0}`, { indent: 10 });
+        doc.text(`   Outstanding: ${((emi.emiAmount || 0) * (emi.remainingInstallments || 0)).toLocaleString('en-IN')}`, { indent: 10 });
+        doc.moveDown(0.3);
+      });
+      doc.moveDown();
+    }
+    
+    // Add Provider Distribution Chart
+    if (Object.keys(providerMap).length > 0) {
+      doc.addPage();
+      doc.fontSize(12).font('Courier-Bold').text('PROVIDER-WISE DISTRIBUTION', { underline: true });
+      doc.moveDown(0.5);
+      doc.image(providerChartImage, {
+        fit: [500, 300],
+        align: 'center'
+      });
+      doc.moveDown(2);
+    }
+    
+    // Upcoming Payments Section
+    if (filteredUpcoming.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('UPCOMING PAYMENTS SCHEDULE', { underline: true });
+      doc.moveDown(0.5);
+      
+      // Add Monthly Trend Chart
+      doc.image(monthlyChartImage, {
+        fit: [500, 300],
+        align: 'center'
+      });
+      doc.moveDown(2);
+      
+      doc.fontSize(9).font('Courier');
+      
+      // Group by month
+      const upcomingByMonth = {};
+      filteredUpcoming.forEach(payment => {
+        const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
+        if (!upcomingByMonth[monthKey]) {
+          upcomingByMonth[monthKey] = [];
+        }
+        upcomingByMonth[monthKey].push(payment);
+      });
+
+      Object.entries(upcomingByMonth).slice(0, 12).forEach(([month, payments]) => {
+        const monthTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        doc.fontSize(11).font('Courier-Bold').text(`${month} - Total: ${monthTotal.toLocaleString('en-IN')}`);
+        doc.fontSize(9).font('Courier');
+        payments.slice(0, 10).forEach((payment, idx) => {
+          doc.text(`  ${new Date(payment.dueDate).toLocaleDateString('en-IN')} - ${payment.merchantName || 'N/A'}`);
+          doc.text(`    Amount: ${(payment.amount || 0).toLocaleString('en-IN')} | ${payment.cardProvider || 'N/A'} | ${payment.installmentNumber || 0}/${payment.totalTenure || 0}`, { indent: 10 });
+        });
+        if (payments.length > 10) {
+          doc.text(`  ... and ${payments.length - 10} more payments`);
+        }
+        doc.moveDown(0.5);
+      });
+    }
+    
+    // Completed EMIs Section
+    if (completedEMIs.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('COMPLETED EMIs', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+      completedEMIs.forEach((emi, index) => {
+        doc.text(`${index + 1}. ${emi.merchantName || 'Unknown'} - ${emi.cardProvider}`);
+        doc.text(`   Principal: ${(emi.principalAmount || 0).toLocaleString('en-IN')} | Total Paid: ${((emi.emiAmount || 0) * (emi.totalTenure || 0)).toLocaleString('en-IN')}`, { indent: 10 });
+        doc.moveDown(0.3);
+      });
+      doc.moveDown();
+    }
+
+    // Provider Summary
+    if (allEMIs.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('PROVIDER-WISE BREAKDOWN', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+
+      Object.entries(providerMap).forEach(([provider, data]) => {
+        doc.text(`${provider}`);
+        doc.text(`  EMIs: ${data.count} | Principal: ${data.principal.toLocaleString('en-IN')} | Outstanding: ${data.outstanding.toLocaleString('en-IN')}`, { indent: 10 });
+        doc.moveDown(0.3);
+      });
+    }
+    
+    // Finalize PDF
+    doc.end();
+    
+  } catch (error) {
+    logger.error('Export PDF error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export PDF report',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route GET /api/emi/export/excel
+ * @desc Export EMI report as Excel
+ * @access Private
+ */
+router.get('/export/excel', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { startDate, endDate } = req.query;
+    logger.info(`Exporting EMI Excel report for user: ${userId}, Date range: ${startDate} to ${endDate}`);
+    
+    const ExcelJS = require('exceljs');
+    
+    // Build date filter
+    const dateFilter = { userId };
+    if (startDate) {
+      dateFilter.startDate = { $gte: new Date(startDate) };
+    }
+    
+    // Fetch all required data
+    const [overview, allEMIs, upcomingData] = await Promise.all([
+      emiAnalyticsService.getEMIOverview(userId),
+      EMI.find(dateFilter).sort({ startDate: -1 }),
+      emiAnalyticsService.getUpcomingPayments(userId, 36)
+    ]);
+
+    // Extract upcoming payments array from the returned object
+    const upcomingPayments = upcomingData.upcomingPayments || [];
+
+    // Filter upcoming payments by end date
+    const filteredUpcoming = upcomingPayments.filter(payment => {
+      if (!endDate) return true;
+      return new Date(payment.dueDate) <= new Date(endDate);
+    });
+
+    // Create workbook
+    const workbook = new ExcelJS.Workbook();
+    pdfContent += '╚════════════════════════════════════════════════════════════════════════════════╝\n\n';
+    pdfContent += `📅 Generated: ${new Date().toLocaleString()}\n`;
+    pdfContent += `📊 Date Range: ${startDate || 'All'} to ${endDate || 'All'}\n`;
+    pdfContent += `👤 User ID: ${userId}\n\n`;
+    
+    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+    pdfContent += '                              OVERVIEW SUMMARY\n';
+    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
+    pdfContent += `📊 Total EMIs: ${allEMIs.length}\n`;
+    pdfContent += `✅ Active EMIs: ${activeEMIs.length}\n`;
+    pdfContent += `✔️  Completed EMIs: ${completedEMIs.length}\n`;
+    pdfContent += `🔒 Foreclosed EMIs: ${foreClosedEMIs.length}\n\n`;
+    pdfContent += `💰 Total Monthly EMI: ₹${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}\n`;
+    pdfContent += `📈 Total Outstanding: ₹${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}\n`;
+    pdfContent += `💵 Total Principal: ₹${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}\n`;
+    pdfContent += `📊 Average Interest Rate: ${(overview?.averageInterestRate || 0).toFixed(2)}%\n\n`;
+    
+    // Active EMIs Section
+    if (activeEMIs.length > 0) {
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+      pdfContent += '                              ACTIVE EMIs\n';
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
+      activeEMIs.forEach((emi, index) => {
+        pdfContent += `${index + 1}. ${emi.merchantName || 'Unknown Merchant'}\n`;
+        pdfContent += `   └─ Card: ${emi.cardProvider} ****${emi.cardLastFourDigits || 'N/A'}\n`;
+        pdfContent += `   └─ Product: ${emi.productDescription || 'N/A'}\n`;
+        pdfContent += `   └─ Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')}\n`;
+        pdfContent += `   └─ Interest Rate: ${emi.interestRate || 0}%\n`;
+        pdfContent += `   └─ EMI Amount: ₹${(emi.emiAmount || 0).toLocaleString('en-IN')}\n`;
+        pdfContent += `   └─ Tenure: ${emi.remainingInstallments || 0}/${emi.totalTenure || 0} remaining\n`;
+        pdfContent += `   └─ Start Date: ${new Date(emi.startDate).toLocaleDateString('en-IN')}\n`;
+        pdfContent += `   └─ Outstanding: ₹${((emi.emiAmount || 0) * (emi.remainingInstallments || 0)).toLocaleString('en-IN')}\n\n`;
+      });
+    }
+
+    // Upcoming Payments Section
+    if (filteredUpcoming.length > 0) {
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+      pdfContent += '                           UPCOMING PAYMENTS SCHEDULE\n';
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
+      
+      // Group by month
+      const paymentsByMonth = {};
+      filteredUpcoming.forEach(payment => {
+        const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
+        if (!paymentsByMonth[monthKey]) {
+          paymentsByMonth[monthKey] = [];
+        }
+        paymentsByMonth[monthKey].push(payment);
+      });
+
+      Object.entries(paymentsByMonth).forEach(([month, payments]) => {
+        const monthTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        pdfContent += `📅 ${month} - Total: ₹${monthTotal.toLocaleString('en-IN')} (${payments.length} payments)\n`;
+        pdfContent += '─'.repeat(80) + '\n';
+        payments.forEach((payment, idx) => {
+          pdfContent += `   ${idx + 1}. ${new Date(payment.dueDate).toLocaleDateString('en-IN')} - ${payment.merchantName || 'N/A'}\n`;
+          pdfContent += `      Amount: ₹${(payment.amount || 0).toLocaleString('en-IN')} | `;
+          pdfContent += `Card: ${payment.cardProvider || 'N/A'} | `;
+          pdfContent += `Installment: ${payment.installmentNumber || 0}/${payment.totalTenure || 0}\n`;
+        });
+        pdfContent += '\n';
+      });
+    }
+
+    // Completed EMIs Section
+    if (completedEMIs.length > 0) {
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+      pdfContent += '                            COMPLETED EMIs\n';
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
+      completedEMIs.forEach((emi, index) => {
+        pdfContent += `${index + 1}. ${emi.merchantName || 'Unknown'} - ${emi.cardProvider}\n`;
+        pdfContent += `   Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')} | `;
+        pdfContent += `Total Paid: ₹${((emi.emiAmount || 0) * (emi.totalTenure || 0)).toLocaleString('en-IN')}\n`;
+        pdfContent += `   Period: ${new Date(emi.startDate).toLocaleDateString('en-IN')} to ${new Date(emi.endDate || emi.startDate).toLocaleDateString('en-IN')}\n\n`;
+      });
+    }
+
+    // Provider-wise Summary
+    if (allEMIs.length > 0) {
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+      pdfContent += '                         PROVIDER-WISE BREAKDOWN\n';
+      pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n\n';
+      
+      const providerMap = {};
+      allEMIs.forEach(emi => {
+        const provider = emi.cardProvider || 'Unknown';
+        if (!providerMap[provider]) {
+          providerMap[provider] = { count: 0, totalAmount: 0, totalPrincipal: 0 };
+        }
+        providerMap[provider].count++;
+        providerMap[provider].totalAmount += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+        providerMap[provider].totalPrincipal += (emi.principalAmount || 0);
+      });
+
+      Object.entries(providerMap).forEach(([provider, data]) => {
+        pdfContent += `🏦 ${provider}:\n`;
+        pdfContent += `   EMIs: ${data.count} | Principal: ₹${data.totalPrincipal.toLocaleString('en-IN')} | `;
+        pdfContent += `Outstanding: ₹${data.totalAmount.toLocaleString('en-IN')}\n\n`;
+      });
+    }
+
+    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+    pdfContent += '                           END OF REPORT\n';
+    pdfContent += '═══════════════════════════════════════════════════════════════════════════════\n';
+
+    // Generate proper PDF using PDFKit
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=EMI_Report_${startDate || 'All'}_to_${endDate || 'All'}.pdf`);
+    
+    // Pipe PDF to response
+    doc.pipe(res);
+    
+    // Add content
+    doc.fontSize(16).font('Courier-Bold').text('EMI TRACKER COMPREHENSIVE REPORT', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(10).font('Courier').text(`Generated: ${new Date().toLocaleString()}`);
+    doc.text(`Date Range: ${startDate || 'All'} to ${endDate || 'All'}`);
+    doc.text(`User ID: ${userId}`);
+    doc.moveDown();
+    
+    // Overview Section
+    doc.fontSize(14).font('Courier-Bold').text('OVERVIEW SUMMARY', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Courier');
+    doc.text(`Total EMIs: ${allEMIs.length}`);
+    doc.text(`Active EMIs: ${activeEMIs.length}`);
+    doc.text(`Completed EMIs: ${completedEMIs.length}`);
+    doc.text(`Foreclosed EMIs: ${foreClosedEMIs.length}`);
+    doc.moveDown(0.5);
+    doc.text(`Total Monthly EMI: ₹${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}`);
+    doc.text(`Total Outstanding: ₹${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}`);
+    doc.text(`Total Principal: ₹${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}`);
+    doc.text(`Average Interest Rate: ${(overview?.averageInterestRate || 0).toFixed(2)}%`);
+    doc.moveDown();
+    
+    // Active EMIs Section
+    if (activeEMIs.length > 0) {
+      doc.fontSize(14).font('Courier-Bold').text('ACTIVE EMIs', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+      activeEMIs.forEach((emi, index) => {
+        doc.text(`${index + 1}. ${emi.merchantName || 'Unknown Merchant'}`);
+        doc.text(`   Card: ${emi.cardProvider} ****${emi.cardLastFourDigits || 'N/A'}`, { indent: 10 });
+        doc.text(`   Product: ${emi.productDescription || 'N/A'}`, { indent: 10 });
+        doc.text(`   Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')} | Interest: ${emi.interestRate || 0}%`, { indent: 10 });
+        doc.text(`   EMI: ₹${(emi.emiAmount || 0).toLocaleString('en-IN')} | Tenure: ${emi.remainingInstallments || 0}/${emi.totalTenure || 0}`, { indent: 10 });
+        doc.text(`   Outstanding: ₹${((emi.emiAmount || 0) * (emi.remainingInstallments || 0)).toLocaleString('en-IN')}`, { indent: 10 });
+        doc.moveDown(0.3);
+      });
+      doc.moveDown();
+    }
+    
+    // Upcoming Payments Section
+    if (filteredUpcoming.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('UPCOMING PAYMENTS SCHEDULE', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+      
+      // Group by month
+      const paymentsByMonth = {};
+      filteredUpcoming.forEach(payment => {
+        const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' });
+        if (!paymentsByMonth[monthKey]) {
+          paymentsByMonth[monthKey] = [];
+        }
+        paymentsByMonth[monthKey].push(payment);
+      });
+
+      Object.entries(paymentsByMonth).slice(0, 12).forEach(([month, payments]) => {
+        const monthTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        doc.fontSize(11).font('Courier-Bold').text(`${month} - Total: ₹${monthTotal.toLocaleString('en-IN')}`);
+        doc.fontSize(9).font('Courier');
+        payments.slice(0, 10).forEach((payment, idx) => {
+          doc.text(`  ${new Date(payment.dueDate).toLocaleDateString('en-IN')} - ${payment.merchantName || 'N/A'}`);
+          doc.text(`    Amount: ₹${(payment.amount || 0).toLocaleString('en-IN')} | ${payment.cardProvider || 'N/A'} | ${payment.installmentNumber || 0}/${payment.totalTenure || 0}`, { indent: 10 });
+        });
+        if (payments.length > 10) {
+          doc.text(`  ... and ${payments.length - 10} more payments`);
+        }
+        doc.moveDown(0.5);
+      });
+    }
+    
+    // Completed EMIs Section
+    if (completedEMIs.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('COMPLETED EMIs', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+      completedEMIs.forEach((emi, index) => {
+        doc.text(`${index + 1}. ${emi.merchantName || 'Unknown'} - ${emi.cardProvider}`);
+        doc.text(`   Principal: ₹${(emi.principalAmount || 0).toLocaleString('en-IN')} | Total Paid: ₹${((emi.emiAmount || 0) * (emi.totalTenure || 0)).toLocaleString('en-IN')}`, { indent: 10 });
+        doc.moveDown(0.3);
+      });
+      doc.moveDown();
+    }
+
+    // Provider Summary
+    if (allEMIs.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font('Courier-Bold').text('PROVIDER-WISE BREAKDOWN', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Courier');
+
+      Object.entries(providerMap).forEach(([provider, data]) => {
+        doc.text(`${provider}`);
+        doc.text(`  EMIs: ${data.count || 0} | Principal: ${(data.principal || 0).toLocaleString('en-IN')} | Outstanding: ${(data.outstanding || 0).toLocaleString('en-IN')}`, { indent: 10 });
+        doc.moveDown(0.3);
+      });
+    }
+    
+    // Finalize PDF
+    doc.end();
+    
+  } catch (error) {
+    logger.error('Export PDF error:', error);
+    // Check if response has already been sent
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export PDF report',
+        error: error.message
+      });
+    }
+  }
+});
+
+/**
+ * @route GET /api/emi/export/excel
+ * @desc Export EMI report as Excel
+ * @access Private
+ */
+router.get('/export/excel', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { startDate, endDate } = req.query;
+    logger.info(`Exporting EMI Excel report for user: ${userId}, Date range: ${startDate} to ${endDate}`);
+    
+    const ExcelJS = require('exceljs');
+    
+    // Build date filter
+    const dateFilter = { userId };
+    if (startDate) {
+      dateFilter.startDate = { $gte: new Date(startDate) };
+    }
+    
+    // Fetch all required data
+    const [overview, allEMIs, upcomingData] = await Promise.all([
+      emiAnalyticsService.getEMIOverview(userId),
+      EMI.find(dateFilter).sort({ startDate: -1 }),
+      emiAnalyticsService.getUpcomingPayments(userId, 36)
+    ]);
+
+    // Extract upcoming payments array from the returned object
+    const upcomingPayments = upcomingData.upcomingPayments || [];
+
+    // Filter upcoming payments by end date
+    const filteredUpcoming = upcomingPayments.filter(payment => {
+      if (!endDate) return true;
+      return new Date(payment.dueDate) <= new Date(endDate);
+    });
+
+    // Create workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Financial Analyzer';
+    workbook.created = new Date();
+
+    // Sheet 1: Overview
+    const overviewSheet = workbook.addWorksheet('Overview', {
+      views: [{ showGridLines: false }]
+    });
+    overviewSheet.columns = [
+      { header: 'Metric', key: 'metric', width: 35 },
+      { header: 'Value', key: 'value', width: 25 }
+    ];
+    
+    overviewSheet.addRows([
+      { metric: 'Report Generated', value: new Date().toLocaleString() },
+      { metric: 'Date Range', value: `${startDate || 'All'} to ${endDate || 'All'}` },
+      { metric: '', value: '' },
+      { metric: 'Total EMIs', value: allEMIs.length },
+      { metric: 'Active EMIs', value: allEMIs.filter(e => e.status === 'active').length },
+      { metric: 'Completed EMIs', value: allEMIs.filter(e => e.status === 'completed').length },
+      { metric: 'Foreclosed EMIs', value: allEMIs.filter(e => e.status === 'foreclosed').length },
+      { metric: '', value: '' },
+      { metric: 'Total Monthly EMI', value: `₹${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}` },
+      { metric: 'Total Outstanding', value: `₹${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}` },
+      { metric: 'Total Principal', value: `₹${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}` },
+      { metric: 'Average Interest Rate', value: `${(overview?.averageInterestRate || 0).toFixed(2)}%` }
+    ]);
+
+    // Style overview sheet
+    overviewSheet.getRow(1).font = { bold: true, size: 14 };
+    overviewSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    };
+    overviewSheet.getRow(1).font.color = { argb: 'FFFFFFFF' };
+    overviewSheet.getRow(1).height = 25;
+
+    // Sheet 2: All EMIs
+    const emisSheet = workbook.addWorksheet('All EMIs');
+    emisSheet.columns = [
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Card Provider', key: 'cardProvider', width: 20 },
+      { header: 'Card Number', key: 'cardNumber', width: 15 },
+      { header: 'Merchant', key: 'merchant', width: 25 },
+      { header: 'Product', key: 'product', width: 30 },
+      { header: 'Principal', key: 'principal', width: 15 },
+      { header: 'Interest Rate', key: 'interestRate', width: 12 },
+      { header: 'EMI Amount', key: 'emiAmount', width: 15 },
+      { header: 'Total Tenure', key: 'totalTenure', width: 12 },
+      { header: 'Remaining', key: 'remaining', width: 12 },
+      { header: 'Outstanding', key: 'outstanding', width: 15 },
+      { header: 'Start Date', key: 'startDate', width: 15 },
+      { header: 'Repayment Type', key: 'repaymentType', width: 15 }
+    ];
+
+    allEMIs.forEach(emi => {
+      const outstanding = (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+      emisSheet.addRow({
+        status: (emi.status || 'unknown').toUpperCase(),
+        cardProvider: emi.cardProvider || 'N/A',
+        cardNumber: `****${emi.cardLastFourDigits || 'N/A'}`,
+        merchant: emi.merchantName || 'N/A',
+        product: emi.productDescription || 'N/A',
+        principal: (emi.principalAmount || 0),
+        interestRate: `${emi.interestRate || 0}%`,
+        emiAmount: (emi.emiAmount || 0),
+        totalTenure: emi.totalTenure || 0,
+        remaining: emi.remainingInstallments || 0,
+        outstanding: outstanding,
+        startDate: new Date(emi.startDate).toLocaleDateString('en-IN'),
+        repaymentType: emi.repaymentType || 'MONTHLY'
+      });
+    });
+
+    // Style EMIs sheet header
+    emisSheet.getRow(1).font = { bold: true, size: 12 };
+    emisSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF70AD47' }
+    };
+    emisSheet.getRow(1).font.color = { argb: 'FFFFFFFF' };
+    emisSheet.getRow(1).height = 22;
+
+    // Format currency columns
+    emisSheet.getColumn('principal').numFmt = '#,##0.00';
+    emisSheet.getColumn('emiAmount').numFmt = '#,##0.00';
+    emisSheet.getColumn('outstanding').numFmt = '#,##0.00';
+
+    // Sheet 3: Upcoming Payments
+    const upcomingSheet = workbook.addWorksheet('Upcoming Payments');
+    upcomingSheet.columns = [
+      { header: 'Due Date', key: 'dueDate', width: 15 },
+      { header: 'Month', key: 'month', width: 15 },
+      { header: 'Card Provider', key: 'cardProvider', width: 20 },
+      { header: 'Merchant', key: 'merchant', width: 25 },
+      { header: 'Amount', key: 'amount', width: 15 },
+      { header: 'Installment', key: 'installment', width: 15 },
+      { header: 'Status', key: 'status', width: 12 }
+    ];
+
+    filteredUpcoming.forEach(payment => {
+      const dueDate = new Date(payment.dueDate);
+      upcomingSheet.addRow({
+        dueDate: dueDate.toLocaleDateString('en-IN'),
+        month: dueDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long' }),
+        cardProvider: payment.cardProvider || 'N/A',
+        merchant: payment.merchantName || 'N/A',
+        amount: payment.amount || 0,
+        installment: `${payment.installmentNumber || 0}/${payment.totalTenure || 0}`,
+        status: payment.status || 'upcoming'
+      });
+    });
+
+    // Style upcoming sheet header
+    upcomingSheet.getRow(1).font = { bold: true, size: 12 };
+    upcomingSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFC000' }
+    };
+    upcomingSheet.getRow(1).font.color = { argb: 'FFFFFFFF' };
+    upcomingSheet.getRow(1).height = 22;
+    upcomingSheet.getColumn('amount').numFmt = '#,##0.00';
+
+    // Sheet 4: Provider Summary
+    const providerSheet = workbook.addWorksheet('Provider Summary');
+    providerSheet.columns = [
+      { header: 'Provider', key: 'provider', width: 25 },
+      { header: 'Total EMIs', key: 'count', width: 15 },
+      { header: 'Active EMIs', key: 'active', width: 15 },
+      { header: 'Total Principal', key: 'principal', width: 18 },
+      { header: 'Total Outstanding', key: 'outstanding', width: 18 }
+    ];
+
+    const providerMap = {};
+    allEMIs.forEach(emi => {
+      const provider = emi.cardProvider || 'Unknown';
+      if (!providerMap[provider]) {
+        providerMap[provider] = { count: 0, active: 0, totalPrincipal: 0, totalOutstanding: 0 };
+      }
+      providerMap[provider].count++;
+      if (emi.status === 'active') providerMap[provider].active++;
+      providerMap[provider].totalPrincipal += (emi.principalAmount || 0);
+      providerMap[provider].totalOutstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+    });
+
+    Object.entries(providerMap).forEach(([provider, data]) => {
+      providerSheet.addRow({
+        provider,
+        count: data.count,
+        active: data.active,
+        principal: data.totalPrincipal,
+        outstanding: data.totalOutstanding
+      });
+    });
+
+    // Style provider sheet
+    providerSheet.getRow(1).font = { bold: true, size: 12 };
+    providerSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF9966FF' }
+    };
+    providerSheet.getRow(1).font.color = { argb: 'FFFFFFFF' };
+    providerSheet.getRow(1).height = 22;
+    providerSheet.getColumn('principal').numFmt = '#,##0.00';
+    providerSheet.getColumn('outstanding').numFmt = '#,##0.00';
+
+    // Generate Excel file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=EMI_Report_${startDate || 'All'}_to_${endDate || 'All'}.xlsx`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    logger.error('Export Excel error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export Excel report',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route GET /api/emi/export/csv
+ * @desc Export EMI report as CSV
+ * @access Private
+ */
+router.get('/export/csv', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { startDate, endDate } = req.query;
+    logger.info(`Exporting EMI CSV report for user: ${userId}, Date range: ${startDate} to ${endDate}`);
+    
+    // Build date filter
+    const dateFilter = { userId };
+    if (startDate) {
+      dateFilter.startDate = { $gte: new Date(startDate) };
+    }
+    
+    // Fetch all EMIs
+    const allEMIs = await EMI.find(dateFilter).sort({ startDate: -1 });
+
+    // Create CSV content with comprehensive data
+    let csvContent = 'Status,Card Provider,Card Number,Merchant,Product,Principal,Interest Rate,EMI Amount,Total Tenure,Remaining,Outstanding,Start Date,Repayment Type\n';
+    
+    allEMIs.forEach(emi => {
+      const outstanding = (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+      const row = [
+        (emi.status || 'unknown').toUpperCase(),
+        emi.cardProvider || 'N/A',
+        `****${emi.cardLastFourDigits || 'N/A'}`,
+        (emi.merchantName || 'N/A').replace(/,/g, ';'),
+        (emi.productDescription || 'N/A').replace(/,/g, ';'), // Replace commas to avoid CSV issues
+        emi.principalAmount || 0,
+        emi.interestRate || 0,
+        emi.emiAmount || 0,
+        emi.totalTenure || 0,
+        emi.remainingInstallments || 0,
+        outstanding,
+        new Date(emi.startDate).toLocaleDateString(),
+        emi.repaymentType || 'MONTHLY'
+      ];
+      csvContent += row.join(',') + '\n';
+    });
+
+    // Set response headers
+    const filename = startDate && endDate 
+      ? `EMI_Report_${startDate}_to_${endDate}.csv`
+      : `EMI_Report_${Date.now()}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    
+    res.send(csvContent);
+
+  } catch (error) {
+    logger.error('Export CSV error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export CSV report',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

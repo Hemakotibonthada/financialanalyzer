@@ -145,6 +145,32 @@ transactionSchema.index({ userId: 1, category: 1 });
 transactionSchema.index({ userId: 1, type: 1, date: -1 });
 transactionSchema.index({ documentId: 1 });
 
+// Text index for full-text search
+transactionSchema.index({ 
+  description: 'text', 
+  merchantName: 'text',
+  'upi.payer': 'text',
+  'upi.payee': 'text',
+  notes: 'text',
+  tags: 'text',
+  category: 'text',
+  subcategory: 'text',
+  location: 'text'
+}, {
+  weights: {
+    description: 10,
+    merchantName: 8,
+    'upi.payer': 6,
+    'upi.payee': 6,
+    notes: 4,
+    category: 3,
+    subcategory: 2,
+    tags: 5,
+    location: 2
+  },
+  name: 'transaction_text_search'
+});
+
 // Virtual for formatted amount
 transactionSchema.virtual('formattedAmount').get(function() {
   const formatter = new Intl.NumberFormat('en-US', {
@@ -208,6 +234,84 @@ transactionSchema.statics.getMonthlyTrend = function(userId, months = 6) {
       $sort: { '_id.year': 1, '_id.month': 1 }
     }
   ]);
+};
+
+// Static method for full-text search
+transactionSchema.statics.searchTransactions = async function(userId, searchQuery, options = {}) {
+  const {
+    limit = 50,
+    skip = 0,
+    sortBy = 'date',
+    sortOrder = 'desc',
+    filters = {}
+  } = options;
+
+  // Build the base query
+  const query = {
+    userId: new mongoose.Types.ObjectId(userId),
+    $text: { $search: searchQuery }
+  };
+
+  // Apply additional filters
+  if (filters.type) query.type = filters.type;
+  if (filters.category) query.category = filters.category;
+  if (filters.startDate || filters.endDate) {
+    query.date = {};
+    if (filters.startDate) query.date.$gte = new Date(filters.startDate);
+    if (filters.endDate) query.date.$lte = new Date(filters.endDate);
+  }
+  if (filters.minAmount !== undefined) {
+    query.amount = { ...query.amount, $gte: filters.minAmount };
+  }
+  if (filters.maxAmount !== undefined) {
+    query.amount = { ...query.amount, $lte: filters.maxAmount };
+  }
+
+  // Execute search with text score
+  const results = await this.find(query, {
+    score: { $meta: 'textScore' }
+  })
+    .sort(sortBy === 'relevance' ? { score: { $meta: 'textScore' } } : { [sortBy]: sortOrder === 'desc' ? -1 : 1 })
+    .skip(skip)
+    .limit(limit);
+
+  // Get total count for pagination
+  const total = await this.countDocuments(query);
+
+  return {
+    results,
+    total,
+    page: Math.floor(skip / limit) + 1,
+    pages: Math.ceil(total / limit)
+  };
+};
+
+// Static method to get search suggestions
+transactionSchema.statics.getSearchSuggestions = async function(userId, prefix, limit = 10) {
+  const suggestions = new Set();
+  
+  // Search in descriptions
+  const descriptions = await this.distinct('description', {
+    userId: new mongoose.Types.ObjectId(userId),
+    description: new RegExp(`^${prefix}`, 'i')
+  }).limit(limit);
+  descriptions.forEach(d => suggestions.add(d));
+  
+  // Search in merchant names
+  const merchants = await this.distinct('merchantName', {
+    userId: new mongoose.Types.ObjectId(userId),
+    merchantName: new RegExp(`^${prefix}`, 'i')
+  }).limit(limit);
+  merchants.forEach(m => suggestions.add(m));
+  
+  // Search in categories
+  const categories = await this.distinct('category', {
+    userId: new mongoose.Types.ObjectId(userId),
+    category: new RegExp(`^${prefix}`, 'i')
+  }).limit(limit);
+  categories.forEach(c => suggestions.add(c));
+  
+  return Array.from(suggestions).slice(0, limit);
 };
 
 const Transaction = mongoose.model('Transaction', transactionSchema);

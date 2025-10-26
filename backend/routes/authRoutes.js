@@ -4,34 +4,22 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
+const { registerValidation, loginValidation } = require('../middleware/validation');
+const { generateTokens, verifyRefreshToken, rotateRefreshToken, revokeRefreshToken, revokeAllUserTokens, getIpAddress } = require('../utils/tokenUtils');
 const logger = require('../utils/logger');
 const gmailService = require('../services/gmailService');
 const FinancialProfile = require('../models/FinancialProfile');
 const { google } = require('googleapis');
+const TwoFactorAuthService = require('../services/twoFactorAuthService');
 
 /**
  * @route   POST /api/auth/register
  * @desc    Register new user
  * @access  Public
  */
-router.post('/register', async (req, res) => {
+router.post('/register', registerValidation, async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
-    // Validation
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide all required fields'
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters'
-      });
-    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -51,12 +39,9 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    // Generate JWT
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    // Generate tokens
+    const ipAddress = getIpAddress(req);
+    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress);
 
     logger.info(`New user registered: ${email}`);
 
@@ -70,7 +55,8 @@ router.post('/register', async (req, res) => {
           email: user.email,
           role: user.role
         },
-        token
+        accessToken,
+        refreshToken
       }
     });
   } catch (error) {
@@ -88,17 +74,9 @@ router.post('/register', async (req, res) => {
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginValidation, async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide email and password'
-      });
-    }
 
     // Find user
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
@@ -126,16 +104,24 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // Check if 2FA is required
+    if (TwoFactorAuthService.is2FARequired(user)) {
+      // Don't generate tokens yet - require 2FA verification first
+      return res.json({
+        success: true,
+        requires2FA: true,
+        userId: user._id,
+        message: 'Please provide 2FA verification code'
+      });
+    }
+
     // Update last login
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate JWT
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    // Generate tokens
+    const ipAddress = getIpAddress(req);
+    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress);
 
     logger.info(`User logged in: ${email}`);
 
@@ -149,7 +135,8 @@ router.post('/login', async (req, res) => {
           email: user.email,
           role: user.role
         },
-        token
+        accessToken,
+        refreshToken
       }
     });
   } catch (error) {
@@ -157,6 +144,90 @@ router.post('/login', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error logging in',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/login/2fa
+ * @desc    Complete login with 2FA verification
+ * @access  Public
+ */
+router.post('/login/2fa', async (req, res) => {
+  try {
+    const { userId, token, useBackupCode } = req.body;
+
+    if (!userId || !token) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID and verification code are required'
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId).select('+twoFactorAuth.secret');
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid user'
+      });
+    }
+
+    // Verify 2FA
+    let isValid = false;
+
+    if (useBackupCode) {
+      const backupCode = TwoFactorAuthService.verifyBackupCode(
+        token,
+        user.twoFactorAuth.backupCodes
+      );
+
+      if (backupCode) {
+        backupCode.used = true;
+        await user.save();
+        isValid = true;
+      }
+    } else {
+      isValid = TwoFactorAuthService.verifyToken(token, user.twoFactorAuth.secret);
+    }
+
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid verification code'
+      });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate tokens
+    const ipAddress = getIpAddress(req);
+    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress);
+
+    logger.info(`User logged in with 2FA: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        accessToken,
+        refreshToken
+      }
+    });
+  } catch (error) {
+    logger.error('2FA login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error completing login',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -188,11 +259,19 @@ router.get('/me', authenticate, async (req, res) => {
 
 /**
  * @route   POST /api/auth/logout
- * @desc    Logout user (client-side token removal)
+ * @desc    Logout user (revoke refresh token)
  * @access  Private
  */
 router.post('/logout', authenticate, async (req, res) => {
   try {
+    const { refreshToken } = req.body;
+    const ipAddress = getIpAddress(req);
+    
+    if (refreshToken) {
+      // Revoke the specific refresh token
+      await revokeRefreshToken(refreshToken, ipAddress);
+    }
+    
     logger.info(`User logged out: ${req.user.email}`);
     
     res.json({
@@ -204,6 +283,106 @@ router.post('/logout', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error logging out'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/refresh-token
+ * @desc    Refresh access token using refresh token
+ * @access  Public
+ */
+router.post('/refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required'
+      });
+    }
+    
+    const ipAddress = getIpAddress(req);
+    
+    // Rotate refresh token (revoke old, create new)
+    const { userId, newToken } = await rotateRefreshToken(refreshToken, ipAddress);
+    
+    // Generate new access token
+    const { generateAccessToken } = require('../utils/tokenUtils');
+    const accessToken = generateAccessToken(userId);
+    
+    logger.info(`Token refreshed for user: ${userId}`);
+    
+    res.json({
+      success: true,
+      data: {
+        accessToken,
+        refreshToken: newToken
+      }
+    });
+  } catch (error) {
+    logger.error('Refresh token error:', error);
+    res.status(401).json({
+      success: false,
+      message: error.message || 'Invalid refresh token'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/revoke-token
+ * @desc    Revoke a refresh token
+ * @access  Private
+ */
+router.post('/revoke-token', authenticate, async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    const ipAddress = getIpAddress(req);
+    
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Refresh token is required'
+      });
+    }
+    
+    await revokeRefreshToken(refreshToken, ipAddress);
+    
+    res.json({
+      success: true,
+      message: 'Token revoked successfully'
+    });
+  } catch (error) {
+    logger.error('Revoke token error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error revoking token'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/revoke-all
+ * @desc    Revoke all refresh tokens for the user
+ * @access  Private
+ */
+router.post('/revoke-all', authenticate, async (req, res) => {
+  try {
+    const ipAddress = getIpAddress(req);
+    await revokeAllUserTokens(req.user._id, ipAddress);
+    
+    logger.info(`All tokens revoked for user: ${req.user.email}`);
+    
+    res.json({
+      success: true,
+      message: 'All tokens revoked successfully'
+    });
+  } catch (error) {
+    logger.error('Revoke all tokens error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error revoking tokens'
     });
   }
 });

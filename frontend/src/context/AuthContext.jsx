@@ -40,18 +40,27 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authService.login({ email, password });
-      const { user, token } = response.data.data;
+      const { user, accessToken, token: legacyToken } = response.data.data;
       
-      setUser(user);
-      setToken(token);
-      localStorage.setItem('token', token);
+      // Handle both accessToken (new) and token (legacy) naming
+      const authToken = accessToken || legacyToken;
+      
+      if (!authToken) {
+        throw new Error('No authentication token received');
+      }
+      
+      // Set token first, then user to trigger proper state updates
+      localStorage.setItem('token', authToken);
       localStorage.setItem('user', JSON.stringify(user));
+      setToken(authToken);
+      setUser(user);
       
       toast.success('Login successful!');
-      return { success: true };
+      return { success: true, user, token: authToken };
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
+      const message = error.response?.data?.message || error.message || 'Login failed';
       toast.error(message);
+      console.error('Login error:', error);
       return { success: false, message };
     }
   };
@@ -59,18 +68,27 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       const response = await authService.register({ name, email, password });
-      const { user, token } = response.data.data;
+      const { user, accessToken, token: legacyToken } = response.data.data;
       
-      setUser(user);
-      setToken(token);
-      localStorage.setItem('token', token);
+      // Handle both accessToken (new) and token (legacy) naming
+      const authToken = accessToken || legacyToken;
+      
+      if (!authToken) {
+        throw new Error('No authentication token received');
+      }
+      
+      // Set token first, then user to trigger proper state updates
+      localStorage.setItem('token', authToken);
       localStorage.setItem('user', JSON.stringify(user));
+      setToken(authToken);
+      setUser(user);
       
       toast.success('Registration successful!');
-      return { success: true };
+      return { success: true, user, token: authToken };
     } catch (error) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const message = error.response?.data?.message || error.message || 'Registration failed';
       toast.error(message);
+      console.error('Registration error:', error);
       return { success: false, message };
     }
   };
