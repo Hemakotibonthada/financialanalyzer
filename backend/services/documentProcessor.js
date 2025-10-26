@@ -1089,11 +1089,15 @@ const extractHDFCBankTransactions = (text) => {
         
         // Parse the full transaction line
         // Expected format has: Date Narration RefNo ValueDate Withdrawal Deposit Balance
-        // Extract all numbers (amounts)
+        // Extract all numbers (amounts) - look for amounts with exactly 2 decimal places
         const amounts = fullTransaction.match(/\d+[,\d]*\.\d{2}/g);
         
         if (amounts && amounts.length >= 3) {
           // Last 3 numbers should be: Withdrawal, Deposit, Balance
+          // Convert to actual numbers for validation
+          const potentialAmounts = amounts.map(a => parseFloat(a.replace(/,/g, '')));
+          
+          // Get last 3 amounts
           const withdrawalStr = amounts[amounts.length - 3];
           const depositStr = amounts[amounts.length - 2];
           const balanceStr = amounts[amounts.length - 1];
@@ -1101,6 +1105,14 @@ const extractHDFCBankTransactions = (text) => {
           const withdrawal = parseFloat(withdrawalStr.replace(/,/g, ''));
           const deposit = parseFloat(depositStr.replace(/,/g, ''));
           const balance = parseFloat(balanceStr.replace(/,/g, ''));
+          
+          // Validate amounts are reasonable (not ridiculously large)
+          const MAX_REASONABLE_AMOUNT = 10000000; // 1 crore max per transaction
+          if (withdrawal > MAX_REASONABLE_AMOUNT || deposit > MAX_REASONABLE_AMOUNT) {
+            logger.warn(`Skipping transaction with unreasonable amount: W=${withdrawal}, D=${deposit}`);
+            logger.warn(`Line: ${fullTransaction.substring(0, 100)}`);
+            continue;
+          }
           
           // Extract date
           const [day, month, year] = currentDate.split('/');

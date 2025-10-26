@@ -47,12 +47,12 @@ const transactionSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'card', 'upi', 'bank_transfer', 'wallet', 'net_banking', 'cheque', 'other'],
+    enum: ['cash', 'Cash', 'card', 'Card', 'upi', 'UPI', 'bank_transfer', 'Bank Transfer', 'wallet', 'Wallet', 'net_banking', 'Net Banking', 'cheque', 'Cheque', 'imps', 'IMPS', 'neft', 'NEFT', 'rtgs', 'RTGS', 'other', 'Other'],
     default: 'other'
   },
   source: {
     type: String,
-    enum: ['manual', 'upload', 'gmail_attachment', 'gmail_email', 'api', 'quick_entry', 'other'],
+    enum: ['manual', 'upload', 'bank_statement', 'gmail_attachment', 'gmail_email', 'api', 'quick_entry', 'other'],
     default: 'upload'
   },
   location: {

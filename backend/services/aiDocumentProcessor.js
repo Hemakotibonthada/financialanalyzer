@@ -265,13 +265,15 @@ class AIDocumentProcessor {
     const transactions = [];
     
     lines.forEach((line, index) => {
+      if (!line || typeof line !== 'string') return;
+      
       const dateMatch = line.match(config.patterns.date);
       const amountMatch = line.match(config.patterns.amount);
       const merchantMatch = line.match(config.patterns.merchant);
 
       if (dateMatch && amountMatch) {
-        const description = merchantMatch ? merchantMatch[1] : 
-          line.replace(dateMatch[0], '').replace(amountMatch[0], '').trim();
+        const description = merchantMatch && merchantMatch[1] ? merchantMatch[1] : 
+          line.replace(dateMatch[0] || '', '').replace(amountMatch[0] || '', '').trim();
 
         transactions.push({
           date: this.parseDate(dateMatch[0]),
@@ -358,14 +360,16 @@ class AIDocumentProcessor {
     const amountPattern = /(\$|₹|€|£)?\s*(\d+[,\d]*\.?\d*)/;
     
     lines.forEach((line, index) => {
+      if (!line || typeof line !== 'string') return;
+      
       const dateMatch = line.match(datePattern);
       const amountMatches = line.match(new RegExp(amountPattern.source, 'g'));
       
-      if (dateMatch && amountMatches) {
+      if (dateMatch && dateMatch[0] && amountMatches) {
         const amounts = amountMatches.map(a => this.parseAmount(a));
         let description = line.replace(dateMatch[0], '').trim();
         amountMatches.forEach(a => {
-          description = description.replace(a, '').trim();
+          if (a) description = description.replace(a, '').trim();
         });
         
         if (amounts.length > 0 && description) {
@@ -519,18 +523,22 @@ class AIDocumentProcessor {
 
   // Helper methods
   parseDate(dateStr) {
+    if (!dateStr) return new Date();
     return new Date(dateStr.replace(/[-\/]/g, '/'));
   }
 
   parseAmount(amountStr) {
+    if (!amountStr) return 0;
     return parseFloat(amountStr.replace(/[^\d.-]/g, ''));
   }
 
   cleanDescription(description) {
+    if (!description) return 'Unknown';
     return description.trim().substring(0, 100);
   }
 
   determineTransactionType(description, amount) {
+    if (!description) return 'debit';
     const creditKeywords = ['deposit', 'credit', 'salary', 'refund', 'interest'];
     const descLower = description.toLowerCase();
     
@@ -541,6 +549,7 @@ class AIDocumentProcessor {
   }
 
   categorizeTransaction(description) {
+    if (!description) return 'other';
     const categories = {
       'food_dining': ['restaurant', 'food', 'cafe', 'dining', 'starbucks', 'mcdonald', 'zomato', 'swiggy'],
       'groceries': ['grocery', 'supermarket', 'bigbasket', 'dmart', 'reliance fresh', 'more'],
@@ -567,6 +576,7 @@ class AIDocumentProcessor {
   }
 
   extractMerchant(description) {
+    if (!description) return 'Unknown';
     // Extract potential merchant name from description
     const words = description.split(/\s+/);
     return words.slice(0, 3).join(' '); // Take first 3 words as potential merchant

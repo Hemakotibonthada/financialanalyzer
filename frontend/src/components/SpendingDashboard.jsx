@@ -146,7 +146,7 @@ const SpendingDashboard = () => {
           params: {
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
-            limit: 100
+            limit: 10000 // Load all transactions
           }
         }),
         api.get('/financial/analytics/spending-by-category', {
@@ -1033,9 +1033,9 @@ const SpendingDashboard = () => {
             {/* Table View */}
             {viewMode === 'table' && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Date

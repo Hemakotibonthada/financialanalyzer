@@ -60,16 +60,16 @@ app.use(helmet({
 
 // Security: Rate limiting
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 100000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for development
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
+  windowMs: 15 * 60 * 100000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 5 : 50, // Higher limit for development
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -79,7 +79,7 @@ const authLimiter = rateLimit({
 // Apply general rate limiter to all routes
 app.use(generalLimiter);
 
-// Middleware
+// Middleware - CORS Configuration
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -101,6 +101,7 @@ app.use(cors({
       for (const iface of interfaces[name]) {
         if (iface.family === 'IPv4' && !iface.internal) {
           allowedOrigins.push(`http://${iface.address}:3000`);
+          allowedOrigins.push(`http://${iface.address}:3001`);
         }
       }
     }
@@ -111,8 +112,15 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600 // Cache preflight for 10 minutes
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
