@@ -222,7 +222,11 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
         setMessage({ type: 'success', text: 'Expense deleted' });
         notification.success('Expense removed from your records', 'Deleted');
         
+        // Reload data based on active tab
         await loadTodayExpenses();
+        if (activeTab === 'history') {
+          await loadAllExpenses();
+        }
         
         if (onExpenseAdded) {
           onExpenseAdded();
@@ -619,6 +623,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                         placeholder="Search expenses..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && loadAllExpenses()}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -629,7 +634,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                     onChange={(e) => setFilterCategory(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">All Categories</option>
+                    <option value="all">All Categories</option>
                     {categories.map(cat => (
                       <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
                     ))}
@@ -648,13 +653,22 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   </select>
                 </div>
 
-                <button
-                  onClick={handleExportExpenses}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  <Download className="w-4 h-4" />
-                  Export to CSV
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={loadAllExpenses}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                    Apply Filters
+                  </button>
+                  <button
+                    onClick={handleExportExpenses}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                </div>
               </div>
 
               {/* Expense History List */}

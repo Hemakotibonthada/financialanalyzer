@@ -443,6 +443,27 @@ router.put('/users/:id', async (req, res) => {
       });
     }
     
+    // If role changed to 'lender', automatically create a Lender record
+    if (role === 'lender') {
+      const Lender = require('../models/Lender');
+      
+      // Check if lender already exists
+      const existingLender = await Lender.findOne({ userId: user._id });
+      
+      if (!existingLender) {
+        const newLender = await Lender.create({
+          userId: user._id,
+          lenderName: user.name,
+          contactEmail: user.email,
+          contactPhone: user.phoneNumber || '',
+          lenderType: 'Individual',
+          status: 'Active'
+        });
+        
+        logger.info(`Auto-created lender profile ${newLender._id} for user ${user._id}`);
+      }
+    }
+    
     logger.info(`Admin ${req.user._id} updated user ${id}`);
     
     res.json({
@@ -902,4 +923,229 @@ router.get('/logs', async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/admin/reports/:type
+ * @desc Generate and download reports
+ * @access Admin
+ */
+router.get('/reports/:type', async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    let data;
+    let filename;
+    let headers;
+
+    switch (type) {
+      case 'users':
+        data = await User.find()
+          .select('name email role isActive createdAt lastLogin')
+          .lean();
+        filename = 'users_report.csv';
+        headers = ['Name', 'Email', 'Role', 'Status', 'Joined Date', 'Last Login'];
+        break;
+
+      case 'transactions':
+        data = await Transaction.find()
+          .populate('userId', 'name email')
+          .select('userId amount category type date description')
+          .lean();
+        filename = 'transactions_report.csv';
+        headers = ['User', 'Email', 'Amount', 'Category', 'Type', 'Date', 'Description'];
+        break;
+
+      case 'documents':
+        data = await Document.find()
+          .populate('userId', 'name email')
+          .select('userId documentType fileName uploadDate status transactionCount')
+          .lean();
+        filename = 'documents_report.csv';
+        headers = ['User', 'Email', 'Type', 'Filename', 'Upload Date', 'Status', 'Transactions'];
+        break;
+
+      case 'lenders':
+        data = await mongoose.connection.db.collection('lenders').find().toArray();
+        filename = 'lenders_report.csv';
+        headers = ['Lender Name', 'Type', 'Total Loans', 'Active Loans', 'Total Disbursed', 'Status'];
+        break;
+
+      case 'financial-summary':
+        const users = await User.find().select('name email').lean();
+        const summaryData = await Promise.all(users.map(async (user) => {
+          const transactions = await Transaction.find({ userId: user._id });
+          const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+          const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+          return {
+            name: user.name,
+            email: user.email,
+            income,
+            expenses,
+            balance: income - expenses,
+            transactionCount: transactions.length
+          };
+        }));
+        data = summaryData;
+        filename = 'financial_summary.csv';
+        headers = ['Name', 'Email', 'Total Income', 'Total Expenses', 'Balance', 'Transactions'];
+        break;
+
+      case 'activity':
+        // Simulated activity log (you can enhance this with actual activity tracking)
+        data = await User.find()
+          .select('name email lastLogin createdAt isActive')
+          .lean();
+        filename = 'activity_report.csv';
+        headers = ['User', 'Email', 'Last Login', 'Joined Date', 'Status'];
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid report type'
+        });
+    }
+
+    // Convert data to CSV
+    let csv = headers.join(',') + '\n';
+    
+    data.forEach(item => {
+      let row;
+      switch (type) {
+        case 'users':
+          row = [
+            item.name,
+            item.email,
+            item.role,
+            item.isActive ? 'Active' : 'Inactive',
+            new Date(item.createdAt).toLocaleDateString(),
+            item.lastLogin ? new Date(item.lastLogin).toLocaleDateString() : 'Never'
+          ];
+          break;
+        case 'transactions':
+          row = [
+            item.userId?.name || 'Unknown',
+            item.userId?.email || 'Unknown',
+            item.amount,
+            item.category,
+            item.type,
+            new Date(item.date).toLocaleDateString(),
+            item.description || ''
+          ];
+          break;
+        case 'documents':
+          row = [
+            item.userId?.name || 'Unknown',
+            item.userId?.email || 'Unknown',
+            item.documentType,
+            item.fileName,
+            new Date(item.uploadDate).toLocaleDateString(),
+            item.status,
+            item.transactionCount || 0
+          ];
+          break;
+        case 'lenders':
+          row = [
+            item.lenderName,
+            item.lenderType,
+            item.totalLoans || 0,
+            item.activeLoans || 0,
+            item.totalDisbursed || 0,
+            item.status
+          ];
+          break;
+        case 'financial-summary':
+          row = [
+            item.name,
+            item.email,
+            item.income,
+            item.expenses,
+            item.balance,
+            item.transactionCount
+          ];
+          break;
+        case 'activity':
+          row = [
+            item.name,
+            item.email,
+            item.lastLogin ? new Date(item.lastLogin).toLocaleDateString() : 'Never',
+            new Date(item.createdAt).toLocaleDateString(),
+            item.isActive ? 'Active' : 'Inactive'
+          ];
+          break;
+      }
+      csv += row.map(field => `"${field}"`).join(',') + '\n';
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+
+    logger.info(`Admin ${req.user._id} generated ${type} report`);
+  } catch (error) {
+    logger.error('Admin generate report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate report'
+    });
+  }
+});
+
+/**
+ * @route POST /api/admin/users/bulk-action
+ * @desc Perform bulk actions on multiple users
+ * @access Admin
+ */
+router.post('/users/bulk-action', async (req, res) => {
+  try {
+    const { action, userIds } = req.body;
+    
+    if (!action || !userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action or user IDs'
+      });
+    }
+
+    let result;
+    switch (action) {
+      case 'activate':
+        result = await User.updateMany(
+          { _id: { $in: userIds } },
+          { isActive: true }
+        );
+        break;
+      case 'deactivate':
+        result = await User.updateMany(
+          { _id: { $in: userIds } },
+          { isActive: false }
+        );
+        break;
+      case 'delete':
+        result = await User.deleteMany({ _id: { $in: userIds } });
+        break;
+      default:
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid action'
+        });
+    }
+
+    logger.info(`Admin ${req.user._id} performed bulk ${action} on ${userIds.length} users`);
+
+    res.json({
+      success: true,
+      message: `Bulk ${action} completed`,
+      data: result
+    });
+  } catch (error) {
+    logger.error('Admin bulk action error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to perform bulk action'
+    });
+  }
+});
+
 module.exports = router;
+

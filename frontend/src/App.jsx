@@ -28,6 +28,7 @@ const EMITracker = lazy(() => import('./pages/EMITracker'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const TransactionSearch = lazy(() => import('./components/TransactionSearch'));
 const CSVImportExport = lazy(() => import('./components/CSVImportExport'));
+const LenderDashboard = lazy(() => import('./pages/LenderDashboardEnhanced'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -109,6 +110,12 @@ function App() {
               <Route path="/emi-tracker" element={
                 <ProtectedRoute>
                   <EMITracker />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/lender-dashboard" element={
+                <ProtectedRoute>
+                  <LenderDashboard />
                 </ProtectedRoute>
               } />
               

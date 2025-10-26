@@ -192,6 +192,15 @@ const Dashboard = () => {
                 <CreditCard className="w-5 h-5 mr-1" />
                 EMI Tracker
               </Link>
+              {(user?.role === 'lender' || user?.role === 'admin') && (
+                <Link 
+                  to="/lender-dashboard" 
+                  className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-green-600 to-teal-600 rounded-lg hover:from-green-700 hover:to-teal-700 transition-all shadow-sm"
+                >
+                  <DollarSign className="w-5 h-5 mr-1" />
+                  Lender Dashboard
+                </Link>
+              )}
               <Link 
                 to="/advanced-analytics" 
                 className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm"
