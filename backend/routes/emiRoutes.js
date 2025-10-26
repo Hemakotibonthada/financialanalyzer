@@ -1037,58 +1037,324 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     const completedEMIs = allEMIs.filter(e => e.status === 'completed');
     const foreClosedEMIs = allEMIs.filter(e => e.status === 'foreclosed');
 
+    // Calculate overview statistics directly from EMI data
+    const calculatedOverview = {
+      totalMonthlyEMI: activeEMIs.reduce((sum, emi) => sum + (emi.emiAmount || 0), 0),
+      totalOutstanding: activeEMIs.reduce((sum, emi) => sum + ((emi.emiAmount || 0) * (emi.remainingInstallments || 0)), 0),
+      totalPrincipal: allEMIs.reduce((sum, emi) => sum + (emi.principalAmount || 0), 0),
+      averageInterestRate: allEMIs.length > 0 
+        ? allEMIs.reduce((sum, emi) => sum + (emi.interestRate || 0), 0) / allEMIs.length 
+        : 0,
+      totalEMIs: allEMIs.length,
+      activeCount: activeEMIs.length,
+      completedCount: completedEMIs.length,
+      foreClosedCount: foreClosedEMIs.length
+    };
+
     // Calculate provider map (used in both charts and summary)
     const providerMap = {};
+    const merchantMap = {};
     allEMIs.forEach(emi => {
       const provider = emi.cardProvider || 'Unknown';
       if (!providerMap[provider]) {
-        providerMap[provider] = { count: 0, principal: 0, outstanding: 0 };
+        providerMap[provider] = { count: 0, principal: 0, outstanding: 0, totalEMI: 0, activeCount: 0 };
       }
       providerMap[provider].count++;
       providerMap[provider].principal += emi.principalAmount || 0;
       providerMap[provider].outstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+      providerMap[provider].totalEMI += emi.emiAmount || 0;
+      if (emi.status === 'active') providerMap[provider].activeCount++;
+
+      // Merchant mapping
+      const merchant = emi.merchantName || 'Unknown';
+      if (!merchantMap[merchant]) {
+        merchantMap[merchant] = { outstanding: 0, count: 0 };
+      }
+      merchantMap[merchant].outstanding += (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+      merchantMap[merchant].count++;
+    });
+
+    // Calculate monthly burden with count
+    const monthlyBurdenMap = {};
+    const emiCountByMonth = {};
+    filteredUpcoming.forEach(payment => {
+      const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' });
+      monthlyBurdenMap[monthKey] = (monthlyBurdenMap[monthKey] || 0) + (payment.amount || 0);
+      emiCountByMonth[monthKey] = (emiCountByMonth[monthKey] || 0) + 1;
+    });
+
+    // Calculate principal vs interest
+    let totalPrincipal = 0;
+    let totalInterest = 0;
+    activeEMIs.forEach(emi => {
+      totalPrincipal += emi.principalAmount || 0;
+      const totalPayable = (emi.emiAmount || 0) * (emi.totalTenure || 0);
+      totalInterest += totalPayable - (emi.principalAmount || 0);
+    });
+
+    // EMI completion progress
+    const completionProgress = allEMIs.map(emi => ({
+      name: `${emi.merchantName || 'Unknown'} (${emi.cardProvider})`,
+      completed: ((emi.totalTenure - emi.remainingInstallments) / emi.totalTenure * 100) || 0,
+      remaining: (emi.remainingInstallments / emi.totalTenure * 100) || 0
+    })).slice(0, 10);
+
+    // Top merchants by outstanding
+    const topMerchants = Object.entries(merchantMap)
+      .sort((a, b) => b[1].outstanding - a[1].outstanding)
+      .slice(0, 10);
+
+    // Interest rate distribution
+    const interestRateRanges = { '0-5%': 0, '5-10%': 0, '10-15%': 0, '15-20%': 0, '20%+': 0 };
+    allEMIs.forEach(emi => {
+      const rate = emi.interestRate || 0;
+      if (rate <= 5) interestRateRanges['0-5%']++;
+      else if (rate <= 10) interestRateRanges['5-10%']++;
+      else if (rate <= 15) interestRateRanges['10-15%']++;
+      else if (rate <= 20) interestRateRanges['15-20%']++;
+      else interestRateRanges['20%+']++;
     });
 
     // Generate charts
     const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
     const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 800, height: 400, backgroundColour: 'white' });
 
-    // Chart 1: EMI Status Distribution (Pie Chart)
-    const statusChartConfig = {
-      type: 'pie',
+    // Chart 1: EMI Monthly Trends (Line + Bar Combo)
+    const monthlyTrendsConfig = {
+      type: 'bar',
       data: {
-        labels: ['Active', 'Completed', 'Foreclosed'],
+        labels: Object.keys(monthlyBurdenMap).slice(0, 12),
         datasets: [{
-          data: [activeEMIs.length, completedEMIs.length, foreClosedEMIs.length],
-          backgroundColor: ['#4CAF50', '#2196F3', '#FF9800']
+          type: 'line',
+          label: 'Payment Amount',
+          data: Object.values(monthlyBurdenMap).slice(0, 12),
+          borderColor: '#FF5722',
+          backgroundColor: 'rgba(255, 87, 34, 0.1)',
+          yAxisID: 'y',
+          tension: 0.4
+        }, {
+          type: 'bar',
+          label: 'EMI Count',
+          data: Object.values(emiCountByMonth).slice(0, 12),
+          backgroundColor: '#2196F3',
+          yAxisID: 'y1'
         }]
       },
       options: {
         plugins: {
           title: {
             display: true,
-            text: 'EMI Status Distribution',
+            text: 'EMI Monthly Trends',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: { type: 'linear', position: 'left', beginAtZero: true },
+          y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
+        }
+      }
+    };
+
+    // Chart 2: Card Provider 360° Comparison (Radar)
+    const provider360Config = {
+      type: 'radar',
+      data: {
+        labels: ['Total EMIs', 'Active EMIs', 'Total Principal', 'Outstanding', 'Monthly EMI'],
+        datasets: Object.entries(providerMap).slice(0, 5).map(([ provider, data], index) => ({
+          label: provider,
+          data: [
+            data.count,
+            data.activeCount,
+            data.principal / 10000, // Scale down for visibility
+            data.outstanding / 10000,
+            data.totalEMI / 1000
+          ],
+          backgroundColor: [`rgba(76, 175, 80, 0.2)`, `rgba(33, 150, 243, 0.2)`, `rgba(255, 152, 0, 0.2)`, `rgba(156, 39, 176, 0.2)`, `rgba(244, 67, 54, 0.2)`][index],
+          borderColor: ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'][index]
+        }))
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Card Provider 360° Comparison',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          r: { beginAtZero: true }
+        }
+      }
+    };
+
+    // Chart 3: EMI Distribution by Card Provider (Doughnut)
+    const providerDistributionConfig = {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(providerMap),
+        datasets: [{
+          data: Object.values(providerMap).map(p => p.count),
+          backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#FFEB3B']
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'EMI Distribution by Card Provider',
             font: { size: 18 }
           },
-          legend: {
-            position: 'bottom'
+          legend: { position: 'right' }
+        }
+      }
+    };
+
+    // Chart 4: Monthly EMI Burden (Bar)
+    const monthlyBurdenConfig = {
+      type: 'bar',
+      data: {
+        labels: Object.keys(monthlyBurdenMap).slice(0, 12),
+        datasets: [{
+          label: 'Monthly EMI Amount',
+          data: Object.values(monthlyBurdenMap).slice(0, 12),
+          backgroundColor: '#FF5722'
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Monthly EMI Burden',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+
+    // Chart 5: Payment Trend Analysis (Area Line)
+    const paymentTrendConfig = {
+      type: 'line',
+      data: {
+        labels: Object.keys(monthlyBurdenMap).slice(0, 12),
+        datasets: [{
+          label: 'Payment Trend',
+          data: Object.values(monthlyBurdenMap).slice(0, 12),
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.3)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Payment Trend Analysis',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+
+    // Chart 6: Monthly Burden with EMI Count (Grouped Bar)
+    const burdenCountConfig = {
+      type: 'bar',
+      data: {
+        labels: Object.keys(monthlyBurdenMap).slice(0, 12),
+        datasets: [{
+          label: 'Payment Amount',
+          data: Object.values(monthlyBurdenMap).slice(0, 12),
+          backgroundColor: '#2196F3'
+        }, {
+          label: 'EMI Count',
+          data: Object.values(emiCountByMonth).slice(0, 12).map(c => c * 5000), // Scale for visibility
+          backgroundColor: '#FF9800'
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Monthly Burden with EMI Count',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+
+    // Chart 7: Principal vs Interest Breakdown (Pie)
+    const principalInterestConfig = {
+      type: 'pie',
+      data: {
+        labels: ['Principal', 'Interest'],
+        datasets: [{
+          data: [totalPrincipal, totalInterest],
+          backgroundColor: ['#4CAF50', '#FF5722']
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Principal vs Interest Breakdown',
+            font: { size: 18 }
           }
         }
       }
     };
 
-    // Chart 2: Provider-wise Distribution (Bar Chart)
-    const providerChartConfig = {
+    // Chart 8: EMI Completion Progress (Stacked Bar)
+    const completionProgressConfig = {
       type: 'bar',
       data: {
-        labels: Object.keys(providerMap),
+        labels: completionProgress.map(e => e.name.substring(0, 20)),
         datasets: [{
-          label: 'Number of EMIs',
-          data: Object.values(providerMap).map(p => p.count || 0),
+          label: 'Completed %',
+          data: completionProgress.map(e => e.completed),
           backgroundColor: '#4CAF50'
         }, {
-          label: 'Outstanding Amount',
-          data: Object.values(providerMap).map(p => p.outstanding || 0),
+          label: 'Remaining %',
+          data: completionProgress.map(e => e.remaining),
+          backgroundColor: '#FF9800'
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: {
+          title: {
+            display: true,
+            text: 'EMI Completion Progress',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          x: { stacked: true, max: 100 },
+          y: { stacked: true }
+        }
+      }
+    };
+
+    // Chart 9: Principal vs Interest Scatter Analysis
+    const scatterData = activeEMIs.slice(0, 20).map(emi => ({
+      x: emi.principalAmount || 0,
+      y: ((emi.emiAmount || 0) * (emi.totalTenure || 0)) - (emi.principalAmount || 0)
+    }));
+
+    const scatterConfig = {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Principal vs Interest',
+          data: scatterData,
           backgroundColor: '#2196F3'
         }]
       },
@@ -1096,62 +1362,123 @@ router.get('/export/pdf', authenticate, async (req, res) => {
         plugins: {
           title: {
             display: true,
-            text: 'Provider-wise EMI Distribution',
+            text: 'Principal vs Interest Scatter Analysis',
             font: { size: 18 }
           }
         },
         scales: {
-          y: {
-            beginAtZero: true
-          }
+          x: { title: { display: true, text: 'Principal Amount' } },
+          y: { title: { display: true, text: 'Interest Amount' } }
         }
       }
     };
 
-    // Chart 3: Monthly Payment Trend (Line Chart)
-    const paymentsByMonth = {};
-    filteredUpcoming.slice(0, 12 * 6).forEach(payment => { // Next 6 months
-      const monthKey = new Date(payment.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' });
-      if (!paymentsByMonth[monthKey]) {
-        paymentsByMonth[monthKey] = 0;
-      }
-      paymentsByMonth[monthKey] += payment.amount || 0;
-    });
-
-    const monthlyChartConfig = {
-      type: 'line',
+    // Chart 10: Top Merchants by Outstanding Amount (Horizontal Bar)
+    const topMerchantsConfig = {
+      type: 'bar',
       data: {
-        labels: Object.keys(paymentsByMonth).slice(0, 12),
+        labels: topMerchants.map(m => m[0].substring(0, 25)),
         datasets: [{
-          label: 'Monthly EMI Payments',
-          data: Object.values(paymentsByMonth).slice(0, 12),
-          borderColor: '#FF5722',
-          backgroundColor: 'rgba(255, 87, 34, 0.1)',
-          tension: 0.4,
-          fill: true
+          label: 'Outstanding Amount',
+          data: topMerchants.map(m => m[1].outstanding),
+          backgroundColor: '#9C27B0'
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: {
+          title: {
+            display: true,
+            text: 'Top Merchants by Outstanding Amount',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          x: { beginAtZero: true }
+        }
+      }
+    };
+
+    // Chart 11: Interest Rate Distribution (Bar)
+    const interestRateConfig = {
+      type: 'bar',
+      data: {
+        labels: Object.keys(interestRateRanges),
+        datasets: [{
+          label: 'Number of EMIs',
+          data: Object.values(interestRateRanges),
+          backgroundColor: '#FF5722'
         }]
       },
       options: {
         plugins: {
           title: {
             display: true,
-            text: 'Upcoming Monthly Payment Trend',
+            text: 'Interest Rate Distribution',
             font: { size: 18 }
           }
         },
         scales: {
-          y: {
-            beginAtZero: true
-          }
+          y: { beginAtZero: true }
         }
       }
     };
 
-    // Generate chart images
-    const [statusChartImage, providerChartImage, monthlyChartImage] = await Promise.all([
-      chartJSNodeCanvas.renderToBuffer(statusChartConfig),
-      chartJSNodeCanvas.renderToBuffer(providerChartConfig),
-      chartJSNodeCanvas.renderToBuffer(monthlyChartConfig)
+    // Chart 12: EMI Progress Overview (Mixed)
+    const progressOverviewConfig = {
+      type: 'bar',
+      data: {
+        labels: ['Active', 'Completed', 'Foreclosed'],
+        datasets: [{
+          type: 'bar',
+          label: 'Count',
+          data: [activeEMIs.length, completedEMIs.length, foreClosedEMIs.length],
+          backgroundColor: '#4CAF50',
+          yAxisID: 'y'
+        }, {
+          type: 'line',
+          label: 'Total Outstanding',
+          data: [
+            activeEMIs.reduce((sum, emi) => sum + ((emi.emiAmount || 0) * (emi.remainingInstallments || 0)), 0),
+            0,
+            0
+          ],
+          borderColor: '#FF5722',
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'EMI Progress Overview',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: { type: 'linear', position: 'left', beginAtZero: true },
+          y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
+        }
+      }
+    };
+
+    // Generate all chart images
+    const [
+      chart1, chart2, chart3, chart4, chart5, chart6,
+      chart7, chart8, chart9, chart10, chart11, chart12
+    ] = await Promise.all([
+      chartJSNodeCanvas.renderToBuffer(monthlyTrendsConfig),
+      chartJSNodeCanvas.renderToBuffer(provider360Config),
+      chartJSNodeCanvas.renderToBuffer(providerDistributionConfig),
+      chartJSNodeCanvas.renderToBuffer(monthlyBurdenConfig),
+      chartJSNodeCanvas.renderToBuffer(paymentTrendConfig),
+      chartJSNodeCanvas.renderToBuffer(burdenCountConfig),
+      chartJSNodeCanvas.renderToBuffer(principalInterestConfig),
+      chartJSNodeCanvas.renderToBuffer(completionProgressConfig),
+      chartJSNodeCanvas.renderToBuffer(scatterConfig),
+      chartJSNodeCanvas.renderToBuffer(topMerchantsConfig),
+      chartJSNodeCanvas.renderToBuffer(interestRateConfig),
+      chartJSNodeCanvas.renderToBuffer(progressOverviewConfig)
     ]);
 
     // Generate proper PDF using PDFKit
@@ -1177,24 +1504,95 @@ router.get('/export/pdf', authenticate, async (req, res) => {
     doc.fontSize(14).font('Courier-Bold').text('OVERVIEW SUMMARY', { underline: true });
     doc.moveDown(0.5);
     doc.fontSize(10).font('Courier');
-    doc.text(`Total EMIs: ${allEMIs.length}`);
-    doc.text(`Active EMIs: ${activeEMIs.length}`);
-    doc.text(`Completed EMIs: ${completedEMIs.length}`);
-    doc.text(`Foreclosed EMIs: ${foreClosedEMIs.length}`);
+    doc.text(`Total EMIs: ${calculatedOverview.totalEMIs}`);
+    doc.text(`Active EMIs: ${calculatedOverview.activeCount}`);
+    doc.text(`Completed EMIs: ${calculatedOverview.completedCount}`);
+    doc.text(`Foreclosed EMIs: ${calculatedOverview.foreClosedCount}`);
     doc.moveDown(0.5);
-    doc.text(`Total Monthly EMI: ${(overview?.totalMonthlyEMI || 0).toLocaleString('en-IN')}`);
-    doc.text(`Total Outstanding: ${(overview?.totalOutstanding || 0).toLocaleString('en-IN')}`);
-    doc.text(`Total Principal: ${(overview?.totalPrincipal || 0).toLocaleString('en-IN')}`);
-    doc.text(`Average Interest Rate: ${(overview?.averageInterestRate || 0).toFixed(2)}%`);
+    doc.text(`Total Monthly EMI: ${calculatedOverview.totalMonthlyEMI.toLocaleString('en-IN')}`);
+    doc.text(`Total Outstanding: ${calculatedOverview.totalOutstanding.toLocaleString('en-IN')}`);
+    doc.text(`Total Principal: ${calculatedOverview.totalPrincipal.toLocaleString('en-IN')}`);
+    doc.text(`Average Interest Rate: ${calculatedOverview.averageInterestRate.toFixed(2)}%`);
     doc.moveDown(2);
     
-    // Add Status Distribution Chart
-    doc.fontSize(12).font('Courier-Bold').text('EMI STATUS DISTRIBUTION', { underline: true });
+    // CHARTS SECTION - All 12 comprehensive charts
+    
+    // Chart 1: EMI Monthly Trends
+    doc.addPage();
+    doc.fontSize(12).font('Courier-Bold').text('EMI MONTHLY TRENDS', { underline: true });
     doc.moveDown(0.5);
-    doc.image(statusChartImage, {
-      fit: [500, 300],
-      align: 'center'
-    });
+    doc.image(chart1, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 2: Card Provider 360° Comparison
+    doc.fontSize(12).font('Courier-Bold').text('CARD PROVIDER 360° COMPARISON', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart2, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 3: EMI Distribution by Card Provider
+    doc.addPage();
+    doc.fontSize(12).font('Courier-Bold').text('EMI DISTRIBUTION BY CARD PROVIDER', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart3, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 4: Monthly EMI Burden
+    doc.fontSize(12).font('Courier-Bold').text('MONTHLY EMI BURDEN', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart4, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 5: Payment Trend Analysis
+    doc.addPage();
+    doc.fontSize(12).font('Courier-Bold').text('PAYMENT TREND ANALYSIS', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart5, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 6: Monthly Burden with EMI Count
+    doc.fontSize(12).font('Courier-Bold').text('MONTHLY BURDEN WITH EMI COUNT', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart6, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 7: Principal vs Interest Breakdown
+    doc.addPage();
+    doc.fontSize(12).font('Courier-Bold').text('PRINCIPAL VS INTEREST BREAKDOWN', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart7, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 8: EMI Completion Progress
+    doc.fontSize(12).font('Courier-Bold').text('EMI COMPLETION PROGRESS', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart8, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 9: Principal vs Interest Scatter Analysis
+    doc.addPage();
+    doc.fontSize(12).font('Courier-Bold').text('PRINCIPAL VS INTEREST SCATTER ANALYSIS', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart9, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 10: Top Merchants by Outstanding Amount
+    doc.fontSize(12).font('Courier-Bold').text('TOP MERCHANTS BY OUTSTANDING AMOUNT', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart10, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 11: Interest Rate Distribution
+    doc.addPage();
+    doc.fontSize(12).font('Courier-Bold').text('INTEREST RATE DISTRIBUTION', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart11, { fit: [500, 300], align: 'center' });
+    doc.moveDown(2);
+    
+    // Chart 12: EMI Progress Overview
+    doc.fontSize(12).font('Courier-Bold').text('EMI PROGRESS OVERVIEW', { underline: true });
+    doc.moveDown(0.5);
+    doc.image(chart12, { fit: [500, 300], align: 'center' });
     doc.moveDown(2);
     
     // Active EMIs Section
@@ -1215,30 +1613,11 @@ router.get('/export/pdf', authenticate, async (req, res) => {
       doc.moveDown();
     }
     
-    // Add Provider Distribution Chart
-    if (Object.keys(providerMap).length > 0) {
-      doc.addPage();
-      doc.fontSize(12).font('Courier-Bold').text('PROVIDER-WISE DISTRIBUTION', { underline: true });
-      doc.moveDown(0.5);
-      doc.image(providerChartImage, {
-        fit: [500, 300],
-        align: 'center'
-      });
-      doc.moveDown(2);
-    }
-    
-    // Upcoming Payments Section
+    // Upcoming Payments Details Section
     if (filteredUpcoming.length > 0) {
       doc.addPage();
-      doc.fontSize(14).font('Courier-Bold').text('UPCOMING PAYMENTS SCHEDULE', { underline: true });
+      doc.fontSize(14).font('Courier-Bold').text('UPCOMING PAYMENTS SCHEDULE - DETAILED', { underline: true });
       doc.moveDown(0.5);
-      
-      // Add Monthly Trend Chart
-      doc.image(monthlyChartImage, {
-        fit: [500, 300],
-        align: 'center'
-      });
-      doc.moveDown(2);
       
       doc.fontSize(9).font('Courier');
       
@@ -1252,7 +1631,7 @@ router.get('/export/pdf', authenticate, async (req, res) => {
         upcomingByMonth[monthKey].push(payment);
       });
 
-      Object.entries(upcomingByMonth).slice(0, 12).forEach(([month, payments]) => {
+      Object.entries(upcomingByMonth).slice(0, 6).forEach(([month, payments]) => {
         const monthTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
         doc.fontSize(11).font('Courier-Bold').text(`${month} - Total: ${monthTotal.toLocaleString('en-IN')}`);
         doc.fontSize(9).font('Courier');
