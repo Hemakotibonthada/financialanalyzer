@@ -1,0 +1,911 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Tab,
+  Tabs,
+  Alert
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  AccountBalance as AccountBalanceIcon,
+  ShowChart as ShowChartIcon,
+  Assessment as AssessmentIcon,
+  Download as DownloadIcon
+} from '@mui/icons-material';
+import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import axios from 'axios';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
+
+const INVESTMENT_TYPES = [
+  { value: 'stock', label: 'Stock' },
+  { value: 'mutual_fund', label: 'Mutual Fund' },
+  { value: 'fd', label: 'Fixed Deposit' },
+  { value: 'rd', label: 'Recurring Deposit' },
+  { value: 'bond', label: 'Bond' },
+  { value: 'crypto', label: 'Cryptocurrency' },
+  { value: 'gold', label: 'Gold' },
+  { value: 'etf', label: 'ETF' },
+  { value: 'sip', label: 'SIP' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'ppf', label: 'PPF' },
+  { value: 'nps', label: 'NPS' },
+  { value: 'elss', label: 'ELSS' },
+  { value: 'other', label: 'Other' }
+];
+
+const CATEGORIES = ['equity', 'debt', 'hybrid', 'commodity', 'real_estate', 'crypto', 'other'];
+const RISK_LEVELS = ['low', 'medium', 'high'];
+
+function InvestmentPortfolio() {
+  const [activeTab, setActiveTab] = useState(0);
+  const [investments, setInvestments] = useState([]);
+  const [portfolio, setPortfolio] = useState(null);
+  const [maturities, setMaturities] = useState([]);
+  const [allocation, setAllocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [editingInvestment, setEditingInvestment] = useState(null);
+  const [filters, setFilters] = useState({
+    type: '',
+    status: '',
+    sortBy: 'currentValue',
+    order: 'desc'
+  });
+
+  const [formData, setFormData] = useState({
+    type: 'stock',
+    name: '',
+    symbol: '',
+    quantity: '',
+    purchasePrice: '',
+    currentPrice: '',
+    purchaseDate: new Date().toISOString().split('T')[0],
+    category: 'equity',
+    riskLevel: 'medium',
+    maturityDate: '',
+    sipAmount: '',
+    sipFrequency: 'monthly',
+    sipStartDate: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, [filters]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [investmentsRes, portfolioRes, maturitiesRes, allocationRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL}/api/investments`, {
+          headers,
+          params: filters
+        }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/investments/portfolio`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/investments/maturities?days=90`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/investments/analytics/allocation`, { headers })
+      ]);
+
+      setInvestments(investmentsRes.data.data || []);
+      setPortfolio(portfolioRes.data.data || {});
+      setMaturities(maturitiesRes.data.data || []);
+      setAllocation(allocationRes.data.data || {});
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddInvestment = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      if (editingInvestment) {
+        await axios.put(
+          `${import.meta.env.VITE_API_URL}/api/investments/${editingInvestment._id}`,
+          formData,
+          { headers }
+        );
+      } else {
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/investments`,
+          formData,
+          { headers }
+        );
+      }
+
+      setOpenAddDialog(false);
+      setEditingInvestment(null);
+      resetForm();
+      fetchData();
+    } catch (error) {
+      console.error('Error saving investment:', error);
+    }
+  };
+
+  const handleDeleteInvestment = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this investment?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/investments/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting investment:', error);
+    }
+  };
+
+  const handleEditInvestment = (investment) => {
+    setEditingInvestment(investment);
+    setFormData({
+      type: investment.type,
+      name: investment.name,
+      symbol: investment.symbol || '',
+      quantity: investment.quantity,
+      purchasePrice: investment.purchasePrice,
+      currentPrice: investment.currentPrice,
+      purchaseDate: investment.purchaseDate?.split('T')[0],
+      category: investment.category,
+      riskLevel: investment.riskLevel,
+      maturityDate: investment.maturityDate?.split('T')[0] || '',
+      sipAmount: investment.sipAmount || '',
+      sipFrequency: investment.sipFrequency || 'monthly',
+      sipStartDate: investment.sipStartDate?.split('T')[0] || '',
+      notes: investment.notes || ''
+    });
+    setOpenAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      type: 'stock',
+      name: '',
+      symbol: '',
+      quantity: '',
+      purchasePrice: '',
+      currentPrice: '',
+      purchaseDate: new Date().toISOString().split('T')[0],
+      category: 'equity',
+      riskLevel: 'medium',
+      maturityDate: '',
+      sipAmount: '',
+      sipFrequency: 'monthly',
+      sipStartDate: '',
+      notes: ''
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const formatPercent = (value) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      active: 'success',
+      matured: 'info',
+      sold: 'default'
+    };
+    return colors[status] || 'default';
+  };
+
+  const getRiskColor = (risk) => {
+    const colors = {
+      low: 'success',
+      medium: 'warning',
+      high: 'error'
+    };
+    return colors[risk] || 'default';
+  };
+
+  if (loading) {
+    return (
+      <Container sx={{ mt: 4, textAlign: 'center' }}>
+        <Typography>Loading portfolio...</Typography>
+      </Container>
+    );
+  }
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1" fontWeight="bold">
+          Investment Portfolio
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            color="primary"
+          >
+            Export
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              resetForm();
+              setOpenAddDialog(true);
+            }}
+          >
+            Add Investment
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Summary Cards */}
+      {portfolio && (
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <AccountBalanceIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Total Invested
+                  </Typography>
+                </Box>
+                <Typography variant="h5" fontWeight="bold">
+                  {formatCurrency(portfolio.totalInvested || 0)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <ShowChartIcon color="success" sx={{ mr: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Current Value
+                  </Typography>
+                </Box>
+                <Typography variant="h5" fontWeight="bold">
+                  {formatCurrency(portfolio.currentValue || 0)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  {portfolio.absoluteReturn >= 0 ? (
+                    <TrendingUpIcon color="success" sx={{ mr: 1 }} />
+                  ) : (
+                    <TrendingDownIcon color="error" sx={{ mr: 1 }} />
+                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    Total Returns
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="h5" 
+                  fontWeight="bold"
+                  color={portfolio.absoluteReturn >= 0 ? 'success.main' : 'error.main'}
+                >
+                  {formatCurrency(portfolio.absoluteReturn || 0)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {formatPercent(portfolio.returnPercentage || 0)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <AssessmentIcon color="info" sx={{ mr: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Day Change
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="h5" 
+                  fontWeight="bold"
+                  color={portfolio.dayChange >= 0 ? 'success.main' : 'error.main'}
+                >
+                  {formatCurrency(portfolio.dayChange || 0)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {formatPercent(portfolio.dayChangePercent || 0)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Tabs */}
+      <Paper sx={{ mb: 3 }}>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tab label="Holdings" />
+          <Tab label="Asset Allocation" />
+          <Tab label="Performance" />
+          <Tab label="Upcoming Maturities" />
+        </Tabs>
+      </Paper>
+
+      {/* Tab Content */}
+      {activeTab === 0 && (
+        <Paper>
+          {/* Filters */}
+          <Box sx={{ p: 2, display: 'flex', gap: 2, borderBottom: '1px solid #e0e0e0' }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={filters.type}
+                label="Type"
+                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+              >
+                <MenuItem value="">All Types</MenuItem>
+                {INVESTMENT_TYPES.map(type => (
+                  <MenuItem key={type.value} value={type.value}>{type.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filters.status}
+                label="Status"
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              >
+                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="matured">Matured</MenuItem>
+                <MenuItem value="sold">Sold</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Sort By</InputLabel>
+              <Select
+                value={filters.sortBy}
+                label="Sort By"
+                onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+              >
+                <MenuItem value="currentValue">Current Value</MenuItem>
+                <MenuItem value="returnPercentage">Returns %</MenuItem>
+                <MenuItem value="purchaseDate">Purchase Date</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Holdings Table */}
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell align="right">Quantity</TableCell>
+                  <TableCell align="right">Invested</TableCell>
+                  <TableCell align="right">Current Value</TableCell>
+                  <TableCell align="right">Returns</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Risk</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {investments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center">
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                        No investments found. Add your first investment to get started!
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  investments.map((investment) => (
+                    <TableRow key={investment._id} hover>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="bold">
+                          {investment.name}
+                        </Typography>
+                        {investment.symbol && (
+                          <Typography variant="caption" color="text.secondary">
+                            {investment.symbol}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={INVESTMENT_TYPES.find(t => t.value === investment.type)?.label || investment.type}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="right">{investment.quantity}</TableCell>
+                      <TableCell align="right">{formatCurrency(investment.totalInvestedAmount)}</TableCell>
+                      <TableCell align="right">{formatCurrency(investment.currentValue)}</TableCell>
+                      <TableCell align="right">
+                        <Typography 
+                          variant="body2"
+                          color={investment.returnPercentage >= 0 ? 'success.main' : 'error.main'}
+                          fontWeight="bold"
+                        >
+                          {formatPercent(investment.returnPercentage)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatCurrency(investment.absoluteReturn)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={investment.status}
+                          size="small"
+                          color={getStatusColor(investment.status)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={investment.riskLevel}
+                          size="small"
+                          color={getRiskColor(investment.riskLevel)}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditInvestment(investment)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteInvestment(investment._id)}
+                          color="error"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      {activeTab === 1 && allocation && (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                By Investment Type
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={Object.entries(allocation.byType || {}).map(([key, value]) => ({
+                      name: INVESTMENT_TYPES.find(t => t.value === key)?.label || key,
+                      value: value.value
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${entry.value.toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {Object.keys(allocation.byType || {}).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value.toFixed(2)}%`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                By Risk Level
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={Object.entries(allocation.byRisk || {}).map(([key, value]) => ({
+                      name: key.charAt(0).toUpperCase() + key.slice(1),
+                      value: value.value
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${entry.value.toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#82ca9d"
+                    dataKey="value"
+                  >
+                    {Object.keys(allocation.byRisk || {}).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value.toFixed(2)}%`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+        </Grid>
+      )}
+
+      {activeTab === 2 && portfolio && (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom color="success.main">
+                Top Performers
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell align="right">Returns</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {portfolio.topPerformers?.slice(0, 5).map((inv) => (
+                      <TableRow key={inv._id}>
+                        <TableCell>{inv.name}</TableCell>
+                        <TableCell align="right">
+                          <Typography color="success.main" fontWeight="bold">
+                            {formatPercent(inv.returnPercentage)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom color="error.main">
+                Underperformers
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell align="right">Returns</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {portfolio.worstPerformers?.slice(0, 5).map((inv) => (
+                      <TableRow key={inv._id}>
+                        <TableCell>{inv.name}</TableCell>
+                        <TableCell align="right">
+                          <Typography color="error.main" fontWeight="bold">
+                            {formatPercent(inv.returnPercentage)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          </Grid>
+        </Grid>
+      )}
+
+      {activeTab === 3 && (
+        <Paper>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell align="right">Maturity Amount</TableCell>
+                  <TableCell>Maturity Date</TableCell>
+                  <TableCell align="right">Days Until Maturity</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {maturities.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                        No upcoming maturities in the next 90 days
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  maturities.map((maturity) => (
+                    <TableRow key={maturity._id}>
+                      <TableCell>{maturity.name}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={INVESTMENT_TYPES.find(t => t.value === maturity.type)?.label || maturity.type}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="right">{formatCurrency(maturity.maturityAmount)}</TableCell>
+                      <TableCell>{new Date(maturity.maturityDate).toLocaleDateString()}</TableCell>
+                      <TableCell align="right">
+                        <Chip
+                          label={`${maturity.daysUntilMaturity} days`}
+                          size="small"
+                          color={maturity.daysUntilMaturity <= 30 ? 'error' : 'default'}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog 
+        open={openAddDialog} 
+        onClose={() => {
+          setOpenAddDialog(false);
+          setEditingInvestment(null);
+        }}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingInvestment ? 'Edit Investment' : 'Add New Investment'}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Investment Type *</InputLabel>
+                <Select
+                  value={formData.type}
+                  label="Investment Type *"
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                >
+                  {INVESTMENT_TYPES.map(type => (
+                    <MenuItem key={type.value} value={type.value}>{type.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Name *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Symbol/Code"
+                value={formData.symbol}
+                onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Quantity *"
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Purchase Price *"
+                value={formData.purchasePrice}
+                onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Current Price *"
+                value={formData.currentPrice}
+                onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Purchase Date *"
+                InputLabelProps={{ shrink: true }}
+                value={formData.purchaseDate}
+                onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.category}
+                  label="Category"
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  {CATEGORIES.map(cat => (
+                    <MenuItem key={cat} value={cat}>
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Risk Level</InputLabel>
+                <Select
+                  value={formData.riskLevel}
+                  label="Risk Level"
+                  onChange={(e) => setFormData({ ...formData, riskLevel: e.target.value })}
+                >
+                  {RISK_LEVELS.map(risk => (
+                    <MenuItem key={risk} value={risk}>
+                      {risk.charAt(0).toUpperCase() + risk.slice(1)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Maturity Date"
+                InputLabelProps={{ shrink: true }}
+                value={formData.maturityDate}
+                onChange={(e) => setFormData({ ...formData, maturityDate: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" gutterBottom>
+                SIP Details (Optional)
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="number"
+                label="SIP Amount"
+                value={formData.sipAmount}
+                onChange={(e) => setFormData({ ...formData, sipAmount: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth>
+                <InputLabel>SIP Frequency</InputLabel>
+                <Select
+                  value={formData.sipFrequency}
+                  label="SIP Frequency"
+                  onChange={(e) => setFormData({ ...formData, sipFrequency: e.target.value })}
+                >
+                  <MenuItem value="weekly">Weekly</MenuItem>
+                  <MenuItem value="monthly">Monthly</MenuItem>
+                  <MenuItem value="quarterly">Quarterly</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="date"
+                label="SIP Start Date"
+                InputLabelProps={{ shrink: true }}
+                value={formData.sipStartDate}
+                onChange={(e) => setFormData({ ...formData, sipStartDate: e.target.value })}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setOpenAddDialog(false);
+              setEditingInvestment(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleAddInvestment} 
+            variant="contained"
+            disabled={!formData.name || !formData.quantity || !formData.purchasePrice || !formData.currentPrice}
+          >
+            {editingInvestment ? 'Update' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
+  );
+}
+
+export default InvestmentPortfolio;

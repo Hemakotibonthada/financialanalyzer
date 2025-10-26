@@ -29,6 +29,9 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const TransactionSearch = lazy(() => import('./components/TransactionSearch'));
 const CSVImportExport = lazy(() => import('./components/CSVImportExport'));
 const LenderDashboard = lazy(() => import('./pages/LenderDashboardEnhanced'));
+const InvestmentPortfolio = lazy(() => import('./pages/InvestmentPortfolio'));
+const FinancialGoals = lazy(() => import('./pages/FinancialGoals'));
+const NetWorthTracker = lazy(() => import('./pages/NetWorthTracker'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -116,6 +119,24 @@ function App() {
               <Route path="/lender-dashboard" element={
                 <ProtectedRoute>
                   <LenderDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/investments" element={
+                <ProtectedRoute>
+                  <InvestmentPortfolio />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/goals" element={
+                <ProtectedRoute>
+                  <FinancialGoals />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/networth" element={
+                <ProtectedRoute>
+                  <NetWorthTracker />
                 </ProtectedRoute>
               } />
               

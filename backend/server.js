@@ -153,6 +153,9 @@ app.use('/api/lenders', require('./routes/lenderRoutes'));
 app.use('/api/lender-loans', require('./routes/lenderLoanRoutes'));
 app.use('/api/lender-payments', require('./routes/lenderPaymentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/investments', require('./routes/investmentRoutes')); // Investment portfolio tracking
+app.use('/api/goals', require('./routes/goalRoutes')); // Financial goals management
+app.use('/api/networth', require('./routes/netWorthRoutes')); // Net worth tracking
 
 // 404 handler
 app.use((req, res) => {
