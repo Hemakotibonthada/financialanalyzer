@@ -807,6 +807,747 @@ router.get('/analytics/monthly-trends', authenticate, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/financial/monthly-trends-report
+ * @desc    Get comprehensive monthly trends report with analytics
+ * @access  Private
+ */
+router.get('/monthly-trends-report', authenticate, async (req, res) => {
+  try {
+    const { months = 12, startDate, endDate } = req.query;
+    
+    // Calculate date range
+    let dateFilter = { userId: req.user._id };
+    if (startDate || endDate) {
+      dateFilter.date = {};
+      if (startDate) dateFilter.date.$gte = new Date(startDate);
+      if (endDate) dateFilter.date.$lte = new Date(endDate);
+    } else {
+      const start = new Date();
+      start.setMonth(start.getMonth() - parseInt(months));
+      dateFilter.date = { $gte: start };
+    }
+
+    // Get all transactions
+    const transactions = await Transaction.find(dateFilter).sort({ date: 1 });
+
+    // Monthly aggregation
+    const monthlyData = await Transaction.aggregate([
+      { $match: dateFilter },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type',
+            category: '$category'
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Process data by month
+    const monthlyTrends = {};
+    monthlyData.forEach(item => {
+      const monthKey = `${item._id.year}-${item._id.month.toString().padStart(2, '0')}`;
+      
+      if (!monthlyTrends[monthKey]) {
+        monthlyTrends[monthKey] = {
+          month: monthKey,
+          year: item._id.year,
+          monthNum: item._id.month,
+          income: 0,
+          expenses: 0,
+          net: 0,
+          savingsRate: 0,
+          transactionCount: 0,
+          categories: {},
+          topExpenseCategory: '',
+          topExpenseAmount: 0
+        };
+      }
+
+      const trend = monthlyTrends[monthKey];
+      
+      if (item._id.type === 'credit') {
+        trend.income += item.totalAmount;
+      } else if (item._id.type === 'debit') {
+        trend.expenses += item.totalAmount;
+        
+        // Track category expenses
+        const cat = item._id.category || 'Uncategorized';
+        trend.categories[cat] = (trend.categories[cat] || 0) + item.totalAmount;
+        
+        // Track top expense category
+        if (item.totalAmount > trend.topExpenseAmount) {
+          trend.topExpenseAmount = item.totalAmount;
+          trend.topExpenseCategory = cat;
+        }
+      }
+      
+      trend.transactionCount += item.count;
+    });
+
+    // Calculate derived metrics
+    const trendsArray = Object.values(monthlyTrends).map(trend => {
+      trend.net = trend.income - trend.expenses;
+      trend.savingsRate = trend.income > 0 ? ((trend.net / trend.income) * 100).toFixed(2) : 0;
+      return trend;
+    });
+
+    // Calculate overall statistics
+    const totalIncome = trendsArray.reduce((sum, t) => sum + t.income, 0);
+    const totalExpenses = trendsArray.reduce((sum, t) => sum + t.expenses, 0);
+    const avgMonthlyIncome = trendsArray.length > 0 ? totalIncome / trendsArray.length : 0;
+    const avgMonthlyExpenses = trendsArray.length > 0 ? totalExpenses / trendsArray.length : 0;
+    const avgSavingsRate = trendsArray.length > 0 
+      ? trendsArray.reduce((sum, t) => sum + parseFloat(t.savingsRate), 0) / trendsArray.length 
+      : 0;
+
+    // Get category breakdown across all months
+    const categoryTotals = {};
+    trendsArray.forEach(trend => {
+      Object.entries(trend.categories).forEach(([cat, amount]) => {
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + amount;
+      });
+    });
+
+    const topCategories = Object.entries(categoryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: ((amount / totalExpenses) * 100).toFixed(2)
+      }));
+
+    // Trend analysis
+    const firstMonth = trendsArray[0];
+    const lastMonth = trendsArray[trendsArray.length - 1];
+    const incomeGrowth = firstMonth && firstMonth.income > 0 
+      ? (((lastMonth.income - firstMonth.income) / firstMonth.income) * 100).toFixed(2)
+      : 0;
+    const expenseGrowth = firstMonth && firstMonth.expenses > 0
+      ? (((lastMonth.expenses - firstMonth.expenses) / firstMonth.expenses) * 100).toFixed(2)
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        monthlyTrends: trendsArray,
+        summary: {
+          totalIncome,
+          totalExpenses,
+          totalNet: totalIncome - totalExpenses,
+          avgMonthlyIncome,
+          avgMonthlyExpenses,
+          avgSavingsRate: parseFloat(avgSavingsRate.toFixed(2)),
+          totalTransactions: transactions.length,
+          monthsAnalyzed: trendsArray.length
+        },
+        categoryBreakdown: topCategories,
+        trendAnalysis: {
+          incomeGrowth: parseFloat(incomeGrowth),
+          expenseGrowth: parseFloat(expenseGrowth),
+          savingsTrend: lastMonth && firstMonth 
+            ? parseFloat(lastMonth.savingsRate) - parseFloat(firstMonth.savingsRate)
+            : 0
+        },
+        dateRange: {
+          start: startDate || (new Date(Date.now() - (months * 30 * 24 * 60 * 60 * 1000))).toISOString().split('T')[0],
+          end: endDate || new Date().toISOString().split('T')[0]
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Monthly trends report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate monthly trends report'
+    });
+  }
+});
+
+/**
+ * @route   GET /api/financial/monthly-trends-report/export/pdf
+ * @desc    Export monthly trends report as PDF
+ * @access  Private
+ */
+router.get('/monthly-trends-report/export/pdf', authenticate, async (req, res) => {
+  try {
+    const { months = 12, startDate, endDate } = req.query;
+    const userId = req.user._id;
+
+    logger.info(`Exporting Monthly Trends PDF for user: ${userId}`);
+
+    // Calculate date range
+    let dateFilter = { userId };
+    if (startDate || endDate) {
+      dateFilter.date = {};
+      if (startDate) dateFilter.date.$gte = new Date(startDate);
+      if (endDate) dateFilter.date.$lte = new Date(endDate);
+    } else {
+      const start = new Date();
+      start.setMonth(start.getMonth() - parseInt(months));
+      dateFilter.date = { $gte: start };
+    }
+
+    // Get monthly data
+    const monthlyData = await Transaction.aggregate([
+      { $match: dateFilter },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type',
+            category: '$category'
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Process data
+    const monthlyTrends = {};
+    monthlyData.forEach(item => {
+      const monthKey = `${item._id.year}-${item._id.month.toString().padStart(2, '0')}`;
+      
+      if (!monthlyTrends[monthKey]) {
+        monthlyTrends[monthKey] = {
+          month: monthKey,
+          income: 0,
+          expenses: 0,
+          transactionCount: 0,
+          categories: {}
+        };
+      }
+
+      const trend = monthlyTrends[monthKey];
+      
+      if (item._id.type === 'credit') {
+        trend.income += item.totalAmount;
+      } else if (item._id.type === 'debit') {
+        trend.expenses += item.totalAmount;
+        const cat = item._id.category || 'Uncategorized';
+        trend.categories[cat] = (trend.categories[cat] || 0) + item.totalAmount;
+      }
+      
+      trend.transactionCount += item.count;
+    });
+
+    const trendsArray = Object.values(monthlyTrends).map(trend => {
+      trend.net = trend.income - trend.expenses;
+      trend.savingsRate = trend.income > 0 ? ((trend.net / trend.income) * 100).toFixed(2) : 0;
+      return trend;
+    });
+
+    // Calculate statistics
+    const totalIncome = trendsArray.reduce((sum, t) => sum + t.income, 0);
+    const totalExpenses = trendsArray.reduce((sum, t) => sum + t.expenses, 0);
+    const avgMonthlyIncome = trendsArray.length > 0 ? totalIncome / trendsArray.length : 0;
+    const avgMonthlyExpenses = trendsArray.length > 0 ? totalExpenses / trendsArray.length : 0;
+
+    // Generate charts
+    const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 800, height: 400, backgroundColour: 'white' });
+
+    // Chart 1: Income vs Expenses Line Chart
+    const lineChartConfig = {
+      type: 'line',
+      data: {
+        labels: trendsArray.map(t => t.month),
+        datasets: [
+          {
+            label: 'Income',
+            data: trendsArray.map(t => t.income),
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'Expenses',
+            data: trendsArray.map(t => t.expenses),
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          title: { display: true, text: 'Monthly Income vs Expenses Trend', font: { size: 16 } },
+          legend: { position: 'bottom' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+
+    // Chart 2: Savings Rate Bar Chart
+    const savingsChartConfig = {
+      type: 'bar',
+      data: {
+        labels: trendsArray.map(t => t.month),
+        datasets: [{
+          label: 'Savings Rate (%)',
+          data: trendsArray.map(t => parseFloat(t.savingsRate)),
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        plugins: {
+          title: { display: true, text: 'Monthly Savings Rate', font: { size: 16 } },
+          legend: { position: 'bottom' }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Percentage (%)' } }
+        }
+      }
+    };
+
+    // Chart 3: Net Savings Bar Chart
+    const netChartConfig = {
+      type: 'bar',
+      data: {
+        labels: trendsArray.map(t => t.month),
+        datasets: [{
+          label: 'Net Savings',
+          data: trendsArray.map(t => t.net),
+          backgroundColor: trendsArray.map(t => t.net >= 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
+          borderColor: trendsArray.map(t => t.net >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        plugins: {
+          title: { display: true, text: 'Monthly Net Savings', font: { size: 16 } },
+          legend: { position: 'bottom' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+
+    const [chart1, chart2, chart3] = await Promise.all([
+      chartJSNodeCanvas.renderToBuffer(lineChartConfig),
+      chartJSNodeCanvas.renderToBuffer(savingsChartConfig),
+      chartJSNodeCanvas.renderToBuffer(netChartConfig)
+    ]);
+
+    // Create PDF
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Monthly_Trends_Report_${Date.now()}.pdf`);
+
+    doc.pipe(res);
+
+    // Header
+    doc.fontSize(20).font('Helvetica-Bold').text('MONTHLY TRENDS REPORT', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleString()}`);
+    doc.text(`Period: ${startDate || 'Last ' + months + ' months'} to ${endDate || 'Today'}`);
+    doc.moveDown();
+
+    // Summary Section
+    doc.fontSize(14).font('Helvetica-Bold').text('SUMMARY', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Helvetica');
+    doc.text(`Total Income: ${totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+    doc.text(`Total Expenses: ${totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+    doc.text(`Total Net: ${(totalIncome - totalExpenses).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+    doc.text(`Average Monthly Income: ${avgMonthlyIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+    doc.text(`Average Monthly Expenses: ${avgMonthlyExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+    doc.text(`Months Analyzed: ${trendsArray.length}`);
+    doc.moveDown(2);
+
+    // Charts
+    doc.addPage();
+    doc.fontSize(14).font('Helvetica-Bold').text('VISUALIZATION CHARTS', { align: 'center' });
+    doc.moveDown();
+    doc.image(chart1, 50, doc.y, { width: 500 });
+    
+    doc.addPage();
+    doc.image(chart2, 50, 50, { width: 500 });
+    doc.moveDown(20);
+    doc.image(chart3, 50, doc.y + 20, { width: 500 });
+
+    // Monthly Details
+    doc.addPage();
+    doc.fontSize(14).font('Helvetica-Bold').text('MONTHLY BREAKDOWN', { underline: true });
+    doc.moveDown();
+    
+    trendsArray.forEach((trend, idx) => {
+      if (idx > 0 && idx % 3 === 0) doc.addPage();
+      
+      doc.fontSize(12).font('Helvetica-Bold').text(`Month: ${trend.month}`);
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Income: ${trend.income.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+      doc.text(`Expenses: ${trend.expenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+      doc.text(`Net: ${trend.net.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+      doc.text(`Savings Rate: ${trend.savingsRate}%`);
+      doc.text(`Transactions: ${trend.transactionCount}`);
+      doc.moveDown();
+    });
+
+    doc.end();
+
+  } catch (error) {
+    logger.error('PDF export error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export PDF report'
+      });
+    }
+  }
+});
+
+/**
+ * @route   GET /api/financial/monthly-trends-report/export/excel
+ * @desc    Export monthly trends report as Excel
+ * @access  Private
+ */
+router.get('/monthly-trends-report/export/excel', authenticate, async (req, res) => {
+  try {
+    const { months = 12, startDate, endDate } = req.query;
+    const userId = req.user._id;
+
+    logger.info(`Exporting Monthly Trends Excel for user: ${userId}`);
+
+    // Calculate date range
+    let dateFilter = { userId };
+    if (startDate || endDate) {
+      dateFilter.date = {};
+      if (startDate) dateFilter.date.$gte = new Date(startDate);
+      if (endDate) dateFilter.date.$lte = new Date(endDate);
+    } else {
+      const start = new Date();
+      start.setMonth(start.getMonth() - parseInt(months));
+      dateFilter.date = { $gte: start };
+    }
+
+    // Get monthly data
+    const monthlyData = await Transaction.aggregate([
+      { $match: dateFilter },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type',
+            category: '$category'
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Process data
+    const monthlyTrends = {};
+    const categoryTotals = {};
+    
+    monthlyData.forEach(item => {
+      const monthKey = `${item._id.year}-${item._id.month.toString().padStart(2, '0')}`;
+      
+      if (!monthlyTrends[monthKey]) {
+        monthlyTrends[monthKey] = {
+          month: monthKey,
+          income: 0,
+          expenses: 0,
+          transactionCount: 0,
+          categories: {}
+        };
+      }
+
+      const trend = monthlyTrends[monthKey];
+      
+      if (item._id.type === 'credit') {
+        trend.income += item.totalAmount;
+      } else if (item._id.type === 'debit') {
+        trend.expenses += item.totalAmount;
+        const cat = item._id.category || 'Uncategorized';
+        trend.categories[cat] = (trend.categories[cat] || 0) + item.totalAmount;
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + item.totalAmount;
+      }
+      
+      trend.transactionCount += item.count;
+    });
+
+    const trendsArray = Object.values(monthlyTrends).map(trend => {
+      trend.net = trend.income - trend.expenses;
+      trend.savingsRate = trend.income > 0 ? ((trend.net / trend.income) * 100).toFixed(2) : 0;
+      return trend;
+    });
+
+    // Calculate statistics
+    const totalIncome = trendsArray.reduce((sum, t) => sum + t.income, 0);
+    const totalExpenses = trendsArray.reduce((sum, t) => sum + t.expenses, 0);
+
+    // Create Excel workbook
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+
+    // Sheet 1: Summary
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+      { header: 'Metric', key: 'metric', width: 30 },
+      { header: 'Value', key: 'value', width: 20 }
+    ];
+
+    summarySheet.addRows([
+      { metric: 'Report Generated', value: new Date().toLocaleString() },
+      { metric: 'Period', value: `${startDate || 'Last ' + months + ' months'} to ${endDate || 'Today'}` },
+      { metric: 'Total Income', value: totalIncome },
+      { metric: 'Total Expenses', value: totalExpenses },
+      { metric: 'Total Net', value: totalIncome - totalExpenses },
+      { metric: 'Average Monthly Income', value: totalIncome / trendsArray.length },
+      { metric: 'Average Monthly Expenses', value: totalExpenses / trendsArray.length },
+      { metric: 'Months Analyzed', value: trendsArray.length }
+    ]);
+
+    summarySheet.getColumn('value').numFmt = '#,##0.00';
+    summarySheet.getRow(1).font = { bold: true };
+
+    // Sheet 2: Monthly Trends
+    const trendsSheet = workbook.addWorksheet('Monthly Trends');
+    trendsSheet.columns = [
+      { header: 'Month', key: 'month', width: 15 },
+      { header: 'Income', key: 'income', width: 15 },
+      { header: 'Expenses', key: 'expenses', width: 15 },
+      { header: 'Net', key: 'net', width: 15 },
+      { header: 'Savings Rate (%)', key: 'savingsRate', width: 18 },
+      { header: 'Transactions', key: 'transactionCount', width: 15 }
+    ];
+
+    trendsArray.forEach(trend => {
+      trendsSheet.addRow({
+        month: trend.month,
+        income: trend.income,
+        expenses: trend.expenses,
+        net: trend.net,
+        savingsRate: parseFloat(trend.savingsRate),
+        transactionCount: trend.transactionCount
+      });
+    });
+
+    trendsSheet.getColumn('income').numFmt = '#,##0.00';
+    trendsSheet.getColumn('expenses').numFmt = '#,##0.00';
+    trendsSheet.getColumn('net').numFmt = '#,##0.00';
+    trendsSheet.getColumn('savingsRate').numFmt = '0.00';
+    trendsSheet.getRow(1).font = { bold: true };
+
+    // Sheet 3: Category Breakdown
+    const categorySheet = workbook.addWorksheet('Category Breakdown');
+    categorySheet.columns = [
+      { header: 'Category', key: 'category', width: 25 },
+      { header: 'Total Amount', key: 'amount', width: 20 },
+      { header: 'Percentage', key: 'percentage', width: 15 }
+    ];
+
+    Object.entries(categoryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([category, amount]) => {
+        categorySheet.addRow({
+          category,
+          amount,
+          percentage: ((amount / totalExpenses) * 100).toFixed(2)
+        });
+      });
+
+    categorySheet.getColumn('amount').numFmt = '#,##0.00';
+    categorySheet.getColumn('percentage').numFmt = '0.00';
+    categorySheet.getRow(1).font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=Monthly_Trends_Report_${Date.now()}.xlsx`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    logger.error('Excel export error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export Excel report'
+      });
+    }
+  }
+});
+
+/**
+ * @route   GET /api/financial/monthly-trends-report/export/csv
+ * @desc    Export monthly trends report as CSV
+ * @access  Private
+ */
+router.get('/monthly-trends-report/export/csv', authenticate, async (req, res) => {
+  try {
+    const { months = 12, startDate, endDate } = req.query;
+    const userId = req.user._id;
+
+    logger.info(`Exporting Monthly Trends CSV for user: ${userId}`);
+
+    // Calculate date range
+    let dateFilter = { userId };
+    if (startDate || endDate) {
+      dateFilter.date = {};
+      if (startDate) dateFilter.date.$gte = new Date(startDate);
+      if (endDate) dateFilter.date.$lte = new Date(endDate);
+    } else {
+      const start = new Date();
+      start.setMonth(start.getMonth() - parseInt(months));
+      dateFilter.date = { $gte: start };
+    }
+
+    // Get monthly data
+    const monthlyData = await Transaction.aggregate([
+      { $match: dateFilter },
+      {
+        $addFields: {
+          dateObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$date' }, 'string'] },
+              then: { $dateFromString: { dateString: '$date' } },
+              else: '$date'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$dateObj' },
+            month: { $month: '$dateObj' },
+            type: '$type'
+          },
+          totalAmount: { $sum: { $abs: '$amount' } },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Process data
+    const monthlyTrends = {};
+    
+    monthlyData.forEach(item => {
+      const monthKey = `${item._id.year}-${item._id.month.toString().padStart(2, '0')}`;
+      
+      if (!monthlyTrends[monthKey]) {
+        monthlyTrends[monthKey] = {
+          month: monthKey,
+          income: 0,
+          expenses: 0,
+          transactionCount: 0
+        };
+      }
+
+      const trend = monthlyTrends[monthKey];
+      
+      if (item._id.type === 'credit') {
+        trend.income += item.totalAmount;
+      } else if (item._id.type === 'debit') {
+        trend.expenses += item.totalAmount;
+      }
+      
+      trend.transactionCount += item.count;
+    });
+
+    const trendsArray = Object.values(monthlyTrends).map(trend => {
+      trend.net = trend.income - trend.expenses;
+      trend.savingsRate = trend.income > 0 ? ((trend.net / trend.income) * 100).toFixed(2) : 0;
+      return trend;
+    });
+
+    // Generate CSV
+    const csvRows = [
+      ['Month', 'Income', 'Expenses', 'Net', 'Savings Rate (%)', 'Transactions']
+    ];
+
+    trendsArray.forEach(trend => {
+      csvRows.push([
+        trend.month,
+        trend.income.toFixed(2),
+        trend.expenses.toFixed(2),
+        trend.net.toFixed(2),
+        trend.savingsRate,
+        trend.transactionCount
+      ]);
+    });
+
+    const csvContent = csvRows.map(row => row.join(',')).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=Monthly_Trends_Report_${Date.now()}.csv`);
+    res.send(csvContent);
+
+  } catch (error) {
+    logger.error('CSV export error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to export CSV report'
+      });
+    }
+  }
+});
+
+/**
  * @route   GET /api/financial/reports
  * @desc    Get all financial analysis reports (combines Analysis and FinancialAnalysis models)
  * @access  Private
