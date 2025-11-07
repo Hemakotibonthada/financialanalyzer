@@ -43,9 +43,65 @@ const api = axios.create({
 // Request interceptor - Add token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // First check localStorage for valid token with expiry
+    let token = null;
+    let tokenSource = '';
+    try {
+      const lsToken = localStorage.getItem('token');
+      const expiry = localStorage.getItem('token_expiry');
+      
+      if (lsToken && expiry) {
+        const expDate = new Date(expiry);
+        const now = new Date();
+        
+        // Debug token state at runtime
+        if (import.meta.env.DEV) {
+          console.debug('[api] Request interceptor - checking token:', {
+            url: config.url,
+            'ls.token?': !!lsToken,
+            'ls.expiry?': !!expiry,
+            expDate: expDate.toISOString(),
+            now: now.toISOString(),
+            isExpired: isNaN(expDate.getTime()) || now > expDate
+          });
+        }
+        
+        if (!isNaN(expDate.getTime()) && now <= expDate) {
+          // Valid unexpired token
+          token = lsToken;
+          tokenSource = 'localStorage';
+        } else {
+          // Invalid or expired - clear localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('token_expiry');
+          localStorage.removeItem('user');
+        }
+      } else if (lsToken) {
+        // Token without expiry - treat as persistent
+        token = lsToken;
+        tokenSource = 'localStorage (no expiry)';
+      }
+      
+      // Fallback to sessionStorage if needed
+      if (!token) {
+        token = sessionStorage.getItem('token');
+        if (token) tokenSource = 'sessionStorage';
+      }
+      
+    } catch (e) {
+      console.error('[api] Error accessing storage:', e);
+      // Last resort: try direct localStorage access
+      token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      tokenSource = 'direct fallback';
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      if (import.meta.env.DEV) {
+        console.debug(`[api] Using token from ${tokenSource} for ${config.url}`);
+      }
+    } else if (import.meta.env.DEV && !config.url.includes('/auth/')) {
+      console.debug(`[api] No token available for ${config.url}`);
     }
     
     // If sending FormData, remove Content-Type to let browser set it with boundary
@@ -78,9 +134,12 @@ api.interceptors.response.use(
 
     // Handle specific HTTP status codes
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
+      // Unauthorized - clear token and redirect to login (remove from both storages)
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('token_expiry');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       window.location.href = '/login';
     } else if (error.response?.status === 503) {
       error.message = 'Service temporarily unavailable. Please try again later.';

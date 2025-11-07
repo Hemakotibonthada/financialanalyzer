@@ -15,7 +15,61 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  // Token can be stored either in sessionStorage (session-only) or localStorage (remembered)
+  const getStoredToken = () => {
+    // Debug token state at runtime
+    if (import.meta.env.DEV) {
+      console.debug('[auth] getStoredToken - checking token and expiry state:', {
+        'ls.token?': !!localStorage.getItem('token'),
+        'ls.expiry?': !!localStorage.getItem('token_expiry'),
+        'ls.expiry': localStorage.getItem('token_expiry'),
+        'sess.token?': !!sessionStorage.getItem('token')
+      });
+    }
+
+    // First check localStorage token + expiry
+    const lsToken = localStorage.getItem('token');
+    const expiry = localStorage.getItem('token_expiry');
+    if (lsToken) {
+      if (expiry) {
+        const expDate = new Date(expiry);
+        const now = new Date();
+        // Debug token expiry check at runtime
+        if (import.meta.env.DEV) {
+          console.debug('[auth] getStoredToken - expiry check:', {
+            expiry,
+            expDate: expDate.toISOString(),
+            now: now.toISOString(),
+            isExpired: now > expDate
+          });
+        }
+        
+        // Clear if expiry is invalid or token has expired
+        if (isNaN(expDate.getTime())) {
+          console.warn('[auth] Invalid token_expiry date - clearing localStorage token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('token_expiry');
+          localStorage.removeItem('user');
+        } else if (now > expDate) {
+          console.info('[auth] Token expired - clearing localStorage token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('token_expiry');
+          localStorage.removeItem('user');
+        } else {
+          // Valid unexpired token
+          return lsToken; 
+        }
+      } else {
+        // token without expiry in localStorage - treat as persistent
+        return lsToken;
+      }
+    }
+
+    // fallback to sessionStorage
+    return sessionStorage.getItem('token');
+  };
+
+  const [token, setToken] = useState(getStoredToken());
 
   useEffect(() => {
     if (token) {
@@ -37,7 +91,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  // options: { rememberThisMonth: boolean }
+  const login = async (email, password, options = {}) => {
     try {
       const response = await authService.login({ email, password });
       const { user, accessToken, token: legacyToken } = response.data.data;
@@ -49,9 +104,41 @@ export const AuthProvider = ({ children }) => {
         throw new Error('No authentication token received');
       }
       
-      // Set token first, then user to trigger proper state updates
-      localStorage.setItem('token', authToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Store token either in sessionStorage (default) or localStorage (when rememberThisMonth)
+      const remember = options.rememberThisMonth;
+      if (remember) {
+        // compute end of current month local time
+        const now = new Date();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('token_expiry', endOfMonth.toISOString());
+        localStorage.setItem('user', JSON.stringify(user));
+        // remove any session token
+        sessionStorage.removeItem('token');
+        
+        // Debug token storage at runtime
+        if (import.meta.env.DEV) {
+          const storedExpiry = localStorage.getItem('token_expiry');
+          console.debug('[auth] Login with remember - stored token with expiry:', {
+            now: now.toISOString(),
+            endOfMonth: endOfMonth.toISOString(),
+            storedExpiry,
+            validDate: !isNaN(new Date(storedExpiry).getTime())
+          });
+        }
+      } else {
+        sessionStorage.setItem('token', authToken);
+        sessionStorage.setItem('user', JSON.stringify(user));
+        // ensure no lingering persistent token
+        localStorage.removeItem('token');
+        localStorage.removeItem('token_expiry');
+        localStorage.removeItem('user');
+        
+        if (import.meta.env.DEV) {
+          console.debug('[auth] Login without remember - using session storage');
+        }
+      }
+
       setToken(authToken);
       setUser(user);
       
@@ -96,8 +183,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
+    // remove from both storages
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('token_expiry');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     toast.info('Logged out successfully');
   };
 

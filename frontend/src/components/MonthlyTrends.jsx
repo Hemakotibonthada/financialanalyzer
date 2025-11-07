@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { TrendingUp, TrendingDown, Calendar, BarChart3, DollarSign, PiggyBank } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -27,6 +27,7 @@ ChartJS.register(
 
 const MonthlyTrends = ({ trendsData }) => {
   const [showInvestments, setShowInvestments] = useState(true);
+  const chartRef = useRef(null);
   // Initialize date range to current month only (start == end == this month)
   const [startDate, setStartDate] = useState(() => {
     const today = new Date();
@@ -347,6 +348,81 @@ const MonthlyTrends = ({ trendsData }) => {
     }
   };
 
+  // Enhance chart options: hide points by default, improve tooltip formatting and legend interactivity
+  // (we mutate chartOptions here to keep the main defaults above)
+  chartOptions.elements = chartOptions.elements || {};
+  chartOptions.elements.point = {
+    radius: 0,
+    hoverRadius: 6,
+    hitRadius: 8
+  };
+
+  // Tooltip: show full currency, previous difference and percentage
+  chartOptions.plugins = chartOptions.plugins || {};
+  chartOptions.plugins.tooltip = chartOptions.plugins.tooltip || {};
+  chartOptions.plugins.tooltip.callbacks = chartOptions.plugins.tooltip.callbacks || {};
+  chartOptions.plugins.tooltip.callbacks.title = function(items) {
+    // items is array, first item's label is the x-axis label
+    if (!items || items.length === 0) return '';
+    return items[0].label;
+  };
+  chartOptions.plugins.tooltip.callbacks.label = function(context) {
+    const label = context.dataset.label || '';
+    const value = context.parsed.y ?? context.raw ?? 0;
+    return `${label}: ₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
+  };
+  chartOptions.plugins.tooltip.callbacks.afterLabel = function(context) {
+    try {
+      const idx = context.dataIndex;
+      const ds = context.dataset.data || [];
+      const cur = Number(ds[idx] || 0);
+      const prev = Number(ds[idx - 1] || 0);
+      if (idx > 0) {
+        const diff = cur - prev;
+        const pct = prev !== 0 ? (diff / prev * 100) : 0;
+        const sign = diff >= 0 ? '+' : '';
+        return `Change vs prev: ${sign}₹${Math.abs(diff).toLocaleString('en-IN')} (${sign}${Math.abs(pct).toFixed(1)}%)`;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return '';
+  };
+  chartOptions.plugins.tooltip.callbacks.footer = function(items) {
+    // show total across visible datasets for this index
+    try {
+      if (!items || items.length === 0) return '';
+      const idx = items[0].dataIndex;
+      const chart = chartRef.current && chartRef.current.chart ? chartRef.current.chart : chartRef.current;
+      if (!chart) return '';
+      let total = 0;
+      chart.data.datasets.forEach(ds => {
+        // skip hidden datasets
+        const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(ds));
+        if (meta && meta.hidden) return;
+        const v = Number(ds.data[idx] || 0);
+        if (!Number.isNaN(v)) total += v;
+      });
+      return `Total: ₹${total.toLocaleString('en-IN')}`;
+    } catch (e) {
+      return '';
+    }
+  };
+
+  // Make legend clickable to toggle datasets (preserve default behavior but force update)
+  chartOptions.plugins.legend = chartOptions.plugins.legend || {};
+  const originalLegendOnClick = chartOptions.plugins.legend.onClick;
+  chartOptions.plugins.legend.onClick = function(e, legendItem, legend) {
+    const chart = legend.chart;
+    const index = legendItem.datasetIndex;
+    const meta = chart.getDatasetMeta(index);
+    meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+    chart.update();
+    if (typeof originalLegendOnClick === 'function') {
+      originalLegendOnClick(e, legendItem, legend);
+    }
+  };
+
   // Debug output - helps verify the filter and labels used by the chart
   try {
     // Only log in development (guard if NODE_ENV is available)
@@ -359,6 +435,50 @@ const MonthlyTrends = ({ trendsData }) => {
   } catch (e) {
     // swallow - console may not be defined in some environments
   }
+
+  // Export helpers
+  const handleExportPNG = () => {
+    try {
+      const chart = chartRef.current && (chartRef.current.chart || chartRef.current);
+      if (!chart) return;
+      const url = chart.toBase64Image();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `monthly-trends-${startDate || 'range'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error('Export PNG failed', e);
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const labels = chartData.labels || [];
+      const datasets = chartData.datasets || [];
+      const rows = [ ['Date', ...datasets.map(d => d.label)] ];
+      for (let i = 0; i < labels.length; i++) {
+        const row = [labels[i]];
+        for (const ds of datasets) {
+          row.push(String(ds.data[i] ?? ''));
+        }
+        rows.push(row);
+      }
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `monthly-trends-${startDate || 'range'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export CSV failed', e);
+    }
+  };
 
   // Calculate additional insights using filtered data
   const latestMonth = filteredTrends[filteredTrends.length - 1];
@@ -474,6 +594,21 @@ const MonthlyTrends = ({ trendsData }) => {
                   Clear
                 </button>
               )}
+              {/* Export buttons */}
+              <button
+                onClick={handleExportPNG}
+                title="Export chart as PNG"
+                className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+              >
+                Export PNG
+              </button>
+              <button
+                onClick={handleExportCSV}
+                title="Export chart data as CSV"
+                className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+              >
+                Export CSV
+              </button>
               {/* Show Investments Toggle */}
             {filteredTrends.some(t => t.totalInvestments > 0) && (
               <label className="flex items-center cursor-pointer">
@@ -624,7 +759,7 @@ const MonthlyTrends = ({ trendsData }) => {
 
         {/* Interactive Chart - Always Line Chart */}
         <div className="h-[500px] mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
-          <Line data={chartData} options={chartOptions} />
+          <Line ref={chartRef} data={chartData} options={chartOptions} />
         </div>
 
         {/* Insights Footer */}

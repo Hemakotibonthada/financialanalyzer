@@ -159,6 +159,7 @@ const EMITracker = () => {
   const [selectedEMI, setSelectedEMI] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editEMIDialogOpen, setEditEMIDialogOpen] = useState(false);
+  const [emiDetailOpen, setEmiDetailOpen] = useState(false);
 
   // Upcoming Payments State
   const [upcomingMonthsToShow, setUpcomingMonthsToShow] = useState(1); // Default show next month only
@@ -221,6 +222,15 @@ const EMITracker = () => {
   const [personalLoanRepaymentData, setPersonalLoanRepaymentData] = useState({
     amount: '',
     notes: ''
+  });
+
+  // Confirmation Dialog State
+  const [confirmationDialog, setConfirmationDialog] = useState({
+    open: false,
+    title: '',
+    message: '',
+    confirmAction: () => {},
+    emiDetails: null
   });
 
   // Export Report State
@@ -884,23 +894,66 @@ const EMITracker = () => {
   };
 
   // Mark Payment as Paid Handler
-  const handleMarkAsPaid = async (emiId, installmentNumber) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/emi/${emiId}/mark-paid`,
-        { installmentNumber, paidDate: new Date().toISOString() },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+  const handleMarkAsPaid = async (emiId, installmentNumber, emiDetails) => {
+    // Open confirmation dialog first
+    setConfirmationDialog({
+      open: true,
+      title: 'Mark Payment as Paid',
+      message: `Are you sure you want to mark this EMI payment of ${formatCurrency(emiDetails.amount)} as paid?`,
+      confirmAction: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          await axios.post(
+            `${API_URL}/emi/${emiId}/mark-paid`,
+            { installmentNumber, paidDate: new Date().toISOString() },
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
 
-      alert('Payment marked as paid!');
-      fetchAllData();
-    } catch (err) {
-      console.error('Error marking payment as paid:', err);
-      alert('Failed to mark payment as paid');
-    }
+          // Immediately update the UI by removing the paid EMI from upcomingPayments
+          if (upcomingPayments && upcomingPayments.monthlyBreakdown) {
+            const updatedBreakdown = upcomingPayments.monthlyBreakdown.map(month => ({
+              ...month,
+              emis: month.emis.filter(emi => emi.emiId !== emiId || emi.installmentNumber !== installmentNumber),
+              emiCount: month.emis.filter(emi => emi.emiId !== emiId || emi.installmentNumber !== installmentNumber).length,
+              totalAmount: month.emis
+                .filter(emi => emi.emiId !== emiId || emi.installmentNumber !== installmentNumber)
+                .reduce((sum, emi) => sum + emi.amount, 0)
+            })).filter(month => month.emiCount > 0); // Remove empty months
+
+            setUpcomingPayments({
+              ...upcomingPayments,
+              monthlyBreakdown: updatedBreakdown
+            });
+          }
+
+          // Close dialog with success message
+          setConfirmationDialog(prev => ({
+            ...prev,
+            open: true,
+            title: 'Success',
+            message: 'Payment marked as paid!',
+            isSuccess: true,
+            confirmAction: () => {
+              setConfirmationDialog(prev => ({ ...prev, open: false }));
+            }
+          }));
+
+          // Refresh data in background
+          fetchAllData();
+        } catch (err) {
+          console.error('Error marking payment as paid:', err);
+          setConfirmationDialog(prev => ({
+            ...prev,
+            title: 'Error',
+            message: 'Failed to mark payment as paid. Please try again.',
+            isError: true
+          }));
+        }
+      },
+      emiDetails
+    });
   };
 
   const formatCurrency = (amount) => {
@@ -1142,6 +1195,198 @@ const EMITracker = () => {
           {error}
         </Alert>
       )}
+
+      {/* EMI Detail Dialog - shows full EMI information when a card is clicked */}
+      <Dialog
+        open={emiDetailOpen}
+        onClose={() => setEmiDetailOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedEMI ? `${selectedEMI.merchantName} — EMI Details` : 'EMI Details'}
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedEMI ? (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2">Provider</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.cardProvider} {selectedEMI.cardLastFourDigits}</Typography>
+
+                <Typography variant="subtitle2">EMI Amount</Typography>
+                <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.emiAmount)}</Typography>
+
+                <Typography variant="subtitle2">Principal</Typography>
+                <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.principalAmount)}</Typography>
+
+                <Typography variant="subtitle2">Interest Rate</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.interestRate}% p.a.</Typography>
+
+                <Typography variant="subtitle2">Repayment Type</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.repaymentType === 'ON_REQUEST' ? 'On Request (flexible)' : 'Monthly'}</Typography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2">Tenure</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.paidInstallments} paid of {selectedEMI.totalTenure}</Typography>
+
+                <Typography variant="subtitle2">Completion</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.completionPercentage}%</Typography>
+
+                <Typography variant="subtitle2">Remaining Amount</Typography>
+                <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.remainingAmount)}</Typography>
+
+                <Typography variant="subtitle2">Next Due Date</Typography>
+                <Typography variant="body1" gutterBottom>{formatDate(selectedEMI.nextDueDate)}</Typography>
+                  <Typography variant="subtitle2">EMI Start Date</Typography>
+                  <Typography variant="body1" gutterBottom>{formatDate(selectedEMI.startDate)}</Typography>
+
+              </Grid>
+
+              {selectedEMI.notes && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2">Notes</Typography>
+                  <Typography variant="body2" gutterBottom>{selectedEMI.notes}</Typography>
+                </Grid>
+              )}
+
+              {/* If backend provides transaction history or schedule, show it */}
+              {selectedEMI.schedule && selectedEMI.schedule.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" gutterBottom>Payment Schedule</Typography>
+                  <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Installment</TableCell>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Amount</TableCell>
+                          <TableCell>Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedEMI.schedule.map((s, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>{s.installmentNumber}</TableCell>
+                            <TableCell>{formatDate(s.dueDate)}</TableCell>
+                            <TableCell>{formatCurrency(s.amount)}</TableCell>
+                            <TableCell>{s.paid ? `Paid (${formatDate(s.paidDate)})` : 'Pending'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+              )}
+            </Grid>
+          ) : (
+            <Typography>No EMI selected</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEmiDetailOpen(false)}>Close</Button>
+          <Button
+            color="primary"
+            onClick={() => {
+              if (!selectedEMI) return;
+              // Open edit dialog
+              setEditEMIDialogOpen(true);
+              setEmiDetailOpen(false);
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            color="error"
+            onClick={() => {
+              if (!selectedEMI) return;
+              setDeleteConfirmOpen(true);
+              setEmiDetailOpen(false);
+            }}
+          >
+            Delete
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (!selectedEMI) return;
+              if (selectedEMI.repaymentType === 'ON_REQUEST') {
+                setConfirmationDialog({
+                  open: true,
+                  title: 'Cannot Mark as Paid',
+                  message: 'This EMI is On-Request and cannot be marked as a regular installment.',
+                  isError: true,
+                  confirmAction: () => setConfirmationDialog(prev => ({ ...prev, open: false }))
+                });
+                return;
+              }
+              const nextInstallment = (selectedEMI.paidInstallments || 0) + 1;
+              handleMarkAsPaid(
+                selectedEMI.id || selectedEMI.emiId || selectedEMI._id, 
+                nextInstallment,
+                {
+                  amount: selectedEMI.emiAmount,
+                  dueDate: selectedEMI.nextDueDate
+                }
+              );
+              setEmiDetailOpen(false);
+            }}
+          >
+            Mark Next Installment Paid
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation Dialog (used for mark-as-paid and messages) */}
+      <Dialog
+        open={confirmationDialog.open}
+        onClose={() => setConfirmationDialog(prev => ({ ...prev, open: false, isError: false, isSuccess: false }))}
+        PaperProps={{ sx: { borderRadius: 2, minWidth: { xs: '90%', sm: 400 } } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {confirmationDialog.isError ? <WarningIcon color="error" /> : confirmationDialog.isSuccess ? <CheckCircleIcon color="success" /> : <InfoIcon color="primary" />}
+          {confirmationDialog.title}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{confirmationDialog.message}</Typography>
+          {confirmationDialog.emiDetails && !confirmationDialog.isError && !confirmationDialog.isSuccess && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">Payment Details</Typography>
+              <Typography variant="body1" sx={{ mt: 1 }}>Amount: {formatCurrency(confirmationDialog.emiDetails.amount)}</Typography>
+              <Typography variant="body2" color="text.secondary">Due Date: {formatDate(confirmationDialog.emiDetails.dueDate)}</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {!confirmationDialog.isSuccess && !confirmationDialog.isError ? (
+            <>
+              <Button onClick={() => setConfirmationDialog(prev => ({ ...prev, open: false }))}>Cancel</Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  // call the action provided in state (may be async)
+                  try {
+                    const res = confirmationDialog.confirmAction && confirmationDialog.confirmAction();
+                    // if the action returns a promise, we don't await here to keep UI responsive;
+                    // the action itself will update the dialog state on success/error.
+                    return res;
+                  } catch (e) {
+                    console.error('Confirmation action error', e);
+                    setConfirmationDialog(prev => ({ ...prev, isError: true, title: 'Error', message: 'Action failed' }));
+                  }
+                }}
+                sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}
+              >
+                Confirm
+              </Button>
+            </>
+          ) : (
+            <Button variant="contained" onClick={() => setConfirmationDialog(prev => ({ ...prev, open: false, isError: false, isSuccess: false }))} color={confirmationDialog.isError ? 'error' : 'success'}>
+              OK
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
       {/* Enhanced Overview Cards */}
       {overview && (
@@ -2690,7 +2935,7 @@ const EMITracker = () => {
                                   <IconButton
                                     size="small"
                                     color="success"
-                                    onClick={() => handleMarkAsPaid(emi.emiId, emi.installmentNumber)}
+                                    onClick={() => handleMarkAsPaid(emi.emiId, emi.installmentNumber, { amount: emi.amount, dueDate: emi.dueDate, merchantName: emi.merchantName })}
                                     sx={{
                                       '&:hover': {
                                         transform: 'scale(1.1)',
@@ -2734,8 +2979,14 @@ const EMITracker = () => {
             <Grid item xs={12} md={6} lg={4} key={emi.id}>
               <Card 
                 elevation={3}
+                onClick={() => {
+                  // Open EMI detail when card is clicked
+                  setSelectedEMI(emi);
+                  setEmiDetailOpen(true);
+                }}
                 sx={{
                   transition: 'all 0.3s ease',
+                  cursor: 'pointer',
                   position: 'relative',
                   '&:hover': {
                     transform: 'scale(1.03)',
@@ -2763,7 +3014,9 @@ const EMITracker = () => {
                         <IconButton 
                           size="small" 
                           color="error"
-                          onClick={() => {
+                          onClick={(e) => {
+                            // Prevent card click from firing
+                            e.stopPropagation();
                             setSelectedEMI(emi);
                             setDeleteConfirmOpen(true);
                           }}

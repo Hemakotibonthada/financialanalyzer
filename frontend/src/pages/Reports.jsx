@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,7 +26,7 @@ ChartJS.register(
   ArcElement
 );
 
-import { API_URL as API_BASE_URL } from '../services/api';
+import api, { API_URL as API_BASE_URL } from '../services/api';
 
 const Reports = () => {
   const [loading, setLoading] = useState(true);
@@ -55,11 +54,9 @@ const Reports = () => {
         url += `months=${range.months}`;
       }
 
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      // Use shared api instance so the request interceptor attaches the
+      // correct token (from localStorage or sessionStorage) automatically.
+      const response = await api.get(url.replace(API_BASE_URL, ''));
 
       if (response.data.success) {
         setReportData(response.data.data);
@@ -90,10 +87,8 @@ const Reports = () => {
         url += `months=${dateRange.months}`;
       }
 
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
+      // Use shared api instance so auth headers are handled by interceptor.
+      const response = await api.get(url.replace(API_BASE_URL, ''), {
         responseType: 'blob'
       });
 
