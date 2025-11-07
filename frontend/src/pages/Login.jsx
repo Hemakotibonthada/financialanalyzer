@@ -6,6 +6,7 @@ import { DollarSign, Mail, Lock } from 'lucide-react';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMonth, setRememberMonth] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const result = await login(email, password);
+  const result = await login(email, password, { rememberThisMonth: rememberMonth });
       
       if (result.success) {
         // Small delay to ensure state is updated
@@ -67,6 +68,18 @@ const Login = () => {
                   placeholder="you@example.com"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center text-sm">
+                <input
+                  type="checkbox"
+                  checked={rememberMonth}
+                  onChange={(e) => setRememberMonth(e.target.checked)}
+                  className="mr-2 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <span>Save this login for the rest of the month (don't ask)</span>
+              </label>
             </div>
 
             <div>
