@@ -31,7 +31,7 @@ class AnalyticsService {
       ] = await Promise.all([
         this.getUserProfile(userId),
         this.getRecentAnalyses(userId, 10),
-        this.getMonthlyTrends(userId, 12),
+        this.getMonthlyTrends(userId, 2), // Changed from 12 to 2 months default
         this.getCategoryBreakdown(userId, 6),
         this.getSpendingPatterns(userId),
         this.getBudgetAnalysis(userId),
@@ -102,6 +102,12 @@ class AnalyticsService {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - monthsBack);
 
+    // Get profile for monthly income data
+    const profile = await FinancialProfile.findOne({ userId }).lean();
+    const monthlyIncome = profile?.monthlyIncome || 0;
+    
+    logger.info(`Monthly income from profile for user ${userId}: ${monthlyIncome}`);
+
     // Get all transactions directly from Transaction collection
     const transactions = await Transaction.find({
       userId,
@@ -111,6 +117,23 @@ class AnalyticsService {
     // Group by month
     const monthlyData = {};
     
+    // Initialize all months with profile income
+    for (let i = 0; i < monthsBack; i++) {
+      const date = new Date(endDate);
+      date.setMonth(date.getMonth() - i);
+      const month = date.toISOString().substring(0, 7); // YYYY-MM
+      
+      monthlyData[month] = {
+        month,
+        totalSpending: 0,
+        totalIncome: monthlyIncome, // Set default monthly income from profile
+        totalInvestments: 0,
+        transactionCount: 0,
+        categories: {},
+        hasTransactions: false // Track if month has any transactions
+      };
+    }
+
     transactions.forEach(transaction => {
       const month = new Date(transaction.date).toISOString().substring(0, 7); // YYYY-MM
       
@@ -118,19 +141,31 @@ class AnalyticsService {
         monthlyData[month] = {
           month,
           totalSpending: 0,
-          totalIncome: 0,
+          totalIncome: monthlyIncome, // Set default monthly income from profile
           totalInvestments: 0,
           transactionCount: 0,
-          categories: {}
+          categories: {},
+          hasTransactions: false
         };
       }
+
+      // Mark this month as having real transaction data
+      monthlyData[month].hasTransactions = true;
 
       // Investment category - count in BOTH spending and investments
       const category = transaction.category || transaction.ai_category || 'other';
       const isInvestment = category.toLowerCase() === 'investment';
 
       if (transaction.type === 'credit') {
-        monthlyData[month].totalIncome += Math.abs(transaction.amount || 0);
+        // For credits that look like salary, don't double count with profile income
+        const isSalaryCredit = transaction.category?.toLowerCase().includes('salary') ||
+                              transaction.ai_category?.toLowerCase().includes('salary') ||
+                              transaction.description?.toLowerCase().includes('salary');
+        
+        if (!isSalaryCredit) {
+          // Only add non-salary credits to income (since salary is from profile)
+          monthlyData[month].totalIncome += Math.abs(transaction.amount || 0);
+        }
       } else if (isInvestment) {
         // Investments count as both spending (money going out) and investments (asset building)
         const amount = Math.abs(transaction.amount || 0);
@@ -166,17 +201,19 @@ class AnalyticsService {
       });
     }
 
+    const validTrends = trends.filter(t => t.totalIncome > 0 || t.totalSpending > 0);
+    
     return {
-      trends,
-      currentMonth: trends[trends.length - 1],
-      previousMonth: trends[trends.length - 2],
+      trends: validTrends, // Only include months with actual data
+      currentMonth: validTrends[validTrends.length - 1] || { totalSpending: 0, totalIncome: 0, totalInvestments: 0 },
+      previousMonth: validTrends[validTrends.length - 2] || { totalSpending: 0, totalIncome: 0, totalInvestments: 0 },
       summary: {
-        totalMonths: trends.length,
-        averageSpending: trends.reduce((sum, t) => sum + t.totalSpending, 0) / trends.length,
-        averageIncome: trends.reduce((sum, t) => sum + t.totalIncome, 0) / trends.length,
-        averageInvestments: trends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0) / trends.length,
-        spendingTrend: this.calculateTrend(trends.map(t => t.totalSpending)),
-        incomeTrend: this.calculateTrend(trends.map(t => t.totalIncome))
+        totalMonths: validTrends.length,
+        averageSpending: validTrends.length > 0 ? validTrends.reduce((sum, t) => sum + (t.totalSpending || 0), 0) / validTrends.length : 0,
+        averageIncome: validTrends.length > 0 ? validTrends.reduce((sum, t) => sum + (t.totalIncome || 0), 0) / validTrends.length : 0,
+        averageInvestments: validTrends.length > 0 ? validTrends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0) / validTrends.length : 0,
+        spendingTrend: this.calculateTrend(validTrends.map(t => t.totalSpending || 0)),
+        incomeTrend: this.calculateTrend(validTrends.map(t => t.totalIncome || 0))
       }
     };
   }

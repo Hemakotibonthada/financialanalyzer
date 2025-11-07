@@ -117,7 +117,7 @@ import {
 import axios from 'axios';
 import { format, addMonths, differenceInDays } from 'date-fns';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { API_URL as API_BASE_URL } from '../services/api';
 
 // Color palette
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1'];

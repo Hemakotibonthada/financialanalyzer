@@ -55,6 +55,20 @@ const Dashboard = () => {
       setError('');
       
       const response = await api.get('/analytics/dashboard');
+      // Debug: log response shape to help diagnose empty/zero charts
+      if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.MODE === 'development')) {
+        // eslint-disable-next-line no-console
+        console.debug('[runtime] fetchDashboardData - API baseURL:', api.defaults.baseURL);
+        // eslint-disable-next-line no-console
+        console.debug('[runtime] fetchDashboardData - response keys:', Object.keys(response.data || {}));
+        // eslint-disable-next-line no-console
+        console.debug('[runtime] fetchDashboardData - dashboardData keys:', response.data?.data ? Object.keys(response.data.data) : 'no-data');
+        // log monthlyTrends length/shape if available
+        const monthly = response.data?.data?.charts?.monthlyTrends;
+        // eslint-disable-next-line no-console
+        console.debug('[runtime] fetchDashboardData - monthlyTrends type/len:', Array.isArray(monthly) ? `array(${monthly.length})` : typeof monthly, monthly && (monthly.length || Object.keys(monthly || {}).length));
+      }
+
       setDashboardData(response.data.data);
       
     } catch (error) {
@@ -539,7 +553,18 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* Monthly Trends */}
             <div className="lg:col-span-2">
-              <MonthlyTrends trendsData={dashboardData?.charts?.monthlyTrends} />
+              {(() => {
+                const rawMonthly = dashboardData?.charts?.monthlyTrends;
+                // Normalize shape: MonthlyTrends expects { trends: [...], summary: {...} }
+                let monthlyProp = rawMonthly;
+                if (Array.isArray(rawMonthly)) {
+                  monthlyProp = {
+                    trends: rawMonthly,
+                    summary: dashboardData?.summary || {}
+                  };
+                }
+                return <MonthlyTrends trendsData={monthlyProp} />;
+              })()}
             </div>
             
             {/* Category Breakdown */}

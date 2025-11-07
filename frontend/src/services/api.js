@@ -1,6 +1,35 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Compute API URL dynamically:
+// - If VITE_API_URL is provided (override), use it.
+// - Otherwise construct from the current hostname so mobile devices
+//   that load the frontend from the laptop's IP will call the laptop backend.
+const computeApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+
+  // If developer explicitly set VITE_API_URL to something other than localhost, use it
+  if (envUrl && !/localhost|127\.0\.0\.1/.test(envUrl)) {
+    return envUrl;
+  }
+
+  // If VITE_API_URL points to localhost (common dev default), prefer using
+  // the host serving the frontend when available (so mobile devices call
+  // the laptop backend IP), otherwise fall back to the env value.
+  if (typeof window !== 'undefined') {
+    const pageHost = window.location.hostname || 'localhost';
+    if (pageHost && !/localhost|127\.0\.0\.1/.test(pageHost)) {
+      return `http://${pageHost}:5001/api`;
+    }
+  }
+
+  // Fallback to env or localhost
+  return envUrl || 'http://localhost:5001/api';
+};
+
+const API_URL = computeApiUrl();
+
+// Host without the trailing /api - useful for code that expects the base host
+const API_HOST = API_URL.replace(/\/api\/?$/, '');
 
 // Create axios instance
 const api = axios.create({
@@ -104,4 +133,11 @@ export const financialService = {
   }),
 };
 
+// Debug: log computed API URL at runtime (only in development)
+if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.MODE === 'development')) {
+  // eslint-disable-next-line no-console
+  console.debug('[runtime] API_URL =', API_URL);
+}
+
+export { API_URL, API_HOST };
 export default api;

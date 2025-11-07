@@ -54,6 +54,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { API_URL } from '../services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -113,10 +114,10 @@ function NetWorthTracker() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [latestRes, historyRes, trendRes, comparisonRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/networth/latest`, { headers }).catch(() => ({ data: { data: null } })),
-        axios.get(`${import.meta.env.VITE_API_URL}/networth/history?months=12`, { headers }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${import.meta.env.VITE_API_URL}/networth/trend?period=monthly&count=12`, { headers }).catch(() => ({ data: { data: [] } })),
-        axios.get(`${import.meta.env.VITE_API_URL}/networth/comparison`, { headers }).catch(() => ({ data: { data: null } }))
+  axios.get(`${API_URL}/networth/latest`, { headers }).catch(() => ({ data: { data: null } })),
+  axios.get(`${API_URL}/networth/history?months=12`, { headers }).catch(() => ({ data: { data: [] } })),
+  axios.get(`${API_URL}/networth/trend?period=monthly&count=12`, { headers }).catch(() => ({ data: { data: [] } })),
+  axios.get(`${API_URL}/networth/comparison`, { headers }).catch(() => ({ data: { data: null } }))
       ]);
 
       setLatestSnapshot(latestRes.data.data);
@@ -134,7 +135,7 @@ function NetWorthTracker() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/networth/auto-generate`,
+        `${API_URL}/networth/auto-generate`,
         { period: 'monthly' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -149,7 +150,7 @@ function NetWorthTracker() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/networth/snapshot`,
+        `${API_URL}/networth/snapshot`,
         snapshotData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

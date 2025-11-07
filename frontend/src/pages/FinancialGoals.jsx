@@ -45,6 +45,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { API_URL } from '../services/api';
 
 const GOAL_CATEGORIES = [
   { value: 'retirement', label: 'Retirement', icon: '🏖️' },
@@ -109,8 +110,8 @@ function FinancialGoals() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [goalsRes, summaryRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/goals`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_URL}/goals/summary`, { headers })
+  axios.get(`${API_URL}/goals`, { headers }),
+  axios.get(`${API_URL}/goals/summary`, { headers })
       ]);
 
       setGoals(goalsRes.data.data || []);
@@ -129,13 +130,13 @@ function FinancialGoals() {
 
       if (editingGoal) {
         await axios.put(
-          `${import.meta.env.VITE_API_URL}/goals/${editingGoal._id}`,
+          `${API_URL}/goals/${editingGoal._id}`,
           formData,
           { headers }
         );
       } else {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/goals`,
+          `${API_URL}/goals`,
           formData,
           { headers }
         );
@@ -155,7 +156,7 @@ function FinancialGoals() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${import.meta.env.VITE_API_URL}/goals/${goalId}`, {
+      await axios.delete(`${API_URL}/goals/${goalId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();
@@ -168,7 +169,7 @@ function FinancialGoals() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/goals/${selectedGoal._id}/contribute`,
+        `${API_URL}/goals/${selectedGoal._id}/contribute`,
         contributionData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -185,7 +186,7 @@ function FinancialGoals() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/goals/${selectedGoal._id}/milestone`,
+        `${API_URL}/goals/${selectedGoal._id}/milestone`,
         milestoneData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
