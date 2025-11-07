@@ -14,7 +14,7 @@ import {
   ScatterChart, ZAxis, ComposedChart
 } from 'recharts';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { API_URL } from '../services/api';
 
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];

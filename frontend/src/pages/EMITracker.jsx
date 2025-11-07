@@ -80,7 +80,9 @@ import {
   AttachMoney as MoneyIcon
 } from '@mui/icons-material';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+import { API_URL as API_BASE } from '../services/api';
+// use API_BASE which includes the /api path, e.g. http://host:5001/api
+const API_URL = API_BASE;
 
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
@@ -284,6 +286,15 @@ const EMITracker = () => {
       setUpcomingPayments(upcomingRes.data.data);
       setChartData(chartsRes.data.data);
       setInsights(insightsRes.data.data);
+
+      // Debug: log fetched data shapes to help diagnose blank charts on remote clients
+      // eslint-disable-next-line no-console
+      console.debug('EMI fetchAllData - API_URL:', API_URL, {
+        overviewCount: overviewRes.data?.data ? Object.keys(overviewRes.data.data).length : 0,
+        upcomingMonths: upcomingRes.data?.data?.monthlyBreakdown?.length ?? 0,
+        chartsKeys: chartsRes.data?.data ? Object.keys(chartsRes.data.data) : [],
+        insightsCount: insightsRes.data?.data?.length ?? 0
+      });
     } catch (err) {
       console.error('Error fetching EMI data:', err);
       setError(err.response?.data?.message || 'Failed to fetch EMI data');
@@ -302,6 +313,10 @@ const EMITracker = () => {
       
       const response = await axios.get(`${API_URL}/emi/monthly-trends?months=${months}`, config);
       setMonthlyTrends(response.data.data);
+
+      // Debug: log monthly trends shape
+      // eslint-disable-next-line no-console
+      console.debug('EMI fetchMonthlyTrends - API_URL:', API_URL, 'months:', months, 'items:', response.data?.data?.monthlyTrends?.length ?? 0);
     } catch (err) {
       console.error('Error fetching monthly trends:', err);
       setError(err.response?.data?.message || 'Failed to fetch monthly trends');
@@ -1652,8 +1667,13 @@ const EMITracker = () => {
                     Breakdown of outstanding amounts across different card providers
                   </Typography>
                 </Box>
-                <ResponsiveContainer width="100%" height={450}>
-                  <PieChart>
+                {(!chartData || !chartData.pieChart || chartData.pieChart.length === 0) ? (
+                  <Box sx={{ p: 4 }}>
+                    <Alert severity="info">No distribution data available to render this chart. If you're on a remote device, please ensure the backend is reachable (calls should go to your laptop IP) and reload.</Alert>
+                  </Box>
+                ) : (
+                  <ResponsiveContainer width="100%" height={450}>
+                          <PieChart>
                     <Pie
                       data={chartData.pieChart}
                       cx="50%"
@@ -1684,7 +1704,8 @@ const EMITracker = () => {
                       iconType="circle"
                     />
                   </PieChart>
-                </ResponsiveContainer>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </Grid>

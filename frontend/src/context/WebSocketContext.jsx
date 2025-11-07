@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
+import api, { /* API_URL if needed */ } from '../services/api';
 
 const WebSocketContext = createContext();
 
@@ -32,14 +33,8 @@ export const WebSocketProvider = ({ children }) => {
     if (isAuthenticated && user) {
       isConnectingRef.current = true;
       
-      // Get WebSocket URL from environment or construct from API URL
-      const getWebSocketURL = () => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-        // Remove /api from the end to get base URL
-        return apiUrl.replace(/\/api$/, '');
-      };
-
-      const wsUrl = getWebSocketURL();
+      // Use the computed API_URL from services/api.js and remove /api to get WS base
+      const wsUrl = (api.defaults.baseURL || '').replace(/\/api\/?$/, '');
       console.log('🔌 Connecting to WebSocket:', wsUrl);
 
       // Initialize socket connection

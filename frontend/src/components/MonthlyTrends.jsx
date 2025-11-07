@@ -27,8 +27,17 @@ ChartJS.register(
 
 const MonthlyTrends = ({ trendsData }) => {
   const [showInvestments, setShowInvestments] = useState(true);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  // Initialize date range to last month and current month
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
+    const lastMonth = new Date(today);
+    lastMonth.setMonth(today.getMonth() - 1);
+    return lastMonth.toISOString().substring(0, 7); // YYYY-MM format
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().substring(0, 7); // YYYY-MM format
+  });
 
   if (!trendsData || !trendsData.trends || trendsData.trends.length === 0) {
     return (
@@ -41,23 +50,13 @@ const MonthlyTrends = ({ trendsData }) => {
 
   const { trends, summary } = trendsData;
 
-  // Filter trends based on date range
+  // Filter trends based on date range - always filter by date range now
   const filteredTrends = useMemo(() => {
-    if (!startDate && !endDate) return trends;
-    
     return trends.filter(trend => {
       const trendDate = new Date(trend.month + '-01');
-      const start = startDate ? new Date(startDate + '-01') : null;
-      const end = endDate ? new Date(endDate + '-01') : null;
-      
-      if (start && end) {
-        return trendDate >= start && trendDate <= end;
-      } else if (start) {
-        return trendDate >= start;
-      } else if (end) {
-        return trendDate <= end;
-      }
-      return true;
+      const start = new Date(startDate + '-01');
+      const end = new Date(endDate + '-01');
+      return trendDate >= start && trendDate <= end;
     });
   }, [trends, startDate, endDate]);
 
@@ -257,11 +256,13 @@ const MonthlyTrends = ({ trendsData }) => {
   // Calculate additional insights using filtered data
   const latestMonth = filteredTrends[filteredTrends.length - 1];
   const previousMonth = filteredTrends[filteredTrends.length - 2];
-  const monthOverMonthChange = previousMonth ? 
+  
+  // Guard against zero/undefined base values for percentage calculations
+  const monthOverMonthChange = previousMonth && previousMonth.totalSpending && previousMonth.totalSpending > 0 ? 
     ((latestMonth.totalSpending - previousMonth.totalSpending) / previousMonth.totalSpending * 100) : 0;
   
   const totalInvestments = filteredTrends.reduce((sum, t) => sum + (t.totalInvestments || 0), 0);
-  const avgSavingsRate = filteredSummary?.averageIncome > 0 ? 
+  const avgSavingsRate = filteredSummary?.averageIncome && filteredSummary.averageIncome > 0 ? 
     ((filteredSummary.averageIncome - filteredSummary.averageSpending) / filteredSummary.averageIncome * 100) : 0;
 
   // Get min and max dates for date pickers

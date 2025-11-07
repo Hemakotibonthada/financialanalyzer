@@ -110,14 +110,22 @@ function InvestmentPortfolio() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [investmentsRes, portfolioRes, maturitiesRes, allocationRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/investments`, {
+  axios.get(`${API_URL}/investments`, {
           headers,
           params: filters
         }),
-        axios.get(`${import.meta.env.VITE_API_URL}/investments/portfolio`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_URL}/investments/maturities?days=90`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_URL}/investments/analytics/allocation`, { headers })
+        axios.get(`${API_URL}/investments/portfolio`, { headers }),
+        axios.get(`${API_URL}/investments/maturities?days=90`, { headers }),
+        axios.get(`${API_URL}/investments/analytics/allocation`, { headers })
       ]);
+      
+      // Debug: log investment fetch shapes and API host
+      // eslint-disable-next-line no-console
+      console.debug('InvestmentPortfolio fetch - API_URL:', API_URL, {
+        investments: investmentsRes.data?.data?.length ?? 0,
+        portfolio: portfolioRes.data?.data ? Object.keys(portfolioRes.data.data).length : 0,
+        maturities: maturitiesRes.data?.data?.length ?? 0
+      });
 
       setInvestments(investmentsRes.data.data || []);
       setPortfolio(portfolioRes.data.data || {});
@@ -137,13 +145,13 @@ function InvestmentPortfolio() {
 
       if (editingInvestment) {
         await axios.put(
-          `${import.meta.env.VITE_API_URL}/investments/${editingInvestment._id}`,
+          `${API_URL}/investments/${editingInvestment._id}`,
           formData,
           { headers }
         );
       } else {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/investments`,
+          `${API_URL}/investments`,
           formData,
           { headers }
         );
@@ -163,7 +171,7 @@ function InvestmentPortfolio() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${import.meta.env.VITE_API_URL}/investments/${id}`, {
+  await axios.delete(`${API_URL}/investments/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();
