@@ -31,7 +31,7 @@ class AnalyticsService {
       ] = await Promise.all([
         this.getUserProfile(userId),
         this.getRecentAnalyses(userId, 10),
-        this.getMonthlyTrends(userId, 2), // Changed from 12 to 2 months default
+  this.getMonthlyTrends(userId, 12), // return last 12 months for dashboard by default
         this.getCategoryBreakdown(userId, 6),
         this.getSpendingPatterns(userId),
         this.getBudgetAnalysis(userId),
@@ -134,8 +134,23 @@ class AnalyticsService {
       };
     }
 
+    // Helper to format a Date to local YYYY-MM and YYYY-MM-DD (avoid UTC ISO shifts)
+    const formatLocalMonth = (d) => {
+      const dt = new Date(d);
+      const yyyy = dt.getFullYear();
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      return `${yyyy}-${mm}`;
+    };
+    const formatLocalDay = (d) => {
+      const dt = new Date(d);
+      const yyyy = dt.getFullYear();
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const dd = String(dt.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
     transactions.forEach(transaction => {
-      const month = new Date(transaction.date).toISOString().substring(0, 7); // YYYY-MM
+      const month = formatLocalMonth(transaction.date); // YYYY-MM
       
       if (!monthlyData[month]) {
         monthlyData[month] = {
@@ -182,14 +197,14 @@ class AnalyticsService {
         (monthlyData[month].categories[category] || 0) + 1;
     });
 
-    // Sort by month and fill gaps
-    const sortedMonths = Object.keys(monthlyData).sort();
+  // Sort by month and fill gaps
+  const sortedMonths = Object.keys(monthlyData).sort();
     const trends = [];
     
     for (let i = 0; i < monthsBack; i++) {
       const date = new Date();
       date.setMonth(date.getMonth() - (monthsBack - 1 - i));
-      const monthKey = date.toISOString().substring(0, 7);
+  const monthKey = date.toISOString().substring(0, 7);
       
       trends.push(monthlyData[monthKey] || {
         month: monthKey,
@@ -203,6 +218,66 @@ class AnalyticsService {
 
     const validTrends = trends.filter(t => t.totalIncome > 0 || t.totalSpending > 0);
     
+    // Build daily breakdown for the most recent month (endDate month) so frontend can render daily charts
+    const currentMonthKey = formatLocalMonth(endDate); // YYYY-MM
+    const dailyMap = {};
+    try {
+      const [year, month] = currentMonthKey.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      // initialize days
+      for (let d = 1; d <= lastDay; d++) {
+        const dayKey = `${currentMonthKey}-${String(d).padStart(2, '0')}`; // YYYY-MM-DD
+        dailyMap[dayKey] = {
+          date: dayKey,
+          totalSpending: 0,
+          totalIncome: 0,
+          totalInvestments: 0,
+          transactionCount: 0
+        };
+      }
+
+      // Aggregate transactions into daily map
+      transactions.forEach(transaction => {
+        const tKey = formatLocalDay(transaction.date); // YYYY-MM-DD using local date
+        if (!tKey.startsWith(currentMonthKey)) return; // only current month
+
+        if (!dailyMap[tKey]) {
+          dailyMap[tKey] = {
+            date: tKey,
+            totalSpending: 0,
+            totalIncome: 0,
+            totalInvestments: 0,
+            transactionCount: 0
+          };
+        }
+
+        const category = transaction.category || transaction.ai_category || 'other';
+        const isInvestment = category.toLowerCase() === 'investment';
+
+        if (transaction.type === 'credit') {
+          const isSalaryCredit = (transaction.category || '').toLowerCase().includes('salary') ||
+                                 (transaction.ai_category || '').toLowerCase().includes('salary') ||
+                                 (transaction.description || '').toLowerCase().includes('salary');
+          if (!isSalaryCredit) {
+            dailyMap[tKey].totalIncome += Math.abs(transaction.amount || 0);
+          }
+        } else if (isInvestment) {
+          const amount = Math.abs(transaction.amount || 0);
+          dailyMap[tKey].totalInvestments += amount;
+          dailyMap[tKey].totalSpending += amount;
+        } else {
+          dailyMap[tKey].totalSpending += Math.abs(transaction.amount || 0);
+        }
+
+          dailyMap[tKey].transactionCount += 1;
+      });
+    } catch (e) {
+      // ignore daily breakdown errors; don't fail the whole request
+      logger.warn('Failed to build daily breakdown for monthly trends:', e.message || e);
+    }
+
+    const dailyTrends = Object.keys(dailyMap).sort().map(k => dailyMap[k]);
+
     return {
       trends: validTrends, // Only include months with actual data
       currentMonth: validTrends[validTrends.length - 1] || { totalSpending: 0, totalIncome: 0, totalInvestments: 0 },
@@ -215,6 +290,9 @@ class AnalyticsService {
         spendingTrend: this.calculateTrend(validTrends.map(t => t.totalSpending || 0)),
         incomeTrend: this.calculateTrend(validTrends.map(t => t.totalIncome || 0))
       }
+      ,
+      // include daily breakdown for the latest month so frontend can render daily charts when user selects a single month
+      dailyTrends
     };
   }
 

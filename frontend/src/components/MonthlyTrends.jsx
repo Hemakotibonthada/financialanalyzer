@@ -27,12 +27,10 @@ ChartJS.register(
 
 const MonthlyTrends = ({ trendsData }) => {
   const [showInvestments, setShowInvestments] = useState(true);
-  // Initialize date range to last month and current month
+  // Initialize date range to current month only (start == end == this month)
   const [startDate, setStartDate] = useState(() => {
     const today = new Date();
-    const lastMonth = new Date(today);
-    lastMonth.setMonth(today.getMonth() - 1);
-    return lastMonth.toISOString().substring(0, 7); // YYYY-MM format
+    return today.toISOString().substring(0, 7); // YYYY-MM format
   });
   const [endDate, setEndDate] = useState(() => {
     const today = new Date();
@@ -49,16 +47,41 @@ const MonthlyTrends = ({ trendsData }) => {
   }
 
   const { trends, summary } = trendsData;
+  // Helper to parse month-like values robustly (accepts 'YYYY-MM' or 'YYYY-MM-DD')
+  const parseMonthToDate = (m) => {
+    if (!m) return new Date(NaN);
+    const s = String(m);
+    const parts = s.split('-');
+    if (parts.length >= 2) {
+      const year = parts[0];
+      const month = parts[1].padStart(2, '0');
+      return new Date(`${year}-${month}-01`);
+    }
+    return new Date(s);
+  };
 
-  // Filter trends based on date range - always filter by date range now
+  // Ensure trends are sorted by month (ascending) and normalize shape
+  const sortedTrends = useMemo(() => {
+    if (!trends || !Array.isArray(trends)) return [];
+    return [...trends].sort((a, b) => parseMonthToDate(a.month) - parseMonthToDate(b.month));
+  }, [trends]);
+
+  // Filter trends based on date range. If start/end are empty, treat them as unbounded.
   const filteredTrends = useMemo(() => {
-    return trends.filter(trend => {
-      const trendDate = new Date(trend.month + '-01');
-      const start = new Date(startDate + '-01');
-      const end = new Date(endDate + '-01');
-      return trendDate >= start && trendDate <= end;
+    if (!sortedTrends || sortedTrends.length === 0) return [];
+
+    // parse safe dates
+    const start = startDate ? parseMonthToDate(startDate) : null;
+    const end = endDate ? parseMonthToDate(endDate) : null;
+
+    return sortedTrends.filter(trend => {
+      const trendDate = parseMonthToDate(trend.month);
+      if (isNaN(trendDate)) return false;
+      if (start && trendDate < start) return false;
+      if (end && trendDate > end) return false;
+      return true;
     });
-  }, [trends, startDate, endDate]);
+  }, [sortedTrends, startDate, endDate]);
 
   // Recalculate summary for filtered data
   const filteredSummary = useMemo(() => {
@@ -148,14 +171,85 @@ const MonthlyTrends = ({ trendsData }) => {
     borderWidth: 2
   });
 
-  // Chart.js configuration
-  const chartData = {
-    labels: filteredTrends.map(trend => {
-      const date = new Date(trend.month + '-01');
-      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    }),
-    datasets: datasets
-  };
+  // If the user selected the same month (start === end), prefer daily breakdown if available
+  const sameMonthSelected = startDate && endDate && startDate === endDate;
+
+  let chartData;
+  if (sameMonthSelected && trendsData.dailyTrends && Array.isArray(trendsData.dailyTrends) && trendsData.dailyTrends.length > 0) {
+    // Build daily datasets
+    const daily = trendsData.dailyTrends;
+    // If the selected month is the current month, only show days up to today (so 'today' is the last point).
+    const selectedMonthKey = startDate; // YYYY-MM
+    const currentMonthKey = new Date().toISOString().substring(0, 7);
+    let dailyToUse = daily;
+    if (selectedMonthKey === currentMonthKey) {
+      const todayKey = new Date().toISOString().substring(0, 10); // YYYY-MM-DD
+      dailyToUse = daily.filter(d => d.date <= todayKey);
+      // Ensure at least day 1 exists; dailyTrends is initialized with zeros server-side so this is safe
+    }
+    const dailyLabels = dailyToUse.map(d => {
+      const dt = new Date(d.date);
+      return dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    });
+
+    const dailyDatasets = [
+      {
+        label: 'Income',
+        data: dailyToUse.map(d => d.totalIncome || 0),
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+        tension: 0.2,
+        fill: true,
+        borderWidth: 2
+      },
+      {
+        label: 'Spending',
+        data: dailyToUse.map(d => d.totalSpending || 0),
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.12)',
+        tension: 0.2,
+        fill: true,
+        borderWidth: 2
+      }
+    ];
+
+    if (showInvestments && dailyToUse.some(d => d.totalInvestments > 0)) {
+      dailyDatasets.push({
+        label: 'Investments',
+        data: dailyToUse.map(d => d.totalInvestments || 0),
+        borderColor: '#A855F7',
+        backgroundColor: 'rgba(168, 85, 247, 0.12)',
+        tension: 0.2,
+        fill: true,
+        borderWidth: 2
+      });
+    }
+
+    dailyDatasets.push({
+      label: 'Net Savings',
+      data: dailyToUse.map(d => (d.totalIncome || 0) - (d.totalSpending || 0) - (d.totalInvestments || 0)),
+      borderColor: '#3B82F6',
+      backgroundColor: 'transparent',
+      tension: 0.2,
+      fill: false,
+      borderDash: [5, 5],
+      borderWidth: 2
+    });
+
+    chartData = {
+      labels: dailyLabels,
+      datasets: dailyDatasets
+    };
+  } else {
+    // Chart.js configuration for monthly data
+    chartData = {
+      labels: filteredTrends.map(trend => {
+        const date = parseMonthToDate(trend.month);
+        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      }),
+      datasets: datasets
+    };
+  }
 
   const chartOptions = {
     responsive: true,
@@ -253,6 +347,19 @@ const MonthlyTrends = ({ trendsData }) => {
     }
   };
 
+  // Debug output - helps verify the filter and labels used by the chart
+  try {
+    // Only log in development (guard if NODE_ENV is available)
+    if (process && process.env && process.env.NODE_ENV !== 'production') {
+      console.debug('[MonthlyTrends] startDate:', startDate, 'endDate:', endDate);
+      console.debug('[MonthlyTrends] filteredTrends count:', filteredTrends.length);
+      console.debug('[MonthlyTrends] chart labels:', chartData.labels);
+      console.debug('[MonthlyTrends] chart datasets lengths:', chartData.datasets.map(ds => ds.data.length));
+    }
+  } catch (e) {
+    // swallow - console may not be defined in some environments
+  }
+
   // Calculate additional insights using filtered data
   const latestMonth = filteredTrends[filteredTrends.length - 1];
   const previousMonth = filteredTrends[filteredTrends.length - 2];
@@ -265,9 +372,12 @@ const MonthlyTrends = ({ trendsData }) => {
   const avgSavingsRate = filteredSummary?.averageIncome && filteredSummary.averageIncome > 0 ? 
     ((filteredSummary.averageIncome - filteredSummary.averageSpending) / filteredSummary.averageIncome * 100) : 0;
 
-  // Get min and max dates for date pickers
-  const minDate = trends.length > 0 ? trends[0].month : '';
-  const maxDate = trends.length > 0 ? trends[trends.length - 1].month : '';
+  // Get min and max dates for date pickers from sorted trends
+  const minDate = sortedTrends.length > 0 ? sortedTrends[0].month : '';
+  const maxDate = sortedTrends.length > 0 ? sortedTrends[sortedTrends.length - 1].month : '';
+
+  // Debug logs to help trace why chart may not update when dates change
+  // These will appear in browser console when the component re-renders
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -278,28 +388,81 @@ const MonthlyTrends = ({ trendsData }) => {
             <p className="text-sm text-gray-600 mt-1">Income and spending over time</p>
           </div>
           <div className="flex items-center flex-wrap gap-3">
-            {/* Date Range Filters */}
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <input
-                type="month"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                min={minDate}
-                max={endDate || maxDate}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Start"
-              />
-              <span className="text-gray-500">to</span>
-              <input
-                type="month"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || minDate}
-                max={maxDate}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="End"
-              />
+            {/* Enhanced Date Range Filters */}
+            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">Date Range:</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col">
+                  <label htmlFor="start-date" className="text-xs text-gray-600 mb-1">Start</label>
+                  <input
+                    id="start-date"
+                    type="month"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    min={minDate}
+                    max={endDate || maxDate}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors"
+                    placeholder="Start Month"
+                  />
+                </div>
+                <span className="text-gray-400 self-end mb-2">→</span>
+                <div className="flex flex-col">
+                  <label htmlFor="end-date" className="text-xs text-gray-600 mb-1">End</label>
+                  <input
+                    id="end-date"
+                    type="month"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate || minDate}
+                    max={maxDate}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors"
+                    placeholder="End Month"
+                  />
+                </div>
+              </div>
+              {/* Quick Select Buttons */}
+              <div className="flex gap-2 ml-2">
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    const lastMonth = new Date(today);
+                    lastMonth.setMonth(today.getMonth() - 1);
+                    setStartDate(lastMonth.toISOString().substring(0, 7));
+                    setEndDate(today.toISOString().substring(0, 7));
+                  }}
+                  className="px-2 py-1 text-xs font-medium text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                >
+                  Last 2 Months
+                </button>
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    const sixMonthsAgo = new Date(today);
+                    sixMonthsAgo.setMonth(today.getMonth() - 6);
+                    setStartDate(sixMonthsAgo.toISOString().substring(0, 7));
+                    setEndDate(today.toISOString().substring(0, 7));
+                  }}
+                  className="px-2 py-1 text-xs font-medium text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 rounded transition-colors"
+                >
+                  Last 6 Months
+                </button>
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    const yearAgo = new Date(today);
+                    yearAgo.setFullYear(today.getFullYear() - 1);
+                    setStartDate(yearAgo.toISOString().substring(0, 7));
+                    setEndDate(today.toISOString().substring(0, 7));
+                  }}
+                  className="px-2 py-1 text-xs font-medium text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 rounded transition-colors"
+                >
+                  Last Year
+                </button>
+              </div>
+            </div>
               {(startDate || endDate) && (
                 <button
                   onClick={() => {
@@ -311,9 +474,7 @@ const MonthlyTrends = ({ trendsData }) => {
                   Clear
                 </button>
               )}
-            </div>
-            
-            {/* Show Investments Toggle */}
+              {/* Show Investments Toggle */}
             {filteredTrends.some(t => t.totalInvestments > 0) && (
               <label className="flex items-center cursor-pointer">
                 <input
@@ -440,7 +601,7 @@ const MonthlyTrends = ({ trendsData }) => {
               <div>
                 <p className="text-sm font-medium text-gray-700">Month-over-Month Change</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Comparing {new Date(latestMonth.month).toLocaleDateString('en-US', { month: 'long' })} vs {new Date(previousMonth.month).toLocaleDateString('en-US', { month: 'long' })}
+                  Comparing {parseMonthToDate(latestMonth.month).toLocaleDateString('en-US', { month: 'long' })} vs {parseMonthToDate(previousMonth.month).toLocaleDateString('en-US', { month: 'long' })}
                 </p>
               </div>
               <div className="flex items-center space-x-6">
@@ -477,7 +638,7 @@ const MonthlyTrends = ({ trendsData }) => {
                   const bestMonth = filteredTrends.reduce((max, t) => 
                     ((t.totalIncome - t.totalSpending) > (max.totalIncome - max.totalSpending)) ? t : max
                   );
-                  return new Date(bestMonth.month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                  return parseMonthToDate(bestMonth.month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
                 })()}
               </p>
             </div>
