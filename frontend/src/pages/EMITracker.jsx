@@ -160,6 +160,7 @@ const EMITracker = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editEMIDialogOpen, setEditEMIDialogOpen] = useState(false);
   const [emiDetailOpen, setEmiDetailOpen] = useState(false);
+  const [selectedEmiChartData, setSelectedEmiChartData] = useState(null);
 
   // Upcoming Payments State
   const [upcomingMonthsToShow, setUpcomingMonthsToShow] = useState(1); // Default show next month only
@@ -956,6 +957,44 @@ const EMITracker = () => {
     });
   };
 
+  // Build chart data when an EMI is selected for details
+  useEffect(() => {
+    if (!selectedEMI) {
+      setSelectedEmiChartData(null);
+      return;
+    }
+
+    // Prefer backend schedule if available
+    const schedule = selectedEMI.schedule && selectedEMI.schedule.length ? selectedEMI.schedule : null;
+    if (schedule) {
+      // Map schedule to chart points: installment index, dueDate, amount, paid
+      const data = schedule.map(s => ({
+        name: `#${s.installmentNumber}`,
+        dueDate: s.dueDate,
+        amount: s.amount,
+        paid: !!s.paid
+      }));
+      setSelectedEmiChartData(data);
+      return;
+    }
+
+    // Fallback: synthesize by using totalTenure and emiAmount
+    const tenure = parseInt(selectedEMI.totalTenure || 0, 10);
+    const amt = parseFloat(selectedEMI.emiAmount || 0);
+    if (tenure > 0 && amt > 0) {
+      const data = Array.from({ length: tenure }).map((_, idx) => ({
+        name: `#${idx + 1}`,
+        dueDate: null,
+        amount: amt,
+        paid: idx < (selectedEMI.paidInstallments || 0)
+      }));
+      setSelectedEmiChartData(data);
+      return;
+    }
+
+    setSelectedEmiChartData(null);
+  }, [selectedEMI]);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -971,6 +1010,28 @@ const EMITracker = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  // Helper to show ordinal suffix for day numbers (e.g., 1st, 2nd)
+  const getOrdinalSuffix = (n) => {
+    const s = ["th","st","nd","rd"], v = n%100;
+    return n + (s[(v-20)%10] || s[v] || s[0]);
+  };
+
+  const estimateEndDate = (emi) => {
+    if (!emi) return null;
+    if (emi.endDate) return emi.endDate;
+    if (emi.schedule && emi.schedule.length) return emi.schedule[emi.schedule.length - 1].dueDate;
+    try {
+      const start = emi.startDate ? new Date(emi.startDate) : null;
+      const months = parseInt(emi.totalTenure || 0, 10);
+      if (!start || !months) return null;
+      const d = new Date(start);
+      d.setMonth(d.getMonth() + months - 1);
+      return d.toISOString();
+    } catch (e) {
+      return null;
+    }
   };
 
   const getSeverityColor = (severity) => {
@@ -1208,8 +1269,18 @@ const EMITracker = () => {
         </DialogTitle>
         <DialogContent dividers>
           {selectedEMI ? (
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+            <Grid container spacing={2} alignItems="flex-start">
+              {/* Left column: Start / End / Next EMI Day first, then provider info */}
+              <Grid item xs={12} md={4}>
+                <Typography variant="subtitle2">Start Date</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.startDate ? formatDate(selectedEMI.startDate) : '—'}</Typography>
+
+                <Typography variant="subtitle2">Estimated End Date</Typography>
+                <Typography variant="body1" gutterBottom>{estimateEndDate(selectedEMI) ? formatDate(estimateEndDate(selectedEMI)) : '—'}</Typography>
+
+                <Typography variant="subtitle2">Next EMI Day</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.nextDueDate ? getOrdinalSuffix(new Date(selectedEMI.nextDueDate).getDate()) : '—'}</Typography>
+
                 <Typography variant="subtitle2">Provider</Typography>
                 <Typography variant="body1" gutterBottom>{selectedEMI.cardProvider} {selectedEMI.cardLastFourDigits}</Typography>
 
@@ -1226,7 +1297,8 @@ const EMITracker = () => {
                 <Typography variant="body1" gutterBottom>{selectedEMI.repaymentType === 'ON_REQUEST' ? 'On Request (flexible)' : 'Monthly'}</Typography>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              {/* Right column: tenure, completion, remaining, next due + chart */}
+              <Grid item xs={12} md={8}>
                 <Typography variant="subtitle2">Tenure</Typography>
                 <Typography variant="body1" gutterBottom>{selectedEMI.paidInstallments} paid of {selectedEMI.totalTenure}</Typography>
 
@@ -1237,18 +1309,39 @@ const EMITracker = () => {
                 <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.remainingAmount)}</Typography>
 
                 <Typography variant="subtitle2">Next Due Date</Typography>
-                <Typography variant="body1" gutterBottom>{formatDate(selectedEMI.nextDueDate)}</Typography>
-                  <Typography variant="subtitle2">EMI Start Date</Typography>
-                  <Typography variant="body1" gutterBottom>{formatDate(selectedEMI.startDate)}</Typography>
+                <Typography variant="body1" gutterBottom>{selectedEMI.nextDueDate ? formatDate(selectedEMI.nextDueDate) : '—'}</Typography>
 
+                {selectedEMI.notes && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2">Notes</Typography>
+                    <Typography variant="body2" gutterBottom>{selectedEMI.notes}</Typography>
+                  </Box>
+                )}
+
+                {/* Show circular completion indicator instead of chart */}
+                <Box sx={{ mt: 1, height: { xs: 220, sm: 340 }, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Box sx={{ width: { xs: 120, sm: 180 }, height: { xs: 120, sm: 180 }, ml: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                    {(() => {
+                      const pct = selectedEMI.completionPercentage != null
+                        ? Math.round(selectedEMI.completionPercentage)
+                        : (selectedEMI.totalTenure ? Math.round(( (selectedEMI.paidInstallments || 0) / selectedEMI.totalTenure) * 100) : 0);
+                      return (
+                        <>
+                          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                            <CircularProgress variant="determinate" value={Math.min(Math.max(pct, 0), 100)} size={Math.min(180, Math.max(120, pct * 1))} thickness={6} sx={{ color: '#667eea' }} />
+                            <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Typography variant="h6" component="div">{pct}%</Typography>
+                            </Box>
+                          </Box>
+                          <Typography variant="caption" sx={{ mt: 1 }}>Completed</Typography>
+                        </>
+                      );
+                    })()}
+                  </Box>
+                </Box>
               </Grid>
 
-              {selectedEMI.notes && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2">Notes</Typography>
-                  <Typography variant="body2" gutterBottom>{selectedEMI.notes}</Typography>
-                </Grid>
-              )}
+              {/* notes rendered in right column above; avoid duplicate */}
 
               {/* If backend provides transaction history or schedule, show it */}
               {selectedEMI.schedule && selectedEMI.schedule.length > 0 && (
@@ -1337,51 +1430,48 @@ const EMITracker = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Confirmation Dialog (used for mark-as-paid and messages) */}
+      {/* Confirmation Dialog (used for marking EMI paid and generic confirmations) */}
       <Dialog
         open={confirmationDialog.open}
-        onClose={() => setConfirmationDialog(prev => ({ ...prev, open: false, isError: false, isSuccess: false }))}
-        PaperProps={{ sx: { borderRadius: 2, minWidth: { xs: '90%', sm: 400 } } }}
+        onClose={() => setConfirmationDialog(prev => ({ ...prev, open: false }))}
+        PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' } }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {confirmationDialog.isError ? <WarningIcon color="error" /> : confirmationDialog.isSuccess ? <CheckCircleIcon color="success" /> : <InfoIcon color="primary" />}
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: confirmationDialog.isError ? 'error.main' : confirmationDialog.isSuccess ? 'success.main' : 'text.primary' }}>
+          {confirmationDialog.isError ? <WarningIcon color="error" /> : confirmationDialog.isSuccess ? <CheckCircleIcon color="success" /> : <InfoIcon />}
           {confirmationDialog.title}
         </DialogTitle>
         <DialogContent>
           <Typography>{confirmationDialog.message}</Typography>
-          {confirmationDialog.emiDetails && !confirmationDialog.isError && !confirmationDialog.isSuccess && (
+          {confirmationDialog.emiDetails && !confirmationDialog.isSuccess && !confirmationDialog.isError && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">Payment Details</Typography>
               <Typography variant="body1" sx={{ mt: 1 }}>Amount: {formatCurrency(confirmationDialog.emiDetails.amount)}</Typography>
-              <Typography variant="body2" color="text.secondary">Due Date: {formatDate(confirmationDialog.emiDetails.dueDate)}</Typography>
+              <Typography variant="body2" color="text.secondary">Due Date: {confirmationDialog.emiDetails.dueDate ? formatDate(confirmationDialog.emiDetails.dueDate) : '—'}</Typography>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          {!confirmationDialog.isSuccess && !confirmationDialog.isError ? (
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          {(!confirmationDialog.isSuccess && !confirmationDialog.isError) ? (
             <>
               <Button onClick={() => setConfirmationDialog(prev => ({ ...prev, open: false }))}>Cancel</Button>
               <Button
                 variant="contained"
                 onClick={() => {
-                  // call the action provided in state (may be async)
-                  try {
-                    const res = confirmationDialog.confirmAction && confirmationDialog.confirmAction();
-                    // if the action returns a promise, we don't await here to keep UI responsive;
-                    // the action itself will update the dialog state on success/error.
-                    return res;
-                  } catch (e) {
-                    console.error('Confirmation action error', e);
-                    setConfirmationDialog(prev => ({ ...prev, isError: true, title: 'Error', message: 'Action failed' }));
+                  // call confirmAction if provided
+                  if (typeof confirmationDialog.confirmAction === 'function') {
+                    // Run the action and leave dialog open until it updates state
+                    confirmationDialog.confirmAction();
+                  } else {
+                    setConfirmationDialog(prev => ({ ...prev, open: false }));
                   }
                 }}
-                sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}
+                sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
               >
                 Confirm
               </Button>
             </>
           ) : (
-            <Button variant="contained" onClick={() => setConfirmationDialog(prev => ({ ...prev, open: false, isError: false, isSuccess: false }))} color={confirmationDialog.isError ? 'error' : 'success'}>
+            <Button variant="contained" color={confirmationDialog.isError ? 'error' : 'success'} onClick={() => setConfirmationDialog(prev => ({ ...prev, open: false }))}>
               OK
             </Button>
           )}
@@ -2935,7 +3025,7 @@ const EMITracker = () => {
                                   <IconButton
                                     size="small"
                                     color="success"
-                                    onClick={() => handleMarkAsPaid(emi.emiId, emi.installmentNumber, { amount: emi.amount, dueDate: emi.dueDate, merchantName: emi.merchantName })}
+                                    onClick={() => handleMarkAsPaid(emi.emiId, emi.installmentNumber)}
                                     sx={{
                                       '&:hover': {
                                         transform: 'scale(1.1)',
