@@ -17,7 +17,8 @@ import {
   ChevronRight,
   BarChart3,
   Menu,
-  X
+  X,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -69,6 +70,12 @@ const Sidebar = () => {
       icon: Wallet,
       path: '/networth',
       color: 'emerald'
+    },
+    {
+      label: 'Bill Reminders',
+      icon: Bell,
+      path: '/bill-reminders',
+      color: 'pink'
     }
   ];
 

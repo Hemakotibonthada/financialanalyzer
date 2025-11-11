@@ -32,6 +32,7 @@ const LenderDashboard = lazy(() => import('./pages/LenderDashboardEnhanced'));
 const InvestmentPortfolio = lazy(() => import('./pages/InvestmentPortfolio'));
 const FinancialGoals = lazy(() => import('./pages/FinancialGoals'));
 const NetWorthTracker = lazy(() => import('./pages/NetWorthTracker'));
+const BillReminders = lazy(() => import('./pages/BillReminders'));
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
 const ContactSupport = lazy(() => import('./pages/ContactSupport'));
 
@@ -145,6 +146,12 @@ function App() {
               <Route path="/networth" element={
                 <ProtectedRoute>
                   <NetWorthTracker />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/bill-reminders" element={
+                <ProtectedRoute>
+                  <BillReminders />
                 </ProtectedRoute>
               } />
               

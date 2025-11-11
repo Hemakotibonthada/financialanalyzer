@@ -22,8 +22,8 @@ const billReminderSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['bills', 'utilities', 'rent', 'subscription', 'insurance', 'loan', 'other'],
-    default: 'bills'
+    enum: ['electricity', 'water', 'gas', 'internet', 'mobile', 'milk', 'rent', 'subscription', 'insurance', 'loan', 'other'],
+    default: 'other'
   },
   dueDate: {
     type: Date,
@@ -32,7 +32,7 @@ const billReminderSchema = new mongoose.Schema({
   frequency: {
     type: String,
     enum: ['once', 'weekly', 'monthly', 'quarterly', 'yearly'],
-    default: 'once'
+    default: 'monthly'
   },
   reminderDays: {
     type: Number,
@@ -41,8 +41,41 @@ const billReminderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'paid', 'overdue', 'cancelled'],
+    enum: ['pending', 'awaiting_approval', 'approved', 'paid', 'overdue', 'cancelled', 'rejected'],
     default: 'pending'
+  },
+  // Auto-payment feature
+  autoPayEnabled: {
+    type: Boolean,
+    default: false
+  },
+  requiresApproval: {
+    type: Boolean,
+    default: true // User must approve before auto-payment
+  },
+  approvalStatus: {
+    type: String,
+    enum: ['not_required', 'pending', 'approved', 'rejected'],
+    default: 'not_required'
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  approvedAt: {
+    type: Date
+  },
+  approvalNote: {
+    type: String
+  },
+  // Payment provider details
+  paymentMethod: {
+    type: String,
+    enum: ['card', 'upi', 'bank_transfer', 'cash', 'cheque', 'manual'],
+    default: 'manual'
+  },
+  paymentAccountId: {
+    type: String // Reference to linked payment account
   },
   isPaid: {
     type: Boolean,
@@ -59,14 +92,60 @@ const billReminderSchema = new mongoose.Schema({
   },
   autoCreateExpense: {
     type: Boolean,
-    default: false // Automatically create expense when marked as paid
+    default: true // Automatically create expense when marked as paid
   },
   lastNotificationSent: {
     type: Date
   },
   nextDueDate: {
     type: Date // For recurring bills
-  }
+  },
+  // Payment history
+  paymentHistory: [{
+    amount: Number,
+    paidDate: Date,
+    paymentMethod: String,
+    transactionId: String,
+    notes: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Vendor details
+  vendor: {
+    name: String,
+    accountNumber: String,
+    phone: String,
+    email: String,
+    address: String
+  },
+  // Reminder settings
+  reminderSettings: {
+    emailReminder: {
+      type: Boolean,
+      default: true
+    },
+    pushNotification: {
+      type: Boolean,
+      default: true
+    },
+    smsReminder: {
+      type: Boolean,
+      default: false
+    }
+  },
+  // Tags for organization
+  tags: [String],
+  // Attachment support
+  attachments: [{
+    filename: String,
+    path: String,
+    uploadDate: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -115,6 +194,96 @@ billReminderSchema.methods.calculateNextDueDate = function() {
   }
 
   return nextDue;
+};
+
+// Method to request approval for auto-payment
+billReminderSchema.methods.requestApproval = async function(userId) {
+  if (!this.autoPayEnabled) {
+    throw new Error('Auto-payment is not enabled for this bill');
+  }
+  
+  this.approvalStatus = 'pending';
+  this.status = 'awaiting_approval';
+  await this.save();
+  
+  return this;
+};
+
+// Method to approve payment
+billReminderSchema.methods.approvePayment = async function(userId, note) {
+  if (this.approvalStatus !== 'pending') {
+    throw new Error('This bill is not awaiting approval');
+  }
+  
+  this.approvalStatus = 'approved';
+  this.approvedBy = userId;
+  this.approvedAt = new Date();
+  this.approvalNote = note;
+  this.status = 'approved';
+  await this.save();
+  
+  return this;
+};
+
+// Method to reject payment
+billReminderSchema.methods.rejectPayment = async function(userId, note) {
+  if (this.approvalStatus !== 'pending') {
+    throw new Error('This bill is not awaiting approval');
+  }
+  
+  this.approvalStatus = 'rejected';
+  this.approvedBy = userId;
+  this.approvedAt = new Date();
+  this.approvalNote = note;
+  this.status = 'rejected';
+  await this.save();
+  
+  return this;
+};
+
+// Method to mark bill as paid
+billReminderSchema.methods.markAsPaid = async function(paymentDetails) {
+  this.isPaid = true;
+  this.status = 'paid';
+  this.paidDate = paymentDetails.paidDate || new Date();
+  this.paidAmount = paymentDetails.amount || this.amount;
+  
+  // Add to payment history
+  this.paymentHistory.push({
+    amount: paymentDetails.amount || this.amount,
+    paidDate: this.paidDate,
+    paymentMethod: paymentDetails.paymentMethod || this.paymentMethod,
+    transactionId: paymentDetails.transactionId,
+    notes: paymentDetails.notes
+  });
+  
+  await this.save();
+  
+  return this;
+};
+
+// Static method to get bills due soon
+billReminderSchema.statics.getBillsDueSoon = async function(userId, days = 7) {
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + days);
+  
+  return this.find({
+    userId,
+    dueDate: { $gte: startDate, $lte: endDate },
+    status: { $in: ['pending', 'awaiting_approval'] }
+  }).sort({ dueDate: 1 });
+};
+
+// Static method to get overdue bills
+billReminderSchema.statics.getOverdueBills = async function(userId) {
+  const now = new Date();
+  
+  return this.find({
+    userId,
+    dueDate: { $lt: now },
+    status: { $in: ['pending', 'overdue', 'awaiting_approval'] }
+  }).sort({ dueDate: 1 });
 };
 
 const BillReminder = mongoose.model('BillReminder', billReminderSchema);

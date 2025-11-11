@@ -43,6 +43,12 @@ cacheService.initialize().catch(err => {
   logger.warn('Cache service initialization failed:', err.message);
 });
 
+// Initialize Bill Reminder Service
+const billReminderService = require('./services/billReminderService');
+billReminderService.initialize().catch(err => {
+  logger.warn('Bill Reminder service initialization failed:', err.message);
+});
+
 const app = express();
 
 // Security: Helmet middleware for security headers
@@ -142,6 +148,7 @@ app.use('/api/2fa', authLimiter, require('./routes/twoFactorAuthRoutes')); // 2F
 app.use('/api/health', require('./routes/healthRoutes')); // Health checks (no auth required)
 app.use('/api/export', require('./routes/exportRoutes')); // Export functionality
 app.use('/api/budgets', require('./routes/budgetRoutes')); // Budget tracking
+app.use('/api/bill-reminders', require('./routes/billReminderRoutes')); // Bill reminders & auto-payment
 app.use('/api/activity-logs', require('./routes/activityLogRoutes')); // Activity logging
 app.use('/api/search', require('./routes/searchRoutes')); // Search functionality
 app.use('/api/csv', require('./routes/csvRoutes')); // CSV import/export
