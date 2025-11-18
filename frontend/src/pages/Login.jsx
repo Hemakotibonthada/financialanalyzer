@@ -70,18 +70,6 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-sm">
-                <input
-                  type="checkbox"
-                  checked={rememberMonth}
-                  onChange={(e) => setRememberMonth(e.target.checked)}
-                  className="mr-2 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <span>Save this login for the rest of the month (don't ask)</span>
-              </label>
-            </div>
-
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -100,6 +88,19 @@ const Login = () => {
                   placeholder="••••••••"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMonth"
+                checked={rememberMonth}
+                onChange={(e) => setRememberMonth(e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="rememberMonth" className="ml-2 block text-sm text-gray-700">
+                Save this login for the rest of the month (don't ask)
+              </label>
             </div>
 
             <button

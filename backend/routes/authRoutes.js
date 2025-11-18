@@ -39,9 +39,9 @@ router.post('/register', registerValidation, async (req, res) => {
 
     await user.save();
 
-    // Generate tokens
+    // Generate tokens (default to rememberMe for new registrations so they don't get immediately logged out)
     const ipAddress = getIpAddress(req);
-    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress);
+    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress, true);
 
     logger.info(`New user registered: ${email}`);
 
@@ -76,7 +76,7 @@ router.post('/register', registerValidation, async (req, res) => {
  */
 router.post('/login', loginValidation, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     // Find user
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
@@ -119,11 +119,11 @@ router.post('/login', loginValidation, async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate tokens
+    // Generate tokens with rememberMe option
     const ipAddress = getIpAddress(req);
-    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress);
+    const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress, rememberMe);
 
-    logger.info(`User logged in: ${email}`);
+    logger.info(`User logged in: ${email}${rememberMe ? ' (remember me)' : ''}`);
 
     res.json({
       success: true,
@@ -136,7 +136,8 @@ router.post('/login', loginValidation, async (req, res) => {
           role: user.role
         },
         accessToken,
-        refreshToken
+        refreshToken,
+        rememberMe: !!rememberMe
       }
     });
   } catch (error) {

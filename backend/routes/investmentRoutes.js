@@ -496,4 +496,209 @@ router.get('/analytics/allocation', async (req, res) => {
   }
 });
 
+// === Advanced Portfolio Analytics Routes ===
+const portfolioAnalyticsService = require('../services/portfolioAnalyticsService');
+
+/**
+ * @route   GET /api/investments/analytics/comprehensive
+ * @desc    Get comprehensive portfolio analysis
+ * @access  Private
+ */
+router.get('/analytics/comprehensive', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis
+    });
+  } catch (error) {
+    logger.error('Portfolio analysis error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze portfolio',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/metrics
+ * @desc    Get portfolio metrics
+ * @access  Private
+ */
+router.get('/analytics/metrics', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.metrics
+    });
+  } catch (error) {
+    logger.error('Portfolio metrics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch portfolio metrics',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/risk
+ * @desc    Get portfolio risk analysis
+ * @access  Private
+ */
+router.get('/analytics/risk', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.risk
+    });
+  } catch (error) {
+    logger.error('Portfolio risk analysis error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze portfolio risk',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/diversification
+ * @desc    Get portfolio diversification analysis
+ * @access  Private
+ */
+router.get('/analytics/diversification', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.diversification
+    });
+  } catch (error) {
+    logger.error('Portfolio diversification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze diversification',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/performance
+ * @desc    Get portfolio performance analysis
+ * @access  Private
+ */
+router.get('/analytics/performance', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.performance
+    });
+  } catch (error) {
+    logger.error('Portfolio performance error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze performance',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/tax-efficiency
+ * @desc    Get portfolio tax efficiency analysis
+ * @access  Private
+ */
+router.get('/analytics/tax-efficiency', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.taxEfficiency
+    });
+  } catch (error) {
+    logger.error('Tax efficiency analysis error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze tax efficiency',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/recommendations
+ * @desc    Get portfolio optimization recommendations
+ * @access  Private
+ */
+router.get('/analytics/recommendations', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.recommendations
+    });
+  } catch (error) {
+    logger.error('Portfolio recommendations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate recommendations',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   POST /api/investments/analytics/optimize
+ * @desc    Get portfolio optimization plan
+ * @access  Private
+ */
+router.post('/analytics/optimize', async (req, res) => {
+  try {
+    const { riskTolerance } = req.body;
+    const optimization = await portfolioAnalyticsService.optimizePortfolio(
+      req.user._id,
+      riskTolerance || 'moderate'
+    );
+    res.json({
+      success: true,
+      data: optimization
+    });
+  } catch (error) {
+    logger.error('Portfolio optimization error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to optimize portfolio',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route   GET /api/investments/analytics/health-score
+ * @desc    Get portfolio health score
+ * @access  Private
+ */
+router.get('/analytics/health-score', async (req, res) => {
+  try {
+    const analysis = await portfolioAnalyticsService.analyzePortfolio(req.user._id);
+    res.json({
+      success: true,
+      data: analysis.healthScore
+    });
+  } catch (error) {
+    logger.error('Portfolio health score error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate health score',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

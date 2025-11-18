@@ -18,7 +18,16 @@ import {
   BarChart3,
   Menu,
   X,
-  Bell
+  Bell,
+  Brain,
+  Calculator,
+  Building2,
+  Briefcase,
+  TrendingUp,
+  FileText,
+  Activity,
+  TrendingDown,
+  Receipt
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -76,10 +85,88 @@ const Sidebar = () => {
       icon: Bell,
       path: '/bill-reminders',
       color: 'pink'
+    },
+    {
+      label: 'Company Expenses',
+      icon: Receipt,
+      path: '/company-expenses',
+      color: 'amber'
+    },
+    {
+      label: 'Financial Health',
+      icon: Activity,
+      path: '/financial-health',
+      color: 'teal'
+    },
+    {
+      label: 'Spending Insights',
+      icon: TrendingDown,
+      path: '/spending-insights',
+      color: 'rose'
+    },
+    {
+      label: 'Debt Management',
+      icon: Target,
+      path: '/debt-management',
+      color: 'red'
+    },
+    {
+      label: 'Portfolio Analytics',
+      icon: BarChart3,
+      path: '/portfolio-analytics',
+      color: 'indigo'
+    },
+    {
+      label: 'AI & ML Insights',
+      icon: Brain,
+      path: '/ml-dashboard',
+      color: 'purple'
+    },
+    {
+      label: 'Tax Planner',
+      icon: Calculator,
+      path: '/tax-planner',
+      color: 'red'
+    },
+    {
+      label: 'Insurance',
+      icon: Shield,
+      path: '/insurance',
+      color: 'blue'
+    },
+    {
+      label: 'Retirement',
+      icon: TrendingUp,
+      path: '/retirement',
+      color: 'green'
+    },
+    {
+      label: 'Real Estate',
+      icon: Building2,
+      path: '/real-estate',
+      color: 'orange'
+    },
+    {
+      label: 'Business',
+      icon: Briefcase,
+      path: '/business',
+      color: 'indigo'
+    },
+    {
+      label: 'Notifications',
+      icon: Bell,
+      path: '/notifications',
+      color: 'yellow'
     }
   ];
 
   const advancedItems = [
+    {
+      label: 'Advanced Search',
+      icon: Search,
+      path: '/advanced-search',
+      color: 'cyan'
+    },
     {
       label: 'Lender Dashboard',
       icon: DollarSign,
@@ -119,7 +206,9 @@ const Sidebar = () => {
       orange: active ? 'bg-orange-100 text-orange-700' : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600',
       emerald: active ? 'bg-emerald-100 text-emerald-700' : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-600',
       purple: active ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600',
-      red: active ? 'bg-red-100 text-red-700' : 'text-gray-700 hover:bg-red-50 hover:text-red-600'
+      red: active ? 'bg-red-100 text-red-700' : 'text-gray-700 hover:bg-red-50 hover:text-red-600',
+      pink: active ? 'bg-pink-100 text-pink-700' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600',
+      cyan: active ? 'bg-cyan-100 text-cyan-700' : 'text-gray-700 hover:bg-cyan-50 hover:text-cyan-600'
     };
     return colors[color] || colors.gray;
   };
@@ -241,9 +330,10 @@ const Sidebar = () => {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-20 left-4 z-50 p-3 bg-white rounded-lg shadow-lg hover:shadow-xl transition-all"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg hover:shadow-xl transition-all border border-gray-200"
+        aria-label="Open menu"
       >
-        <Menu className="w-6 h-6 text-gray-700" />
+        <Menu className="w-5 h-5 text-gray-700" />
       </button>
 
       {/* Mobile Overlay */}
@@ -265,7 +355,7 @@ const Sidebar = () => {
 
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col fixed top-16 left-0 bottom-0 bg-white border-r border-gray-200 shadow-lg z-30 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 bg-white border-r border-gray-200 shadow-lg z-30 transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-72'
         }`}
       >

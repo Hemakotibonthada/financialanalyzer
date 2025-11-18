@@ -171,6 +171,11 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/investments', require('./routes/investmentRoutes')); // Investment portfolio tracking
 app.use('/api/goals', require('./routes/goalRoutes')); // Financial goals management
 app.use('/api/networth', require('./routes/netWorthRoutes')); // Net worth tracking
+app.use('/api/insights', require('./routes/insights')); // Financial insights & behavior analysis
+app.use('/api/banking', require('./routes/banking')); // Banking integration
+app.use('/api/currency', require('./routes/currency')); // Currency conversion
+app.use('/api/security', require('./routes/security')); // Security features
+app.use('/api/company-expenses', require('./routes/companyExpenseRoutes')); // Company expenses tracking
 
 // 404 handler
 app.use((req, res) => {

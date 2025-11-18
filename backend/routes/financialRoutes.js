@@ -16,6 +16,8 @@ const cibilService = require('../services/cibilService');
 const websocketService = require('../services/websocketService');
 const currencyService = require('../services/currencyService');
 const TransactionFilterService = require('../services/transactionFilterService');
+const { getUserDocumentPassword } = require('../utils/documentPasswordGenerator');
+const User = require('../models/User');
 const logger = require('../utils/logger');
 const fs = require('fs').promises;
 const path = require('path');
@@ -996,6 +998,9 @@ router.get('/monthly-trends-report/export/pdf', authenticate, async (req, res) =
 
     logger.info(`Exporting Monthly Trends PDF for user: ${userId}`);
 
+    // Generate password from user info
+    const password = await getUserDocumentPassword(userId, User, FinancialProfile);
+
     // Calculate date range
     let dateFilter = { userId };
     if (startDate || endDate) {
@@ -1176,6 +1181,10 @@ router.get('/monthly-trends-report/export/pdf', authenticate, async (req, res) =
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Monthly_Trends_Report_${Date.now()}.pdf`);
+    res.setHeader('X-Document-Password', password);
+    
+    // Note: PDFKit doesn't support native password protection
+    // The password is sent via header for user information
 
     doc.pipe(res);
 

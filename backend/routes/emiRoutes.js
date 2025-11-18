@@ -14,6 +14,7 @@ const logger = require('../utils/logger');
 const CreditCardStatementService = require('../services/creditCardStatementService');
 const EMIExtractionService = require('../services/emiExtractionService');
 const EMIAnalyticsService = require('../services/emiAnalyticsService');
+const { getUserDocumentPassword } = require('../utils/documentPasswordGenerator');
 
 // Initialize services
 const emiExtractionService = new EMIExtractionService();
@@ -539,8 +540,21 @@ router.get('/monthly-trends/export', authenticate, async (req, res) => {
     
     // Export based on format
     if (format === 'excel') {
+      // Generate document password
+      const password = await getUserDocumentPassword(userId, User, FinancialProfile);
+      
       // Create Excel workbook
       const workbook = new ExcelJS.Workbook();
+      
+      // Add workbook protection
+      workbook.model = {
+        ...workbook.model,
+        workbookProtection: {
+          lockStructure: true,
+          password: password
+        }
+      };
+      
       const worksheet = workbook.addWorksheet('Monthly Trends');
       
       // Add title
@@ -751,6 +765,7 @@ router.get('/monthly-trends/export', authenticate, async (req, res) => {
       // Set response headers
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=monthly-trends-${Date.now()}.xlsx`);
+      res.setHeader('X-Document-Password', password); // Send password in header for client info
       
       // Write to response
       await workbook.xlsx.write(res);

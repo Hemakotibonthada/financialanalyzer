@@ -36,6 +36,21 @@ const BillReminders = lazy(() => import('./pages/BillReminders'));
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
 const ContactSupport = lazy(() => import('./pages/ContactSupport'));
 
+// New feature components
+const MLDashboard = lazy(() => import('./components/ml/MLDashboard'));
+const TaxPlanner = lazy(() => import('./components/tax/TaxPlanner'));
+const InsuranceDashboard = lazy(() => import('./components/insurance/InsuranceDashboard'));
+const RetirementPlanner = lazy(() => import('./components/retirement/RetirementPlanner'));
+const RealEstateDashboard = lazy(() => import('./components/realEstate/RealEstateDashboard'));
+const BusinessDashboard = lazy(() => import('./components/business/BusinessDashboard'));
+const NotificationCenter = lazy(() => import('./components/notifications/NotificationCenter'));
+const AdvancedSearch = lazy(() => import('./components/search/AdvancedSearch'));
+const FinancialHealthDashboard = lazy(() => import('./pages/FinancialHealthDashboard'));
+const SpendingInsights = lazy(() => import('./pages/SpendingInsights'));
+const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboard'));
+const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
+const CompanyExpensesDashboard = lazy(() => import('./pages/CompanyExpensesDashboard'));
+
 // Loading component
 const LoadingFallback = () => (
   <Box
@@ -155,6 +170,12 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              <Route path="/company-expenses" element={
+                <ProtectedRoute>
+                  <CompanyExpensesDashboard />
+                </ProtectedRoute>
+              } />
+              
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <AdminDashboard />
@@ -188,6 +209,79 @@ function App() {
               <Route path="/docs" element={
                 <ProtectedRoute>
                   <HelpCenter />
+                </ProtectedRoute>
+              } />
+              
+              {/* New Feature Routes */}
+              <Route path="/ml-dashboard" element={
+                <ProtectedRoute>
+                  <MLDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/tax-planner" element={
+                <ProtectedRoute>
+                  <TaxPlanner />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/insurance" element={
+                <ProtectedRoute>
+                  <InsuranceDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/retirement" element={
+                <ProtectedRoute>
+                  <RetirementPlanner />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/real-estate" element={
+                <ProtectedRoute>
+                  <RealEstateDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/business" element={
+                <ProtectedRoute>
+                  <BusinessDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <NotificationCenter />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/advanced-search" element={
+                <ProtectedRoute>
+                  <AdvancedSearch />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/financial-health" element={
+                <ProtectedRoute>
+                  <FinancialHealthDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/spending-insights" element={
+                <ProtectedRoute>
+                  <SpendingInsights />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/debt-management" element={
+                <ProtectedRoute>
+                  <DebtManagementDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/portfolio-analytics" element={
+                <ProtectedRoute>
+                  <PortfolioAnalyticsDashboard />
                 </ProtectedRoute>
               } />
               

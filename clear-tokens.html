@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Authentication Tokens</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+        }
+        
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #f57c00;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .details {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .details strong {
+            color: #333;
+        }
+        
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        .icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🔐</div>
+        <h1>Clear Authentication Tokens</h1>
+        
+        <div id="status" class="status info">
+            Click the button below to clear all authentication tokens and login data.
+        </div>
+        
+        <button onclick="clearTokens()" id="clearBtn">
+            🗑️ Clear All Tokens
+        </button>
+        
+        <button onclick="goToLogin()" id="loginBtn" style="display: none; background: #4caf50;">
+            ✅ Go to Login Page
+        </button>
+        
+        <div class="details">
+            <strong>📋 What will be cleared:</strong>
+            <ul>
+                <li>Authentication tokens (localStorage & sessionStorage)</li>
+                <li>Token expiry data</li>
+                <li>User data</li>
+            </ul>
+            <br>
+            <strong>ℹ️ Why is this needed?</strong>
+            <p>The JWT secret was updated in the backend. All existing tokens were created with the old secret and are now invalid. You need to log in again to get a new valid token.</p>
+        </div>
+    </div>
+    
+    <script>
+        function clearTokens() {
+            const btn = document.getElementById('clearBtn');
+            const status = document.getElementById('status');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            btn.disabled = true;
+            btn.textContent = '🔄 Clearing...';
+            
+            setTimeout(() => {
+                try {
+                    // Clear localStorage
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('token_expiry');
+                    localStorage.removeItem('user');
+                    
+                    // Clear sessionStorage
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
+                    
+                    // Update status
+                    status.className = 'status success';
+                    status.innerHTML = `
+                        <strong>✅ Success!</strong><br>
+                        All tokens have been cleared. You can now log in again to get a fresh token.
+                    `;
+                    
+                    // Hide clear button, show login button
+                    btn.style.display = 'none';
+                    loginBtn.style.display = 'block';
+                    
+                    console.log('✅ Tokens cleared successfully');
+                } catch (error) {
+                    status.className = 'status warning';
+                    status.innerHTML = `
+                        <strong>⚠️ Warning</strong><br>
+                        ${error.message}
+                    `;
+                    btn.disabled = false;
+                    btn.textContent = '🗑️ Clear All Tokens';
+                }
+            }, 500);
+        }
+        
+        function goToLogin() {
+            // Try to redirect to login page
+            const possibleUrls = [
+                'http://localhost:3001/login',
+                'http://localhost:3000/login',
+                window.location.origin + '/login'
+            ];
+            
+            // Try the first URL
+            window.location.href = possibleUrls[0];
+        }
+        
+        // Check if tokens exist on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const hasLocalToken = localStorage.getItem('token');
+            const hasSessionToken = sessionStorage.getItem('token');
+            
+            if (!hasLocalToken && !hasSessionToken) {
+                const status = document.getElementById('status');
+                status.className = 'status success';
+                status.innerHTML = `
+                    <strong>✅ Already Clean</strong><br>
+                    No tokens found. You're ready to log in!
+                `;
+                
+                document.getElementById('clearBtn').style.display = 'none';
+                document.getElementById('loginBtn').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

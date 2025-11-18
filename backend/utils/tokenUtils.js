@@ -3,13 +3,19 @@ const crypto = require('crypto');
 const RefreshToken = require('../models/RefreshToken');
 
 /**
- * Generate access token (short-lived: 15 minutes)
+ * Generate access token with configurable expiry
+ * @param {string} userId - User ID
+ * @param {boolean} rememberMe - If true, token lasts for 30 days, else 7 days (default active user token)
  */
-const generateAccessToken = (userId) => {
+const generateAccessToken = (userId, rememberMe = false) => {
+  // For active users, give them long-lived tokens so they don't get logged out
+  // rememberMe: 30 days, regular: 7 days (plenty for active session)
+  const expiresIn = rememberMe ? '30d' : '7d';
+  
   return jwt.sign(
     { id: userId },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn }
   );
 };
 
@@ -35,9 +41,12 @@ const generateRefreshToken = async (userId, ipAddress) => {
 
 /**
  * Generate both access and refresh tokens
+ * @param {string} userId - User ID
+ * @param {string} ipAddress - IP address for audit trail
+ * @param {boolean} rememberMe - If true, generate longer-lived tokens
  */
-const generateTokens = async (userId, ipAddress) => {
-  const accessToken = generateAccessToken(userId);
+const generateTokens = async (userId, ipAddress, rememberMe = false) => {
+  const accessToken = generateAccessToken(userId, rememberMe);
   const refreshToken = await generateRefreshToken(userId, ipAddress);
   
   return {

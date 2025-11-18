@@ -462,6 +462,20 @@ router.post('/:id/mark-paid', authenticate, async (req, res) => {
     
     // Create expense transaction if enabled
     if (bill.autoCreateExpense) {
+      // Map bill payment method to valid transaction payment method
+      // BillReminder uses: 'card', 'upi', 'bank_transfer', 'cash', 'cheque', 'manual'
+      // Transaction uses: 'cash', 'card', 'upi', 'bank_transfer', 'wallet', 'net_banking', 'cheque', 'imps', 'neft', 'rtgs', 'other'
+      const paymentMethodMap = {
+        'manual': 'other',
+        'card': 'card',
+        'upi': 'upi',
+        'bank_transfer': 'bank_transfer',
+        'cash': 'cash',
+        'cheque': 'cheque'
+      };
+      
+      const transactionPaymentMethod = paymentMethodMap[paymentDetails.paymentMethod] || 'other';
+
       const transaction = new Transaction({
         userId: req.user._id,
         date: paymentDetails.paidDate,
@@ -469,10 +483,10 @@ router.post('/:id/mark-paid', authenticate, async (req, res) => {
         amount: paymentDetails.amount,
         type: 'debit',
         category: bill.category,
-        paymentMethod: paymentDetails.paymentMethod,
-        source: 'bill_reminder',
+        paymentMethod: transactionPaymentMethod,
+        source: 'manual', // Use 'manual' instead of 'bill_reminder'
         merchantName: bill.vendor?.name,
-        notes: `Bill payment: ${bill.title}`,
+        notes: `Bill payment: ${bill.title}${paymentDetails.notes ? ' - ' + paymentDetails.notes : ''}`,
         referenceNumber: transactionId
       });
       

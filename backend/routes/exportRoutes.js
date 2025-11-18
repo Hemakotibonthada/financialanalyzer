@@ -3,6 +3,9 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const exportService = require('../services/exportService');
 const logger = require('../utils/logger');
+const { getUserDocumentPassword } = require('../utils/documentPasswordGenerator');
+const User = require('../models/User');
+const FinancialProfile = require('../models/FinancialProfile');
 
 /**
  * @route   POST /api/export/transactions/excel
@@ -20,17 +23,22 @@ router.post('/transactions/excel', authenticate, async (req, res) => {
       });
     }
 
+    // Generate password from user info
+    const password = await getUserDocumentPassword(req.user._id, User, FinancialProfile);
+
     const buffer = await exportService.exportTransactionsToExcel(
       req.user._id,
       new Date(startDate),
       new Date(endDate),
-      filters
+      filters,
+      password
     );
 
     // Set headers for file download
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=transactions_${Date.now()}.xlsx`);
     res.setHeader('Content-Length', buffer.length);
+    res.setHeader('X-Document-Password', password);
 
     res.send(buffer);
   } catch (error) {
@@ -50,12 +58,16 @@ router.post('/transactions/excel', authenticate, async (req, res) => {
  */
 router.get('/emi/excel', authenticate, async (req, res) => {
   try {
-    const buffer = await exportService.exportEMIScheduleToExcel(req.user._id);
+    // Generate password from user info
+    const password = await getUserDocumentPassword(req.user._id, User, FinancialProfile);
+    
+    const buffer = await exportService.exportEMIScheduleToExcel(req.user._id, password);
 
     // Set headers for file download
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=emi_schedule_${Date.now()}.xlsx`);
     res.setHeader('Content-Length', buffer.length);
+    res.setHeader('X-Document-Password', password);
 
     res.send(buffer);
   } catch (error) {
@@ -75,12 +87,16 @@ router.get('/emi/excel', authenticate, async (req, res) => {
  */
 router.get('/cibil/excel', authenticate, async (req, res) => {
   try {
-    const buffer = await exportService.exportCIBILReportToExcel(req.user._id);
+    // Generate password from user info
+    const password = await getUserDocumentPassword(req.user._id, User, FinancialProfile);
+    
+    const buffer = await exportService.exportCIBILReportToExcel(req.user._id, password);
 
     // Set headers for file download
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=cibil_report_${Date.now()}.xlsx`);
     res.setHeader('Content-Length', buffer.length);
+    res.setHeader('X-Document-Password', password);
 
     res.send(buffer);
   } catch (error) {

@@ -4,9 +4,9 @@ import {
   Bell, Plus, Check, X, Clock, AlertCircle, Calendar, 
   DollarSign, Filter, Search, Edit, Trash2, Eye, 
   CheckCircle, XCircle, AlertTriangle, Zap, TrendingUp,
-  CreditCard, Smartphone, Building, Droplet, Lightbulb, Wifi, Phone, Shield
+  CreditCard, Smartphone, Building, Droplet, Lightbulb, Wifi, Phone, Shield, RefreshCw
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 
@@ -174,33 +174,43 @@ const BillReminders = () => {
     bill.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Sidebar />
-      
-      <div className="flex-1 p-8 ml-0 lg:ml-72">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Bill Reminders & Auto-Pay
-              </h1>
-              <p className="text-gray-600 mt-2">Automate your monthly bills with smart reminders</p>
-            </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Add Bill
-            </button>
+  // Header actions for MainLayout
+  const headerActions = (
+    <button
+      onClick={() => setShowAddModal(true)}
+      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+    >
+      <Plus className="w-5 h-5" />
+      Add Bill
+    </button>
+  );
+
+  if (loading) {
+    return (
+      <MainLayout
+        title="Bill Reminders & Auto-Pay"
+        subtitle="Automate your monthly bills with smart reminders"
+        headerActions={headerActions}
+      >
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading bill reminders...</p>
           </div>
         </div>
+      </MainLayout>
+    );
+  }
 
-        {/* Dashboard Stats */}
-        {dashboard && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  return (
+    <MainLayout
+      title="Bill Reminders & Auto-Pay"
+      subtitle="Automate your monthly bills with smart reminders"
+      headerActions={headerActions}
+    >
+      {/* Dashboard Stats */}
+      {dashboard && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <StatCard
               title="Due Soon"
               value={dashboard.billsDueSoon.length}
@@ -238,7 +248,7 @@ const BillReminders = () => {
         )}
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
               {['all', 'pending', 'awaiting_approval', 'approved', 'paid', 'overdue'].map((f) => (
@@ -366,8 +376,7 @@ const BillReminders = () => {
             getStatusBadge={getStatusBadge}
           />
         )}
-      </div>
-    </div>
+    </MainLayout>
   );
 };
 

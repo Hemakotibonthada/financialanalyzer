@@ -46,6 +46,17 @@ const emiSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  currency: {
+    type: String,
+    default: 'INR',
+    enum: ['USD', 'INR']
+  },
+  principalAmountInINR: {
+    type: Number,
+    required: true,
+    min: 0,
+    index: true
+  },
   interestRate: {
     type: Number,
     required: true,
@@ -58,9 +69,25 @@ const emiSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  processingFeeInINR: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   emiAmount: {
     type: Number,
     required: true,
+    min: 0
+  },
+  emiAmountInINR: {
+    type: Number,
+    required: true,
+    min: 0,
+    index: true
+  },
+  exchangeRate: {
+    type: Number,
+    default: 1,
     min: 0
   },
   

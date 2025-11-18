@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
 /**
  * Export transactions to Excel
  */
-const exportTransactionsToExcel = async (userId, startDate, endDate, filters = {}) => {
+const exportTransactionsToExcel = async (userId, startDate, endDate, filters = {}, password = null) => {
   try {
     // Build query
     const query = {
@@ -96,6 +96,14 @@ const exportTransactionsToExcel = async (userId, startDate, endDate, filters = {
       worksheet.getRow(i).font = { bold: true };
     }
 
+    // Add password protection if provided
+    if (password) {
+      workbook.model.workbookProtection = {
+        lockStructure: true,
+        password: password
+      };
+    }
+
     // Return buffer
     return await workbook.xlsx.writeBuffer();
   } catch (error) {
@@ -107,7 +115,7 @@ const exportTransactionsToExcel = async (userId, startDate, endDate, filters = {
 /**
  * Export EMI schedule to Excel
  */
-const exportEMIScheduleToExcel = async (userId) => {
+const exportEMIScheduleToExcel = async (userId, password = null) => {
   try {
     // Fetch all active EMIs
     const emis = await EMI.find({ userId, status: { $ne: 'CLOSED' } })
@@ -214,6 +222,14 @@ const exportEMIScheduleToExcel = async (userId) => {
       }
     }
 
+    // Add password protection if provided
+    if (password) {
+      workbook.model.workbookProtection = {
+        lockStructure: true,
+        password: password
+      };
+    }
+
     return await workbook.xlsx.writeBuffer();
   } catch (error) {
     logger.error('Export EMI schedule to Excel error:', error);
@@ -224,7 +240,7 @@ const exportEMIScheduleToExcel = async (userId) => {
 /**
  * Export CIBIL report to Excel
  */
-const exportCIBILReportToExcel = async (userId) => {
+const exportCIBILReportToExcel = async (userId, password = null) => {
   try {
     const profile = await FinancialProfile.findOne({ userId }).lean();
     
@@ -285,6 +301,14 @@ const exportCIBILReportToExcel = async (userId) => {
           history.accounts || 0
         ]);
       });
+    }
+
+    // Add password protection if provided
+    if (password) {
+      workbook.model.workbookProtection = {
+        lockStructure: true,
+        password: password
+      };
     }
 
     return await workbook.xlsx.writeBuffer();

@@ -22,6 +22,22 @@ const loanGivenSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  currency: {
+    type: String,
+    default: 'INR',
+    enum: ['USD', 'INR']
+  },
+  amountInINR: {
+    type: Number,
+    required: true,
+    min: 0,
+    index: true
+  },
+  exchangeRate: {
+    type: Number,
+    default: 1,
+    min: 0
+  },
   loanDate: {
     type: Date,
     required: true,
@@ -48,6 +64,20 @@ const loanGivenSchema = new mongoose.Schema({
       required: true,
       min: 0
     },
+    currency: {
+      type: String,
+      default: 'INR',
+      enum: ['USD', 'INR']
+    },
+    amountInINR: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    exchangeRate: {
+      type: Number,
+      default: 1
+    },
     date: {
       type: Date,
       required: true,
@@ -65,9 +95,19 @@ const loanGivenSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  totalRepaidInINR: {
+    type: Number,
+    default: 0,
+    index: true
+  },
   remainingAmount: {
     type: Number,
     default: 0
+  },
+  remainingAmountInINR: {
+    type: Number,
+    default: 0,
+    index: true
   },
   contactDetails: {
     phone: String,
