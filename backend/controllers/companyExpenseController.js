@@ -329,6 +329,88 @@ exports.deleteAttachment = async (req, res) => {
 };
 
 /**
+ * @desc    Get consolidated analytics
+ * @route   GET /api/company-expenses/analytics
+ * @access  Private
+ */
+exports.getAnalytics = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 1));
+    const end = endDate ? new Date(endDate) : new Date();
+
+    // Build query
+    const query = {
+      userId: req.user._id,
+      expenseDate: { $gte: start, $lte: end }
+    };
+
+    // Get all expenses in date range
+    const expenses = await CompanyExpense.find(query);
+
+    // Calculate totals
+    const totalAmount = expenses.reduce((sum, exp) => sum + (exp.amountInINR || 0), 0);
+    const paidAmount = expenses
+      .filter(exp => exp.paymentStatus === 'Paid')
+      .reduce((sum, exp) => sum + (exp.amountInINR || 0), 0);
+    const pendingAmount = expenses
+      .filter(exp => exp.paymentStatus === 'Pending')
+      .reduce((sum, exp) => sum + (exp.amountInINR || 0), 0);
+    const expenseCount = expenses.length;
+
+    // Category breakdown
+    const categoryMap = {};
+    expenses.forEach(exp => {
+      const cat = exp.category || 'Uncategorized';
+      if (!categoryMap[cat]) {
+        categoryMap[cat] = 0;
+      }
+      categoryMap[cat] += exp.amountInINR || 0;
+    });
+
+    const categoryData = Object.entries(categoryMap).map(([category, amount]) => ({
+      _id: category,
+      totalAmount: amount,
+      count: expenses.filter(e => (e.category || 'Uncategorized') === category).length
+    }));
+
+    // Department breakdown
+    const departmentMap = {};
+    expenses.forEach(exp => {
+      const dept = exp.department || 'General';
+      if (!departmentMap[dept]) {
+        departmentMap[dept] = 0;
+      }
+      departmentMap[dept] += exp.amountInINR || 0;
+    });
+
+    const departmentData = Object.entries(departmentMap).map(([department, amount]) => ({
+      _id: department,
+      totalAmount: amount,
+      count: expenses.filter(e => (e.department || 'General') === department).length
+    }));
+
+    res.json({
+      success: true,
+      totalAmount,
+      paidAmount,
+      pendingAmount,
+      expenseCount,
+      categoryData,
+      departmentData,
+      startDate: start,
+      endDate: end
+    });
+  } catch (error) {
+    logger.error('Error fetching analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch analytics'
+    });
+  }
+};
+
+/**
  * @desc    Get dashboard summary
  * @route   GET /api/company-expenses/dashboard/summary
  * @access  Private

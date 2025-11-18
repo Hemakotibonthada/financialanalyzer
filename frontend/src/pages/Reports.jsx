@@ -27,6 +27,7 @@ ChartJS.register(
 );
 
 import api, { API_URL as API_BASE_URL } from '../services/api';
+import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const Reports = () => {
   const [loading, setLoading] = useState(true);
@@ -92,20 +93,17 @@ const Reports = () => {
         responseType: 'blob'
       });
 
-      // Create download link
+      // Get password from response headers and download with notification
+      const password = extractPasswordFromResponse(response);
+      const filename = `Monthly_Trends_Report_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`;
+      
       const blob = new Blob([response.data], {
         type: format === 'pdf' ? 'application/pdf' :
               format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
               'text/csv'
       });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `Monthly_Trends_Report_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
+      
+      downloadFileWithPassword(blob, filename, password);
     } catch (error) {
       console.error(`Error exporting ${format}:`, error);
       alert(`Failed to export ${format.toUpperCase()} report`);

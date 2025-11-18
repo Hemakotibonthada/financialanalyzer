@@ -17,6 +17,7 @@ import {
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import ExpenseFormModal from '../components/ExpenseFormModal';
+import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const CompanyExpensesDashboard = () => {
   const [expenses, setExpenses] = useState([]);
@@ -96,23 +97,11 @@ const CompanyExpensesDashboard = () => {
       });
 
       // Get password from response headers
-      const password = response.headers['x-document-password'];
+      const password = extractPasswordFromResponse(response);
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `company-expenses-${Date.now()}.${format === 'pdf' ? 'pdf' : 'xlsx'}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      // Show password notification
-      if (password) {
-        toast.info(`Document Password: ${password}`, {
-          autoClose: 10000,
-          position: 'top-center'
-        });
-      }
+      // Download file with password notification
+      const filename = `company-expenses-${Date.now()}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      downloadFileWithPassword(new Blob([response.data]), filename, password);
       
       toast.success(`Report exported as ${format.toUpperCase()}`);
     } catch (error) {

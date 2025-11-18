@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import EMIMonthlyTrends from '../components/EMIMonthlyTrends';
+import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 import {
   Box,
   Container,
@@ -349,23 +350,15 @@ const EMITracker = () => {
         responseType: 'blob'
       });
       
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      
+      // Get password from response headers and download with notification
+      const password = extractPasswordFromResponse(response);
       const fileExtension = format === 'pdf' ? 'pdf' : 'xlsx';
       const fileName = `Monthly_Trends_${trendsMonths}months_${new Date().toISOString().slice(0, 10)}.${fileExtension}`;
-      link.setAttribute('download', fileName);
       
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadFileWithPassword(new Blob([response.data]), fileName, password);
       
       // Show success message
       setError(null);
-      alert(`Monthly Trends report exported successfully as ${format.toUpperCase()}!`);
     } catch (err) {
       console.error('Error exporting monthly trends:', err);
       setError(err.response?.data?.message || 'Failed to export monthly trends');
@@ -647,6 +640,9 @@ const EMITracker = () => {
         endDate: exportDateRange.endDate
       });
       
+      let password = null;
+      let filename = '';
+      
       if (exportFormat === 'pdf') {
         // Generate PDF report
         const response = await axios.get(`${API_URL}/emi/export/pdf?${params}`, {
@@ -654,15 +650,10 @@ const EMITracker = () => {
           responseType: 'blob'
         });
         
-        // Create download link
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `EMI_Report_${exportDateRange.startDate}_to_${exportDateRange.endDate}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        password = extractPasswordFromResponse(response);
+        filename = `EMI_Report_${exportDateRange.startDate}_to_${exportDateRange.endDate}.pdf`;
+        downloadFileWithPassword(new Blob([response.data]), filename, password);
+        
       } else if (exportFormat === 'excel') {
         // Generate Excel report
         const response = await axios.get(`${API_URL}/emi/export/excel?${params}`, {
@@ -670,14 +661,10 @@ const EMITracker = () => {
           responseType: 'blob'
         });
         
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `EMI_Report_${exportDateRange.startDate}_to_${exportDateRange.endDate}.xlsx`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        password = extractPasswordFromResponse(response);
+        filename = `EMI_Report_${exportDateRange.startDate}_to_${exportDateRange.endDate}.xlsx`;
+        downloadFileWithPassword(new Blob([response.data]), filename, password);
+        
       } else if (exportFormat === 'csv') {
         // Generate CSV report
         const response = await axios.get(`${API_URL}/emi/export/csv?${params}`, {
@@ -685,10 +672,11 @@ const EMITracker = () => {
           responseType: 'blob'
         });
         
+        filename = `EMI_Report_${exportDateRange.startDate}_to_${exportDateRange.endDate}.csv`;
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `EMI_Report_${exportDateRange.startDate}_to_${exportDateRange.endDate}.csv`);
+        link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -696,7 +684,6 @@ const EMITracker = () => {
       }
       
       setExportDialogOpen(false);
-      // Show success message
       alert('Report exported successfully!');
     } catch (err) {
       console.error('Error exporting report:', err);

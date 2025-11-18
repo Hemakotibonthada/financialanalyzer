@@ -55,6 +55,13 @@ router.use(authenticate);
 router.get('/dashboard/summary', companyExpenseController.getDashboardSummary);
 
 /**
+ * @route   GET /api/company-expenses/analytics
+ * @desc    Get consolidated analytics data
+ * @access  Private
+ */
+router.get('/analytics', companyExpenseController.getAnalytics);
+
+/**
  * @route   GET /api/company-expenses/analytics/by-category
  * @desc    Get expenses grouped by category
  * @access  Private

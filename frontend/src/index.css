@@ -150,3 +150,34 @@ code {
 .animate-scale-in {
   animation: scale-in 0.3s ease-out;
 }
+
+/* Document password toast styles */
+.document-password-toast {
+  min-width: 400px !important;
+  max-width: 500px !important;
+}
+
+.document-password-toast .Toastify__toast-body {
+  padding: 0;
+}
+
+.document-password-body {
+  padding: 16px;
+}
+
+.document-password-toast .select-all {
+  cursor: pointer;
+  user-select: all;
+  transition: all 0.2s ease;
+}
+
+.document-password-toast .select-all:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.document-password-toast .Toastify__progress-bar {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+}
+
