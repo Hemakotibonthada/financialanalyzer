@@ -8,14 +8,16 @@ import { theme } from '../theme';
 import DashboardScreen from '../screens/Dashboard/DashboardScreen';
 import EMITrackerScreen from '../screens/EMI/EMITrackerScreen';
 import BillRemindersScreen from '../screens/BillReminders/BillRemindersScreen';
-import InvestmentsScreen from '../screens/Investments/InvestmentsScreen';
+import CompanyExpensesScreen from '../screens/CompanyExpenses/CompanyExpensesScreen';
+import LenderDashboardScreen from '../screens/Lender/LenderDashboardScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 
 // Stack Navigators
 const DashboardStack = createNativeStackNavigator();
 const EMIStack = createNativeStackNavigator();
 const BillStack = createNativeStackNavigator();
-const InvestmentStack = createNativeStackNavigator();
+const ExpenseStack = createNativeStackNavigator();
+const LenderStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 
 const Tab = createBottomTabNavigator();
@@ -54,14 +56,25 @@ const BillStackScreen = () => (
 );
 
 // Investment Stack
-const InvestmentStackScreen = () => (
-  <InvestmentStack.Navigator>
-    <InvestmentStack.Screen 
-      name="InvestmentHome" 
-      component={InvestmentsScreen}
-      options={{ title: 'Investments' }}
+const ExpenseStackScreen = () => (
+  <ExpenseStack.Navigator>
+    <ExpenseStack.Screen 
+      name="ExpenseHome" 
+      component={CompanyExpensesScreen}
+      options={{ title: 'Company Expenses' }}
     />
-  </InvestmentStack.Navigator>
+  </ExpenseStack.Navigator>
+);
+
+// Lender Stack
+const LenderStackScreen = () => (
+  <LenderStack.Navigator>
+    <LenderStack.Screen 
+      name="LenderHome" 
+      component={LenderDashboardScreen}
+      options={{ title: 'Loans Given' }}
+    />
+  </LenderStack.Navigator>
 );
 
 // Profile Stack
@@ -125,11 +138,21 @@ const BottomTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Investments"
-        component={InvestmentStackScreen}
+        name="Expenses"
+        component={ExpenseStackScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="chart-line" size={size} color={color} />
+            <Icon name="wallet-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Lender"
+        component={LenderStackScreen}
+        options={{
+          tabBarLabel: 'Loans',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="hand-coin-outline" size={size} color={color} />
           ),
         }}
       />
