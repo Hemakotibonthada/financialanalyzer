@@ -92,8 +92,9 @@ const BudgetTracker = ({ budgetData }) => {
           <h4 className="text-sm font-medium text-gray-900 mb-3">Category Breakdown</h4>
           
           <div className="space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          {budgetData.categories?.map((category, index) => {
-            const StatusIcon = getStatusIcon(category.status);
+          {budgetData.categories && Array.isArray(budgetData.categories) && budgetData.categories.map((category, index) => {
+            if (!category) return null;
+            const StatusIcon = getStatusIcon(category.status || 'good');
             
             return (
               <div key={index} className="space-y-2">
@@ -104,18 +105,18 @@ const BudgetTracker = ({ budgetData }) => {
                       category.status === 'warning' ? 'text-yellow-500' :
                       category.status === 'critical' ? 'text-orange-500' : 'text-red-500'
                     }`} />
-                    <span className="text-sm font-medium text-gray-900">{category.category}</span>
+                    <span className="text-sm font-medium text-gray-900">{category.category || 'Unknown'}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-medium">
-                      ${category.spent?.toFixed(2)} / ${category.budget?.toFixed(2)}
+                      ${(category.spent || 0).toFixed(2)} / ${(category.budget || 0).toFixed(2)}
                     </span>
                     <span className={`ml-2 text-xs ${
                       category.status === 'good' ? 'text-green-600' :
                       category.status === 'warning' ? 'text-yellow-600' :
                       category.status === 'critical' ? 'text-orange-600' : 'text-red-600'
                     }`}>
-                      {category.percentUsed}%
+                      {(category.percentUsed || 0).toFixed(0)}%
                     </span>
                   </div>
                 </div>
@@ -127,7 +128,7 @@ const BudgetTracker = ({ budgetData }) => {
                       category.status === 'warning' ? 'bg-yellow-500' :
                       category.status === 'critical' ? 'bg-orange-500' : 'bg-red-500'
                     }`}
-                    style={{ width: `${Math.min(category.percentUsed, 100)}%` }}
+                    style={{ width: `${Math.min(category.percentUsed || 0, 100)}%` }}
                   ></div>
                 </div>
               </div>

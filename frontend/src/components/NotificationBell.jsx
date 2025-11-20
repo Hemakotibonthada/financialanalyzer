@@ -84,16 +84,31 @@ const NotificationBell = () => {
       });
 
       if (response.data.success) {
-        const newNotifications = response.data.data.notifications;
+        // Handle both response formats: data.data.notifications OR data.data (array)
+        const newNotifications = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : (response.data.data?.notifications || []);
+        
         if (pageNum === 1) {
           setNotifications(newNotifications);
         } else {
           setNotifications(prev => [...prev, ...newNotifications]);
         }
-        setHasMore(response.data.data.pagination.hasMore);
+        
+        // Check if pagination info exists
+        const hasMoreData = response.data.data?.pagination?.hasMore !== undefined 
+          ? response.data.data.pagination.hasMore 
+          : newNotifications.length >= 10;
+        
+        setHasMore(hasMoreData);
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
+      // Set empty array on error to prevent undefined access
+      if (pageNum === 1) {
+        setNotifications([]);
+      }
+      setHasMore(false);
     } finally {
       setLoading(false);
     }

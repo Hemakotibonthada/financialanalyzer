@@ -15,6 +15,7 @@ import FinancialHealth from '../components/FinancialHealth';
 import RecommendationsPanel from '../components/RecommendationsPanel';
 import CreditScoreCard from '../components/CreditScoreCard';
 import QuickExpenseEntry from '../components/QuickExpenseEntry';
+import QuickIncomeEntry from '../components/QuickIncomeEntry';
 import NewFeaturesShowcase from '../components/NewFeaturesShowcase';
 
 const Dashboard = () => {
@@ -236,13 +237,22 @@ const Dashboard = () => {
         <div className="lg:col-span-2">
           {(() => {
             const rawMonthly = dashboardData?.charts?.monthlyTrends;
+            // monthlyTrends can be: { trends: [...], summary: {...} } or just an array
             let monthlyProp = rawMonthly;
             if (Array.isArray(rawMonthly)) {
+              // Legacy format: wrap array in expected structure
               monthlyProp = {
                 trends: rawMonthly,
                 summary: dashboardData?.summary || {}
               };
+            } else if (rawMonthly && !rawMonthly.trends && !Array.isArray(rawMonthly)) {
+              // Edge case: object without trends property
+              monthlyProp = {
+                trends: [],
+                summary: rawMonthly
+              };
             }
+            // Otherwise, monthlyProp is already { trends, summary } or null/undefined
             return <MonthlyTrends trendsData={monthlyProp} />;
           })()}
         </div>
@@ -328,8 +338,9 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Quick Expense Entry - Floating Button */}
+      {/* Quick Entry Components */}
       <QuickExpenseEntry onExpenseAdded={fetchDashboardData} />
+      <QuickIncomeEntry onIncomeAdded={fetchDashboardData} />
     </MainLayout>
   );
 };

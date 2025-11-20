@@ -31,6 +31,17 @@ export const WebSocketProvider = ({ children }) => {
     }
 
     if (isAuthenticated && user) {
+      // Skip WebSocket for Firebase deployments (not needed for client-side operations)
+      const isFirebaseHosting = typeof window !== 'undefined' && 
+                                 (window.location.hostname.includes('firebaseapp.com') || 
+                                  window.location.hostname.includes('web.app'));
+      
+      if (isFirebaseHosting) {
+        console.log('🔌 WebSocket skipped for Firebase Hosting deployment');
+        setIsConnected(false);
+        return;
+      }
+      
       isConnectingRef.current = true;
       
       // Use the computed API_URL from services/api.js and remove /api to get WS base

@@ -102,29 +102,30 @@ const FinancialHealth = ({ healthData }) => {
         <div className="space-y-4 mb-6">
           <h4 className="text-sm font-medium text-gray-900">Health Factors</h4>
           
-          {factors?.map((factor, index) => {
-            const FactorIcon = getFactorIcon(factor.score);
+          {factors && Array.isArray(factors) && factors.map((factor, index) => {
+            if (!factor) return null;
+            const FactorIcon = getFactorIcon(factor.score || 0);
             const maxScore = 25; // Assuming each factor is out of 25
-            const percentage = (factor.score / maxScore) * 100;
+            const percentage = ((factor.score || 0) / maxScore) * 100;
             
             return (
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <FactorIcon className={`w-4 h-4 mr-2 ${getFactorColor(factor.score)}`} />
-                    <span className="text-sm font-medium text-gray-900">{factor.factor}</span>
+                    <FactorIcon className={`w-4 h-4 mr-2 ${getFactorColor(factor.score || 0)}`} />
+                    <span className="text-sm font-medium text-gray-900">{factor.factor || 'Unknown'}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-medium">{factor.score}/25</span>
+                    <span className="text-sm font-medium">{factor.score || 0}/25</span>
                   </div>
                 </div>
                 
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      factor.score >= 20 ? 'bg-green-500' :
-                      factor.score >= 15 ? 'bg-yellow-500' :
-                      factor.score >= 10 ? 'bg-orange-500' : 'bg-red-500'
+                      (factor.score || 0) >= 20 ? 'bg-green-500' :
+                      (factor.score || 0) >= 15 ? 'bg-yellow-500' :
+                      (factor.score || 0) >= 10 ? 'bg-orange-500' : 'bg-red-500'
                     }`}
                     style={{ width: `${percentage}%` }}
                   ></div>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Analyzer - Welcome</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .left-panel {
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 42px;
+            color: #1a202c;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #718096;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 40px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover {
+            background: #f7fafc;
+            transform: translateX(5px);
+        }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 18px;
+        }
+
+        .feature-text {
+            font-size: 16px;
+            color: #2d3748;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f7fafc;
+            transform: translateY(-2px);
+        }
+
+        .right-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .right-panel::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+
+        .right-panel::after {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .features-showcase {
+            margin-top: 40px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .features-showcase h3 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .feature-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .pill {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+
+        .pill:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .right-panel {
+                padding: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="logo">💰</div>
+            <h1>
+                Welcome to<br>
+                <span class="gradient-text">Financial Analyzer</span>
+            </h1>
+            <p class="subtitle">
+                Your all-in-one platform to manage finances, track expenses, 
+                and achieve financial goals with AI-powered insights.
+            </p>
+
+            <ul class="feature-list">
+                <li class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <span class="feature-text">Real-time analytics and insights</span>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">🤖</div>
+                    <span class="feature-text">AI-powered financial recommendations</span>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">🔒</div>
+                    <span class="feature-text">Bank-level security and encryption</span>
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">☁️</div>
+                    <span class="feature-text">Cloud sync across all devices</span>
+                </li>
+            </ul>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openApp()">
+                    <span>🚀</span>
+                    <span>Launch App</span>
+                </button>
+                <button class="btn btn-secondary" onclick="viewFeatures()">
+                    <span>📖</span>
+                    <span>Learn More</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">50K+</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">₹500Cr+</div>
+                    <div class="stat-label">Money Tracked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1M+</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4.9★</div>
+                    <div class="stat-label">User Rating</div>
+                </div>
+            </div>
+
+            <div class="features-showcase">
+                <h3>Everything You Need</h3>
+                <div class="feature-pills">
+                    <div class="pill">Budget Tracking</div>
+                    <div class="pill">EMI Management</div>
+                    <div class="pill">Bill Reminders</div>
+                    <div class="pill">Tax Planning</div>
+                    <div class="pill">Investment Portfolio</div>
+                    <div class="pill">Real Estate</div>
+                    <div class="pill">Insurance</div>
+                    <div class="pill">Retirement Planning</div>
+                    <div class="pill">Business Management</div>
+                    <div class="pill">Advanced Analytics</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        function openApp() {
+            document.getElementById('loading').classList.add('active');
+            
+            // Notify Electron to close this window and open main app
+            if (window.electron && window.electron.launchMainApp) {
+                window.electron.launchMainApp();
+            }
+            
+            setTimeout(() => {
+                document.getElementById('loading').classList.remove('active');
+            }, 1000);
+        }
+
+        function viewFeatures() {
+            if (window.electron && window.electron.openExternal) {
+                window.electron.openExternal('https://github.com/yourusername/financial-analyzer#features');
+            }
+        }
+
+        // Add keyboard shortcut (Enter to launch)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                openApp();
+            }
+        });
+
+        // Auto-launch after 3 seconds (optional)
+        // setTimeout(openApp, 3000);
+    </script>
+</body>
+</html>

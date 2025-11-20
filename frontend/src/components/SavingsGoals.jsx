@@ -57,11 +57,13 @@ const SavingsGoals = ({ savingsData }) => {
 
         {/* Individual Goals */}
         <div className="space-y-4 mb-6">
-          {goals?.slice(0, 4).map((goal, index) => (
+          {goals && Array.isArray(goals) && goals.slice(0, 4).map((goal, index) => {
+            if (!goal) return null;
+            return (
             <div key={index} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  {goal.progressPercentage >= 100 ? (
+                  {(goal.progressPercentage || 0) >= 100 ? (
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                   ) : goal.onTrack === false ? (
                     <Clock className="w-4 h-4 text-red-500 mr-2" />
@@ -72,10 +74,10 @@ const SavingsGoals = ({ savingsData }) => {
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-medium">
-                    ₹{goal.currentAmount?.toLocaleString('en-IN', { minimumFractionDigits: 0 }) || '0'}
+                    ₹{(goal.currentAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                   </span>
                   <span className="text-xs text-gray-500 ml-1">
-                    / ₹{goal.targetAmount?.toLocaleString('en-IN', { minimumFractionDigits: 0 }) || '0'}
+                    / ₹{(goal.targetAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
               </div>
@@ -83,7 +85,7 @@ const SavingsGoals = ({ savingsData }) => {
               <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-500 ${
-                    goal.progressPercentage >= 100 ? 'bg-green-500' :
+                    (goal.progressPercentage || 0) >= 100 ? 'bg-green-500' :
                     goal.onTrack === false ? 'bg-red-500' : 'bg-blue-500'
                   }`}
                   style={{ width: `${Math.min(goal.progressPercentage || 0, 100)}%` }}
@@ -123,7 +125,8 @@ const SavingsGoals = ({ savingsData }) => {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Savings Stats */}

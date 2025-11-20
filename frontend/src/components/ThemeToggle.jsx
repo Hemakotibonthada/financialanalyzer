@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
-import { Brightness4, Brightness7 } from '@mui/icons-material';
+import { Brightness4, Brightness7, Brightness2 } from '@mui/icons-material';
 import { useTheme } from '../context/ThemeContext';
 
 const ThemeToggle = ({ sx = {} }) => {
@@ -16,17 +16,39 @@ const ThemeToggle = ({ sx = {} }) => {
     return () => window.removeEventListener('toggleTheme', handleToggleTheme);
   }, [toggleTheme]);
 
+  const getThemeIcon = () => {
+    if (mode === 'light') return <Brightness7 />;
+    if (mode === 'dark') return <Brightness4 />;
+    return <Brightness2 />; // Moon icon for black theme
+  };
+
+  const getThemeLabel = () => {
+    if (mode === 'light') return 'Light';
+    if (mode === 'dark') return 'Dark';
+    return 'Black';
+  };
+
+  const getNextTheme = () => {
+    if (mode === 'light') return 'Dark';
+    if (mode === 'dark') return 'Black';
+    return 'Light';
+  };
+
   return (
-    <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode (Ctrl+Shift+L)`}>
+    <Tooltip title={`Current: ${getThemeLabel()} → Switch to ${getNextTheme()} (Ctrl+Shift+L)`}>
       <IconButton
         onClick={toggleTheme}
         color="inherit"
         sx={{
           ...sx,
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'scale(1.1)',
+          },
         }}
         aria-label="toggle theme"
       >
-        {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
+        {getThemeIcon()}
       </IconButton>
     </Tooltip>
   );

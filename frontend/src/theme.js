@@ -99,6 +99,118 @@ export const lightTheme = createTheme({
   },
 });
 
+// Black theme colors (OLED-friendly pure black)
+export const blackTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#3b82f6',
+      light: '#60a5fa',
+      dark: '#2563eb',
+      contrastText: '#fff',
+    },
+    secondary: {
+      main: '#a78bfa',
+      light: '#c4b5fd',
+      dark: '#7c3aed',
+      contrastText: '#fff',
+    },
+    success: {
+      main: '#10b981',
+      light: '#34d399',
+      dark: '#059669',
+    },
+    error: {
+      main: '#ef4444',
+      light: '#f87171',
+      dark: '#dc2626',
+    },
+    warning: {
+      main: '#f59e0b',
+      light: '#fbbf24',
+      dark: '#d97706',
+    },
+    info: {
+      main: '#06b6d4',
+      light: '#22d3ee',
+      dark: '#0891b2',
+    },
+    background: {
+      default: '#000000',
+      paper: '#0a0a0a',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#a3a3a3',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontSize: '2.5rem',
+      fontWeight: 500,
+    },
+    h2: {
+      fontSize: '2rem',
+      fontWeight: 500,
+    },
+    h3: {
+      fontSize: '1.75rem',
+      fontWeight: 500,
+    },
+    h4: {
+      fontSize: '1.5rem',
+      fontWeight: 500,
+    },
+    h5: {
+      fontSize: '1.25rem',
+      fontWeight: 500,
+    },
+    h6: {
+      fontSize: '1rem',
+      fontWeight: 500,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
+          backgroundImage: 'none',
+          border: '1px solid rgba(255,255,255,0.05)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          backgroundImage: 'none',
+          border: '1px solid rgba(255,255,255,0.05)',
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          backgroundColor: '#000000',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        },
+      },
+    },
+  },
+});
+
 // Dark theme colors
 export const darkTheme = createTheme({
   palette: {

@@ -1,5 +1,8 @@
 /* Import mobile enhancements */
 @import './styles/mobile-enhancements.css';
+@import './styles/mobile-responsive.css';
+@import './styles/profile-mobile.css';
+@import './styles/dashboard-mobile.css';
 
 @tailwind base;
 @tailwind components;
@@ -18,6 +21,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
+  transition: background-color 0.3s ease;
+}
+
+/* Dark mode body styles */
+.dark body {
+  background-color: #000000;
+  color: #ffffff;
 }
 
 code {
@@ -35,13 +45,25 @@ code {
   background: #f1f1f1;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 4px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #404040;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #606060;
 }
 
 /* Scrollbar utilities for specific elements */

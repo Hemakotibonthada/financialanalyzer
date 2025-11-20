@@ -400,7 +400,7 @@ const EMITracker = () => {
       
       if (selectedLoanGiven) {
         // Update existing loan
-        await axios.put(`${API_URL}/loans-given/${selectedLoanGiven._id}`, loanGivenFormData, config);
+        await axios.put(`${API_URL}/loans-given/${selectedLoanGiven.id}`, loanGivenFormData, config);
         alert('Loan updated successfully!');
       } else {
         // Create new loan
@@ -439,7 +439,7 @@ const EMITracker = () => {
         headers: { Authorization: `Bearer ${token}` }
       };
       
-      await axios.post(`${API_URL}/loans-given/${selectedLoanGiven._id}/repayment`, repaymentData, config);
+      await axios.post(`${API_URL}/loans-given/${selectedLoanGiven.id}/repayment`, repaymentData, config);
       alert('Repayment added successfully!');
       
       setRepaymentDialogOpen(false);
@@ -510,8 +510,8 @@ const EMITracker = () => {
         axios.get(`${API_URL}/personal-loans/summary`, config)
       ]);
       
-      setPersonalLoans(loansRes.data.loans || []);
-      setPersonalLoansSummary(summaryRes.data.summary || null);
+      setPersonalLoans(loansRes.data.data || []);
+      setPersonalLoansSummary(summaryRes.data.data || null);
     } catch (err) {
       console.error('Error fetching personal loans:', err);
       setError(err.response?.data?.message || 'Failed to fetch personal loans');
@@ -530,7 +530,7 @@ const EMITracker = () => {
       
       if (selectedPersonalLoan) {
         // Update existing loan
-        await axios.put(`${API_URL}/personal-loans/${selectedPersonalLoan._id}`, personalLoanFormData, config);
+        await axios.put(`${API_URL}/personal-loans/${selectedPersonalLoan.id}`, personalLoanFormData, config);
         alert('Personal loan updated successfully!');
       } else {
         // Create new loan
@@ -574,7 +574,7 @@ const EMITracker = () => {
       };
       
       await axios.post(
-        `${API_URL}/personal-loans/${selectedPersonalLoan._id}/repayment`, 
+        `${API_URL}/personal-loans/${selectedPersonalLoan.id}/repayment`, 
         { amount: parseFloat(personalLoanRepaymentData.amount) },
         config
       );
@@ -1519,7 +1519,7 @@ const EMITracker = () => {
                         textShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}
                     >
-                      {overview.overview.totalActiveEMIs}
+                      {overview?.totalActiveEMIs || 0}
                     </Typography>
                   </Box>
                   <Box 
@@ -1537,7 +1537,7 @@ const EMITracker = () => {
                 <Box display="flex" alignItems="center" gap={1}>
                   <CheckCircleIcon sx={{ fontSize: 16, opacity: 0.8 }} />
                   <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
-                    {overview.overview.totalCompletedEMIs} completed
+                    {overview?.totalCompletedEMIs || 0} completed
                   </Typography>
                 </Box>
               </CardContent>
@@ -1596,7 +1596,7 @@ const EMITracker = () => {
                         textShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}
                     >
-                      {formatCurrency(overview.overview.totalOutstanding + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0))}
+                      {formatCurrency((overview?.totalOutstanding || 0) + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0))}
                     </Typography>
                   </Box>
                   <Box 
@@ -1619,7 +1619,7 @@ const EMITracker = () => {
                 </Box>
                 {personalLoansSummary && personalLoansSummary.totalOutstanding > 0 && (
                   <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: 400, mt: 0.5, display: 'block' }}>
-                    (EMI: {formatCurrency(overview.overview.totalOutstanding)} + Personal Loans: {formatCurrency(personalLoansSummary.totalOutstanding)})
+                    (EMI: {formatCurrency(overview?.totalOutstanding || 0)} + Personal Loans: {formatCurrency(personalLoansSummary.totalOutstanding)})
                   </Typography>
                 )}
               </CardContent>
@@ -1678,7 +1678,7 @@ const EMITracker = () => {
                         textShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}
                     >
-                      {formatCurrency(overview.overview.monthlyBurden)}
+                      {formatCurrency(overview?.totalMonthlyPayment || 0)}
                     </Typography>
                   </Box>
                   <Box 
@@ -1755,7 +1755,7 @@ const EMITracker = () => {
                         textShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}
                     >
-                      {formatCurrency(overview.overview.totalAmountPaid)}
+                      {formatCurrency(overview?.totalPaid || 0)}
                     </Typography>
                   </Box>
                   <Box 
@@ -1876,6 +1876,9 @@ const EMITracker = () => {
         <Tabs 
           value={activeTab} 
           onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             px: 2,
             '& .MuiTabs-indicator': {
@@ -1888,6 +1891,8 @@ const EMITracker = () => {
               fontSize: '1rem',
               textTransform: 'none',
               minHeight: 64,
+              minWidth: 'auto',
+              px: 3,
               transition: 'all 0.3s ease',
               '&:hover': {
                 color: '#667eea',
@@ -1897,6 +1902,13 @@ const EMITracker = () => {
             '& .Mui-selected': {
               fontWeight: 700,
               background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)'
+            },
+            '& .MuiTabs-scrollButtons': {
+              width: 48,
+              color: '#667eea',
+              '&.Mui-disabled': {
+                opacity: 0.3
+              }
             }
           }}
         >
@@ -3347,7 +3359,7 @@ const EMITracker = () => {
                 <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Lent</Typography>
-                    <Typography variant="h4">₹{loansGivenSummary.totalLent.toLocaleString()}</Typography>
+                    <Typography variant="h4">₹{(loansGivenSummary.totalLent || 0).toLocaleString()}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -3355,7 +3367,7 @@ const EMITracker = () => {
                 <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Outstanding</Typography>
-                    <Typography variant="h4">₹{loansGivenSummary.totalOutstanding.toLocaleString()}</Typography>
+                    <Typography variant="h4">₹{(loansGivenSummary.totalOutstanding || 0).toLocaleString()}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -3363,7 +3375,7 @@ const EMITracker = () => {
                 <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Repaid</Typography>
-                    <Typography variant="h4">₹{loansGivenSummary.totalRepaid.toLocaleString()}</Typography>
+                    <Typography variant="h4">₹{(loansGivenSummary.totalReceived || 0).toLocaleString()}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -3371,7 +3383,7 @@ const EMITracker = () => {
                 <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Active Loans</Typography>
-                    <Typography variant="h4">{loansGivenSummary.activeLoansCount}</Typography>
+                    <Typography variant="h4">{loansGivenSummary.activeLoanCount || 0}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -3423,7 +3435,7 @@ const EMITracker = () => {
           ) : (
             <Grid container spacing={3}>
               {loansGiven.map((loan) => (
-                <Grid item xs={12} md={6} lg={4} key={loan._id}>
+                <Grid item xs={12} md={6} lg={4} key={loan.id}>
                   <Card elevation={3} sx={{ '&:hover': { boxShadow: 6 } }}>
                     <CardContent>
                       <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
@@ -3443,7 +3455,7 @@ const EMITracker = () => {
                       </Box>
 
                       <Typography variant="h4" color="primary" gutterBottom>
-                        ₹{loan.amount.toLocaleString()}
+                        ₹{(loan.amount || 0).toLocaleString()}
                       </Typography>
 
                       {loan.totalRepaid > 0 && (
@@ -3464,7 +3476,7 @@ const EMITracker = () => {
 
                       <Box mt={2}>
                         <Typography variant="body2" color="text.secondary">
-                          Outstanding: ₹{loan.remainingAmount.toLocaleString()}
+                          Outstanding: ₹{(loan.remainingAmount || 0).toLocaleString()}
                         </Typography>
                         {loan.expectedRepaymentDate && (
                           <Typography variant="body2" color="text.secondary">
@@ -3508,7 +3520,7 @@ const EMITracker = () => {
                         <IconButton
                           size="small"
                           color="error"
-                          onClick={() => handleDeleteLoanGiven(loan._id)}
+                          onClick={() => handleDeleteLoanGiven(loan.id)}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -3532,7 +3544,7 @@ const EMITracker = () => {
                 <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Borrowed</Typography>
-                    <Typography variant="h4">₹{personalLoansSummary.totalBorrowed.toLocaleString()}</Typography>
+                    <Typography variant="h4">₹{(personalLoansSummary.totalBorrowed || 0).toLocaleString()}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -3540,7 +3552,7 @@ const EMITracker = () => {
                 <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Outstanding</Typography>
-                    <Typography variant="h4">₹{personalLoansSummary.totalOutstanding.toLocaleString()}</Typography>
+                    <Typography variant="h4">₹{(personalLoansSummary.totalOutstanding || 0).toLocaleString()}</Typography>
                     <Typography variant="caption">Principal + Interest</Typography>
                   </CardContent>
                 </Card>
@@ -3548,8 +3560,8 @@ const EMITracker = () => {
               <Grid item xs={12} md={3}>
                 <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="h6">Current Interest</Typography>
-                    <Typography variant="h4">₹{personalLoansSummary.totalInterest.toLocaleString()}</Typography>
+                    <Typography variant="h6">Total Repaid</Typography>
+                    <Typography variant="h4">₹{(personalLoansSummary.totalRepaid || 0).toLocaleString()}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -3610,7 +3622,7 @@ const EMITracker = () => {
               {personalLoans.filter(loan => loan.status === 'active').map((loan) => {
                 const daysSinceTaken = Math.floor((new Date() - new Date(loan.loanTakenDate)) / (1000 * 60 * 60 * 24));
                 return (
-                  <Grid item xs={12} md={6} lg={4} key={loan._id}>
+                  <Grid item xs={12} md={6} lg={4} key={loan.id}>
                     <Card elevation={3} sx={{ 
                       '&:hover': { boxShadow: 6 },
                       border: loan.priority === 'urgent' ? '2px solid #f44336' : 
@@ -3637,7 +3649,7 @@ const EMITracker = () => {
                           Principal Amount
                         </Typography>
                         <Typography variant="h5" color="primary" gutterBottom>
-                          ₹{loan.principalAmount.toLocaleString()}
+                          ₹{(loan.principalAmount || 0).toLocaleString()}
                         </Typography>
 
                         {loan.currentInterest > 0 && (
@@ -3646,7 +3658,7 @@ const EMITracker = () => {
                               Current Interest ({loan.interestRate}% p.a.)
                             </Typography>
                             <Typography variant="h6" color="warning.dark">
-                              + ₹{loan.currentInterest.toLocaleString()}
+                              + ₹{(loan.currentInterest || 0).toLocaleString()}
                             </Typography>
                           </Box>
                         )}
@@ -3664,7 +3676,7 @@ const EMITracker = () => {
                             Total Outstanding
                           </Typography>
                           <Typography variant="h4" fontWeight="bold">
-                            ₹{loan.outstandingAmount.toLocaleString()}
+                            ₹{(loan.outstandingAmount || 0).toLocaleString()}
                           </Typography>
                         </Box>
 
@@ -3677,7 +3689,7 @@ const EMITracker = () => {
                           </Typography>
                           {loan.totalRepaid > 0 && (
                             <Typography variant="body2" color="success.main">
-                              Repaid: ₹{loan.totalRepaid.toLocaleString()}
+                              Repaid: ₹{(loan.totalRepaid || 0).toLocaleString()}
                             </Typography>
                           )}
                         </Box>
@@ -3699,7 +3711,7 @@ const EMITracker = () => {
                             size="small"
                             variant="outlined"
                             color="primary"
-                            onClick={() => handleMarkPersonalLoanRepaid(loan._id)}
+                            onClick={() => handleMarkPersonalLoanRepaid(loan.id)}
                           >
                             Mark Repaid
                           </Button>
@@ -3719,7 +3731,7 @@ const EMITracker = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDeletePersonalLoan(loan._id)}
+                            onClick={() => handleDeletePersonalLoan(loan.id)}
                           >
                             <DeleteIcon />
                           </IconButton>
@@ -3748,11 +3760,11 @@ const EMITracker = () => {
                           <Box>
                             <Typography variant="h6">{loan.lenderName}</Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Principal: ₹{loan.principalAmount.toLocaleString()}
+                              Principal: ₹{(loan.principalAmount || 0).toLocaleString()}
                             </Typography>
                             {loan.currentInterest > 0 && (
                               <Typography variant="body2" color="text.secondary">
-                                Interest Paid: ₹{loan.currentInterest.toLocaleString()}
+                                Interest Paid: ₹{(loan.currentInterest || 0).toLocaleString()}
                               </Typography>
                             )}
                           </Box>
@@ -4598,7 +4610,7 @@ const EMITracker = () => {
                 <Typography variant="body2">
                   <strong>{selectedLoanGiven.borrowerName}</strong>
                   <br />
-                  Outstanding: ₹{selectedLoanGiven.remainingAmount.toLocaleString()}
+                  Outstanding: ₹{(selectedLoanGiven.remainingAmount || 0).toLocaleString()}
                 </Typography>
               </Alert>
 
@@ -4609,7 +4621,7 @@ const EMITracker = () => {
                 value={repaymentData.amount}
                 onChange={(e) => setRepaymentData({ ...repaymentData, amount: e.target.value })}
                 InputProps={{ startAdornment: '₹' }}
-                helperText={`Max: ₹${selectedLoanGiven.remainingAmount.toLocaleString()}`}
+                helperText={`Max: ₹${(selectedLoanGiven.remainingAmount || 0).toLocaleString()}`}
               />
 
               <TextField
@@ -4817,11 +4829,11 @@ const EMITracker = () => {
                   <strong>Lender:</strong> {selectedPersonalLoan.lenderName}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Outstanding:</strong> ₹{selectedPersonalLoan.outstandingAmount.toLocaleString()}
+                  <strong>Outstanding:</strong> ₹{(selectedPersonalLoan.outstandingAmount || 0).toLocaleString()}
                 </Typography>
                 {selectedPersonalLoan.currentInterest > 0 && (
                   <Typography variant="body2" color="warning.main">
-                    <strong>Current Interest:</strong> ₹{selectedPersonalLoan.currentInterest.toLocaleString()}
+                    <strong>Current Interest:</strong> ₹{(selectedPersonalLoan.currentInterest || 0).toLocaleString()}
                   </Typography>
                 )}
               </Alert>
@@ -4834,7 +4846,7 @@ const EMITracker = () => {
                 value={personalLoanRepaymentData.amount}
                 onChange={(e) => setPersonalLoanRepaymentData({ ...personalLoanRepaymentData, amount: e.target.value })}
                 InputProps={{ startAdornment: '₹' }}
-                helperText={`Max: ₹${selectedPersonalLoan.outstandingAmount.toLocaleString()}`}
+                helperText={`Max: ₹${(selectedPersonalLoan.outstandingAmount || 0).toLocaleString()}`}
               />
 
               <TextField

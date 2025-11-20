@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,12 +9,15 @@ import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { KeyboardShortcutsProvider } from './context/KeyboardShortcutsContext';
+import { SidebarProvider } from './context/SidebarContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
+import { initializeStorage } from './services/storage';
 
 // Eager load auth pages (small, frequently used)
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
 
 // Lazy load all other pages for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -46,10 +49,12 @@ const BusinessDashboard = lazy(() => import('./components/business/BusinessDashb
 const NotificationCenter = lazy(() => import('./components/notifications/NotificationCenter'));
 const AdvancedSearch = lazy(() => import('./components/search/AdvancedSearch'));
 const FinancialHealthDashboard = lazy(() => import('./pages/FinancialHealthDashboard'));
+const AIInsights = lazy(() => import('./pages/AIInsights'));
 const SpendingInsights = lazy(() => import('./pages/SpendingInsights'));
 const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboard'));
 const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
 const CompanyExpensesDashboard = lazy(() => import('./pages/CompanyExpensesDashboard'));
+const Documents = lazy(() => import('./pages/Documents'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -67,32 +72,49 @@ const LoadingFallback = () => (
 );
 
 function App() {
+  // Initialize storage on app startup
+  useEffect(() => {
+    initializeStorage().then((storageType) => {
+      console.log(`App initialized with ${storageType} storage`);
+    }).catch((error) => {
+      console.error('Failed to initialize storage:', error);
+    });
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
         <WebSocketProvider>
           <NotificationProvider>
-            <Router
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true
-              }}
-            >
-              <KeyboardShortcutsProvider>
-                <KeyboardShortcutsHelp />
-                <div className="min-h-screen bg-gray-50">
-                  <Suspense fallback={<LoadingFallback />}>
+            <SidebarProvider>
+              <Router
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true
+                }}
+              >
+                <KeyboardShortcutsProvider>
+                  <KeyboardShortcutsHelp />
+                  <div className="min-h-screen bg-gray-50">
+                    <Suspense fallback={<LoadingFallback />}>
                     <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
-              <Route path="/" element={
+              <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
               } />
               
               <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/home" element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
@@ -173,6 +195,12 @@ function App() {
               <Route path="/company-expenses" element={
                 <ProtectedRoute>
                   <CompanyExpensesDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/documents" element={
+                <ProtectedRoute>
+                  <Documents />
                 </ProtectedRoute>
               } />
               
@@ -266,6 +294,11 @@ function App() {
                   <FinancialHealthDashboard />
                 </ProtectedRoute>
               } />
+              <Route path="/ai-insights" element={
+                <ProtectedRoute>
+                  <AIInsights />
+                </ProtectedRoute>
+              } />
               
               <Route path="/spending-insights" element={
                 <ProtectedRoute>
@@ -302,8 +335,9 @@ function App() {
           />
         </div>
               </KeyboardShortcutsProvider>
-      </Router>
-      </NotificationProvider>
+            </Router>
+          </SidebarProvider>
+        </NotificationProvider>
       </WebSocketProvider>
     </AuthProvider>
     </ThemeProvider>

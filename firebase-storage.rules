@@ -1,0 +1,175 @@
+rules_version = '2';
+
+// Firebase Storage Rules - Enterprise Configuration
+// Database ID: financialassist
+// Updated: November 2025
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && 
+             request.auth.token.role != null && 
+             request.auth.token.role == role;
+    }
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    function isLender() {
+      return hasRole('lender') || isAdmin();
+    }
+    
+    function hasEnterpriseAccess() {
+      return isAuthenticated() && 
+             request.auth.token.enterprise == true;
+    }
+    
+    // File size limits (10MB for regular users, 50MB for enterprise)
+    function isValidFileSize() {
+      return request.resource.size < 10 * 1024 * 1024 || 
+             (hasEnterpriseAccess() && request.resource.size < 50 * 1024 * 1024);
+    }
+    
+    // Allowed file types
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocumentType() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*') ||
+             request.resource.contentType.matches('text/csv') ||
+             request.resource.contentType.matches('application/vnd.ms-excel');
+    }
+    
+    // User profile images
+    match /users/{userId}/profile/{filename} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && 
+                      isValidImageType() && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // User documents (receipts, invoices, tax documents)
+    match /users/{userId}/documents/{allPaths=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                      (isValidImageType() || isValidDocumentType()) && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Expense receipts
+    match /users/{userId}/receipts/{receiptId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                      isValidImageType() && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Tax documents
+    match /users/{userId}/tax/{taxYear}/{filename} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                      isValidDocumentType() && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Insurance policy documents
+    match /users/{userId}/insurance/{policyId}/{filename} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                      isValidDocumentType() && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Real estate documents
+    match /users/{userId}/real-estate/{propertyId}/{filename} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                      isValidDocumentType() && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Lender documents (loan agreements, contracts)
+    match /lenders/{lenderId}/documents/{allPaths=**} {
+      allow read: if isLender() && (isOwner(lenderId) || isAdmin());
+      allow write: if isLender() && isOwner(lenderId) && 
+                      isValidDocumentType() && 
+                      isValidFileSize();
+      allow delete: if isLender() && (isOwner(lenderId) || isAdmin());
+    }
+    
+    // Company/Business documents
+    match /companies/{companyId}/documents/{allPaths=**} {
+      allow read: if hasEnterpriseAccess() && 
+                     (request.auth.token.companyId == companyId || isAdmin());
+      allow write: if hasEnterpriseAccess() && 
+                      request.auth.token.companyId == companyId && 
+                      isValidDocumentType() && 
+                      isValidFileSize();
+      allow delete: if hasEnterpriseAccess() && 
+                       (request.auth.token.companyId == companyId || isAdmin());
+    }
+    
+    // Exported reports and CSV files
+    match /users/{userId}/exports/{filename} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                      (isValidDocumentType() || 
+                       request.resource.contentType == 'text/csv') && 
+                      isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Backup files
+    match /users/{userId}/backups/{backupId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Admin-only uploads
+    match /admin/{allPaths=**} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Public assets (app icons, logos, marketing materials)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Temporary uploads (automatically deleted after 24 hours)
+    match /temp/{userId}/{filename} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidFileSize();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -12,7 +12,8 @@ import { Doughnut } from 'react-chartjs-2';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const CategoryBreakdown = ({ categoryData }) => {
-  if (!categoryData || !categoryData.chartData || categoryData.chartData.length === 0) {
+  // Early return with safe checks
+  if (!categoryData || !categoryData.chartData || !Array.isArray(categoryData.chartData) || categoryData.chartData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Category Breakdown</h3>
@@ -21,15 +22,15 @@ const CategoryBreakdown = ({ categoryData }) => {
     );
   }
 
-  const { chartData, summary } = categoryData;
+  const { chartData = [], summary = {} } = categoryData;
 
   // Chart.js configuration for interactive donut chart
   const interactiveChartData = {
-    labels: chartData.slice(0, 8).map(item => 
-      item.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    labels: (chartData || []).slice(0, 8).map(item => 
+      (item?.category || 'Unknown').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     ),
     datasets: [{
-      data: chartData.slice(0, 8).map(item => item.amount),
+      data: (chartData || []).slice(0, 8).map(item => item?.amount || 0),
       backgroundColor: [
         '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
         '#FF9F40', '#FF6384', '#C9CBCF'
@@ -58,10 +59,10 @@ const CategoryBreakdown = ({ categoryData }) => {
           label: function(context) {
             const label = context.label || '';
             const value = context.parsed || 0;
-            const categoryData = chartData.find(item => 
-              item.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) === label
-            );
-            const percentage = categoryData?.percentage || 0;
+            const categoryItem = Array.isArray(chartData) && chartData.length > 0 ? chartData.find(item => 
+              item && item.category && item.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) === label
+            ) : null;
+            const percentage = categoryItem?.percentage || 0;
             return `${label}: ₹${value.toLocaleString('en-IN')} (${percentage.toFixed(1)}%)`;
           }
         }
@@ -101,27 +102,30 @@ const CategoryBreakdown = ({ categoryData }) => {
         
         {/* Category List */}
         <div className="space-y-3">
-          {chartData.slice(0, 8).map((category, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div 
-                  className="w-3 h-3 rounded-full mr-3"
-                  style={{ backgroundColor: category.color }}
-                ></div>
-                <span className="text-sm font-medium text-gray-900 truncate">
-                  {category.category}
-                </span>
+          {(chartData || []).slice(0, 8).map((category, index) => {
+            if (!category) return null;
+            return (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div 
+                    className="w-3 h-3 rounded-full mr-3"
+                    style={{ backgroundColor: category.color || '#CCCCCC' }}
+                  ></div>
+                  <span className="text-sm font-medium text-gray-900 truncate">
+                    {category.category || 'Unknown'}
+                  </span>
+                </div>
+                <div className="text-right ml-2">
+                  <p className="text-sm font-medium text-gray-900">
+                    ₹{(category.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-gray-500">{(category.percentage || 0).toFixed(1)}%</p>
+                </div>
               </div>
-              <div className="text-right ml-2">
-                <p className="text-sm font-medium text-gray-900">
-                  ₹{category.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </p>
-                <p className="text-xs text-gray-500">{category.percentage}%</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           
-          {chartData.length > 8 && (
+          {chartData && chartData.length > 8 && (
             <div className="text-xs text-gray-500 text-center pt-2">
               +{chartData.length - 8} more categories
             </div>

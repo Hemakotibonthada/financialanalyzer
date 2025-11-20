@@ -130,7 +130,7 @@ function FinancialGoals() {
 
       if (editingGoal) {
         await axios.put(
-          `${API_URL}/goals/${editingGoal._id}`,
+          `${API_URL}/goals/${editingGoal.id}`,
           formData,
           { headers }
         );
@@ -169,7 +169,7 @@ function FinancialGoals() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${API_URL}/goals/${selectedGoal._id}/contribute`,
+        `${API_URL}/goals/${selectedGoal.id}/contribute`,
         contributionData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -186,7 +186,7 @@ function FinancialGoals() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${API_URL}/goals/${selectedGoal._id}/milestone`,
+        `${API_URL}/goals/${selectedGoal.id}/milestone`,
         milestoneData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -458,7 +458,7 @@ function FinancialGoals() {
       ) : (
         <Grid container spacing={3}>
           {goals.map((goal) => (
-            <Grid item xs={12} md={6} lg={4} key={goal._id}>
+            <Grid item xs={12} md={6} lg={4} key={goal.id}>
               <Card 
                 sx={{ 
                   height: '100%',
@@ -487,7 +487,7 @@ function FinancialGoals() {
                       <IconButton size="small" onClick={() => handleEditGoal(goal)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" onClick={() => handleDeleteGoal(goal._id)} color="error">
+                      <IconButton size="small" onClick={() => handleDeleteGoal(goal.id)} color="error">
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>

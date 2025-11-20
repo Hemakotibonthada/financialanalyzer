@@ -27,7 +27,7 @@ export const SHORTCUTS = {
   // General
   SAVE: { key: 'ctrl+s', description: 'Save (in forms)', action: 'save' },
   REFRESH: { key: 'ctrl+r', description: 'Refresh Page', action: 'refresh' },
-  TOGGLE_THEME: { key: 'ctrl+shift+l', description: 'Toggle Dark/Light Mode', action: 'toggleTheme' },
+  TOGGLE_THEME: { key: 'ctrl+shift+l', description: 'Cycle Theme (Light → Dark → Black)', action: 'toggleTheme' },
   
   // List Navigation
   NEXT_ITEM: { key: 'j', description: 'Next Item (in lists)', action: 'navigation', direction: 'next' },

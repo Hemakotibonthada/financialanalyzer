@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSidebar } from '../context/SidebarContext';
 import {
   User,
   LogOut,
@@ -33,6 +34,7 @@ import NotificationBell from './NotificationBell';
  */
 const MainLayout = ({ children, title, subtitle, headerActions }) => {
   const { user, logout } = useAuth();
+  const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -70,7 +72,9 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
       {/* Main Content Area */}
       <div className="min-h-screen bg-gray-50">
         {/* Fixed Header */}
-        <header className="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 lg:left-72 z-40 shadow-sm">
+        <header className={`bg-white border-b border-gray-200 fixed top-0 right-0 left-0 z-40 shadow-sm transition-all duration-300 ${
+          isCollapsed ? 'lg:left-20' : 'lg:left-72'
+        }`}>
           <div className="px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between gap-4">
               {/* Page Title */}
@@ -109,7 +113,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                     aria-expanded={profileDropdownOpen}
                   >
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md ring-2 ring-white">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
                     </div>
                     <ChevronDown className={`hidden sm:block h-4 w-4 text-gray-600 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -130,18 +134,18 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                       <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-                            {user?.name?.charAt(0).toUpperCase()}
+                            {user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
-                            <p className="text-xs text-gray-600 truncate">{user?.email}</p>
+                            <p className="font-semibold text-gray-900 truncate">{user?.name || user?.email?.split('@')[0] || 'User'}</p>
+                            <p className="text-xs text-gray-600 truncate">{user?.email || 'No email'}</p>
                           </div>
                         </div>
                         <div className="mt-2 flex items-center justify-between">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full capitalize">
-                            {user?.role}
+                            {user?.role || 'user'}
                           </span>
-                          <span className="text-xs text-gray-500">ID: {user?._id?.slice(-6)}</span>
+                          <span className="text-xs text-gray-500">ID: {user?._id?.slice(-6) || user?.id?.slice(-6) || 'N/A'}</span>
                         </div>
                       </div>
 
@@ -389,7 +393,9 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
         </header>
 
         {/* Main Content with proper spacing for fixed header and sidebar */}
-        <main className="pt-16 lg:ml-72 min-h-screen">
+        <main className={`pt-16 min-h-screen transition-all duration-300 ${
+          isCollapsed ? 'lg:ml-20' : 'lg:ml-72'
+        }`}>
           <div className="px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>

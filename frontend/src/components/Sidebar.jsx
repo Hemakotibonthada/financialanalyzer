@@ -30,11 +30,12 @@ import {
   Receipt
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSidebar } from '../context/SidebarContext';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navigationItems = [
@@ -93,10 +94,23 @@ const Sidebar = () => {
       color: 'amber'
     },
     {
+      label: 'Documents',
+      icon: FileText,
+      path: '/documents',
+      color: 'purple'
+    },
+    {
       label: 'Financial Health',
       icon: Activity,
       path: '/financial-health',
       color: 'teal'
+    },
+    {
+      label: '🤖 AI Insights',
+      icon: Brain,
+      path: '/ai-insights',
+      color: 'violet',
+      badge: 'NEW'
     },
     {
       label: 'Spending Insights',
@@ -294,7 +308,7 @@ const Sidebar = () => {
       {!mobile && (
         <div className="p-3 border-t border-gray-200">
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={toggleSidebar}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all text-gray-700"
           >
             {isCollapsed ? (

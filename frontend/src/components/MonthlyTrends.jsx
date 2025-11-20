@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Calendar, BarChart3, DollarSign, PiggyBank } from 'lucide-react';
+import api from '../services/api';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,44 +28,112 @@ ChartJS.register(
 
 const MonthlyTrends = ({ trendsData }) => {
   const [showInvestments, setShowInvestments] = useState(true);
+  const [dailyData, setDailyData] = useState(null);
+  const [loadingDaily, setLoadingDaily] = useState(false);
   const chartRef = useRef(null);
-  // Initialize date range to current month only (start == end == this month)
+  // Initialize date range to last 6 months
   const [startDate, setStartDate] = useState(() => {
     const today = new Date();
-    return today.toISOString().substring(0, 7); // YYYY-MM format
+    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+    return sixMonthsAgo.toISOString().substring(0, 7); // YYYY-MM format
   });
   const [endDate, setEndDate] = useState(() => {
     const today = new Date();
     return today.toISOString().substring(0, 7); // YYYY-MM format
   });
 
-  if (!trendsData || !trendsData.trends || trendsData.trends.length === 0) {
+  // Fetch daily data when same month is selected
+  useEffect(() => {
+    const fetchDailyData = async () => {
+      if (startDate === endDate) {
+        setLoadingDaily(true);
+        try {
+          const response = await api.get('/analytics/daily-trends', {
+            params: { month: startDate }
+          });
+          if (response.data.success) {
+            setDailyData(response.data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching daily trends:', error);
+          setDailyData(null);
+        } finally {
+          setLoadingDaily(false);
+        }
+      } else {
+        setDailyData(null);
+      }
+    };
+
+    fetchDailyData();
+  }, [startDate, endDate]);
+
+  // Debug: Log what we receive
+  if (import.meta.env.DEV) {
+    console.debug('[MonthlyTrends] trendsData received:', {
+      trendsData,
+      hasTrends: trendsData?.trends,
+      trendsLength: trendsData?.trends?.length,
+      isArray: Array.isArray(trendsData?.trends)
+    });
+  }
+
+  if (!trendsData) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
-        <p className="text-gray-500">No trend data available yet. Upload bank statements to see your financial trends.</p>
+        <p className="text-gray-500">Loading trend data...</p>
+      </div>
+    );
+  }
+
+  // If trendsData.trends doesn't exist or is empty, show empty state but allow adding data
+  if (!trendsData.trends || !Array.isArray(trendsData.trends) || trendsData.trends.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
+        <p className="text-gray-500">No transaction data available yet. Add expenses or income to see your financial trends over time.</p>
       </div>
     );
   }
 
   const { trends, summary } = trendsData;
-  // Helper to parse month-like values robustly (accepts 'YYYY-MM' or 'YYYY-MM-DD')
+  
+  // Helper to parse month values - handles both "Nov 2025" and "YYYY-MM" formats
   const parseMonthToDate = (m) => {
     if (!m) return new Date(NaN);
     const s = String(m);
-    const parts = s.split('-');
-    if (parts.length >= 2) {
-      const year = parts[0];
-      const month = parts[1].padStart(2, '0');
-      return new Date(`${year}-${month}-01`);
+    
+    // Check if it's in YYYY-MM format
+    if (s.match(/^\d{4}-\d{2}$/)) {
+      const [year, month] = s.split('-');
+      return new Date(parseInt(year), parseInt(month) - 1, 1);
     }
+    
+    // Check if it's in "MMM YYYY" format (e.g., "Nov 2025")
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const parts = s.split(' ');
+    if (parts.length === 2) {
+      const monthName = parts[0];
+      const year = parseInt(parts[1]);
+      const monthIndex = monthNames.indexOf(monthName);
+      if (monthIndex !== -1 && !isNaN(year)) {
+        return new Date(year, monthIndex, 1);
+      }
+    }
+    
+    // Try standard date parsing as fallback
     return new Date(s);
   };
 
   // Ensure trends are sorted by month (ascending) and normalize shape
   const sortedTrends = useMemo(() => {
     if (!trends || !Array.isArray(trends)) return [];
-    return [...trends].sort((a, b) => parseMonthToDate(a.month) - parseMonthToDate(b.month));
+    return [...trends].sort((a, b) => {
+      const dateA = parseMonthToDate(a.monthKey || a.month);
+      const dateB = parseMonthToDate(b.monthKey || b.month);
+      return dateA - dateB;
+    });
   }, [trends]);
 
   // Filter trends based on date range. If start/end are empty, treat them as unbounded.
@@ -76,7 +145,9 @@ const MonthlyTrends = ({ trendsData }) => {
     const end = endDate ? parseMonthToDate(endDate) : null;
 
     return sortedTrends.filter(trend => {
-      const trendDate = parseMonthToDate(trend.month);
+      // Use monthKey if available (YYYY-MM format), otherwise fall back to month
+      const monthStr = trend.monthKey || trend.month;
+      const trendDate = parseMonthToDate(monthStr);
       if (isNaN(trendDate)) return false;
       if (start && trendDate < start) return false;
       if (end && trendDate > end) return false;
@@ -176,7 +247,84 @@ const MonthlyTrends = ({ trendsData }) => {
   const sameMonthSelected = startDate && endDate && startDate === endDate;
 
   let chartData;
-  if (sameMonthSelected && trendsData.dailyTrends && Array.isArray(trendsData.dailyTrends) && trendsData.dailyTrends.length > 0) {
+  if (sameMonthSelected && dailyData?.dailyTrends && Array.isArray(dailyData.dailyTrends) && dailyData.dailyTrends.length > 0) {
+    // Build daily datasets
+    const daily = dailyData.dailyTrends;
+    
+    const dailyLabels = daily.map(d => {
+      const dt = new Date(d.date);
+      return dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    });
+
+    const dailyDatasets = [
+      {
+        label: 'Income',
+        data: daily.map(d => d.totalIncome || 0),
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        tension: 0.3,
+        fill: true,
+        pointBackgroundColor: '#10B981',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2
+      },
+      {
+        label: 'Spending',
+        data: daily.map(d => d.totalSpending || 0),
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+        tension: 0.3,
+        fill: true,
+        pointBackgroundColor: '#F97316',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2
+      }
+    ];
+
+    if (showInvestments && daily.some(d => d.totalInvestments > 0)) {
+      dailyDatasets.push({
+        label: 'Investments',
+        data: daily.map(d => d.totalInvestments || 0),
+        borderColor: '#A855F7',
+        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+        tension: 0.3,
+        fill: true,
+        pointBackgroundColor: '#A855F7',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2
+      });
+    }
+
+    dailyDatasets.push({
+      label: 'Net Savings',
+      data: daily.map(d => (d.totalIncome || 0) - (d.totalSpending || 0) - (d.totalInvestments || 0)),
+      borderColor: '#3B82F6',
+      backgroundColor: 'transparent',
+      tension: 0.3,
+      fill: false,
+      pointBackgroundColor: '#3B82F6',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      borderDash: [5, 5],
+      borderWidth: 2
+    });
+
+    chartData = {
+      labels: dailyLabels,
+      datasets: dailyDatasets
+    };
+  } else if (sameMonthSelected && trendsData.dailyTrends && Array.isArray(trendsData.dailyTrends) && trendsData.dailyTrends.length > 0) {
     // Build daily datasets
     const daily = trendsData.dailyTrends;
     // If the selected month is the current month, only show days up to today (so 'today' is the last point).
@@ -312,6 +460,7 @@ const MonthlyTrends = ({ trendsData }) => {
       },
       y: {
         beginAtZero: true,
+        suggestedMax: filteredTrends.length > 0 && filteredTrends.every(t => (t.totalIncome || 0) === 0 && (t.totalSpending || 0) === 0) ? 1000 : undefined,
         grid: {
           color: 'rgba(0, 0, 0, 0.05)',
           drawBorder: false

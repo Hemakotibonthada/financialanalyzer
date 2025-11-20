@@ -12,11 +12,20 @@ const computeApiUrl = () => {
     return envUrl;
   }
 
-  // If VITE_API_URL points to localhost (common dev default), prefer using
-  // the host serving the frontend when available (so mobile devices call
-  // the laptop backend IP), otherwise fall back to the env value.
+  // Check if deployed on Firebase Hosting
   if (typeof window !== 'undefined') {
-    const pageHost = window.location.hostname || 'localhost';
+    const hostname = window.location.hostname;
+    
+    // Firebase Hosting detection
+    if (hostname.includes('firebaseapp.com') || hostname.includes('web.app')) {
+      // Use Cloud Functions API URL for Mumbai region
+      return 'https://asia-south1-finserveassist.cloudfunctions.net/api';
+    }
+    
+    // If VITE_API_URL points to localhost (common dev default), prefer using
+    // the host serving the frontend when available (so mobile devices call
+    // the laptop backend IP), otherwise fall back to the env value.
+    const pageHost = hostname || 'localhost';
     if (pageHost && !/localhost|127\.0\.0\.1/.test(pageHost)) {
       return `http://${pageHost}:5001/api`;
     }

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="#4A90E2" stroke="#2C5F8D" stroke-width="4"/>
+  
+  <!-- Dollar sign -->
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2">
+    <!-- Top curve -->
+    <path d="M 128 60 L 128 50" stroke-linecap="round"/>
+    <path d="M 110 70 Q 110 60, 128 60 L 146 60 Q 155 60, 155 70 Q 155 80, 146 85 L 110 95 Q 101 98, 101 108 Q 101 118, 110 121 L 128 125" 
+          fill="none" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Bottom curve -->
+    <path d="M 128 125 L 146 130 Q 155 133, 155 143 Q 155 153, 146 156 L 128 160 Q 110 160, 110 150" 
+          fill="none" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 128 160 L 128 170" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Chart/Graph decoration -->
+  <g fill="none" stroke="#FFD700" stroke-width="3" opacity="0.8">
+    <polyline points="40,180 70,160 100,170 130,140 160,155 190,130 220,145" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="70" cy="160" r="4" fill="#FFD700"/>
+    <circle cx="100" cy="170" r="4" fill="#FFD700"/>
+    <circle cx="130" cy="140" r="4" fill="#FFD700"/>
+    <circle cx="160" cy="155" r="4" fill="#FFD700"/>
+    <circle cx="190" cy="130" r="4" fill="#FFD700"/>
+  </g>
+  
+  <!-- Ring decoration -->
+  <circle cx="128" cy="128" r="100" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
+</svg>

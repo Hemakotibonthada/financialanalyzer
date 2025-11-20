@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { lightTheme, darkTheme } from '../theme';
+import { lightTheme, darkTheme, blackTheme } from '../theme';
 
 const ThemeContext = createContext();
 
@@ -23,23 +23,37 @@ export const ThemeProvider = ({ children }) => {
   // Update localStorage when theme changes
   useEffect(() => {
     localStorage.setItem('themeMode', mode);
+    // Update body class for Tailwind dark mode
+    if (mode === 'dark' || mode === 'black') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [mode]);
 
-  // Toggle between light and dark mode
+  // Toggle between light, dark, and black mode
   const toggleTheme = () => {
-    setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+    setMode((prevMode) => {
+      if (prevMode === 'light') return 'dark';
+      if (prevMode === 'dark') return 'black';
+      return 'light';
+    });
   };
 
   // Memoize theme to prevent unnecessary re-renders
   const theme = useMemo(() => {
-    return mode === 'light' ? lightTheme : darkTheme;
+    if (mode === 'black') return blackTheme;
+    if (mode === 'dark') return darkTheme;
+    return lightTheme;
   }, [mode]);
 
   const value = {
     mode,
     toggleTheme,
+    setMode,
     isDark: mode === 'dark',
     isLight: mode === 'light',
+    isBlack: mode === 'black',
   };
 
   return (

@@ -7,6 +7,7 @@ backend/node_modules/
 frontend/dist/
 backend/dist/
 backend/logs/
+desktop/dist/
 
 # Environment and credentials
 *.env
@@ -42,3 +43,9 @@ venv/
 
 # Speech recognition temp files
 last_email_id.txt
+
+# Executable files
+*.exe
+*.dll
+*.so
+*.dylib

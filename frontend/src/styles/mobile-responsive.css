@@ -1,0 +1,495 @@
+/* ===== COMPREHENSIVE MOBILE RESPONSIVENESS ===== */
+
+/* Touch Target Optimization - Ensure minimum 44x44px tap targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe Areas for notched devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile-First Base Styles */
+@media (max-width: 640px) {
+  /* Text Size Adjustments */
+  h1 {
+    font-size: 1.75rem !important;
+    line-height: 2.25rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+  
+  h3 {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  
+  /* Card Padding Adjustments */
+  .card-mobile {
+    padding: 1rem !important;
+    border-radius: 0.75rem !important;
+  }
+  
+  /* Button Full Width on Mobile */
+  .btn-mobile-full {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  /* Stack Grid Layouts */
+  .grid-mobile-stack > * {
+    grid-column: span 1 !important;
+  }
+  
+  /* Profile Page Specific */
+  .profile-tab-button {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .profile-input {
+    padding: 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .profile-section-header h2 {
+    font-size: 1.125rem !important;
+  }
+  
+  .profile-section-header p {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Tablet Breakpoint */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .card-tablet {
+    padding: 1.5rem !important;
+  }
+  
+  .grid-tablet-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Dashboard Page Mobile Optimization */
+@media (max-width: 768px) {
+  /* Dashboard Cards */
+  .dashboard-stat-card {
+    padding: 1rem !important;
+  }
+  
+  .dashboard-stat-card h3 {
+    font-size: 0.875rem !important;
+  }
+  
+  .dashboard-stat-card .stat-value {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Chart Containers */
+  .chart-container {
+    height: 250px !important;
+    padding: 0.75rem !important;
+  }
+  
+  /* Transaction List */
+  .transaction-item {
+    padding: 0.75rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+  
+  .transaction-item-amount {
+    width: 100% !important;
+    text-align: right !important;
+  }
+}
+
+/* Form Elements Mobile Optimization */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+    border-radius: 0.75rem !important;
+  }
+  
+  /* Date Pickers */
+  input[type="date"] {
+    min-height: 44px !important;
+  }
+  
+  /* Select Dropdowns */
+  select {
+    min-height: 44px !important;
+    padding-right: 2.5rem !important;
+  }
+}
+
+/* Modal/Dialog Mobile Optimization */
+@media (max-width: 640px) {
+  .modal-content {
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    margin: 1rem !important;
+    border-radius: 1rem !important;
+  }
+  
+  .modal-header {
+    padding: 1rem !important;
+  }
+  
+  .modal-body {
+    padding: 1rem !important;
+    max-height: calc(90vh - 140px) !important;
+    overflow-y: auto !important;
+  }
+  
+  .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column-reverse !important;
+    gap: 0.5rem !important;
+  }
+  
+  .modal-footer button {
+    width: 100% !important;
+  }
+}
+
+/* Table Mobile Optimization */
+@media (max-width: 768px) {
+  /* Hide table, show card layout */
+  .table-mobile-card {
+    display: none;
+  }
+  
+  .table-mobile-card + .mobile-card-list {
+    display: block;
+  }
+  
+  .mobile-card-item {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+  }
+  
+  .mobile-card-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .mobile-card-item-row:last-child {
+    border-bottom: none;
+  }
+  
+  .mobile-card-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .mobile-card-value {
+    font-size: 0.875rem;
+    color: #111827;
+    font-weight: 600;
+  }
+}
+
+/* Navigation Mobile Optimization */
+@media (max-width: 1024px) {
+  /* Bottom Navigation Bar (if applicable) */
+  .mobile-nav-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+  }
+  
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    min-height: 44px;
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .mobile-nav-item.active {
+    color: #3b82f6;
+  }
+  
+  .mobile-nav-item svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .mobile-nav-label {
+    font-size: 0.625rem;
+    font-weight: 500;
+  }
+}
+
+/* Profile Page Specific Mobile Styles */
+@media (max-width: 640px) {
+  .profile-header-gradient {
+    padding: 1.5rem 1rem !important;
+  }
+  
+  .profile-header-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    padding: 0.5rem !important;
+  }
+  
+  .profile-tabs-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .profile-tab {
+    flex-shrink: 0;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .profile-tab svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+  
+  .profile-section {
+    padding: 1rem !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 0.75rem !important;
+  }
+  
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .profile-save-button-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 40;
+  }
+  
+  .profile-save-button {
+    width: 100% !important;
+    padding: 0.875rem !important;
+    font-size: 1rem !important;
+    min-height: 44px !important;
+  }
+}
+
+/* Budget & Goals Mobile Optimization */
+@media (max-width: 640px) {
+  .budget-item {
+    padding: 0.875rem !important;
+  }
+  
+  .budget-progress-bar {
+    height: 6px !important;
+  }
+  
+  .savings-goal-card {
+    padding: 1rem !important;
+  }
+  
+  .category-tag {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Gmail Integration Mobile Styles */
+@media (max-width: 640px) {
+  .gmail-status-card {
+    padding: 1rem !important;
+  }
+  
+  .gmail-connect-button {
+    width: 100% !important;
+    padding: 0.875rem !important;
+  }
+  
+  .gmail-last-sync {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Financial Dashboard Charts Mobile */
+@media (max-width: 640px) {
+  .recharts-wrapper {
+    font-size: 0.75rem !important;
+  }
+  
+  .recharts-legend-wrapper {
+    font-size: 0.625rem !important;
+  }
+  
+  .recharts-cartesian-axis-tick-value {
+    font-size: 0.625rem !important;
+  }
+}
+
+/* Notification Badge */
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Loading States */
+@media (max-width: 640px) {
+  .skeleton-loader {
+    border-radius: 0.75rem !important;
+  }
+  
+  .loading-spinner {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+}
+
+/* Prevent text selection on touch (for buttons, etc.) */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent Pull-to-Refresh on Chrome Mobile */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* iOS Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix iOS input zoom */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Fix iOS sticky positioning */
+  .ios-sticky-fix {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+}
+
+/* Android Specific Fixes */
+@media (max-width: 640px) and (min-resolution: 2dppx) {
+  /* Higher DPI adjustments for Android */
+  .android-dpi-fix {
+    transform: scale(1.01);
+  }
+}
+
+/* Landscape Orientation Adjustments */
+@media (max-width: 896px) and (orientation: landscape) {
+  .landscape-compact {
+    max-height: 70vh !important;
+  }
+  
+  .landscape-header {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

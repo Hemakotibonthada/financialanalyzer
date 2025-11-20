@@ -345,25 +345,25 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Enhanced Header */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+        <div className="mb-6 sm:mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 text-white relative overflow-hidden">
             {/* Decorative background pattern */}
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+              <div className="absolute top-0 right-0 w-32 sm:w-64 h-32 sm:h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-48 sm:w-96 h-48 sm:h-96 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
             </div>
             
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-6">
-                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
-                  <User className="w-12 h-12" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 flex-1 min-w-0">
+                <div className="bg-white/20 backdrop-blur-sm p-3 sm:p-4 rounded-xl sm:rounded-2xl flex-shrink-0">
+                  <User className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
                 </div>
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold mb-2">Profile Settings</h1>
-                  <p className="text-blue-100 text-sm md:text-base">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 truncate">Profile Settings</h1>
+                  <p className="text-blue-100 text-xs sm:text-sm lg:text-base">
                     Manage your personal information and preferences
                   </p>
                 </div>
@@ -371,17 +371,17 @@ const Profile = () => {
               <button
                 onClick={saveProfile}
                 disabled={saving}
-                className="bg-white text-blue-600 px-8 py-3 rounded-xl font-semibold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
+                className="w-full sm:w-auto bg-white text-blue-600 px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-semibold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 touch-target"
               >
                 {saving ? (
                   <>
                     <RefreshCw className="w-5 h-5 animate-spin" />
-                    Saving...
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    Save Changes
+                    <span>Save Changes</span>
                   </>
                 )}
               </button>
@@ -390,21 +390,21 @@ const Profile = () => {
         </div>
 
         {message.text && (
-          <div className={`mb-6 p-4 rounded-xl shadow-lg flex items-center gap-3 animate-fade-in ${
+          <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl shadow-lg flex items-start gap-2 sm:gap-3 animate-fade-in text-sm sm:text-base ${
             message.type === 'success' ? 'bg-green-50 text-green-700 border-2 border-green-200' :
             message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' :
             'bg-blue-50 text-blue-700 border-2 border-blue-200'
           }`}>
-            {message.type === 'success' && <CheckCircle className="w-6 h-6 flex-shrink-0" />}
+            {message.type === 'success' && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />}
             {message.type === 'error' && <AlertCircle className="w-6 h-6 flex-shrink-0" />}
             <span className="font-medium">{message.text}</span>
           </div>
         )}
 
         {/* Enhanced Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-xl mb-6 overflow-hidden">
-          <div className="border-b border-gray-100">
-            <nav className="flex overflow-x-auto px-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+          <div className="border-b border-gray-200">
+            <nav className="flex overflow-x-auto scrollbar-hide profile-tabs-wrapper">
               {[
                 { key: 'personal', label: 'Personal Info', icon: User },
                 { key: 'financial', label: 'Financial Details', icon: DollarSign },
@@ -413,25 +413,27 @@ const Profile = () => {
                 { key: 'preferences', label: 'Preferences', icon: Settings }
               ].map(tab => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.key;
                 return (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`group flex items-center gap-2 py-4 px-6 border-b-3 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
-                      activeTab === tab.key
-                        ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    className={`profile-tab-button group flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base whitespace-nowrap transition-all flex-shrink-0 touch-target border-b-2 ${
+                      isActive
+                        ? 'text-blue-600 border-blue-600 bg-blue-50'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-transparent'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 transition-transform duration-300 ${activeTab === tab.key ? 'scale-110' : 'group-hover:scale-110'}`} />
-                    {tab.label}
+                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
                   </button>
                 );
               })}
             </nav>
           </div>
 
-          <div className="p-8">
+          <div className="p-4 sm:p-6 lg:p-8 profile-content-wrapper">
             {/* Personal Information */}
             {activeTab === 'personal' && (
               <div className="space-y-8 animate-fade-in">

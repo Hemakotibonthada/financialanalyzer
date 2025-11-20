@@ -36,16 +36,27 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
     { value: 'groceries', label: 'Groceries', icon: '🛒' },
     { value: 'transportation', label: 'Transportation', icon: '🚗' },
     { value: 'fuel', label: 'Fuel', icon: '⛽' },
+    { value: 'rent_mortgage', label: 'Rent/Mortgage', icon: '🏠' },
     { value: 'utilities', label: 'Utilities', icon: '💡' },
     { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
     { value: 'shopping', label: 'Shopping', icon: '🛍️' },
     { value: 'healthcare', label: 'Healthcare', icon: '⚕️' },
+    { value: 'insurance', label: 'Insurance', icon: '🛡️' },
     { value: 'education', label: 'Education', icon: '📚' },
     { value: 'travel', label: 'Travel', icon: '✈️' },
     { value: 'subscriptions', label: 'Subscriptions', icon: '📱' },
     { value: 'investment', label: 'Investment', icon: '📈' },
     { value: 'emi', label: 'EMI', icon: '💳' },
     { value: 'loan', label: 'Loan', icon: '🏦' },
+    { value: 'personal_care', label: 'Personal Care', icon: '💆' },
+    { value: 'gifts_donations', label: 'Gifts & Donations', icon: '🎁' },
+    { value: 'pets', label: 'Pets', icon: '🐾' },
+    { value: 'childcare', label: 'Childcare', icon: '👶' },
+    { value: 'home_maintenance', label: 'Home Maintenance', icon: '🔧' },
+    { value: 'clothing', label: 'Clothing', icon: '👕' },
+    { value: 'fitness', label: 'Fitness', icon: '💪' },
+    { value: 'taxes', label: 'Taxes', icon: '📋' },
+    { value: 'business', label: 'Business', icon: '💼' },
     { value: 'other', label: 'Other', icon: '💰' }
   ];
 
@@ -64,8 +75,8 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
   const loadCurrencies = async () => {
     try {
       const response = await api.get('/financial/currencies');
-      if (response.data.success) {
-        setCurrencies(response.data.currencies);
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setCurrencies(response.data.data);
       }
     } catch (error) {
       console.error('Error loading currencies:', error);
@@ -151,7 +162,9 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
         setMessage({ type: 'success', text: '✓ Expense added successfully!' });
         
         // Get currency symbol
-        const currencySymbol = currencies.find(c => c.code === expense.currency)?.symbol || expense.currency;
+        const currencySymbol = (Array.isArray(currencies) && currencies.length > 0) ? 
+          (currencies.find(c => c.code === expense.currency)?.symbol || expense.currency) : 
+          expense.currency;
         
         // Show success notification
         notification.success(
@@ -162,7 +175,9 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
         // Check for budget alerts
         if (response.data.data?.budgetAlert) {
           const alert = response.data.data.budgetAlert;
-          const categoryName = categories.find(c => c.value === alert.category)?.label || alert.category;
+          const categoryName = Array.isArray(categories) ? 
+            categories.find(c => c.value === alert.category)?.label || alert.category : 
+            alert.category;
           
           if (alert.type === 'exceeded') {
             notification.budgetAlert(
@@ -252,7 +267,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
   };
 
   const formatCurrency = (amount, currencyCode = 'INR') => {
-    const currency = currencies.find(c => c.code === currencyCode);
+    const currency = Array.isArray(currencies) ? currencies.find(c => c.code === currencyCode) : null;
     const symbol = currency?.symbol || currencyCode;
     
     return `${symbol}${amount.toLocaleString('en-IN', {
@@ -531,20 +546,20 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {categories.map((cat) => (
+                  <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                    {Array.isArray(categories) && categories.map((cat) => (
                       <button
                         key={cat.value}
                         type="button"
                         onClick={() => setExpense({ ...expense, category: cat.value })}
-                        className={`p-3 border rounded-lg text-sm flex flex-col items-center justify-center transition-all ${
+                        className={`p-2 border rounded-lg text-xs flex flex-col items-center justify-center transition-all ${
                           expense.category === cat.value
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                            : 'border-gray-300 hover:border-blue-300 text-gray-700'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium ring-2 ring-blue-200'
+                            : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 text-gray-700'
                         }`}
                       >
-                        <span className="text-2xl mb-1">{cat.icon}</span>
-                        <span className="text-xs">{cat.label}</span>
+                        <span className="text-xl mb-1">{cat.icon}</span>
+                        <span className="text-[10px] leading-tight text-center">{cat.label}</span>
                       </button>
                     ))}
                   </div>
@@ -583,12 +598,12 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
                                 <span className="text-lg">
-                                  {categories.find(c => c.value === exp.category)?.icon || '💰'}
+                                  {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.icon || '💰' : '💰'}
                                 </span>
                                 <span className="font-medium text-gray-900">{exp.description}</span>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                {categories.find(c => c.value === exp.category)?.label || 'Other'} • 
+                                {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.label || 'Other' : 'Other'} • 
                                 {new Date(exp.date).toLocaleTimeString('en-IN', { 
                                   hour: '2-digit', 
                                   minute: '2-digit' 
@@ -642,7 +657,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                           className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                         >
                           <option value="all">🔍 All Categories</option>
-                          {categories.map(cat => (
+                          {Array.isArray(categories) && categories.map(cat => (
                             <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
                           ))}
                         </select>
@@ -704,7 +719,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                           >
                             <div className="flex items-center space-x-3 flex-1">
                               <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center text-2xl shadow-sm">
-                                {categories.find(c => c.value === exp.category)?.icon || '💰'}
+                                {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.icon || '💰' : '💰'}
                               </div>
                               <div className="flex-1">
                                 <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -712,7 +727,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                                    {categories.find(c => c.value === exp.category)?.label || 'Other'}
+                                    {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.label || 'Other' : 'Other'}
                                   </span>
                                   <span>•</span>
                                   <span className="flex items-center gap-1">
@@ -822,12 +837,12 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span className="text-xl">
-                            {categories.find(c => c.value === template.category)?.icon || '💰'}
+                            {Array.isArray(categories) ? categories.find(c => c.value === template.category)?.icon || '💰' : '💰'}
                           </span>
                           <div>
                             <div className="font-medium text-gray-900">{template.description}</div>
                             <div className="text-xs text-gray-600 mt-1">
-                              {categories.find(c => c.value === template.category)?.label || 'Other'}
+                              {Array.isArray(categories) ? categories.find(c => c.value === template.category)?.label || 'Other' : 'Other'}
                             </div>
                           </div>
                         </div>

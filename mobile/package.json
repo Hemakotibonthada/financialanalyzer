@@ -12,7 +12,8 @@
     "build:android": "cd android && ./gradlew assembleRelease",
     "build:ios": "cd ios && xcodebuild -workspace FinancialAnalyzer.xcworkspace -scheme FinancialAnalyzer -configuration Release",
     "clean:android": "cd android && ./gradlew clean",
-    "clean:ios": "cd ios && xcodebuild clean"
+    "clean:ios": "cd ios && xcodebuild clean",
+    "windows": "react-native run-windows"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.21.0",
@@ -38,7 +39,8 @@
     "react-native-screens": "^3.29.0",
     "react-native-svg": "^14.1.0",
     "react-native-vector-icons": "^10.0.3",
-    "socket.io-client": "^4.6.1"
+    "socket.io-client": "^4.6.1",
+    "react-native-windows": "0.73.22"
   },
   "devDependencies": {
     "@babel/core": "^7.23.6",
@@ -56,10 +58,14 @@
     "metro-react-native-babel-preset": "^0.77.0",
     "prettier": "^3.1.1",
     "react-test-renderer": "18.2.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "metro-config": "^0.80.12"
   },
   "engines": {
     "node": ">=18",
     "npm": ">=9"
-  }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
