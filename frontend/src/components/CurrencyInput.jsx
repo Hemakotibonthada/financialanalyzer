@@ -110,7 +110,7 @@ const CurrencyInput = ({
             value={selectedCurrency}
             onChange={handleCurrencyChange}
             disabled={disabled}
-            className="h-full py-0 pl-3 pr-8 border-transparent bg-transparent text-gray-500 focus:ring-0 focus:border-transparent text-sm font-medium rounded-l-lg hover:bg-gray-50 transition-colors"
+            className="h-full py-0 pl-3pr-8 border-transparent bg-transparent text-gray-500 focus:ring-0 focus:border-transparent text-sm font-medium rounded-l-lg hover:bg-gray-50 transition-colors"
             aria-label="Select currency"
           >
             {CURRENCY_OPTIONS.map(option => (

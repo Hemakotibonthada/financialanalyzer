@@ -21,6 +21,7 @@ import {
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import ExpenseFormModal from '../components/ExpenseFormModal';
+import BudgetFormModal from '../components/BudgetFormModal';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const CompanyExpensesDashboard = () => {
@@ -33,6 +34,9 @@ const CompanyExpensesDashboard = () => {
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [investors, setInvestors] = useState([]);
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState(null);
+  const [budgetLoading, setBudgetLoading] = useState(false);
   const [filters, setFilters] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
@@ -44,7 +48,10 @@ const CompanyExpensesDashboard = () => {
   useEffect(() => {
     fetchExpenses();
     fetchAnalytics();
-  }, [filters]);
+    if (activeTab === 'budget') {
+      fetchBudgets();
+    }
+  }, [filters, activeTab]);
 
   const fetchExpenses = async () => {
     try {
@@ -77,6 +84,48 @@ const CompanyExpensesDashboard = () => {
     } catch (error) {
       console.error('Error fetching analytics:', error);
     }
+  };
+
+  const fetchBudgets = async () => {
+    try {
+      setBudgetLoading(true);
+      const response = await api.get('/company-expenses/budgets');
+      setBudgets(response.data.budgets || []);
+    } catch (error) {
+      console.error('Error fetching budgets:', error);
+      toast.error('Failed to fetch budgets');
+    } finally {
+      setBudgetLoading(false);
+    }
+  };
+
+  const handleDeleteBudget = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this budget?')) return;
+
+    try {
+      await api.delete(`/company-expenses/budgets/${id}`);
+      toast.success('Budget deleted successfully');
+      fetchBudgets();
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      toast.error('Failed to delete budget');
+    }
+  };
+
+  const openAddBudgetModal = () => {
+    setSelectedBudget(null);
+    setShowBudgetModal(true);
+  };
+
+  const openEditBudgetModal = (budget) => {
+    setSelectedBudget(budget);
+    setShowBudgetModal(true);
+  };
+
+  const handleBudgetModalSuccess = () => {
+    setShowBudgetModal(false);
+    setSelectedBudget(null);
+    fetchBudgets();
   };
 
   const handleDelete = async (id) => {
@@ -174,7 +223,11 @@ const CompanyExpensesDashboard = () => {
             <p className="text-gray-600 mt-1">Track expenses, budgets, transactions & investors</p>
           </div>
           <button
-            onClick={openAddModal}
+            onClick={() => {
+              if (activeTab === 'expenses') openAddModal();
+              else if (activeTab === 'budget') openAddBudgetModal();
+              // Add handlers for other tabs as needed
+            }}
             className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -518,31 +571,151 @@ const CompanyExpensesDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="border border-gray-200 rounded-lg p-4">
                   <p className="text-sm text-gray-600">Total Budget</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(0)}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {formatCurrency(budgets.reduce((sum, b) => sum + (b.amount || 0), 0))}
+                  </p>
                 </div>
                 <div className="border border-green-200 rounded-lg p-4 bg-green-50">
                   <p className="text-sm text-gray-600">Spent</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(0)}</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">
+                    {formatCurrency(budgets.reduce((sum, b) => sum + (b.spent || 0), 0))}
+                  </p>
                 </div>
                 <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
                   <p className="text-sm text-gray-600">Remaining</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(0)}</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">
+                    {formatCurrency(budgets.reduce((sum, b) => sum + ((b.amount || 0) - (b.spent || 0)), 0))}
+                  </p>
                 </div>
               </div>
 
               {/* Budget List */}
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <Target className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">No budgets created yet</p>
-                <p className="text-sm text-gray-500 mb-4">Create your first budget to start tracking spending limits</p>
-                <button
-                  onClick={openAddModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Budget
-                </button>
-              </div>
+              {budgetLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : budgets.length === 0 ? (
+                <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                  <Target className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">No budgets created yet</p>
+                  <p className="text-sm text-gray-500 mb-4">Create your first budget to start tracking spending limits</p>
+                  <button
+                    onClick={openAddBudgetModal}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Budget
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {budgets.map((budget) => {
+                    const spent = budget.spent || 0;
+                    const remaining = budget.amount - spent;
+                    const percentage = (spent / budget.amount) * 100;
+                    const isOverBudget = percentage > 100;
+                    const isNearThreshold = percentage >= budget.alertThreshold && !isOverBudget;
+
+                    return (
+                      <div key={budget._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{budget.name}</h3>
+                              {budget.isActive ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                                  Inactive
+                                </span>
+                              )}
+                              {isOverBudget && (
+                                <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                                  Over Budget
+                                </span>
+                              )}
+                              {isNearThreshold && (
+                                <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">
+                                  Near Limit
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <FileText className="w-4 h-4" />
+                                {budget.category}
+                              </span>
+                              <span>•</span>
+                              <span>{budget.department}</span>
+                              <span>•</span>
+                              <span>{budget.period}</span>
+                              <span>•</span>
+                              <span>
+                                {new Date(budget.startDate).toLocaleDateString()} - {new Date(budget.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {budget.description && (
+                              <p className="text-sm text-gray-600 mt-2">{budget.description}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => openEditBudgetModal(budget)}
+                              className="text-indigo-600 hover:text-indigo-900 p-2"
+                              title="Edit Budget"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBudget(budget._id)}
+                              className="text-red-600 hover:text-red-900 p-2"
+                              title="Delete Budget"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Budget Progress */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Budget Progress</span>
+                            <span className={`font-medium ${isOverBudget ? 'text-red-600' : isNearThreshold ? 'text-yellow-600' : 'text-gray-900'}`}>
+                              {percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div
+                              className={`h-2.5 rounded-full transition-all ${
+                                isOverBudget ? 'bg-red-600' : isNearThreshold ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <div>
+                              <span className="text-gray-600">Spent: </span>
+                              <span className="font-medium text-gray-900">{formatCurrency(spent)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Budget: </span>
+                              <span className="font-medium text-gray-900">{formatCurrency(budget.amount)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Remaining: </span>
+                              <span className={`font-medium ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {formatCurrency(Math.abs(remaining))}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -646,6 +819,19 @@ const CompanyExpensesDashboard = () => {
           }}
           expense={selectedExpense}
           onSuccess={handleModalSuccess}
+        />
+      )}
+
+      {/* Budget Modal */}
+      {showBudgetModal && (
+        <BudgetFormModal
+          isOpen={showBudgetModal}
+          onClose={() => {
+            setShowBudgetModal(false);
+            setSelectedBudget(null);
+          }}
+          budget={selectedBudget}
+          onSuccess={handleBudgetModalSuccess}
         />
       )}
     </MainLayout>
