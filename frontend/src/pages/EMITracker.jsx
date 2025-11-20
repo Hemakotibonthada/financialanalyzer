@@ -57,6 +57,35 @@ const EMITracker = () => {
   const [manualEMIDialogOpen, setManualEMIDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
+  // Manual EMI Dialog State
+  const [manualEMILoading, setManualEMILoading] = useState(false);
+  const [manualEMIData, setManualEMIData] = useState({
+    cardProvider: '',
+    customProviderName: '',
+    cardLastFourDigits: '',
+    cardHolderName: '',
+    merchantName: '',
+    productDescription: '',
+    category: 'electronics',
+    invoiceNumber: '',
+    principalAmount: '',
+    interestRate: '',
+    processingFee: '',
+    prepaymentCharges: '',
+    emiAmount: '',
+    totalTenure: '',
+    repaymentType: 'MONTHLY',
+    startDate: new Date().toISOString().split('T')[0],
+    reminderDate: '',
+    lenderContact: '',
+    loanAccountNumber: '',
+    insuranceIncluded: 'no',
+    autoDebit: 'no',
+    notes: '',
+    tags: []
+  });
+  const [manualEMIErrors, setManualEMIErrors] = useState({});
+
   // Use custom hooks
   const emiData = useEMIData();
   const monthlyTrendsData = useMonthlyTrends();
@@ -89,6 +118,113 @@ const EMITracker = () => {
     } catch (err) {
       console.error('Error fetching profile:', err);
     }
+  };
+
+  const handleManualEMIChange = (field, value) => {
+    setManualEMIData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    if (manualEMIErrors[field]) {
+      setManualEMIErrors(prev => ({
+        ...prev,
+        [field]: null
+      }));
+    }
+  };
+
+  const validateManualEMI = () => {
+    const errors = {};
+    
+    if (!manualEMIData.cardProvider) errors.cardProvider = 'Card provider is required';
+    if (manualEMIData.cardProvider === 'OTHER' && !manualEMIData.customProviderName) {
+      errors.customProviderName = 'Provider name is required';
+    }
+    if (!manualEMIData.cardLastFourDigits) {
+      errors.cardLastFourDigits = 'Card last 4 digits required';
+    } else if (!/^\d{4}$/.test(manualEMIData.cardLastFourDigits)) {
+      errors.cardLastFourDigits = 'Must be exactly 4 digits';
+    }
+    if (!manualEMIData.cardHolderName) errors.cardHolderName = 'Card holder name is required';
+    if (!manualEMIData.merchantName) errors.merchantName = 'Merchant name is required';
+    if (!manualEMIData.principalAmount || parseFloat(manualEMIData.principalAmount) <= 0) {
+      errors.principalAmount = 'Valid principal amount required';
+    }
+    
+    if (manualEMIData.repaymentType === 'MONTHLY') {
+      if (!manualEMIData.emiAmount || parseFloat(manualEMIData.emiAmount) <= 0) {
+        errors.emiAmount = 'Valid EMI amount required';
+      }
+      if (!manualEMIData.totalTenure || parseInt(manualEMIData.totalTenure) <= 0) {
+        errors.totalTenure = 'Valid tenure required';
+      }
+    }
+    
+    if (!manualEMIData.startDate) errors.startDate = 'Start date is required';
+    
+    setManualEMIErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateManualEMI = async () => {
+    if (!validateManualEMI()) {
+      return;
+    }
+
+    setManualEMILoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const axios = require('axios');
+      const API_URL = require('./EMI/hooks/useEMIData').API_URL;
+      await axios.post(
+        `${API_URL}/emi/manual`,
+        manualEMIData,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      alert('EMI created successfully!');
+      handleCloseManualEMIDialog();
+      emiData.fetchAllData();
+    } catch (err) {
+      console.error('Error creating manual EMI:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to create EMI';
+      alert(errorMessage);
+    } finally {
+      setManualEMILoading(false);
+    }
+  };
+
+  const handleCloseManualEMIDialog = () => {
+    setManualEMIDialogOpen(false);
+    setManualEMIData({
+      cardProvider: '',
+      customProviderName: '',
+      cardLastFourDigits: '',
+      cardHolderName: '',
+      merchantName: '',
+      productDescription: '',
+      category: 'electronics',
+      invoiceNumber: '',
+      principalAmount: '',
+      interestRate: '',
+      processingFee: '',
+      prepaymentCharges: '',
+      emiAmount: '',
+      totalTenure: '',
+      repaymentType: 'MONTHLY',
+      startDate: new Date().toISOString().split('T')[0],
+      reminderDate: '',
+      lenderContact: '',
+      loanAccountNumber: '',
+      insuranceIncluded: 'no',
+      autoDebit: 'no',
+      notes: '',
+      tags: []
+    });
+    setManualEMIErrors({});
   };
 
   if (emiData.loading && !emiData.overview) {
@@ -252,8 +388,12 @@ const EMITracker = () => {
           {/* Dialogs */}
           <ManualEMIDialog
             open={manualEMIDialogOpen}
-            onClose={() => setManualEMIDialogOpen(false)}
-            onSuccess={emiData.fetchAllData}
+            onClose={handleCloseManualEMIDialog}
+            manualEMIData={manualEMIData}
+            handleManualEMIChange={handleManualEMIChange}
+            manualEMIErrors={manualEMIErrors}
+            manualEMILoading={manualEMILoading}
+            handleCreateManualEMI={handleCreateManualEMI}
           />
           <SyncDialog
             open={syncDialogOpen}
