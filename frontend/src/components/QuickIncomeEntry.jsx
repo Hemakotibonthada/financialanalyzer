@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, TrendingUp, Calendar, DollarSign, Clock } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import { useConfirm } from '../hooks/useConfirm';
 
 const QuickIncomeEntry = ({ onIncomeAdded }) => {
   const notification = useNotification();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('add');
   const [income, setIncome] = useState({
@@ -113,9 +115,14 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
   };
 
   const handleDeleteIncome = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this income?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Income',
+      message: 'Are you sure you want to delete this income? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       await api.delete(`/incomes/${id}`);
@@ -130,18 +137,22 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 flex items-center space-x-2 z-50"
-        style={{ boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)' }}
-      >
-        <TrendingUp className="w-6 h-6" />
-        <span className="font-medium">Quick Income</span>
-      </button>
+      <>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-24 right-6 bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 flex items-center space-x-2 z-50"
+          style={{ boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)' }}
+        >
+          <TrendingUp className="w-6 h-6" />
+          <span className="font-medium">Quick Income</span>
+        </button>
+        <ConfirmDialog />
+      </>
     );
   }
 
   return (
+    <>
     <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-2xl z-50 border border-gray-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 rounded-t-lg flex items-center justify-between">
@@ -330,6 +341,8 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
         )}
       </div>
     </div>
+    <ConfirmDialog />
+    </>
   );
 };
 

@@ -97,10 +97,22 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     });
     console.log('Current month investments:', currentMonthInvestments.length);
 
+    // ALSO check expenses with category 'investment' (from Expense Tracker)
+    const investmentExpenses = currentMonthExpenses.filter(exp => {
+      const category = exp.category || '';
+      return category.toLowerCase() === 'investment';
+    });
+    console.log('Current month investment expenses:', investmentExpenses.length);
+
     // Calculate totals
-    const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+    const totalExpenses = currentMonthExpenses.filter(exp => {
+      const category = exp.category || '';
+      return category.toLowerCase() !== 'investment'; // Exclude investment category from spending
+    }).reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
     const totalIncome = currentMonthIncomes.reduce((sum, inc) => sum + (parseFloat(inc.amount) || 0), 0);
-    const totalInvestments = currentMonthInvestments.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+    // Sum investments from both 'investments' collection AND expenses with category='investment'
+    const totalInvestments = currentMonthInvestments.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0) +
+                              investmentExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
     // Get profile monthly income (salary) to include in total income
     const profileMonthlyIncome = parseFloat(profileData.monthlyIncome || 0);
     const totalIncomeWithSalary = totalIncome + profileMonthlyIncome;
@@ -111,11 +123,14 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     const goals = (goalsSnapshot.docs || []).map(doc => ({ id: doc.id, ...doc.data() }));
     console.log('Budgets:', budgets.length, 'Goals:', goals.length);
 
-    // Category breakdown - needed for financial health calculation
+    // Category breakdown - needed for financial health calculation (exclude investments)
     const categoryData = {};
     currentMonthExpenses.forEach(exp => {
       const category = exp.category || 'Uncategorized';
-      categoryData[category] = (categoryData[category] || 0) + (parseFloat(exp.amount) || 0);
+      // Exclude investment category from spending breakdown
+      if (category.toLowerCase() !== 'investment') {
+        categoryData[category] = (categoryData[category] || 0) + (parseFloat(exp.amount) || 0);
+      }
     });
 
     // Calculate comprehensive financial health score (0-100)
@@ -398,7 +413,29 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         }
       });
 
-      const monthExpenseTotal = monthExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+      // Separate investments from spending for this month
+      const monthInvestmentExpenses = monthExpenses.filter(exp => {
+        const category = exp.category || '';
+        return category.toLowerCase() === 'investment';
+      });
+
+      const monthRegularExpenses = monthExpenses.filter(exp => {
+        const category = exp.category || '';
+        return category.toLowerCase() !== 'investment';
+      });
+
+      const monthInvestments = investments.filter(inv => {
+        try {
+          const date = inv.date?.toDate ? inv.date.toDate() : (inv.createdAt?.toDate ? inv.createdAt.toDate() : new Date(inv.date || inv.createdAt));
+          return date >= monthDate && date <= monthEnd;
+        } catch (err) {
+          return false;
+        }
+      });
+
+      const monthExpenseTotal = monthRegularExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+      const monthInvestmentTotal = monthInvestmentExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0) +
+                                   monthInvestments.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
       const monthIncomeFromTransactions = monthIncomes.reduce((sum, inc) => sum + (parseFloat(inc.amount) || 0), 0);
       // Include monthly salary/income from profile
       const monthIncomeTotal = monthIncomeFromTransactions + profileMonthlyIncome;
@@ -406,6 +443,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       
       monthlyStats.totalSpending += monthExpenseTotal;
       monthlyStats.totalIncome += monthIncomeTotal;
+      monthlyStats.totalInvestments += monthInvestmentTotal;
       
       monthlyTrends.push({
         month: monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
@@ -415,7 +453,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         netSavings: parseFloat(monthSavings.toFixed(2)),
         totalSpending: parseFloat(monthExpenseTotal.toFixed(2)),
         totalIncome: parseFloat(monthIncomeTotal.toFixed(2)),
-        totalInvestments: 0 // Can be calculated from investment transactions if available
+        totalInvestments: parseFloat(monthInvestmentTotal.toFixed(2))
       });
     }
     
@@ -424,7 +462,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       totalMonths: monthlyTrends.length,
       averageSpending: monthlyTrends.length > 0 ? parseFloat((monthlyStats.totalSpending / monthlyTrends.length).toFixed(2)) : 0,
       averageIncome: monthlyTrends.length > 0 ? parseFloat((monthlyStats.totalIncome / monthlyTrends.length).toFixed(2)) : 0,
-      averageInvestments: 0,
+      averageInvestments: monthlyTrends.length > 0 ? parseFloat((monthlyStats.totalInvestments / monthlyTrends.length).toFixed(2)) : 0,
       spendingTrend: monthlyTrends.length >= 2 && monthlyTrends[0].totalSpending > 0 ? 
         parseFloat((((monthlyTrends[monthlyTrends.length - 1].totalSpending - monthlyTrends[0].totalSpending) / monthlyTrends[0].totalSpending * 100).toFixed(2))) : 0,
       incomeTrend: monthlyTrends.length >= 2 && monthlyTrends[0].totalIncome > 0 ? 
@@ -439,7 +477,10 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     // Budget progress
     const budgetProgress = budgets.map(budget => {
       const categorySpent = currentMonthExpenses
-        .filter(exp => exp.category === budget.category)
+        .filter(exp => {
+          const category = exp.category || '';
+          return exp.category === budget.category && category.toLowerCase() !== 'investment';
+        })
         .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
       
       const budgetAmount = parseFloat(budget.amount) || 0;
@@ -536,9 +577,14 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         date: txn.date?.toDate ? txn.date.toDate().toISOString() : txn.date
       }));
 
-    // Spending Patterns Analysis
+    // Spending Patterns Analysis (exclude investments)
     const spendingPatterns = (() => {
-      if (expenses.length === 0) {
+      const spendingExpenses = expenses.filter(exp => {
+        const category = exp.category || '';
+        return category.toLowerCase() !== 'investment';
+      });
+
+      if (spendingExpenses.length === 0) {
         return null;
       }
 
@@ -564,7 +610,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       // Merchant/Category frequency
       const merchantData = {};
 
-      expenses.forEach(exp => {
+      spendingExpenses.forEach(exp => {
         try {
           const date = exp.date?.toDate ? exp.date.toDate() : new Date(exp.date);
           const dayIndex = date.getDay();
@@ -700,8 +746,8 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         recurringPatterns,
         insights,
         summary: {
-          totalTransactions: expenses.length,
-          avgTransactionSize: expenses.length > 0 ? parseFloat((totalExpenses / expenses.length).toFixed(2)) : 0,
+          totalTransactions: spendingExpenses.length,
+          avgTransactionSize: spendingExpenses.length > 0 ? parseFloat((spendingExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0) / spendingExpenses.length).toFixed(2)) : 0,
           mostActiveDay: peakDay.day,
           mostActiveHour: `${peakHour.hour}:00`,
           weekendSpendingRatio: weekdayTotal > 0 ? parseFloat((weekendTotal / (weekdayTotal + weekendTotal) * 100).toFixed(1)) : 0

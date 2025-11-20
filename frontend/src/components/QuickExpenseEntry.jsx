@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, TrendingDown, Calendar, DollarSign, Search, Download, Clock, Star } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import { useConfirm } from '../hooks/useConfirm';
 
 const QuickExpenseEntry = ({ onExpenseAdded }) => {
   const notification = useNotification();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('add'); // 'add', 'history', 'templates'
   const [expense, setExpense] = useState({
@@ -71,6 +73,17 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
       }
     }
   }, [isOpen, activeTab]);
+
+  // Auto-search when filters change
+  useEffect(() => {
+    if (isOpen && activeTab === 'history') {
+      const debounceTimer = setTimeout(() => {
+        loadAllExpenses();
+      }, 500); // Wait 500ms after user stops typing
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [searchQuery, filterCategory, filterDateRange, activeTab, isOpen]);
 
   const loadCurrencies = async () => {
     try {
@@ -230,9 +243,14 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
   };
 
   const handleDeleteExpense = async (expenseId) => {
-    if (!window.confirm('Delete this expense?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Expense',
+      message: 'Are you sure you want to delete this expense? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       const response = await api.delete(`/financial/quick-expense/${expenseId}`);
@@ -316,9 +334,14 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (!window.confirm('Delete this template?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Template',
+      message: 'Are you sure you want to delete this template? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       const response = await api.delete(`/financial/expense-template/${templateId}`);
@@ -640,10 +663,9 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
                         type="text"
-                        placeholder="Search by description or category..."
+                        placeholder="Search expenses by description or category..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && loadAllExpenses()}
                         className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                       />
                     </div>
@@ -875,6 +897,9 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
       </div>
     </div>
   )}
+
+  {/* Confirmation Dialog */}
+  <ConfirmDialog />
   </>
 );
 };

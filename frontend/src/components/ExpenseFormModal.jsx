@@ -190,15 +190,13 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
       let response;
       if (expense) {
         // Update existing expense
-        response = await api.put(`/company-expenses/${expense._id}`, submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        // Don't set Content-Type - let axios/browser set it with boundary
+        response = await api.put(`/company-expenses/${expense._id}`, submitData);
         toast.success('Expense updated successfully');
       } else {
         // Create new expense
-        response = await api.post('/company-expenses', submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        // Don't set Content-Type - let axios/browser set it with boundary
+        response = await api.post('/company-expenses', submitData);
         toast.success('Expense created successfully');
       }
 

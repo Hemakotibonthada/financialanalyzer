@@ -458,34 +458,108 @@ router.delete('/quick-expense/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Get expense history
+// Get expense history with filters
 router.get('/expense-history', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { limit = 20, offset = 0 } = req.query;
+    const { limit = 100, offset = 0, search, category, range = 'month' } = req.query;
     
-    const expensesSnapshot = await db.collection('expenses')
-      .where('userId', '==', userId)
-      .orderBy('date', 'desc')
-      .limit(parseInt(limit))
-      .offset(parseInt(offset))
-      .get();
+    console.log('Expense history request:', { userId, limit, offset, search, category, range });
     
-    const expenses = expensesSnapshot.docs.map(doc => ({
-      id: doc.id,
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date(now);
+    
+    switch (range) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '3months':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case 'all':
+        startDate = new Date(0); // Beginning of time
+        break;
+      case 'month':
+      default:
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+    }
+    
+    // Build query - simplified to avoid index requirement
+    // First, get all expenses for the user, then filter in memory
+    let query = db.collection('expenses').where('userId', '==', userId);
+    
+    const expensesSnapshot = await query.get();
+    
+    let expenses = expensesSnapshot.docs.map(doc => ({
+      _id: doc.id,
       ...doc.data(),
-      date: doc.data().date?.toDate ? doc.data().date.toDate().toISOString() : doc.data().date
+      date: doc.data().date?.toDate ? doc.data().date.toDate().toISOString() : doc.data().date,
+      amount: parseFloat(doc.data().amount) || 0
     }));
+    
+    console.log(`Total expenses before filtering: ${expenses.length}`);
+    
+    // Filter by date range
+    const startDateTimestamp = startDate.getTime();
+    expenses = expenses.filter(exp => {
+      try {
+        const expDate = new Date(exp.date);
+        return expDate.getTime() >= startDateTimestamp;
+      } catch (err) {
+        return false;
+      }
+    });
+    
+    console.log(`Expenses after date filter: ${expenses.length}`);
+    
+    // Filter by category if specified
+    if (category && category !== 'all') {
+      expenses = expenses.filter(exp => exp.category === category);
+      console.log(`Expenses after category filter: ${expenses.length}`);
+    }
+    
+    // Apply search filter
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      expenses = expenses.filter(exp => {
+        const description = (exp.description || '').toLowerCase();
+        const expCategory = (exp.category || '').toLowerCase();
+        return description.includes(searchLower) || expCategory.includes(searchLower);
+      });
+      console.log(`Expenses after search filter: ${expenses.length}`);
+    }
+    
+    // Sort by date descending
+    expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Apply pagination
+    const total = expenses.length;
+    const paginatedExpenses = expenses.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    
+    console.log(`Returning ${paginatedExpenses.length} expenses out of ${total}`);
     
     res.json({
       success: true,
-      data: expenses
+      expenses: paginatedExpenses,
+      pagination: {
+        total,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: total > (parseInt(offset) + parseInt(limit))
+      }
     });
   } catch (error) {
     console.error('Get expense history error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch expense history'
+      message: 'Failed to fetch expense history',
+      error: error.message
     });
   }
 });
@@ -497,16 +571,18 @@ router.get('/expense-templates', authenticateToken, async (req, res) => {
     
     const templatesSnapshot = await db.collection('expenseTemplates')
       .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
       .get();
     
     const templates = templatesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
+      _id: doc.id,
+      ...doc.data(),
+      amount: parseFloat(doc.data().amount) || 0
     }));
     
     res.json({
       success: true,
-      data: templates
+      templates: templates
     });
   } catch (error) {
     console.error('Get expense templates error:', error);

@@ -34,7 +34,9 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Tooltip
+  Tooltip,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import {
   PieChart,
@@ -144,13 +146,21 @@ const EMITracker = () => {
     cardHolderName: '',
     merchantName: '',
     productDescription: '',
+    category: 'electronics',
+    invoiceNumber: '',
     principalAmount: '',
     interestRate: '',
     processingFee: '',
+    prepaymentCharges: '',
     emiAmount: '',
     totalTenure: '',
     repaymentType: 'MONTHLY', // MONTHLY or ON_REQUEST
     startDate: new Date().toISOString().split('T')[0],
+    reminderDate: '',
+    lenderContact: '',
+    loanAccountNumber: '',
+    insuranceIncluded: 'no',
+    autoDebit: 'no',
     notes: '',
     tags: []
   });
@@ -2171,7 +2181,7 @@ const EMITracker = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: '#2e7d32' }}>
-                    ₹{Math.round(monthlyTrends.summary.avgMonthlyIncome).toLocaleString('en-IN')}
+                    ₹{Math.round(monthlyTrends.summary?.avgMonthlyIncome || 0).toLocaleString('en-IN')}
                   </Typography>
                 </CardContent>
               </Card>
@@ -2189,11 +2199,11 @@ const EMITracker = () => {
                       📅 Avg Monthly Spending
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#c62828', fontWeight: 600 }}>
-                      ↗ {monthlyTrends.analysis.spendingChange >= 0 ? '+' : ''}{Math.abs(monthlyTrends.analysis.spendingChange)}%
+                      ↗ {(monthlyTrends.analysis?.spendingChange || 0) >= 0 ? '+' : ''}{Math.abs(monthlyTrends.analysis?.spendingChange || 0)}%
                     </Typography>
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: '#c62828' }}>
-                    ₹{Math.round(monthlyTrends.summary.avgMonthlySpendings).toLocaleString('en-IN')}
+                    ₹{Math.round(monthlyTrends.summary?.avgMonthlySpendings || 0).toLocaleString('en-IN')}
                   </Typography>
                 </CardContent>
               </Card>
@@ -2215,7 +2225,7 @@ const EMITracker = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: '#6a1b9a' }}>
-                    ₹{Math.round(monthlyTrends.summary.totalInvestments).toLocaleString('en-IN')}
+                    ₹{Math.round(monthlyTrends.summary?.totalInvestments || 0).toLocaleString('en-IN')}
                   </Typography>
                 </CardContent>
               </Card>
@@ -2233,11 +2243,11 @@ const EMITracker = () => {
                       🐷 Avg Savings Rate
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#1565c0', fontWeight: 600 }}>
-                      ↘ {Math.abs(monthlyTrends.summary.avgSavingsRate)}%
+                      ↘ {Math.abs(monthlyTrends.summary?.avgSavingsRate || 0).toFixed(1)}%
                     </Typography>
                   </Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: '#1565c0' }}>
-                    ₹{Math.round(monthlyTrends.summary.totalNetSavings / trendsMonths).toLocaleString('en-IN')}
+                    ₹{Math.round((monthlyTrends.summary?.totalNetSavings || 0) / (trendsMonths || 1)).toLocaleString('en-IN')}
                   </Typography>
                 </CardContent>
               </Card>
@@ -3880,236 +3890,324 @@ const EMITracker = () => {
       <Dialog 
         open={manualEMIDialogOpen} 
         onClose={handleCloseManualEMIDialog}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            borderRadius: 4,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            overflow: 'hidden'
           }
         }}
       >
         <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
           fontWeight: 'bold',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          py: 3,
+          px: 4
         }}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AddIcon />
-            Add Manual EMI
+          <Box display="flex" alignItems="center" gap={2}>
+            <Box sx={{ 
+              bgcolor: 'rgba(255,255,255,0.2)', 
+              borderRadius: 2, 
+              p: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <AddIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>Add Manual EMI</Typography>
+              <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                Create a new EMI entry for your purchases
+              </Typography>
+            </Box>
           </Box>
           <IconButton 
             onClick={handleCloseManualEMIDialog}
-            sx={{ color: 'white' }}
+            sx={{ 
+              color: 'white',
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
+            }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         
-        <DialogContent sx={{ mt: 2 }}>
+        <DialogContent sx={{ p: 4, bgcolor: '#f8f9fa' }}>
           <Grid container spacing={3}>
             {/* Card Details Section */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
-                💳 Card Details
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, pb: 1, borderBottom: '2px solid', borderColor: 'primary.main' }}>
+                Card Details
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth error={!!manualEMIErrors.cardProvider}>
-                <InputLabel>Card Provider *</InputLabel>
-                <Select
-                  value={manualEMIData.cardProvider}
-                  onChange={(e) => handleManualEMIChange('cardProvider', e.target.value)}
-                  label="Card Provider *"
-                >
-                  <MenuItem value="ICICI">ICICI</MenuItem>
-                  <MenuItem value="HDFC">HDFC</MenuItem>
-                  <MenuItem value="SBI">SBI</MenuItem>
-                  <MenuItem value="AXIS">AXIS</MenuItem>
-                  <MenuItem value="KOTAK">KOTAK</MenuItem>
-                  <MenuItem value="CITI">CITI</MenuItem>
-                  <MenuItem value="AMEX">AMEX</MenuItem>
-                  <MenuItem value="STANDARD CHARTERED">STANDARD CHARTERED</MenuItem>
-                  <MenuItem value="INDUSIND">INDUSIND</MenuItem>
-                  <MenuItem value="YES BANK">YES BANK</MenuItem>
-                  <MenuItem value="OTHER">OTHER</MenuItem>
-                </Select>
-                {manualEMIErrors.cardProvider && (
-                  <Typography variant="caption" color="error">{manualEMIErrors.cardProvider}</Typography>
-                )}
-              </FormControl>
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Card Provider *</Typography>
+              <FormControl fullWidth error={!!manualEMIErrors.cardProvider} variant="outlined">
+                  <Select
+                    value={manualEMIData.cardProvider}
+                    onChange={(e) => handleManualEMIChange('cardProvider', e.target.value)}
+                    sx={{
+                      bgcolor: 'white',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderWidth: 2
+                      }
+                    }}
+                  >
+                    <MenuItem value="ICICI">ICICI Bank</MenuItem>
+                    <MenuItem value="HDFC">HDFC Bank</MenuItem>
+                    <MenuItem value="SBI">State Bank of India</MenuItem>
+                    <MenuItem value="AXIS">Axis Bank</MenuItem>
+                    <MenuItem value="KOTAK">Kotak Mahindra</MenuItem>
+                    <MenuItem value="CITI">Citi Bank</MenuItem>
+                    <MenuItem value="AMEX">American Express</MenuItem>
+                    <MenuItem value="STANDARD CHARTERED">Standard Chartered</MenuItem>
+                    <MenuItem value="INDUSIND">IndusInd Bank</MenuItem>
+                    <MenuItem value="YES BANK">Yes Bank</MenuItem>
+                    <MenuItem value="PAYTM">Paytm</MenuItem>
+                    <MenuItem value="BAJAJ FINSERV">Bajaj Finserv</MenuItem>
+                    <MenuItem value="IDFC FIRST">IDFC First Bank</MenuItem>
+                    <MenuItem value="RBL">RBL Bank</MenuItem>
+                    <MenuItem value="HSBC">HSBC Bank</MenuItem>
+                    <MenuItem value="BOB">Bank of Baroda</MenuItem>
+                    <MenuItem value="PNB">Punjab National Bank</MenuItem>
+                    <MenuItem value="CANARA">Canara Bank</MenuItem>
+                    <MenuItem value="UNION BANK">Union Bank</MenuItem>
+                    <MenuItem value="IDBI">IDBI Bank</MenuItem>
+                    <MenuItem value="OTHER">Other</MenuItem>
+                  </Select>
+                  {manualEMIErrors.cardProvider && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                      {manualEMIErrors.cardProvider}
+                    </Typography>
+                  )}
+                </FormControl>
             </Grid>
 
             {/* Custom Provider Name - Shows only when OTHER is selected */}
             {manualEMIData.cardProvider === 'OTHER' && (
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Provider Name *</Typography>
                 <TextField
                   fullWidth
-                  label="Provider Name *"
                   value={manualEMIData.customProviderName}
                   onChange={(e) => handleManualEMIChange('customProviderName', e.target.value)}
                   error={!!manualEMIErrors.customProviderName}
-                  helperText={manualEMIErrors.customProviderName || 'Enter the name of the loan provider'}
-                  placeholder="e.g., Local Bank, Friend, Family, etc."
+                  helperText={manualEMIErrors.customProviderName}
+                  placeholder="e.g., Local Bank, Friend, Family"
+                  sx={{ bgcolor: 'white' }}
+                  InputProps={{
+                    sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                  }}
                 />
               </Grid>
             )}
 
-            <Grid item xs={12} sm={manualEMIData.cardProvider === 'OTHER' ? 12 : 6}>
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Card Last 4 Digits *</Typography>
               <TextField
                 fullWidth
-                label="Card Last 4 Digits *"
                 value={manualEMIData.cardLastFourDigits}
                 onChange={(e) => handleManualEMIChange('cardLastFourDigits', e.target.value)}
                 error={!!manualEMIErrors.cardLastFourDigits}
                 helperText={manualEMIErrors.cardLastFourDigits}
                 inputProps={{ maxLength: 4, pattern: '[0-9]*' }}
                 placeholder="1234"
+                sx={{ bgcolor: 'white' }}
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
               />
             </Grid>
 
             <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Card Holder Name *</Typography>
               <TextField
                 fullWidth
-                label="Card Holder Name *"
                 value={manualEMIData.cardHolderName}
                 onChange={(e) => handleManualEMIChange('cardHolderName', e.target.value)}
                 error={!!manualEMIErrors.cardHolderName}
                 helperText={manualEMIErrors.cardHolderName}
                 placeholder="John Doe"
+                sx={{ bgcolor: 'white' }}
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
               />
             </Grid>
 
-            {/* EMI Details Section */}
+            {/* Purchase Details Section */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
-                🛍️ Purchase Details
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'secondary.main', mb: 2, mt: 2, pb: 1, borderBottom: '2px solid', borderColor: 'secondary.main' }}>
+                Purchase Details
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Merchant Name *</Typography>
               <TextField
                 fullWidth
-                label="Merchant Name *"
                 value={manualEMIData.merchantName}
                 onChange={(e) => handleManualEMIChange('merchantName', e.target.value)}
                 error={!!manualEMIErrors.merchantName}
                 helperText={manualEMIErrors.merchantName}
-                placeholder="Amazon, Flipkart, etc."
+                placeholder="Amazon, Flipkart, Apple Store"
+                sx={{ bgcolor: 'white' }}
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Product Description</Typography>
               <TextField
                 fullWidth
-                label="Product Description"
                 value={manualEMIData.productDescription}
                 onChange={(e) => handleManualEMIChange('productDescription', e.target.value)}
-                placeholder="iPhone, Laptop, etc."
+                placeholder="iPhone 15 Pro, MacBook Air, etc."
+                sx={{ bgcolor: 'white' }}
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Purchase Category</Typography>
+              <FormControl fullWidth variant="outlined">
+                <Select
+                  value={manualEMIData.category || 'electronics'}
+                  onChange={(e) => handleManualEMIChange('category', e.target.value)}
+                  sx={{
+                    bgcolor: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 }
+                  }}
+                >
+                    <MenuItem value="electronics">Electronics</MenuItem>
+                    <MenuItem value="furniture">Furniture</MenuItem>
+                    <MenuItem value="appliances">Home Appliances</MenuItem>
+                    <MenuItem value="vehicle">Vehicle</MenuItem>
+                    <MenuItem value="jewellery">Jewellery</MenuItem>
+                    <MenuItem value="education">Education</MenuItem>
+                    <MenuItem value="travel">Travel</MenuItem>
+                    <MenuItem value="medical">Medical</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Order/Invoice No.</Typography>
+              <TextField
+                fullWidth
+                value={manualEMIData.invoiceNumber || ''}
+                onChange={(e) => handleManualEMIChange('invoiceNumber', e.target.value)}
+                placeholder="INV-2025-001"
+                sx={{ bgcolor: 'white' }}
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
               />
             </Grid>
 
             {/* Financial Details Section */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
-                💰 Financial Details
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main', mb: 2, mt: 2, pb: 1, borderBottom: '2px solid', borderColor: 'success.main' }}>
+                Financial Details
               </Typography>
             </Grid>
 
             {/* Repayment Type Selection */}
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Repayment Type *</InputLabel>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Repayment Type *</Typography>
+              <FormControl fullWidth variant="outlined">
                 <Select
                   value={manualEMIData.repaymentType}
                   onChange={(e) => handleManualEMIChange('repaymentType', e.target.value)}
-                  label="Repayment Type *"
+                  sx={{
+                    bgcolor: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderWidth: 2
+                    }
+                  }}
                 >
-                  <MenuItem value="MONTHLY">
-                    <Box>
-                      <Typography variant="body1" fontWeight={600}>📅 Monthly EMI</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Regular monthly installments with fixed tenure
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="ON_REQUEST">
-                    <Box>
-                      <Typography variant="body1" fontWeight={600}>🤝 On Request (Personal Loan)</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Pay back anytime when requested (friends, family, informal loans)
-                      </Typography>
-                    </Box>
-                  </MenuItem>
+                    <MenuItem value="MONTHLY">
+                      <Box sx={{ py: 1 }}>
+                        <Typography variant="body1" fontWeight={700}>
+                          Monthly EMI
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Regular monthly installments with fixed tenure
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="ON_REQUEST">
+                      <Box sx={{ py: 1 }}>
+                        <Typography variant="body1" fontWeight={700}>
+                          On Request (Personal Loan)
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Pay back anytime when requested (friends, family, informal loans)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Principal Amount *</Typography>
               <TextField
                 fullWidth
-                label="Principal Amount *"
                 type="number"
                 value={manualEMIData.principalAmount}
                 onChange={(e) => handleManualEMIChange('principalAmount', e.target.value)}
                 error={!!manualEMIErrors.principalAmount}
-                helperText={manualEMIErrors.principalAmount || (manualEMIData.repaymentType === 'ON_REQUEST' ? 'Total loan amount to be repaid' : '')}
-                InputProps={{ startAdornment: '₹' }}
+                helperText={manualEMIErrors.principalAmount || (manualEMIData.repaymentType === 'ON_REQUEST' ? 'Total loan amount' : 'Original loan')}
+                InputProps={{ 
+                  startAdornment: <Typography sx={{ mr: 1, fontWeight: 600 }}>₹</Typography>,
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
                 placeholder="50000"
+                sx={{ bgcolor: 'white' }}
               />
             </Grid>
 
             {/* Only show EMI Amount for MONTHLY repayment type */}
             {manualEMIData.repaymentType === 'MONTHLY' && (
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>EMI Amount *</Typography>
                 <TextField
                   fullWidth
-                  label="EMI Amount (Monthly) *"
                   type="number"
                   value={manualEMIData.emiAmount}
                   onChange={(e) => handleManualEMIChange('emiAmount', e.target.value)}
                   error={!!manualEMIErrors.emiAmount}
                   helperText={manualEMIErrors.emiAmount}
-                  InputProps={{ startAdornment: '₹' }}
+                  InputProps={{ 
+                    startAdornment: <Typography sx={{ mr: 1, fontWeight: 600 }}>₹</Typography>,
+                    sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                  }}
                   placeholder="5000"
+                  sx={{ bgcolor: 'white' }}
                 />
               </Grid>
             )}
 
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Interest Rate (%)"
-                type="number"
-                value={manualEMIData.interestRate}
-                onChange={(e) => handleManualEMIChange('interestRate', e.target.value)}
-                placeholder="12"
-                InputProps={{ endAdornment: '%' }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Processing Fee"
-                type="number"
-                value={manualEMIData.processingFee}
-                onChange={(e) => handleManualEMIChange('processingFee', e.target.value)}
-                InputProps={{ startAdornment: '₹' }}
-                placeholder="0"
-              />
-            </Grid>
-
-            {/* Only show Tenure for MONTHLY repayment type */}
             {manualEMIData.repaymentType === 'MONTHLY' && (
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Tenure (Months) *</Typography>
                 <TextField
                   fullWidth
-                  label="Tenure (Months) *"
                   type="number"
                   value={manualEMIData.totalTenure}
                   onChange={(e) => handleManualEMIChange('totalTenure', e.target.value)}
@@ -4117,46 +4215,194 @@ const EMITracker = () => {
                   helperText={manualEMIErrors.totalTenure}
                   placeholder="12"
                   inputProps={{ min: 1, max: 60 }}
+                  sx={{ bgcolor: 'white' }}
+                  InputProps={{
+                    sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                  }}
                 />
               </Grid>
             )}
 
-            {/* Date Section */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
-                📅 Date Information
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Interest Rate (%)</Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={manualEMIData.interestRate}
+                onChange={(e) => handleManualEMIChange('interestRate', e.target.value)}
+                placeholder="12"
+                InputProps={{ 
+                  endAdornment: <Typography sx={{ ml: 1, fontWeight: 600 }}>%</Typography>,
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+                sx={{ bgcolor: 'white' }}
+                helperText="Annual interest rate"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Processing Fee</Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={manualEMIData.processingFee}
+                onChange={(e) => handleManualEMIChange('processingFee', e.target.value)}
+                InputProps={{ 
+                  startAdornment: <Typography sx={{ mr: 1, fontWeight: 600 }}>₹</Typography>,
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+                placeholder="0"
+                sx={{ bgcolor: 'white' }}
+                helperText="One-time charges"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Prepayment Charges</Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={manualEMIData.prepaymentCharges || ''}
+                onChange={(e) => handleManualEMIChange('prepaymentCharges', e.target.value)}
+                InputProps={{ 
+                  endAdornment: <Typography sx={{ ml: 1, fontWeight: 600 }}>%</Typography>,
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+                placeholder="2"
+                sx={{ bgcolor: 'white' }}
+                helperText="Early closure penalty %"
+              />
+            </Grid>
+
+            {/* Date Information Section */}
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'info.main', mb: 2, mt: 2, pb: 1, borderBottom: '2px solid', borderColor: 'info.main' }}>
+                Date Information
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>EMI Start Date *</Typography>
               <TextField
                 fullWidth
-                label="EMI Start Date *"
                 type="date"
                 value={manualEMIData.startDate}
                 onChange={(e) => handleManualEMIChange('startDate', e.target.value)}
                 error={!!manualEMIErrors.startDate}
-                helperText={manualEMIErrors.startDate}
+                helperText={manualEMIErrors.startDate || 'When EMI starts'}
                 InputLabelProps={{ shrink: true }}
+                sx={{ bgcolor: 'white' }}
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
               />
             </Grid>
 
-            {/* Additional Information */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
-                📝 Additional Information
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Reminder Date</Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={manualEMIData.reminderDate || ''}
+                onChange={(e) => handleManualEMIChange('reminderDate', e.target.value)}
+                placeholder="5"
+                inputProps={{ min: 1, max: 28 }}
+                sx={{ bgcolor: 'white' }}
+                helperText="Day of month for reminder"
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+              />
+            </Grid>
+
+            {/* Additional Information Section */}
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'warning.main', mb: 2, mt: 2, pb: 1, borderBottom: '2px solid', borderColor: 'warning.main' }}>
+                Additional Information
               </Typography>
             </Grid>
 
             <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Lender Contact</Typography>
               <TextField
                 fullWidth
-                label="Notes"
+                value={manualEMIData.lenderContact || ''}
+                onChange={(e) => handleManualEMIChange('lenderContact', e.target.value)}
+                placeholder="Customer service number"
+                sx={{ bgcolor: 'white' }}
+                helperText="Bank/lender phone"
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Loan Account No.</Typography>
+              <TextField
+                fullWidth
+                value={manualEMIData.loanAccountNumber || ''}
+                onChange={(e) => handleManualEMIChange('loanAccountNumber', e.target.value)}
+                placeholder="ACC123456789"
+                sx={{ bgcolor: 'white' }}
+                helperText="Account/loan reference"
+                InputProps={{
+                  sx: { '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 } }
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Insurance Included</Typography>
+              <FormControl fullWidth variant="outlined">
+                <Select
+                  value={manualEMIData.insuranceIncluded || 'no'}
+                  onChange={(e) => handleManualEMIChange('insuranceIncluded', e.target.value)}
+                  sx={{
+                    bgcolor: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 }
+                  }}
+                >
+                  <MenuItem value="no">No Insurance</MenuItem>
+                  <MenuItem value="yes">Insurance Included</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Auto-Debit Enabled</Typography>
+              <FormControl fullWidth variant="outlined">
+                <Select
+                  value={manualEMIData.autoDebit || 'no'}
+                  onChange={(e) => handleManualEMIChange('autoDebit', e.target.value)}
+                  sx={{
+                    bgcolor: 'white',
+                    '& .MuiOutlinedInput-notchedOutline': { borderWidth: 2 }
+                  }}
+                >
+                  <MenuItem value="no">Manual Payment</MenuItem>
+                  <MenuItem value="yes">Auto-Debit Active</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Notes</Typography>
+              <TextField
+                fullWidth
                 multiline
                 rows={3}
                 value={manualEMIData.notes}
                 onChange={(e) => handleManualEMIChange('notes', e.target.value)}
                 placeholder="Any additional notes about this EMI..."
+                sx={{ 
+                  bgcolor: 'white',
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderWidth: 2
+                    }
+                  }
+                }}
               />
             </Grid>
 
@@ -4168,66 +4414,105 @@ const EMITracker = () => {
               <Grid item xs={12}>
                 <Card sx={{ 
                   background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
-                  border: '2px solid',
-                  borderColor: 'primary.light'
+                  border: '3px solid',
+                  borderColor: 'primary.main',
+                  borderRadius: 3,
+                  boxShadow: '0 8px 24px rgba(102, 126, 234, 0.2)'
                 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                      📊 {manualEMIData.repaymentType === 'MONTHLY' ? 'EMI Summary' : 'Loan Summary'}
-                    </Typography>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                      <Box sx={{ 
+                        bgcolor: 'primary.main', 
+                        borderRadius: 2, 
+                        p: 1.5,
+                        display: 'flex'
+                      }}>
+                        <Typography sx={{ fontSize: 28 }}>📊</Typography>
+                      </Box>
+                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                        {manualEMIData.repaymentType === 'MONTHLY' ? 'EMI Summary' : 'Loan Summary'}
+                      </Typography>
+                    </Box>
                     
                     {manualEMIData.repaymentType === 'MONTHLY' ? (
-                      <Grid container spacing={2}>
-                        <Grid item xs={6} sm={3}>
-                          <Typography variant="caption" color="text.secondary">Principal</Typography>
-                          <Typography variant="h6" color="primary">
-                            {formatCurrency(parseFloat(manualEMIData.principalAmount))}
-                          </Typography>
+                        <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                              💵 Principal Amount
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700}>
+                              ₹{parseFloat(manualEMIData.principalAmount || 0).toLocaleString('en-IN')}
+                            </Typography>
+                          </Box>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
-                          <Typography variant="caption" color="text.secondary">Monthly EMI</Typography>
-                          <Typography variant="h6" color="primary">
-                            {formatCurrency(parseFloat(manualEMIData.emiAmount))}
-                          </Typography>
+                        <Grid item xs={12} sm={6}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                              💳 Monthly EMI
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700} color="primary">
+                              ₹{parseFloat(manualEMIData.emiAmount || 0).toLocaleString('en-IN')}
+                            </Typography>
+                          </Box>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
-                          <Typography variant="caption" color="text.secondary">Total Payable</Typography>
-                          <Typography variant="h6" color="secondary">
-                            {formatCurrency(parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure))}
-                          </Typography>
+                        <Grid item xs={12} sm={6}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                              📅 Tenure
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700}>
+                              {manualEMIData.totalTenure} months
+                            </Typography>
+                          </Box>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
-                          <Typography variant="caption" color="text.secondary">Total Interest</Typography>
-                          <Typography variant="h6" color="error">
-                            {formatCurrency((parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure)) - parseFloat(manualEMIData.principalAmount))}
-                          </Typography>
+                        <Grid item xs={12} sm={6}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                              💰 Total Amount
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700} color="success.main">
+                              ₹{(parseFloat(manualEMIData.emiAmount || 0) * parseFloat(manualEMIData.totalTenure || 0)).toLocaleString('en-IN')}
+                            </Typography>
+                          </Box>
                         </Grid>
+                        {manualEMIData.processingFee && parseFloat(manualEMIData.processingFee) > 0 && (
+                          <Grid item xs={12}>
+                            <Box sx={{ 
+                              bgcolor: 'warning.light', 
+                              p: 2, 
+                              borderRadius: 2,
+                              border: '2px solid',
+                              borderColor: 'warning.main'
+                            }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                                ⚠️ Processing Fee
+                              </Typography>
+                              <Typography variant="h6" fontWeight={700} color="warning.dark">
+                                ₹{parseFloat(manualEMIData.processingFee).toLocaleString('en-IN')}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
                       </Grid>
                     ) : (
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="caption" color="text.secondary">Total Loan Amount</Typography>
-                          <Typography variant="h6" color="primary">
-                            {formatCurrency(parseFloat(manualEMIData.principalAmount))}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="caption" color="text.secondary">Repayment Type</Typography>
-                          <Typography variant="h6" color="secondary">
-                            🤝 On Request (Pay Anytime)
-                          </Typography>
-                        </Grid>
+                      <Grid container spacing={3}>
                         <Grid item xs={12}>
                           <Box sx={{ 
-                            p: 2, 
-                            backgroundColor: 'info.light', 
-                            borderRadius: 1,
-                            border: '1px solid',
+                            bgcolor: 'info.light', 
+                            p: 3, 
+                            borderRadius: 2,
+                            border: '2px solid',
                             borderColor: 'info.main'
                           }}>
-                            <Typography variant="body2" color="info.dark">
-                              💡 <strong>Note:</strong> This is a personal loan that can be repaid anytime when requested. 
-                              No fixed monthly EMI or tenure.
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                              💵 Loan Amount
+                            </Typography>
+                            <Typography variant="h5" fontWeight={700} color="info.dark">
+                              ₹{parseFloat(manualEMIData.principalAmount || 0).toLocaleString('en-IN')}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                              This is an on-request loan. It will be tracked but won't have monthly payments until requested.
                             </Typography>
                           </Box>
                         </Grid>
@@ -4239,18 +4524,26 @@ const EMITracker = () => {
             )}
           </Grid>
         </DialogContent>
-
-        <DialogActions sx={{ p: 3, gap: 2 }}>
+        
+        <DialogActions sx={{ 
+          p: 3, 
+          bgcolor: '#f8f9fa',
+          borderTop: '2px solid',
+          borderColor: 'divider',
+          gap: 2
+        }}>
           <Button 
             onClick={handleCloseManualEMIDialog}
             variant="outlined"
-            startIcon={<CloseIcon />}
-            disabled={manualEMILoading}
-            sx={{
-              transition: 'all 0.3s ease',
+            size="large"
+            sx={{ 
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
+              borderWidth: 2,
               '&:hover': {
-                transform: 'scale(1.05)',
-                boxShadow: 3
+                borderWidth: 2,
+                bgcolor: 'action.hover'
               }
             }}
           >
@@ -4259,18 +4552,18 @@ const EMITracker = () => {
           <Button 
             onClick={handleCreateManualEMI}
             variant="contained"
-            startIcon={manualEMILoading ? <CircularProgress size={16} /> : <SaveIcon />}
+            size="large"
             disabled={manualEMILoading}
-            sx={{
-              transition: 'all 0.3s ease',
-              background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+            startIcon={manualEMILoading ? <CircularProgress size={20} /> : <AddIcon />}
+            sx={{ 
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
               '&:hover': {
-                transform: 'scale(1.05)',
-                boxShadow: 6,
-                background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
-              },
-              '&:disabled': {
-                background: 'grey.300'
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408b 100%)',
+                boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
               }
             }}
           >
@@ -4546,6 +4839,71 @@ const EMITracker = () => {
               value={loanGivenFormData.purpose}
               onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, purpose: e.target.value })}
             />
+
+            {/* Interest Section */}
+            <Box sx={{ 
+              p: 2, 
+              bgcolor: 'primary.light', 
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'primary.main'
+            }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={loanGivenFormData.hasInterest}
+                    onChange={(e) => setLoanGivenFormData({ 
+                      ...loanGivenFormData, 
+                      hasInterest: e.target.checked,
+                      interestRate: e.target.checked ? loanGivenFormData.interestRate : 0
+                    })}
+                    sx={{ color: 'primary.main' }}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body1" fontWeight={600}>
+                      💰 Charge Interest on this Loan
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Enable to add interest rate for this loan
+                    </Typography>
+                  </Box>
+                }
+              />
+              
+              {loanGivenFormData.hasInterest && (
+                <Box sx={{ mt: 2 }}>
+                  <TextField
+                    label="Interest Rate (% per annum)"
+                    type="number"
+                    fullWidth
+                    value={loanGivenFormData.interestRate}
+                    onChange={(e) => setLoanGivenFormData({ 
+                      ...loanGivenFormData, 
+                      interestRate: parseFloat(e.target.value) || 0 
+                    })}
+                    InputProps={{ 
+                      endAdornment: '% p.a.',
+                      inputProps: { min: 0, max: 100, step: 0.5 }
+                    }}
+                    helperText="Simple interest will be calculated based on days elapsed"
+                  />
+                  
+                  {/* Interest Preview */}
+                  {loanGivenFormData.amount && loanGivenFormData.interestRate > 0 && (
+                    <Box sx={{ mt: 2, p: 1.5, bgcolor: 'info.light', borderRadius: 1 }}>
+                      <Typography variant="caption" color="info.dark" display="block">
+                        📊 Interest Preview (1 year):
+                      </Typography>
+                      <Typography variant="body2" color="info.dark" fontWeight={600}>
+                        ₹{((parseFloat(loanGivenFormData.amount) * parseFloat(loanGivenFormData.interestRate) / 100) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
 
             <Box display="flex" gap={2}>
               <TextField

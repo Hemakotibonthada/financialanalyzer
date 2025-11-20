@@ -424,29 +424,59 @@ router.get('/monthly-trends', authenticateToken, async (req, res) => {
         }
       });
       
-      // Calculate expenses for this month
+      // Calculate expenses for this month (separate investments, loans)
       let monthSpending = 0;
+      let monthInvestments = 0;
+      let monthLoans = 0;
       expenseSnapshot.docs.forEach(doc => {
         const expense = doc.data();
         const expenseDate = expense.date?.toDate ? expense.date.toDate() : new Date(expense.date);
         if (expenseDate.getFullYear() === year && expenseDate.getMonth() === month) {
-          monthSpending += parseFloat(expense.amount) || 0;
+          const amount = parseFloat(expense.amount) || 0;
+          const category = (expense.category || '').toLowerCase();
+          
+          if (category === 'investment') {
+            monthInvestments += amount;
+          } else if (category === 'loan' || category === 'emi') {
+            monthLoans += amount;
+          } else {
+            monthSpending += amount;
+          }
         }
       });
       
+      // Calculate total monthly commitments (EMI + loans)
+      const monthlyCommitments = emiTotal + monthLoans;
+      
+      // Calculate net savings (income - spending - EMI)
+      const netSavings = monthIncome - monthSpending - emiTotal;
+      
+      // Calculate savings rate
+      const savingsRate = monthIncome > 0 ? ((netSavings / monthIncome) * 100) : 0;
+      
       monthlyTrends.push({
         month: monthKey,
+        monthName: monthKey,
+        year: date.getFullYear(),
         amount: Math.round(emiTotal * 100) / 100,
         count: emiSnapshot.docs.filter(doc => doc.data().status === 'active').length,
         income: Math.round(monthIncome * 100) / 100,
-        spending: Math.round(monthSpending * 100) / 100
+        spending: Math.round(monthSpending * 100) / 100,
+        spendings: Math.round(monthSpending * 100) / 100,
+        emiPayments: Math.round(emiTotal * 100) / 100,
+        investments: Math.round(monthInvestments * 100) / 100,
+        loanPayments: Math.round(monthLoans * 100) / 100,
+        monthlyCommitments: Math.round(monthlyCommitments * 100) / 100,
+        netSavings: Math.round(netSavings * 100) / 100,
+        savingsRate: Math.round(savingsRate * 10) / 10
       });
     }
     
     // Calculate analysis (change percentages)
     const analysis = {
       incomeChange: 0,
-      spendingChange: 0
+      spendingChange: 0,
+      difference: 0
     };
     
     if (monthlyTrends.length >= 2) {
@@ -455,20 +485,35 @@ router.get('/monthly-trends', authenticateToken, async (req, res) => {
       
       if (firstMonth.income > 0) {
         analysis.incomeChange = Math.round(((lastMonth.income - firstMonth.income) / firstMonth.income * 100) * 10) / 10;
+      } else if (lastMonth.income > 0) {
+        analysis.incomeChange = 100;
       }
       
       if (firstMonth.spending > 0) {
         analysis.spendingChange = Math.round(((lastMonth.spending - firstMonth.spending) / firstMonth.spending * 100) * 10) / 10;
+      } else if (lastMonth.spending > 0) {
+        analysis.spendingChange = 100;
       }
+      
+      analysis.difference = Math.round((lastMonth.spending - firstMonth.spending) * 100) / 100;
     }
     
     // Calculate summary statistics
-    const totalIncome = monthlyTrends.reduce((sum, m) => sum + m.income, 0);
-    const totalSpending = monthlyTrends.reduce((sum, m) => sum + m.spending, 0);
+    const totalIncome = monthlyTrends.reduce((sum, m) => sum + (m.income || 0), 0);
+    const totalSpending = monthlyTrends.reduce((sum, m) => sum + (m.spending || 0), 0);
+    const totalInvestments = monthlyTrends.reduce((sum, m) => sum + (m.investments || 0), 0);
+    const totalNetSavings = monthlyTrends.reduce((sum, m) => sum + (m.netSavings || 0), 0);
+    
+    const avgMonthlyIncome = monthlyTrends.length > 0 ? totalIncome / monthlyTrends.length : 0;
+    const avgMonthlySpendings = monthlyTrends.length > 0 ? totalSpending / monthlyTrends.length : 0;
+    const avgSavingsRate = avgMonthlyIncome > 0 ? ((avgMonthlyIncome - avgMonthlySpendings) / avgMonthlyIncome * 100) : 0;
     
     const summary = {
-      avgMonthlyIncome: Math.round((totalIncome / monthlyTrends.length) * 100) / 100,
-      avgMonthlySpending: Math.round((totalSpending / monthlyTrends.length) * 100) / 100
+      avgMonthlyIncome: Math.round(avgMonthlyIncome * 100) / 100,
+      avgMonthlySpendings: Math.round(avgMonthlySpendings * 100) / 100,
+      totalInvestments: Math.round(totalInvestments * 100) / 100,
+      totalNetSavings: Math.round(totalNetSavings * 100) / 100,
+      avgSavingsRate: Math.round(avgSavingsRate * 100) / 100
     };
     
     res.json({
@@ -855,29 +900,91 @@ router.post('/calculate', (req, res) => {
 router.post('/manual', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.uid;
+    const { 
+      cardProvider,
+      customProviderName,
+      cardLastFourDigits,
+      cardHolderName,
+      merchantName,
+      productDescription,
+      repaymentType,
+      principalAmount,
+      emiAmount,
+      interestRate,
+      processingFee,
+      totalTenure,
+      startDate,
+      notes
+    } = req.body;
+
+    // Calculate next due date and other fields
+    const emiStartDate = new Date(startDate);
+    const nextDueDate = new Date(emiStartDate);
+    
+    // For monthly EMI, set next due date to first payment
+    // For on-request, set it far in future
+    if (repaymentType === 'ON_REQUEST') {
+      nextDueDate.setFullYear(nextDueDate.getFullYear() + 10); // Set to 10 years in future
+    }
+
+    const principal = parseFloat(principalAmount) || 0;
+    const monthlyEMI = repaymentType === 'MONTHLY' ? (parseFloat(emiAmount) || 0) : 0;
+    const tenure = repaymentType === 'MONTHLY' ? (parseInt(totalTenure) || 0) : 0;
+    const interest = parseFloat(interestRate) || 0;
+    const fee = parseFloat(processingFee) || 0;
+
+    // Calculate total amount to be paid
+    const totalAmount = repaymentType === 'MONTHLY' 
+      ? (monthlyEMI * tenure) + fee
+      : principal + fee;
+
     const emiData = {
-      ...req.body,
       userId,
+      cardProvider: cardProvider === 'OTHER' ? customProviderName : cardProvider,
+      cardLastFourDigits: cardLastFourDigits || '',
+      cardHolderName: cardHolderName || '',
+      merchantName: merchantName || '',
+      productDescription: productDescription || '',
+      repaymentType: repaymentType || 'MONTHLY',
+      principalAmount: principal,
+      emiAmount: monthlyEMI,
+      interestRate: interest,
+      processingFee: fee,
+      totalTenure: tenure,
+      totalAmount: totalAmount,
+      paidAmount: 0,
+      remainingAmount: totalAmount,
+      paidInstallments: 0,
+      remainingInstallments: tenure,
+      startDate: admin.firestore.Timestamp.fromDate(emiStartDate),
+      nextDueDate: admin.firestore.Timestamp.fromDate(nextDueDate),
+      status: 'active',
+      notes: notes || '',
+      source: 'manual',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      source: 'manual'
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
     
-    const docRef = await db.collection('emis').add(emiData);
+    // Use 'emi' collection (singular) to match other endpoints
+    const docRef = await db.collection('emi').add(emiData);
     const doc = await docRef.get();
     
     res.status(201).json({ 
       success: true,
+      message: 'EMI created successfully',
       data: { 
         id: doc.id, 
-        ...doc.data() 
+        ...doc.data(),
+        startDate: doc.data().startDate?.toDate ? doc.data().startDate.toDate().toISOString() : doc.data().startDate,
+        nextDueDate: doc.data().nextDueDate?.toDate ? doc.data().nextDueDate.toDate().toISOString() : doc.data().nextDueDate
       } 
     });
   } catch (error) {
     console.error('Error adding manual EMI:', error);
     res.status(500).json({ 
       success: false,
-      message: 'Failed to add manual EMI' 
+      message: 'Failed to add manual EMI',
+      error: error.message
     });
   }
 });

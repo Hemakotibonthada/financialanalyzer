@@ -3,6 +3,7 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
+const Busboy = require('busboy');
 
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
@@ -11,18 +12,19 @@ const bucket = admin.storage().bucket();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+    fileSize: 50 * 1024 * 1024, // 50MB limit per file
     files: 10, // Max 10 files
-    fieldSize: 10 * 1024 * 1024, // 10MB per field
-    parts: 100 // Max 100 parts in multipart form
+    fieldSize: 50 * 1024 * 1024, // 50MB per field
+    parts: 1000, // Max 1000 parts in multipart form
+    headerPairs: 2000 // Increase header pairs limit
   },
   fileFilter: (req, file, cb) => {
     // Accept images, PDFs, and documents
-    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|txt/;
+    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|txt|image\//;
     const mimetype = allowedTypes.test(file.mimetype);
-    const extname = allowedTypes.test(file.originalname.toLowerCase().split('.').pop());
+    const extname = file.originalname ? allowedTypes.test(file.originalname.toLowerCase().split('.').pop()) : true;
     
-    if (mimetype && extname) {
+    if (mimetype || extname) {
       return cb(null, true);
     }
     cb(new Error('Invalid file type. Only images, PDFs, and documents are allowed.'));
@@ -36,7 +38,7 @@ const handleMulterError = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File too large. Maximum size is 10MB per file.'
+        message: 'File too large. Maximum size is 50MB per file.'
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
@@ -51,12 +53,25 @@ const handleMulterError = (err, req, res, next) => {
         message: 'Unexpected file field.'
       });
     }
+    if (err.code === 'LIMIT_PART_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Too many form parts.'
+      });
+    }
     return res.status(400).json({
       success: false,
       message: `Upload error: ${err.message}`
     });
   } else if (err) {
     console.error('File upload error:', err);
+    // Handle "Unexpected end of form" error
+    if (err.message && err.message.includes('Unexpected end of form')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Form upload interrupted. Please try again with a smaller file or check your connection.'
+      });
+    }
     return res.status(400).json({
       success: false,
       message: err.message || 'File upload failed'
@@ -234,13 +249,26 @@ router.get('/analytics', authenticateToken, async (req, res) => {
   }
 });
 
-// Create company expense
 // Create new company expense
 router.post('/', authenticateToken, (req, res, next) => {
-  upload.array('attachments', 10)(req, res, (err) => {
+  // Add timeout and error handling
+  const uploadMiddleware = upload.array('attachments', 10);
+  
+  uploadMiddleware(req, res, (err) => {
     if (err) {
+      console.error('Multer upload error:', err);
       return handleMulterError(err, req, res, next);
     }
+    
+    // Check if body was parsed
+    if (!req.body || Object.keys(req.body).length === 0) {
+      console.error('Empty request body after multer');
+      return res.status(400).json({
+        success: false,
+        message: 'No form data received. Please check your upload and try again.'
+      });
+    }
+    
     next();
   });
 }, async (req, res) => {
