@@ -12,7 +12,11 @@ import {
   Edit,
   Trash2,
   Eye,
-  Search
+  Search,
+  Wallet,
+  Users,
+  CreditCard,
+  Target
 } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'react-toastify';
@@ -25,6 +29,10 @@ const CompanyExpensesDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
+  const [activeTab, setActiveTab] = useState('expenses'); // 'expenses', 'budget', 'transactions', 'investors'
+  const [budgets, setBudgets] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [investors, setInvestors] = useState([]);
   const [filters, setFilters] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
@@ -162,16 +170,71 @@ const CompanyExpensesDashboard = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Company Expenses</h1>
-            <p className="text-gray-600 mt-1">Track and manage business expenses</p>
+            <h1 className="text-3xl font-bold text-gray-900">Company Trans</h1>
+            <p className="text-gray-600 mt-1">Track expenses, budgets, transactions & investors</p>
           </div>
           <button
             onClick={openAddModal}
             className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Add Expense
+            {activeTab === 'expenses' && 'Add Expense'}
+            {activeTab === 'budget' && 'Add Budget'}
+            {activeTab === 'transactions' && 'Add Transaction'}
+            {activeTab === 'investors' && 'Add Investor'}
           </button>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('expenses')}
+                className={`${
+                  activeTab === 'expenses'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+              >
+                <FileText className="w-5 h-5" />
+                Expenses
+              </button>
+              <button
+                onClick={() => setActiveTab('budget')}
+                className={`${
+                  activeTab === 'budget'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+              >
+                <Target className="w-5 h-5" />
+                Budget
+              </button>
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`${
+                  activeTab === 'transactions'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+              >
+                <CreditCard className="w-5 h-5" />
+                Transactions
+              </button>
+              <button
+                onClick={() => setActiveTab('investors')}
+                className={`${
+                  activeTab === 'investors'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+              >
+                <Users className="w-5 h-5" />
+                Investors
+              </button>
+            </nav>
+          </div>
         </div>
 
         {/* Analytics Cards */}
@@ -236,11 +299,12 @@ const CompanyExpensesDashboard = () => {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-          </div>
+        {activeTab === 'expenses' && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+            </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -332,9 +396,11 @@ const CompanyExpensesDashboard = () => {
             </button>
           </div>
         </div>
+        )}
 
         {/* Expenses Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {activeTab === 'expenses' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             {loading ? (
               <div className="flex justify-center items-center py-12">
@@ -439,6 +505,135 @@ const CompanyExpensesDashboard = () => {
             )}
           </div>
         </div>
+        )}
+
+        {/* Budget Tab */}
+        {activeTab === 'budget' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Budget Management</h2>
+              <p className="text-gray-600 mb-6">Set and track budgets for different categories and departments.</p>
+              
+              {/* Budget Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Total Budget</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(0)}</p>
+                </div>
+                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                  <p className="text-sm text-gray-600">Spent</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(0)}</p>
+                </div>
+                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                  <p className="text-sm text-gray-600">Remaining</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(0)}</p>
+                </div>
+              </div>
+
+              {/* Budget List */}
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <Target className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">No budgets created yet</p>
+                <p className="text-sm text-gray-500 mb-4">Create your first budget to start tracking spending limits</p>
+                <button
+                  onClick={openAddModal}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Budget
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transactions Tab */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Transaction History</h2>
+              <p className="text-gray-600 mb-6">Track all company financial transactions in one place.</p>
+              
+              {/* Transaction Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Total Transactions</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                  <p className="text-sm text-gray-600">Income</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(0)}</p>
+                </div>
+                <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                  <p className="text-sm text-gray-600">Expenses</p>
+                  <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(0)}</p>
+                </div>
+                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                  <p className="text-sm text-gray-600">Net</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(0)}</p>
+                </div>
+              </div>
+
+              {/* Transaction List */}
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">No transactions recorded</p>
+                <p className="text-sm text-gray-500 mb-4">Add your first transaction to track cash flow</p>
+                <button
+                  onClick={openAddModal}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Transaction
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Investors Tab */}
+        {activeTab === 'investors' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Investor Management</h2>
+              <p className="text-gray-600 mb-6">Manage investor information, shares, and communications.</p>
+              
+              {/* Investor Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Total Investors</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">0</p>
+                </div>
+                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                  <p className="text-sm text-gray-600">Total Investment</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(0)}</p>
+                </div>
+                <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                  <p className="text-sm text-gray-600">Active Investors</p>
+                  <p className="text-2xl font-bold text-purple-600 mt-1">0</p>
+                </div>
+                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                  <p className="text-sm text-gray-600">Total Shares</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">0%</p>
+                </div>
+              </div>
+
+              {/* Investor List */}
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">No investors added</p>
+                <p className="text-sm text-gray-500 mb-4">Add investor details to manage stakeholder information</p>
+                <button
+                  onClick={openAddModal}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Investor
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}

@@ -88,7 +88,7 @@ const Sidebar = () => {
       color: 'pink'
     },
     {
-      label: 'Company Expenses',
+      label: 'Company Trans',
       icon: Receipt,
       path: '/company-expenses',
       color: 'amber'
