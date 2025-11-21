@@ -1,30 +1,81 @@
-import React from 'react';
-import { Lightbulb, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Lightbulb, AlertTriangle, Info, CheckCircle, TrendingUp, Target, PiggyBank, CreditCard, ArrowRight, Sparkles } from 'lucide-react';
 
 const RecommendationsPanel = ({ recommendations }) => {
-  if (!recommendations || recommendations.length === 0) {
+  const [expandedIndex, setExpandedIndex] = useState(null);
+
+  // Generate smart suggestions if no recommendations
+  const generateSmartSuggestions = () => [
+    {
+      title: 'Set Up Your First Budget',
+      description: 'Start tracking your expenses by creating budget categories for groceries, utilities, and entertainment.',
+      action: 'Navigate to Budget section and create your first budget',
+      type: 'budget',
+      priority: 'high',
+      icon: Target,
+      benefit: 'Save up to 20% on monthly expenses'
+    },
+    {
+      title: 'Track Daily Expenses',
+      description: 'Add your daily transactions to get personalized insights and spending patterns.',
+      action: 'Use Quick Expense Entry to log transactions',
+      type: 'tracking',
+      priority: 'medium',
+      icon: CreditCard,
+      benefit: 'Better financial visibility'
+    },
+    {
+      title: 'Create an Emergency Fund',
+      description: 'Set aside 3-6 months of expenses as emergency savings for financial security.',
+      action: 'Set up a savings goal in Financial Goals',
+      type: 'savings',
+      priority: 'high',
+      icon: PiggyBank,
+      benefit: 'Financial peace of mind'
+    },
+    {
+      title: 'Review Subscriptions',
+      description: 'Identify and cancel unused subscriptions to save money each month.',
+      action: 'Check Recurring Transactions for subscriptions',
+      type: 'subscriptions',
+      priority: 'medium',
+      icon: TrendingUp,
+      benefit: 'Save ₹500-2000 per month'
+    }
+  ];
+
+  const displayRecommendations = recommendations && recommendations.length > 0 
+    ? recommendations 
+    : generateSmartSuggestions();
+
+  if (!displayRecommendations || displayRecommendations.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Financial Recommendations</h3>
         <div className="text-center py-8">
-          <Lightbulb className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No recommendations available</p>
+          <Sparkles className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-900 font-medium">AI Insights Loading...</p>
           <p className="text-xs text-gray-400 mt-2">
-            Recommendations will appear as your financial data is analyzed
+            Analyzing your financial data to provide personalized recommendations
           </p>
         </div>
       </div>
     );
   }
 
-  const getRecommendationIcon = (type, priority) => {
-    if (priority === 'high') return AlertTriangle;
+  const getRecommendationIcon = (rec) => {
+    // Use custom icon if provided
+    if (rec.icon) return rec.icon;
     
-    switch (type) {
+    if (rec.priority === 'high') return AlertTriangle;
+    
+    switch (rec.type) {
       case 'urgent': return AlertTriangle;
-      case 'budget': return AlertTriangle;
-      case 'savings': return CheckCircle;
-      case 'subscriptions': return Info;
+      case 'budget': return Target;
+      case 'savings': return PiggyBank;
+      case 'subscriptions': return CreditCard;
+      case 'investment': return TrendingUp;
+      case 'tracking': return CheckCircle;
       default: return Lightbulb;
     }
   };
@@ -66,65 +117,99 @@ const RecommendationsPanel = ({ recommendations }) => {
 
   return (
     <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">Financial Recommendations</h3>
-            <p className="text-sm text-gray-600 mt-1">Personalized advice to improve your finances</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                Financial Recommendations
+                {!recommendations || recommendations.length === 0 ? (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">AI Powered</span>
+                ) : null}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Personalized advice to improve your finances</p>
+            </div>
           </div>
-          <div className="text-sm text-gray-500">
-            {recommendations.length} recommendations
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">{displayRecommendations.length}</div>
+            <div className="text-xs text-gray-500">Active Tips</div>
           </div>
         </div>
       </div>
       
       <div className="p-6">
-        <div className="space-y-4">
-          {sortedRecommendations.map((rec, index) => {
-            const RecommendationIcon = getRecommendationIcon(rec.type, rec.priority);
+        <div className="space-y-3">
+          {displayRecommendations.map((rec, index) => {
+            const RecommendationIcon = getRecommendationIcon(rec);
+            const isExpanded = expandedIndex === index;
             
             return (
               <div 
                 key={index} 
-                className={`border rounded-lg p-4 ${getRecommendationStyle(rec.priority, rec.type)}`}
+                className={`border-2 rounded-xl transition-all duration-200 hover:shadow-md cursor-pointer ${
+                  isExpanded ? 'shadow-lg' : ''
+                } ${getRecommendationStyle(rec.priority, rec.type)}`}
+                onClick={() => setExpandedIndex(isExpanded ? null : index)}
               >
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mr-3">
-                    <RecommendationIcon className={`w-5 h-5 ${getIconStyle(rec.priority, rec.type)}`} />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium">
-                        {rec.title}
-                      </h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        rec.priority === 'high' ? 'bg-red-100 text-red-700' :
-                        rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {rec.priority} priority
-                      </span>
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 p-2 bg-white rounded-lg shadow-sm">
+                      <RecommendationIcon className={`w-5 h-5 ${getIconStyle(rec.priority, rec.type)}`} />
                     </div>
                     
-                    <p className="text-sm mb-3">
-                      {rec.description}
-                    </p>
-                    
-                    {rec.action && (
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 bg-current rounded-full mr-2 opacity-60"></div>
-                        <span className="text-sm font-medium">
-                          Action: {rec.action}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="text-base font-semibold mb-1">
+                            {rec.title}
+                          </h4>
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                            rec.priority === 'high' ? 'bg-red-100 text-red-700' :
+                            rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {rec.priority} priority
+                          </span>
+                        </div>
+                        <ArrowRight className={`w-5 h-5 text-gray-400 transition-transform ${
+                          isExpanded ? 'rotate-90' : ''
+                        }`} />
+                      </div>
+                      
+                      <p className="text-sm text-gray-700 mb-3">
+                        {rec.description}
+                      </p>
+                      
+                      {/* Benefit badge */}
+                      {rec.benefit && (
+                        <div className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 border border-green-200 rounded-full mb-3">
+                          <Sparkles className="w-3 h-3 text-green-600" />
+                          <span className="text-xs font-medium text-green-700">{rec.benefit}</span>
+                        </div>
+                      )}
+                      
+                      {/* Expanded content */}
+                      {isExpanded && rec.action && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="flex items-start gap-2 p-3 bg-white bg-opacity-70 rounded-lg">
+                            <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-xs font-medium text-gray-900 mb-1">Recommended Action:</p>
+                              <p className="text-sm text-gray-700">{rec.action}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Category tag */}
+                      <div className="mt-2">
+                        <span className="inline-block px-2 py-1 rounded-md text-xs font-medium bg-white bg-opacity-60">
+                          {rec.type?.charAt(0).toUpperCase() + rec.type?.slice(1) || 'General'}
                         </span>
                       </div>
-                    )}
-                    
-                    {/* Recommendation type indicator */}
-                    <div className="mt-2">
-                      <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-white bg-opacity-50">
-                        {rec.type?.charAt(0).toUpperCase() + rec.type?.slice(1) || 'General'}
-                      </span>
                     </div>
                   </div>
                 </div>
