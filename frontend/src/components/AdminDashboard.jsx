@@ -47,6 +47,18 @@ const AdminDashboard = () => {
   const [docPage, setDocPage] = useState(1);
   const [docPagination, setDocPagination] = useState(null);
   
+  // Contact submissions
+  const [contactSubmissions, setContactSubmissions] = useState([]);
+  const [contactStats, setContactStats] = useState(null);
+  const [contactFilters, setContactFilters] = useState({
+    status: 'all',
+    category: 'all',
+    priority: 'all',
+    search: ''
+  });
+  const [contactPage, setContactPage] = useState(1);
+  const [contactPagination, setContactPagination] = useState(null);
+  
   // Edit modal
   const [editingUser, setEditingUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -66,8 +78,10 @@ const AdminDashboard = () => {
       loadAnalytics();
     } else if (activeTab === 'system') {
       loadSystemHealth();
+    } else if (activeTab === 'contact') {
+      loadContactSubmissions();
     }
-  }, [activeTab, userPage, docPage, userSearch, userStatus, userRole, segmentPage, segmentFilters]);
+  }, [activeTab, userPage, docPage, userSearch, userStatus, userRole, segmentPage, segmentFilters, contactPage, contactFilters]);
 
   const loadDashboardData = async () => {
     try {
@@ -161,6 +175,63 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error loading system health:', error);
       setMessage({ type: 'error', text: 'Failed to load system health' });
+    }
+  };
+
+  const loadContactSubmissions = async () => {
+    try {
+      const response = await api.get('/contact/submissions', {
+        params: {
+          page: contactPage,
+          limit: 50,
+          ...(contactFilters.status !== 'all' && { status: contactFilters.status }),
+          ...(contactFilters.category !== 'all' && { category: contactFilters.category }),
+          ...(contactFilters.priority !== 'all' && { priority: contactFilters.priority }),
+          ...(contactFilters.search && { search: contactFilters.search })
+        }
+      });
+      if (response.data.success) {
+        setContactSubmissions(response.data.data.submissions);
+        setContactPagination(response.data.data.pagination);
+        setContactStats(response.data.data.stats);
+      }
+    } catch (error) {
+      console.error('Error loading contact submissions:', error);
+      setMessage({ type: 'error', text: 'Failed to load contact submissions' });
+    }
+  };
+
+  const handleUpdateContactStatus = async (id, status, priority, note) => {
+    try {
+      const response = await api.put(`/contact/submissions/${id}/status`, {
+        status,
+        priority,
+        note
+      });
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Submission updated successfully' });
+        loadContactSubmissions();
+      }
+    } catch (error) {
+      console.error('Error updating contact submission:', error);
+      setMessage({ type: 'error', text: 'Failed to update submission' });
+    }
+  };
+
+  const handleDeleteContactSubmission = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this contact submission?')) {
+      return;
+    }
+
+    try {
+      const response = await api.delete(`/contact/submissions/${id}`);
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Submission deleted successfully' });
+        loadContactSubmissions();
+      }
+    } catch (error) {
+      console.error('Error deleting contact submission:', error);
+      setMessage({ type: 'error', text: 'Failed to delete submission' });
     }
   };
 
@@ -601,6 +672,19 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-2">
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('contact')}
+              className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'contact'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <MessageSquare className="w-4 h-4" />
+                <span>Contact Submissions</span>
               </div>
             </button>
           </div>
@@ -1721,6 +1805,246 @@ const AdminDashboard = () => {
             <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium">
               Save Settings
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Submissions Tab */}
+      {activeTab === 'contact' && (
+        <div className="space-y-6">
+          {/* Contact Stats */}
+          {contactStats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between mb-2">
+                  <MessageSquare className="w-8 h-8 text-blue-500" />
+                  <span className="text-sm font-medium text-gray-500">TOTAL</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{contactStats.total}</div>
+                <div className="text-sm text-gray-600 mt-1">All Submissions</div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+                <div className="flex items-center justify-between mb-2">
+                  <Clock className="w-8 h-8 text-yellow-500" />
+                  <span className="text-sm font-medium text-gray-500">NEW</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{contactStats.new}</div>
+                <div className="text-sm text-gray-600 mt-1">Pending Response</div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between mb-2">
+                  <Activity className="w-8 h-8 text-purple-500" />
+                  <span className="text-sm font-medium text-gray-500">IN PROGRESS</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{contactStats.inProgress}</div>
+                <div className="text-sm text-gray-600 mt-1">Being Handled</div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                <div className="flex items-center justify-between mb-2">
+                  <CheckCircle className="w-8 h-8 text-green-500" />
+                  <span className="text-sm font-medium text-gray-500">RESOLVED</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{contactStats.resolved}</div>
+                <div className="text-sm text-gray-600 mt-1">Successfully Resolved</div>
+              </div>
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Submissions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={contactFilters.status}
+                  onChange={(e) => setContactFilters({ ...contactFilters, status: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="new">New</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <select
+                  value={contactFilters.category}
+                  onChange={(e) => setContactFilters({ ...contactFilters, category: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="general">General Inquiry</option>
+                  <option value="support">Technical Support</option>
+                  <option value="sales">Sales & Pricing</option>
+                  <option value="feedback">Feedback</option>
+                  <option value="partnership">Partnership</option>
+                  <option value="bug">Report a Bug</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                <select
+                  value={contactFilters.priority}
+                  onChange={(e) => setContactFilters({ ...contactFilters, priority: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={contactFilters.search}
+                    onChange={(e) => setContactFilters({ ...contactFilters, search: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Submissions Table */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Contact Submissions</h3>
+              <button
+                onClick={loadContactSubmissions}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Contact Info</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Subject</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Category</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Priority</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contactSubmissions.map((submission) => (
+                    <tr key={submission._id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{submission.name}</div>
+                          <div className="text-sm text-gray-500">{submission.email}</div>
+                          {submission.phone && (
+                            <div className="text-sm text-gray-500">{submission.phone}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="max-w-xs">
+                          <div className="text-sm font-medium text-gray-900 truncate">{submission.subject}</div>
+                          <div className="text-sm text-gray-500 truncate">{submission.message}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          {submission.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <select
+                          value={submission.priority}
+                          onChange={(e) => handleUpdateContactStatus(submission._id, null, e.target.value)}
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${
+                            submission.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                            submission.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                            submission.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                      </td>
+                      <td className="py-3 px-4">
+                        <select
+                          value={submission.status}
+                          onChange={(e) => handleUpdateContactStatus(submission._id, e.target.value)}
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${
+                            submission.status === 'new' ? 'bg-yellow-100 text-yellow-700' :
+                            submission.status === 'in-progress' ? 'bg-purple-100 text-purple-700' :
+                            submission.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          <option value="new">New</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {new Date(submission.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleDeleteContactSubmission(submission._id)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {contactPagination && contactPagination.pages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-600">
+                  Showing {((contactPage - 1) * 50) + 1} to {Math.min(contactPage * 50, contactPagination.total)} of {contactPagination.total} submissions
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setContactPage(contactPage - 1)}
+                    disabled={contactPage === 1}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setContactPage(contactPage + 1)}
+                    disabled={contactPage >= contactPagination.pages}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

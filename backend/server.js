@@ -176,6 +176,7 @@ app.use('/api/banking', require('./routes/banking')); // Banking integration
 app.use('/api/currency', require('./routes/currency')); // Currency conversion
 app.use('/api/security', require('./routes/security')); // Security features
 app.use('/api/company-expenses', require('./routes/companyExpenseRoutes')); // Company expenses tracking
+app.use('/api/contact', require('./routes/contact')); // Contact form submissions
 
 // 404 handler
 app.use((req, res) => {

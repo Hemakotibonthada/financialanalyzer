@@ -31,6 +31,21 @@ const RootRedirect = () => {
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
+import FeaturesPage from './pages/LandingPage/FeaturesPage';
+
+// Company pages
+import AboutPage from './pages/Company/About';
+import BlogPage from './pages/Company/Blog';
+import CareersPage from './pages/Company/Careers';
+import ContactPage from './pages/Company/Contact';
+import UpdatesPage from './pages/Company/Updates';
+
+// Legal pages
+import PrivacyPage from './pages/Legal/Privacy';
+import TermsPage from './pages/Legal/Terms';
+import SecurityPage from './pages/Legal/Security';
+import CompliancePage from './pages/Legal/Compliance';
+
 
 // Preload Dashboard for faster navigation
 const Dashboard = lazy(() => import(/* webpackPreload: true */ './pages/Dashboard'));
@@ -127,8 +142,22 @@ function App() {
                     <Routes>
               <Route path="/" element={<RootRedirect />} />
               <Route path="/landing" element={<LandingPage />} />
+              <Route path="/features" element={<FeaturesPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              
+              {/* Company Pages */}
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/careers" element={<CareersPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/updates" element={<UpdatesPage />} />
+              
+              {/* Legal Pages */}
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/security" element={<SecurityPage />} />
+              <Route path="/compliance" element={<CompliancePage />} />
               
               <Route path="/dashboard" element={
                 <ProtectedRoute>

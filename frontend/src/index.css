@@ -203,3 +203,26 @@ code {
   background: linear-gradient(to right, #3b82f6, #2563eb);
 }
 
+/* Animation delays for staggered effects */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Additional landing page animations */
+@layer utilities {
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-float-delay {
+    animation: float 3s ease-in-out 1s infinite;
+  }
+  
+  .animate-float-slow {
+    animation: float 4s ease-in-out infinite;
+  }
+}
