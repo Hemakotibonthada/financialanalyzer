@@ -653,4 +653,779 @@ router.get('/report', authenticateToken, async (req, res) => {
   }
 });
 
+// ============================================
+// BUDGETS ENDPOINTS
+// ============================================
+
+// Get all budgets
+router.get('/budgets', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    console.log('Fetching budgets for user:', userId);
+    
+    const budgetsSnapshot = await db.collection('companyBudgets')
+      .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+    
+    const budgets = budgetsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      startDate: doc.data().startDate?.toDate ? doc.data().startDate.toDate().toISOString() : doc.data().startDate,
+      endDate: doc.data().endDate?.toDate ? doc.data().endDate.toDate().toISOString() : doc.data().endDate,
+      createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt,
+      updatedAt: doc.data().updatedAt?.toDate ? doc.data().updatedAt.toDate().toISOString() : doc.data().updatedAt
+    }));
+    
+    console.log('Found budgets:', budgets.length);
+    
+    res.json({
+      success: true,
+      budgets
+    });
+  } catch (error) {
+    console.error('Get budgets error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch budgets',
+      error: error.message
+    });
+  }
+});
+
+// Create new budget
+router.post('/budgets', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    console.log('Creating budget for user:', userId);
+    console.log('Request body:', req.body);
+    
+    // Validate required fields
+    if (!req.body.name || !req.body.amount || !req.body.period) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: name, amount, and period are required'
+      });
+    }
+    
+    const budgetData = {
+      name: req.body.name,
+      amount: parseFloat(req.body.amount),
+      spent: parseFloat(req.body.spent) || 0,
+      period: req.body.period,
+      category: req.body.category || '',
+      department: req.body.department || '',
+      startDate: req.body.startDate ? admin.firestore.Timestamp.fromDate(new Date(req.body.startDate)) : null,
+      endDate: req.body.endDate ? admin.firestore.Timestamp.fromDate(new Date(req.body.endDate)) : null,
+      alertThreshold: parseFloat(req.body.alertThreshold) || 80,
+      notes: req.body.notes || '',
+      isActive: req.body.isActive !== false,
+      userId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const budgetRef = await db.collection('companyBudgets').add(budgetData);
+    const newDoc = await budgetRef.get();
+    
+    res.json({
+      success: true,
+      message: 'Budget created successfully',
+      budget: {
+        id: budgetRef.id,
+        ...newDoc.data(),
+        startDate: newDoc.data().startDate?.toDate ? newDoc.data().startDate.toDate().toISOString() : newDoc.data().startDate,
+        endDate: newDoc.data().endDate?.toDate ? newDoc.data().endDate.toDate().toISOString() : newDoc.data().endDate
+      }
+    });
+  } catch (error) {
+    console.error('Create budget error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create budget',
+      error: error.message
+    });
+  }
+});
+
+// Update budget
+router.put('/budgets/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { id } = req.params;
+    
+    const budgetRef = db.collection('companyBudgets').doc(id);
+    const budgetDoc = await budgetRef.get();
+    
+    if (!budgetDoc.exists || budgetDoc.data().userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Budget not found'
+      });
+    }
+    
+    const updateData = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.amount !== undefined) updateData.amount = parseFloat(req.body.amount);
+    if (req.body.spent !== undefined) updateData.spent = parseFloat(req.body.spent);
+    if (req.body.period !== undefined) updateData.period = req.body.period;
+    if (req.body.category !== undefined) updateData.category = req.body.category;
+    if (req.body.department !== undefined) updateData.department = req.body.department;
+    if (req.body.alertThreshold !== undefined) updateData.alertThreshold = parseFloat(req.body.alertThreshold);
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+    if (req.body.isActive !== undefined) updateData.isActive = req.body.isActive;
+    
+    if (req.body.startDate) {
+      updateData.startDate = admin.firestore.Timestamp.fromDate(new Date(req.body.startDate));
+    }
+    
+    if (req.body.endDate) {
+      updateData.endDate = admin.firestore.Timestamp.fromDate(new Date(req.body.endDate));
+    }
+    
+    await budgetRef.update(updateData);
+    
+    res.json({
+      success: true,
+      message: 'Budget updated successfully',
+      budget: {
+        id: id,
+        ...budgetDoc.data(),
+        ...updateData
+      }
+    });
+  } catch (error) {
+    console.error('Update budget error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update budget',
+      error: error.message
+    });
+  }
+});
+
+// Delete budget
+router.delete('/budgets/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { id } = req.params;
+    
+    const budgetRef = db.collection('companyBudgets').doc(id);
+    const budgetDoc = await budgetRef.get();
+    
+    if (!budgetDoc.exists || budgetDoc.data().userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Budget not found'
+      });
+    }
+    
+    await budgetRef.delete();
+    
+    res.json({
+      success: true,
+      message: 'Budget deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete budget error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete budget'
+    });
+  }
+});
+
+// ============================================
+// TRANSACTIONS ENDPOINTS
+// ============================================
+
+// Get all transactions
+router.get('/transactions', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { page = 1, limit = 50, type, category, startDate, endDate } = req.query;
+    
+    console.log('Fetching transactions for user:', userId);
+    
+    let query = db.collection('companyTransactions').where('userId', '==', userId);
+    
+    const transactionsSnapshot = await query.get();
+    
+    // Filter in memory
+    let allTransactions = transactionsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        date: data.date?.toDate ? data.date.toDate().toISOString() : data.date,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+        dateTimestamp: data.date?.toDate ? data.date.toDate().getTime() : new Date(data.date || 0).getTime()
+      };
+    });
+    
+    // Apply filters
+    if (type && type !== 'all') {
+      allTransactions = allTransactions.filter(t => t.type === type);
+    }
+    
+    if (category && category !== 'all') {
+      allTransactions = allTransactions.filter(t => t.category === category);
+    }
+    
+    if (startDate) {
+      const start = new Date(startDate);
+      if (!isNaN(start.getTime())) {
+        const startTime = start.getTime();
+        allTransactions = allTransactions.filter(t => t.dateTimestamp >= startTime);
+      }
+    }
+    
+    if (endDate) {
+      const end = new Date(endDate);
+      if (!isNaN(end.getTime())) {
+        end.setHours(23, 59, 59, 999);
+        const endTime = end.getTime();
+        allTransactions = allTransactions.filter(t => t.dateTimestamp <= endTime);
+      }
+    }
+    
+    // Sort by date descending
+    allTransactions.sort((a, b) => b.dateTimestamp - a.dateTimestamp);
+    
+    // Apply pagination
+    const totalCount = allTransactions.length;
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const transactions = allTransactions.slice(startIndex, startIndex + parseInt(limit));
+    
+    // Remove temporary sort field
+    transactions.forEach(t => delete t.dateTimestamp);
+    
+    console.log('Returning transactions:', transactions.length, 'of', totalCount);
+    
+    res.json({
+      success: true,
+      transactions,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(totalCount / parseInt(limit)),
+        totalTransactions: totalCount
+      }
+    });
+  } catch (error) {
+    console.error('Get transactions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch transactions',
+      error: error.message
+    });
+  }
+});
+
+// Create new transaction
+router.post('/transactions', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    console.log('Creating transaction for user:', userId);
+    console.log('Request body:', req.body);
+    
+    // Validate required fields
+    if (!req.body.type || !req.body.amount || !req.body.category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: type, amount, and category are required'
+      });
+    }
+    
+    // Parse party info if it's a JSON string
+    let partyInfo = {};
+    if (req.body.partyInfo) {
+      try {
+        partyInfo = typeof req.body.partyInfo === 'string' ? JSON.parse(req.body.partyInfo) : req.body.partyInfo;
+      } catch (e) {
+        console.error('Failed to parse partyInfo:', e);
+      }
+    }
+    
+    // Parse tags if it's a JSON string
+    let tags = [];
+    if (req.body.tags) {
+      try {
+        tags = typeof req.body.tags === 'string' ? JSON.parse(req.body.tags) : req.body.tags;
+      } catch (e) {
+        tags = req.body.tags.split(',').map(t => t.trim()).filter(t => t);
+      }
+    }
+    
+    // Parse recurring info if present
+    let recurringInfo = null;
+    if (req.body.recurringInfo) {
+      try {
+        recurringInfo = typeof req.body.recurringInfo === 'string' 
+          ? JSON.parse(req.body.recurringInfo) 
+          : req.body.recurringInfo;
+      } catch (e) {
+        console.error('Failed to parse recurringInfo:', e);
+      }
+    }
+    
+    const transactionData = {
+      type: req.body.type, // income, expense, transfer
+      category: req.body.category,
+      amount: parseFloat(req.body.amount),
+      subtotal: parseFloat(req.body.subtotal) || parseFloat(req.body.amount),
+      discountAmount: parseFloat(req.body.discountAmount) || 0,
+      discountPercent: parseFloat(req.body.discountPercent) || 0,
+      taxAmount: parseFloat(req.body.taxAmount) || 0,
+      taxPercent: parseFloat(req.body.taxPercent) || 0,
+      totalAmount: parseFloat(req.body.totalAmount) || parseFloat(req.body.amount),
+      description: req.body.description || '',
+      date: req.body.date ? admin.firestore.Timestamp.fromDate(new Date(req.body.date)) : admin.firestore.FieldValue.serverTimestamp(),
+      paymentMethod: req.body.paymentMethod || 'cash',
+      paymentStatus: req.body.paymentStatus || 'completed',
+      referenceNumber: req.body.referenceNumber || '',
+      partyInfo: partyInfo,
+      invoiceNumber: req.body.invoiceNumber || '',
+      poNumber: req.body.poNumber || '',
+      department: req.body.department || '',
+      project: req.body.project || '',
+      fromAccount: req.body.fromAccount || '',
+      toAccount: req.body.toAccount || '',
+      isBillable: req.body.isBillable === 'true' || req.body.isBillable === true,
+      isReconciled: req.body.isReconciled === 'true' || req.body.isReconciled === true,
+      notes: req.body.notes || '',
+      tags: tags,
+      isRecurring: req.body.isRecurring === 'true' || req.body.isRecurring === true,
+      recurringInfo: recurringInfo,
+      userId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const transactionRef = await db.collection('companyTransactions').add(transactionData);
+    const newDoc = await transactionRef.get();
+    
+    res.json({
+      success: true,
+      message: 'Transaction created successfully',
+      transaction: {
+        id: transactionRef.id,
+        ...newDoc.data(),
+        date: newDoc.data().date?.toDate ? newDoc.data().date.toDate().toISOString() : newDoc.data().date
+      }
+    });
+  } catch (error) {
+    console.error('Create transaction error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create transaction',
+      error: error.message
+    });
+  }
+});
+
+// Update transaction
+router.put('/transactions/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { id } = req.params;
+    
+    const transactionRef = db.collection('companyTransactions').doc(id);
+    const transactionDoc = await transactionRef.get();
+    
+    if (!transactionDoc.exists || transactionDoc.data().userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+    
+    // Parse complex fields
+    let partyInfo = req.body.partyInfo;
+    if (partyInfo && typeof partyInfo === 'string') {
+      try {
+        partyInfo = JSON.parse(partyInfo);
+      } catch (e) {
+        console.error('Failed to parse partyInfo:', e);
+      }
+    }
+    
+    let tags = req.body.tags;
+    if (tags && typeof tags === 'string') {
+      try {
+        tags = JSON.parse(tags);
+      } catch (e) {
+        tags = tags.split(',').map(t => t.trim()).filter(t => t);
+      }
+    }
+    
+    let recurringInfo = req.body.recurringInfo;
+    if (recurringInfo && typeof recurringInfo === 'string') {
+      try {
+        recurringInfo = JSON.parse(recurringInfo);
+      } catch (e) {
+        console.error('Failed to parse recurringInfo:', e);
+      }
+    }
+    
+    const updateData = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Update only provided fields
+    if (req.body.type !== undefined) updateData.type = req.body.type;
+    if (req.body.category !== undefined) updateData.category = req.body.category;
+    if (req.body.amount !== undefined) updateData.amount = parseFloat(req.body.amount);
+    if (req.body.subtotal !== undefined) updateData.subtotal = parseFloat(req.body.subtotal);
+    if (req.body.discountAmount !== undefined) updateData.discountAmount = parseFloat(req.body.discountAmount);
+    if (req.body.discountPercent !== undefined) updateData.discountPercent = parseFloat(req.body.discountPercent);
+    if (req.body.taxAmount !== undefined) updateData.taxAmount = parseFloat(req.body.taxAmount);
+    if (req.body.taxPercent !== undefined) updateData.taxPercent = parseFloat(req.body.taxPercent);
+    if (req.body.totalAmount !== undefined) updateData.totalAmount = parseFloat(req.body.totalAmount);
+    if (req.body.description !== undefined) updateData.description = req.body.description;
+    if (req.body.paymentMethod !== undefined) updateData.paymentMethod = req.body.paymentMethod;
+    if (req.body.paymentStatus !== undefined) updateData.paymentStatus = req.body.paymentStatus;
+    if (req.body.referenceNumber !== undefined) updateData.referenceNumber = req.body.referenceNumber;
+    if (partyInfo !== undefined) updateData.partyInfo = partyInfo;
+    if (req.body.invoiceNumber !== undefined) updateData.invoiceNumber = req.body.invoiceNumber;
+    if (req.body.poNumber !== undefined) updateData.poNumber = req.body.poNumber;
+    if (req.body.department !== undefined) updateData.department = req.body.department;
+    if (req.body.project !== undefined) updateData.project = req.body.project;
+    if (req.body.fromAccount !== undefined) updateData.fromAccount = req.body.fromAccount;
+    if (req.body.toAccount !== undefined) updateData.toAccount = req.body.toAccount;
+    if (req.body.isBillable !== undefined) updateData.isBillable = req.body.isBillable === 'true' || req.body.isBillable === true;
+    if (req.body.isReconciled !== undefined) updateData.isReconciled = req.body.isReconciled === 'true' || req.body.isReconciled === true;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+    if (tags !== undefined) updateData.tags = tags;
+    if (req.body.isRecurring !== undefined) updateData.isRecurring = req.body.isRecurring === 'true' || req.body.isRecurring === true;
+    if (recurringInfo !== undefined) updateData.recurringInfo = recurringInfo;
+    
+    if (req.body.date) {
+      updateData.date = admin.firestore.Timestamp.fromDate(new Date(req.body.date));
+    }
+    
+    await transactionRef.update(updateData);
+    
+    res.json({
+      success: true,
+      message: 'Transaction updated successfully',
+      transaction: {
+        id: id,
+        ...transactionDoc.data(),
+        ...updateData
+      }
+    });
+  } catch (error) {
+    console.error('Update transaction error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update transaction',
+      error: error.message
+    });
+  }
+});
+
+// Delete transaction
+router.delete('/transactions/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { id } = req.params;
+    
+    const transactionRef = db.collection('companyTransactions').doc(id);
+    const transactionDoc = await transactionRef.get();
+    
+    if (!transactionDoc.exists || transactionDoc.data().userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+    
+    await transactionRef.delete();
+    
+    res.json({
+      success: true,
+      message: 'Transaction deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete transaction error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete transaction'
+    });
+  }
+});
+
+// ============================================
+// INVESTORS ENDPOINTS
+// ============================================
+
+// Get all investors
+router.get('/investors', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    console.log('Fetching investors for user:', userId);
+    
+    const investorsSnapshot = await db.collection('companyInvestors')
+      .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+    
+    const investors = investorsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        investmentDate: data.investmentDate?.toDate ? data.investmentDate.toDate().toISOString() : data.investmentDate,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt
+      };
+    });
+    
+    console.log('Found investors:', investors.length);
+    
+    res.json({
+      success: true,
+      investors
+    });
+  } catch (error) {
+    console.error('Get investors error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch investors',
+      error: error.message
+    });
+  }
+});
+
+// Create new investor
+router.post('/investors', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    console.log('Creating investor for user:', userId);
+    console.log('Request body:', req.body);
+    
+    // Validate required fields
+    if (!req.body.name || !req.body.investorType || !req.body.investmentAmount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: name, investorType, and investmentAmount are required'
+      });
+    }
+    
+    // Parse vesting schedule if it's a JSON string
+    let vestingSchedule = null;
+    if (req.body.vestingSchedule) {
+      try {
+        vestingSchedule = typeof req.body.vestingSchedule === 'string' 
+          ? JSON.parse(req.body.vestingSchedule) 
+          : req.body.vestingSchedule;
+      } catch (e) {
+        console.error('Failed to parse vestingSchedule:', e);
+      }
+    }
+    
+    // Parse address if it's a JSON string
+    let address = {};
+    if (req.body.address) {
+      try {
+        address = typeof req.body.address === 'string' ? JSON.parse(req.body.address) : req.body.address;
+      } catch (e) {
+        console.error('Failed to parse address:', e);
+      }
+    }
+    
+    // Parse banking details if it's a JSON string
+    let bankingDetails = {};
+    if (req.body.bankingDetails) {
+      try {
+        bankingDetails = typeof req.body.bankingDetails === 'string' 
+          ? JSON.parse(req.body.bankingDetails) 
+          : req.body.bankingDetails;
+      } catch (e) {
+        console.error('Failed to parse bankingDetails:', e);
+      }
+    }
+    
+    const investorData = {
+      name: req.body.name,
+      investorType: req.body.investorType,
+      email: req.body.email || '',
+      phone: req.body.phone || '',
+      company: req.body.company || '',
+      designation: req.body.designation || '',
+      status: req.body.status || 'active',
+      investmentAmount: parseFloat(req.body.investmentAmount),
+      equityPercentage: parseFloat(req.body.equityPercentage) || 0,
+      investmentDate: req.body.investmentDate 
+        ? admin.firestore.Timestamp.fromDate(new Date(req.body.investmentDate)) 
+        : admin.firestore.FieldValue.serverTimestamp(),
+      investmentType: req.body.investmentType || '',
+      numberOfShares: parseInt(req.body.numberOfShares) || 0,
+      valuationCap: parseFloat(req.body.valuationCap) || 0,
+      vestingSchedule: vestingSchedule,
+      hasBoardSeat: req.body.hasBoardSeat === 'true' || req.body.hasBoardSeat === true,
+      hasVotingRights: req.body.hasVotingRights === 'true' || req.body.hasVotingRights === true,
+      address: address,
+      panNumber: req.body.panNumber || '',
+      taxId: req.body.taxId || '',
+      bankingDetails: bankingDetails,
+      notes: req.body.notes || '',
+      userId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const investorRef = await db.collection('companyInvestors').add(investorData);
+    const newDoc = await investorRef.get();
+    
+    res.json({
+      success: true,
+      message: 'Investor created successfully',
+      investor: {
+        id: investorRef.id,
+        ...newDoc.data(),
+        investmentDate: newDoc.data().investmentDate?.toDate 
+          ? newDoc.data().investmentDate.toDate().toISOString() 
+          : newDoc.data().investmentDate
+      }
+    });
+  } catch (error) {
+    console.error('Create investor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create investor',
+      error: error.message
+    });
+  }
+});
+
+// Update investor
+router.put('/investors/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { id } = req.params;
+    
+    const investorRef = db.collection('companyInvestors').doc(id);
+    const investorDoc = await investorRef.get();
+    
+    if (!investorDoc.exists || investorDoc.data().userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Investor not found'
+      });
+    }
+    
+    // Parse complex fields
+    let vestingSchedule = req.body.vestingSchedule;
+    if (vestingSchedule && typeof vestingSchedule === 'string') {
+      try {
+        vestingSchedule = JSON.parse(vestingSchedule);
+      } catch (e) {
+        console.error('Failed to parse vestingSchedule:', e);
+      }
+    }
+    
+    let address = req.body.address;
+    if (address && typeof address === 'string') {
+      try {
+        address = JSON.parse(address);
+      } catch (e) {
+        console.error('Failed to parse address:', e);
+      }
+    }
+    
+    let bankingDetails = req.body.bankingDetails;
+    if (bankingDetails && typeof bankingDetails === 'string') {
+      try {
+        bankingDetails = JSON.parse(bankingDetails);
+      } catch (e) {
+        console.error('Failed to parse bankingDetails:', e);
+      }
+    }
+    
+    const updateData = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Update only provided fields
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.investorType !== undefined) updateData.investorType = req.body.investorType;
+    if (req.body.email !== undefined) updateData.email = req.body.email;
+    if (req.body.phone !== undefined) updateData.phone = req.body.phone;
+    if (req.body.company !== undefined) updateData.company = req.body.company;
+    if (req.body.designation !== undefined) updateData.designation = req.body.designation;
+    if (req.body.status !== undefined) updateData.status = req.body.status;
+    if (req.body.investmentAmount !== undefined) updateData.investmentAmount = parseFloat(req.body.investmentAmount);
+    if (req.body.equityPercentage !== undefined) updateData.equityPercentage = parseFloat(req.body.equityPercentage);
+    if (req.body.investmentType !== undefined) updateData.investmentType = req.body.investmentType;
+    if (req.body.numberOfShares !== undefined) updateData.numberOfShares = parseInt(req.body.numberOfShares);
+    if (req.body.valuationCap !== undefined) updateData.valuationCap = parseFloat(req.body.valuationCap);
+    if (vestingSchedule !== undefined) updateData.vestingSchedule = vestingSchedule;
+    if (req.body.hasBoardSeat !== undefined) updateData.hasBoardSeat = req.body.hasBoardSeat === 'true' || req.body.hasBoardSeat === true;
+    if (req.body.hasVotingRights !== undefined) updateData.hasVotingRights = req.body.hasVotingRights === 'true' || req.body.hasVotingRights === true;
+    if (address !== undefined) updateData.address = address;
+    if (req.body.panNumber !== undefined) updateData.panNumber = req.body.panNumber;
+    if (req.body.taxId !== undefined) updateData.taxId = req.body.taxId;
+    if (bankingDetails !== undefined) updateData.bankingDetails = bankingDetails;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+    
+    if (req.body.investmentDate) {
+      updateData.investmentDate = admin.firestore.Timestamp.fromDate(new Date(req.body.investmentDate));
+    }
+    
+    await investorRef.update(updateData);
+    
+    res.json({
+      success: true,
+      message: 'Investor updated successfully',
+      investor: {
+        id: id,
+        ...investorDoc.data(),
+        ...updateData
+      }
+    });
+  } catch (error) {
+    console.error('Update investor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update investor',
+      error: error.message
+    });
+  }
+});
+
+// Delete investor
+router.delete('/investors/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { id } = req.params;
+    
+    const investorRef = db.collection('companyInvestors').doc(id);
+    const investorDoc = await investorRef.get();
+    
+    if (!investorDoc.exists || investorDoc.data().userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Investor not found'
+      });
+    }
+    
+    await investorRef.delete();
+    
+    res.json({
+      success: true,
+      message: 'Investor deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete investor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete investor'
+    });
+  }
+});
+
 module.exports = router;
