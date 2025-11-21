@@ -22,6 +22,7 @@ import api from '../services/api';
 import { toast } from 'react-toastify';
 import ExpenseFormModal from '../components/ExpenseFormModal';
 import BudgetFormModal from '../components/BudgetFormModal';
+import InvestorFormModal from '../components/InvestorFormModal';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const CompanyExpensesDashboard = () => {
@@ -37,6 +38,9 @@ const CompanyExpensesDashboard = () => {
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState(null);
   const [budgetLoading, setBudgetLoading] = useState(false);
+  const [showInvestorModal, setShowInvestorModal] = useState(false);
+  const [selectedInvestor, setSelectedInvestor] = useState(null);
+  const [investorLoading, setInvestorLoading] = useState(false);
   const [filters, setFilters] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
@@ -50,6 +54,9 @@ const CompanyExpensesDashboard = () => {
     fetchAnalytics();
     if (activeTab === 'budget') {
       fetchBudgets();
+    }
+    if (activeTab === 'investors') {
+      fetchInvestors();
     }
   }, [filters, activeTab]);
 
@@ -126,6 +133,48 @@ const CompanyExpensesDashboard = () => {
     setShowBudgetModal(false);
     setSelectedBudget(null);
     fetchBudgets();
+  };
+
+  const fetchInvestors = async () => {
+    try {
+      setInvestorLoading(true);
+      const response = await api.get('/company-expenses/investors');
+      setInvestors(response.data.investors || []);
+    } catch (error) {
+      console.error('Error fetching investors:', error);
+      toast.error('Failed to fetch investors');
+    } finally {
+      setInvestorLoading(false);
+    }
+  };
+
+  const handleDeleteInvestor = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this investor?')) return;
+
+    try {
+      await api.delete(`/company-expenses/investors/${id}`);
+      toast.success('Investor deleted successfully');
+      fetchInvestors();
+    } catch (error) {
+      console.error('Error deleting investor:', error);
+      toast.error('Failed to delete investor');
+    }
+  };
+
+  const openAddInvestorModal = () => {
+    setSelectedInvestor(null);
+    setShowInvestorModal(true);
+  };
+
+  const openEditInvestorModal = (investor) => {
+    setSelectedInvestor(investor);
+    setShowInvestorModal(true);
+  };
+
+  const handleInvestorModalSuccess = () => {
+    setShowInvestorModal(false);
+    setSelectedInvestor(null);
+    fetchInvestors();
   };
 
   const handleDelete = async (id) => {
@@ -226,6 +275,7 @@ const CompanyExpensesDashboard = () => {
             onClick={() => {
               if (activeTab === 'expenses') openAddModal();
               else if (activeTab === 'budget') openAddBudgetModal();
+              else if (activeTab === 'investors') openAddInvestorModal();
               // Add handlers for other tabs as needed
             }}
             className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -767,44 +817,197 @@ const CompanyExpensesDashboard = () => {
         {/* Investors Tab */}
         {activeTab === 'investors' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Investor Management</h2>
-              <p className="text-gray-600 mb-6">Manage investor information, shares, and communications.</p>
-              
-              {/* Investor Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Total Investors</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">0</p>
-                </div>
-                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-                  <p className="text-sm text-gray-600">Total Investment</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(0)}</p>
-                </div>
-                <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                  <p className="text-sm text-gray-600">Active Investors</p>
-                  <p className="text-2xl font-bold text-purple-600 mt-1">0</p>
-                </div>
-                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                  <p className="text-sm text-gray-600">Total Shares</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-1">0%</p>
+            {investorLoading ? (
+              <div className="bg-white rounded-lg shadow p-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Investor Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Investors</p>
+                        <p className="text-2xl font-bold text-gray-900 mt-1">{investors.length}</p>
+                      </div>
+                      <Users className="w-8 h-8 text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white border border-green-200 rounded-lg p-4 bg-green-50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Investment</p>
+                        <p className="text-2xl font-bold text-green-600 mt-1">
+                          {formatCurrency(investors.reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0))}
+                        </p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-green-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white border border-purple-200 rounded-lg p-4 bg-purple-50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Active Investors</p>
+                        <p className="text-2xl font-bold text-purple-600 mt-1">
+                          {investors.filter(inv => inv.status === 'Active').length}
+                        </p>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-purple-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white border border-blue-200 rounded-lg p-4 bg-blue-50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Equity</p>
+                        <p className="text-2xl font-bold text-blue-600 mt-1">
+                          {investors.reduce((sum, inv) => sum + (inv.equityPercentage || 0), 0).toFixed(2)}%
+                        </p>
+                      </div>
+                      <PieChart className="w-8 h-8 text-blue-400" />
+                    </div>
+                  </div>
+                </div>
 
-              {/* Investor List */}
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">No investors added</p>
-                <p className="text-sm text-gray-500 mb-4">Add investor details to manage stakeholder information</p>
-                <button
-                  onClick={openAddModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Investor
-                </button>
-              </div>
-            </div>
+                {/* Investor List */}
+                {investors.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-8">
+                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-900 font-semibold mb-2">No investors added</p>
+                      <p className="text-sm text-gray-500 mb-4">Add investor details to manage stakeholder information</p>
+                      <button
+                        onClick={openAddInvestorModal}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Investor
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Investor
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Investment
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Equity
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Investment Type
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {investors.map((investor) => (
+                            <tr key={investor._id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{investor.name}</div>
+                                  <div className="text-sm text-gray-500">{investor.email}</div>
+                                  {investor.company && (
+                                    <div className="text-xs text-gray-400">{investor.company}</div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                  {investor.type}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {formatCurrency(investor.investmentAmount)}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(investor.investmentDate).toLocaleDateString()}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-semibold text-purple-600">
+                                  {investor.equityPercentage ? `${investor.equityPercentage}%` : 'N/A'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-700">{investor.investmentType}</span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  investor.status === 'Active' ? 'bg-green-100 text-green-800' :
+                                  investor.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  investor.status === 'Exited' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {investor.status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button
+                                  onClick={() => openEditInvestorModal(investor)}
+                                  className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                  title="Edit Investor"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteInvestor(investor._id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  title="Delete Investor"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Investor Details Summary */}
+                    <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Total Investment: </span>
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(investors.reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0))}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Total Equity Distributed: </span>
+                          <span className="font-semibold text-purple-600">
+                            {investors.reduce((sum, inv) => sum + (inv.equityPercentage || 0), 0).toFixed(2)}%
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">With Board Seats: </span>
+                          <span className="font-semibold text-blue-600">
+                            {investors.filter(inv => inv.boardSeat).length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -832,6 +1035,19 @@ const CompanyExpensesDashboard = () => {
           }}
           budget={selectedBudget}
           onSuccess={handleBudgetModalSuccess}
+        />
+      )}
+
+      {/* Investor Modal */}
+      {showInvestorModal && (
+        <InvestorFormModal
+          isOpen={showInvestorModal}
+          onClose={() => {
+            setShowInvestorModal(false);
+            setSelectedInvestor(null);
+          }}
+          investor={selectedInvestor}
+          onSuccess={handleInvestorModalSuccess}
         />
       )}
     </MainLayout>
