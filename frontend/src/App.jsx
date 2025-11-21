@@ -4,7 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress, Box } from '@mui/material';
 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -14,13 +14,28 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import { initializeStorage } from './services/storage';
 
+// Root redirect component
+const RootRedirect = () => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingFallback />;
+  }
+  
+  // If authenticated, redirect to dashboard
+  // If not authenticated, redirect to landing page
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/landing'} replace />;
+};
+
 // Eager load auth pages (small, frequently used)
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
 
+// Preload Dashboard for faster navigation
+const Dashboard = lazy(() => import(/* webpackPreload: true */ './pages/Dashboard'));
+
 // Lazy load all other pages for code splitting
-const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Analyzer = lazy(() => import('./pages/Analyzer'));
 const Reports = lazy(() => import('./pages/Reports'));
@@ -81,6 +96,18 @@ function App() {
     });
   }, []);
 
+  // Preload Dashboard component when authenticated
+  useEffect(() => {
+    const preloadDashboard = async () => {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token) {
+        // Dynamically import to start loading in background
+        import('./pages/Dashboard');
+      }
+    };
+    preloadDashboard();
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -98,7 +125,8 @@ function App() {
                   <div className="min-h-screen bg-gray-50">
                     <Suspense fallback={<LoadingFallback />}>
                     <Routes>
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<RootRedirect />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               

@@ -30,7 +30,8 @@ ChartJS.register(
 const EMIMonthlyTrends = ({ monthlyData }) => {
   const [viewType, setViewType] = useState('line'); // 'line' or 'bar'
 
-  if (!monthlyData || monthlyData.length === 0) {
+  // Ensure monthlyData is an array
+  if (!monthlyData || !Array.isArray(monthlyData) || monthlyData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">📊 EMI Monthly Trends</h3>

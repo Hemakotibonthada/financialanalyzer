@@ -29,6 +29,11 @@ export default defineConfig({
           'charts': ['chart.js', 'react-chartjs-2', 'recharts'],
           'utils': ['axios', 'date-fns', 'lodash']
         }
+      },
+      onwarn(warning, warn) {
+        // Suppress certain warnings for cleaner build output
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
+        warn(warning);
       }
     },
     // Optimize chunk size
@@ -37,12 +42,17 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true
+        drop_console: false, // Keep console for debugging (production CDN can strip)
+        drop_debugger: true,
+        pure_funcs: ['console.debug'] // Remove only console.debug
       }
     },
     // Source maps for debugging (disable in production)
-    sourcemap: false
+    sourcemap: false,
+    // Enable CSS code splitting
+    cssCodeSplit: true,
+    // Optimize asset inlining
+    assetsInlineLimit: 4096
   },
   server: {
     host: '0.0.0.0', // Listen on all network interfaces for mobile access

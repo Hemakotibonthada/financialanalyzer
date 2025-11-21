@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -7,16 +7,30 @@ import MainLayout from '../components/MainLayout';
 import FinancialSummary from '../components/FinancialSummary';
 import MonthlyTrends from '../components/MonthlyTrends';
 import CategoryBreakdown from '../components/CategoryBreakdown';
-import SpendingPatterns from '../components/SpendingPatterns';
-import BudgetTracker from '../components/BudgetTracker';
-import SavingsGoals from '../components/SavingsGoals';
-import RecurringTransactions from '../components/RecurringTransactions';
-import FinancialHealth from '../components/FinancialHealth';
-import RecommendationsPanel from '../components/RecommendationsPanel';
-import CreditScoreCard from '../components/CreditScoreCard';
-import QuickExpenseEntry from '../components/QuickExpenseEntry';
-import QuickIncomeEntry from '../components/QuickIncomeEntry';
-import NewFeaturesShowcase from '../components/NewFeaturesShowcase';
+
+// Lazy load heavy/less critical components
+const SpendingPatterns = lazy(() => import('../components/SpendingPatterns'));
+const BudgetTracker = lazy(() => import('../components/BudgetTracker'));
+const SavingsGoals = lazy(() => import('../components/SavingsGoals'));
+const RecurringTransactions = lazy(() => import('../components/RecurringTransactions'));
+const FinancialHealth = lazy(() => import('../components/FinancialHealth'));
+const RecommendationsPanel = lazy(() => import('../components/RecommendationsPanel'));
+const CreditScoreCard = lazy(() => import('../components/CreditScoreCard'));
+const QuickExpenseEntry = lazy(() => import('../components/QuickExpenseEntry'));
+const QuickIncomeEntry = lazy(() => import('../components/QuickIncomeEntry'));
+const NewFeaturesShowcase = lazy(() => import('../components/NewFeaturesShowcase'));
+
+// Skeleton loader component
+const ComponentSkeleton = () => (
+  <div className="bg-white rounded-lg shadow p-6 animate-pulse">
+    <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+    <div className="space-y-3">
+      <div className="h-3 bg-gray-200 rounded"></div>
+      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+      <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -25,9 +39,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [showFullDashboard, setShowFullDashboard] = useState(false);
 
   useEffect(() => {
+    // Show initial critical data immediately
     fetchDashboardData();
+    
+    // Load full dashboard after a short delay
+    const timer = setTimeout(() => {
+      setShowFullDashboard(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const handleLogout = () => {
@@ -46,6 +69,21 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
+      // Check cache first (5 minute cache)
+      const cacheKey = 'dashboard_data';
+      const cacheTime = 'dashboard_cache_time';
+      const cachedData = sessionStorage.getItem(cacheKey);
+      const cachedTime = sessionStorage.getItem(cacheTime);
+      
+      if (cachedData && cachedTime) {
+        const age = Date.now() - parseInt(cachedTime);
+        if (age < 5 * 60 * 1000) { // 5 minutes
+          setDashboardData(JSON.parse(cachedData));
+          setLoading(false);
+          return;
+        }
+      }
+      
       setLoading(true);
       setError('');
       
@@ -65,6 +103,10 @@ const Dashboard = () => {
       }
 
       setDashboardData(response.data.data);
+      
+      // Cache the response
+      sessionStorage.setItem('dashboard_data', JSON.stringify(response.data.data));
+      sessionStorage.setItem('dashboard_cache_time', Date.now().toString());
       
     } catch (error) {
       const errorMessage = error.message || 'Failed to load dashboard data';
@@ -262,33 +304,53 @@ const Dashboard = () => {
           <CategoryBreakdown categoryData={dashboardData?.charts?.categoryBreakdown} />
         </div>
         
-        {/* Spending Patterns */}
+        {/* Spending Patterns - Lazy loaded */}
         <div>
-          <SpendingPatterns patternsData={dashboardData?.charts?.spendingPatterns} />
+          <Suspense fallback={<ComponentSkeleton />}>
+            <SpendingPatterns patternsData={dashboardData?.charts?.spendingPatterns} />
+          </Suspense>
         </div>
       </div>
 
-      {/* Budget, Savings, and Credit Score */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <BudgetTracker budgetData={dashboardData?.charts?.budgetAnalysis} />
-        <SavingsGoals savingsData={dashboardData?.insights?.savingsGoals} />
-        <CreditScoreCard />
-      </div>
-
-      {/* Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <RecommendationsPanel recommendations={dashboardData?.insights?.recommendations} />
+      {/* Budget, Savings, and Credit Score - Lazy loaded */}
+      {showFullDashboard && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <Suspense fallback={<ComponentSkeleton />}>
+            <BudgetTracker budgetData={dashboardData?.charts?.budgetAnalysis} />
+          </Suspense>
+          <Suspense fallback={<ComponentSkeleton />}>
+            <SavingsGoals savingsData={dashboardData?.insights?.savingsGoals} />
+          </Suspense>
+          <Suspense fallback={<ComponentSkeleton />}>
+            <CreditScoreCard />
+          </Suspense>
         </div>
-        <div>
-          <RecurringTransactions recurringData={dashboardData?.insights?.recurringTransactions} />
-        </div>
-      </div>
+      )}
 
-      {/* New Features Showcase */}
-      <div className="mb-6">
-        <NewFeaturesShowcase />
-      </div>
+      {/* Insights Section - Lazy loaded */}
+      {showFullDashboard && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <Suspense fallback={<ComponentSkeleton />}>
+              <RecommendationsPanel recommendations={dashboardData?.insights?.recommendations} />
+            </Suspense>
+          </div>
+          <div>
+            <Suspense fallback={<ComponentSkeleton />}>
+              <RecurringTransactions recurringData={dashboardData?.insights?.recurringTransactions} />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {/* New Features Showcase - Lazy loaded */}
+      {showFullDashboard && (
+        <div className="mb-6">
+          <Suspense fallback={<ComponentSkeleton />}>
+            <NewFeaturesShowcase />
+          </Suspense>
+        </div>
+      )}
 
       {/* Recent Activity */}
       {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (

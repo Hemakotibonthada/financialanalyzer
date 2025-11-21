@@ -5,9 +5,30 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Financial Analyzer - Smart Money Management</title>
+    
+    <!-- Preconnect to API domain for faster requests -->
+    <link rel="preconnect" href="https://finserveassist.web.app" />
+    <link rel="dns-prefetch" href="https://finserveassist.web.app" />
+    
+    <!-- Resource hints for performance -->
+    <link rel="preload" as="script" href="/src/main.jsx" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Register Service Worker for caching
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered:', registration);
+            })
+            .catch(error => {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

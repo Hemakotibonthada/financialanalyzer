@@ -6,7 +6,8 @@ import {
   Bell, Search, Calculator, Briefcase, Home, Users, 
   BarChart3, DollarSign, Wallet, Award, RefreshCw, 
   Zap, Globe, Lock, Cloud, Download, CheckCircle,
-  ArrowRight, Star, PlayCircle, Menu, X
+  ArrowRight, Star, PlayCircle, Menu, X, Upload, FileText,
+  Activity, Heart, Sparkles, Lightbulb, TrendingDown
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -85,22 +86,63 @@ const LandingPage = () => {
   ];
 
   const allFeatures = [
-    { icon: PieChart, title: 'Budget Tracking', desc: 'Smart budget allocation and monitoring' },
-    { icon: CreditCard, title: 'EMI Management', desc: 'Track all loans and EMIs in one place' },
-    { icon: Bell, title: 'Bill Reminders', desc: 'Never miss a payment with smart alerts' },
-    { icon: Home, title: 'Real Estate', desc: 'Manage property investments and mortgages' },
-    { icon: Award, title: 'Credit Score', desc: 'Monitor and improve your credit health' },
-    { icon: Users, title: 'Lender Dashboard', desc: 'Manage loans given to others' },
-    { icon: BarChart3, title: 'Advanced Analytics', desc: 'Deep insights into spending patterns' },
-    { icon: Wallet, title: 'Net Worth Tracker', desc: 'Track assets and liabilities' },
-    { icon: Target, title: 'Investment Portfolio', desc: 'Monitor stocks, mutual funds, and more' },
-    { icon: Shield, title: 'Insurance Manager', desc: 'Track all insurance policies' },
-    { icon: Calculator, title: 'Retirement Planner', desc: 'Plan for a secure future' },
-    { icon: Search, title: 'Advanced Search', desc: 'Find any transaction instantly' },
-    { icon: Globe, title: 'Multi-Currency', desc: 'Support for 12+ currencies' },
-    { icon: Cloud, title: 'Cloud Sync', desc: 'Access data anywhere, anytime' },
-    { icon: RefreshCw, title: 'Auto-Backup', desc: 'Never lose your financial data' },
-    { icon: Zap, title: 'Quick Entry', desc: 'Add expenses in seconds' }
+    // Core Financial Management
+    { icon: PieChart, title: 'Dashboard', desc: 'Comprehensive overview of your finances with real-time insights', category: 'Core' },
+    { icon: TrendingUp, title: 'Budget Tracking', desc: 'Smart budget allocation, monitoring, and spending limits', category: 'Core' },
+    { icon: CreditCard, title: 'EMI Tracker', desc: 'Track all EMIs, loans, and installment payments in one place', category: 'Core' },
+    { icon: Wallet, title: 'Net Worth Tracker', desc: 'Monitor total assets, liabilities, and net worth growth', category: 'Core' },
+    { icon: Bell, title: 'Bill Reminders', desc: 'Never miss a payment with smart alerts and notifications', category: 'Core' },
+    { icon: DollarSign, title: 'Quick Expense Entry', desc: 'Add expenses in seconds with voice input support', category: 'Core' },
+    { icon: Target, title: 'Financial Goals', desc: 'Set and achieve savings goals with milestone tracking', category: 'Core' },
+    
+    // Investment & Portfolio
+    { icon: Target, title: 'Investment Portfolio', desc: 'Monitor stocks, mutual funds, bonds, and crypto investments', category: 'Investments' },
+    { icon: BarChart3, title: 'Portfolio Analytics', desc: 'Advanced analytics with performance tracking and allocation', category: 'Investments' },
+    { icon: TrendingUp, title: 'Market Insights', desc: 'Real-time market data and investment recommendations', category: 'Investments' },
+    
+    // Business & Professional
+    { icon: Briefcase, title: 'Company Expenses', desc: 'Track business transactions, receipts, and tax-deductible expenses', category: 'Business' },
+    { icon: Briefcase, title: 'Business Dashboard', desc: 'Manage invoices, payroll, vendors, and cash flow', category: 'Business' },
+    { icon: Users, title: 'Lender Dashboard', desc: 'Manage loans given to others with repayment tracking', category: 'Business' },
+    
+    // Planning & Analysis
+    { icon: Calculator, title: 'Tax Planner', desc: 'Optimize deductions, track documents, and plan for tax season', category: 'Planning' },
+    { icon: TrendingUp, title: 'Retirement Planner', desc: 'Plan for secure retirement with savings projections', category: 'Planning' },
+    { icon: Shield, title: 'Insurance Manager', desc: 'Track all insurance policies, premiums, and claims', category: 'Planning' },
+    { icon: Target, title: 'Debt Management', desc: 'Debt consolidation strategies and payoff planning', category: 'Planning' },
+    
+    // Real Estate & Assets
+    { icon: Home, title: 'Real Estate', desc: 'Manage property investments, mortgages, and rental income', category: 'Assets' },
+    { icon: Home, title: 'Property Analytics', desc: 'Track property values, ROI, and market trends', category: 'Assets' },
+    
+    // AI & Intelligence
+    { icon: Brain, title: 'AI-Powered Insights', desc: 'Machine learning recommendations for smarter spending', category: 'AI' },
+    { icon: Brain, title: 'ML Dashboard', desc: 'Advanced predictive analytics and financial forecasting', category: 'AI' },
+    { icon: Sparkles, title: 'Spending Insights', desc: 'AI-driven analysis of spending patterns and trends', category: 'AI' },
+    { icon: Lightbulb, title: 'Smart Recommendations', desc: 'Personalized suggestions to optimize your finances', category: 'AI' },
+    
+    // Health & Monitoring
+    { icon: Heart, title: 'Financial Health', desc: 'Comprehensive health score with actionable improvements', category: 'Health' },
+    { icon: Activity, title: 'Credit Score Monitor', desc: 'Track and improve your credit score over time', category: 'Health' },
+    { icon: TrendingDown, title: 'Spending Analysis', desc: 'Deep dive into spending categories and patterns', category: 'Health' },
+    
+    // Documents & Data
+    { icon: FileText, title: 'Document Manager', desc: 'Secure storage for bills, receipts, and statements', category: 'Data' },
+    { icon: Upload, title: 'CSV Import/Export', desc: 'Import from banks, export to Excel, CSV formats', category: 'Data' },
+    { icon: Download, title: 'Report Generator', desc: 'Generate detailed financial reports and summaries', category: 'Data' },
+    { icon: Search, title: 'Advanced Search', desc: 'Find any transaction instantly with smart filters', category: 'Data' },
+    
+    // Security & Notifications
+    { icon: Shield, title: 'Bank-Level Security', desc: '256-bit encryption, 2FA, and secure data storage', category: 'Security' },
+    { icon: Lock, title: 'Password Protection', desc: 'Document encryption and access control', category: 'Security' },
+    { icon: Bell, title: 'Smart Notifications', desc: 'Customizable alerts for bills, goals, and anomalies', category: 'Security' },
+    
+    // Additional Features
+    { icon: Globe, title: 'Multi-Currency Support', desc: 'Support for 12+ currencies with live exchange rates', category: 'Global' },
+    { icon: Cloud, title: 'Cloud Sync', desc: 'Access your data anywhere with automatic cloud backup', category: 'Global' },
+    { icon: RefreshCw, title: 'Auto-Backup', desc: 'Never lose financial data with automated backups', category: 'Global' },
+    { icon: BarChart3, title: 'Advanced Analytics', desc: 'Deep insights with interactive charts and graphs', category: 'Analytics' },
+    { icon: Zap, title: 'Real-Time Updates', desc: 'Live data synchronization across all devices', category: 'Analytics' }
   ];
 
   const stats = [
@@ -152,19 +194,25 @@ const LandingPage = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
-              <a href="#testimonials" className="text-gray-700 hover:text-blue-600 transition">Reviews</a>
+            <nav className="hidden md:flex items-baseline gap-8">
+              <a href="#features" className="text-gray-700 hover:text-blue-600 transition-colors font-medium text-base">
+                Features
+              </a>
+              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition-colors font-medium text-base">
+                Pricing
+              </a>
+              <a href="#testimonials" className="text-gray-700 hover:text-blue-600 transition-colors font-medium text-base">
+                Reviews
+              </a>
               <button 
                 onClick={() => navigate('/login')}
-                className="text-blue-600 hover:text-blue-700 font-medium transition"
+                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors text-base"
               >
                 Sign In
               </button>
               <button 
                 onClick={() => navigate('/register')}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition transform hover:scale-105"
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium text-base"
               >
                 Get Started Free
               </button>
@@ -205,18 +253,25 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium">
-                <Star className="w-4 h-4" />
+            <div className="space-y-8 animate-fade-in-up">
+              <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform cursor-pointer">
+                <Star className="w-4 h-4 animate-pulse" />
                 <span>Trusted by 50,000+ users</span>
               </div>
               
               <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Take Control of Your
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Financial Future</span>
+                <span className="inline-block">Take Control of Your</span>
+                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent animate-gradient-x"> Financial Future</span>
               </h1>
               
               <p className="text-xl text-gray-600 leading-relaxed">
@@ -226,14 +281,15 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={() => navigate('/register')}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-xl transition transform hover:scale-105 flex items-center justify-center space-x-2 text-lg font-semibold"
+                  className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 text-lg font-semibold relative overflow-hidden"
                 >
-                  <span>Start Free Trial</span>
-                  <ArrowRight className="w-5 h-5" />
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                  <span className="relative">Start Free Trial</span>
+                  <ArrowRight className="w-5 h-5 relative group-hover:translate-x-1 transition-transform" />
                 </button>
                 
-                <button className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 transition flex items-center justify-center space-x-2 text-lg font-semibold">
-                  <PlayCircle className="w-5 h-5" />
+                <button className="group px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-lg font-semibold">
+                  <PlayCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   <span>Watch Demo</span>
                 </button>
               </div>
@@ -328,34 +384,110 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* All Features Grid */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+      {/* All Features Grid - Categorized */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need to Manage Money
+              Complete Financial Management Suite
             </h2>
             <p className="text-xl text-gray-600">
-              Powerful features designed for individuals, families, and businesses
+              45+ powerful features designed for individuals, families, and businesses
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allFeatures.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div 
-                  key={index}
-                  className="bg-white rounded-xl p-6 hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer border border-gray-100"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.desc}</p>
+          {/* Feature Categories */}
+          {[
+            { name: 'Core', title: '🎯 Core Features', color: 'from-blue-500 to-cyan-500' },
+            { name: 'Investments', title: '📈 Investment & Portfolio', color: 'from-green-500 to-emerald-500' },
+            { name: 'Business', title: '💼 Business & Professional', color: 'from-purple-500 to-pink-500' },
+            { name: 'Planning', title: '📊 Planning & Analysis', color: 'from-orange-500 to-red-500' },
+            { name: 'AI', title: '🤖 AI & Intelligence', color: 'from-violet-500 to-purple-500' },
+            { name: 'Health', title: '❤️ Financial Health', color: 'from-rose-500 to-pink-500' },
+            { name: 'Data', title: '📁 Documents & Data', color: 'from-indigo-500 to-blue-500' },
+            { name: 'Security', title: '🔒 Security & Privacy', color: 'from-gray-700 to-gray-900' },
+            { name: 'Global', title: '🌍 Global Features', color: 'from-teal-500 to-cyan-500' },
+            { name: 'Analytics', title: '📊 Advanced Analytics', color: 'from-amber-500 to-orange-500' },
+            { name: 'Assets', title: '🏠 Real Estate & Assets', color: 'from-lime-500 to-green-500' }
+          ].map((category) => {
+            const categoryFeatures = allFeatures.filter(f => f.category === category.name);
+            if (categoryFeatures.length === 0) return null;
+
+            return (
+              <div key={category.name} className="mb-12">
+                <div className="mb-6">
+                  <h3 className={`text-2xl font-bold bg-gradient-to-r ${category.color} bg-clip-text text-transparent inline-block`}>
+                    {category.title}
+                  </h3>
                 </div>
-              );
-            })}
+                
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {categoryFeatures.map((feature, index) => {
+                    const Icon = feature.icon;
+                    return (
+                      <div 
+                        key={index}
+                        className="bg-white rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer border border-gray-100 group"
+                      >
+                        {/* Image/Visual Section */}
+                        <div className={`relative h-40 bg-gradient-to-br ${category.color} overflow-hidden`}>
+                          {/* Animated Background Pattern */}
+                          <div className="absolute inset-0 opacity-10">
+                            <div className="absolute inset-0" style={{
+                              backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                              backgroundSize: '20px 20px'
+                            }}></div>
+                          </div>
+                          
+                          {/* Large Icon with Animation */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+                              <Icon className="w-20 h-20 text-white relative z-10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300" />
+                            </div>
+                          </div>
+                          
+                          {/* Decorative Elements */}
+                          <div className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                          <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/10 rounded-lg group-hover:rotate-45 transition-transform duration-500"></div>
+                        </div>
+                        
+                        {/* Content Section */}
+                        <div className="p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                            {feature.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm leading-relaxed">
+                            {feature.desc}
+                          </p>
+                          
+                          {/* Learn More Link */}
+                          <div className="mt-4 flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span>Learn more</span>
+                            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Feature Summary */}
+          <div className="mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white text-center">
+            <h3 className="text-3xl font-bold mb-4">And Much More!</h3>
+            <p className="text-lg mb-6 opacity-90">
+              Recurring transactions, subscription tracking, expense categorization, income management, 
+              savings calculators, loan comparisons, investment analysis, cash flow forecasting, and more...
+            </p>
+            <button 
+              onClick={() => navigate('/register')}
+              className="px-8 py-3 bg-white text-blue-600 rounded-lg hover:shadow-xl transition transform hover:scale-105 font-semibold"
+            >
+              Explore All Features →
+            </button>
           </div>
         </div>
       </section>

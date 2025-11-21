@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { PieChart } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -12,6 +12,8 @@ import { Doughnut } from 'react-chartjs-2';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const CategoryBreakdown = ({ categoryData }) => {
+  const [showInvestments, setShowInvestments] = useState(false);
+
   // Early return with safe checks
   if (!categoryData || !categoryData.chartData || !Array.isArray(categoryData.chartData) || categoryData.chartData.length === 0) {
     return (
@@ -24,13 +26,65 @@ const CategoryBreakdown = ({ categoryData }) => {
 
   const { chartData = [], summary = {} } = categoryData;
 
+  // Filter data based on showInvestments checkbox
+  const filteredChartData = useMemo(() => {
+    if (showInvestments) {
+      return chartData;
+    }
+    // Filter out investment-related categories
+    return chartData.filter(item => {
+      const category = (item?.category || '').toLowerCase();
+      return !category.includes('investment') && 
+             !category.includes('stock') && 
+             !category.includes('mutual') &&
+             !category.includes('equity') &&
+             !category.includes('bond') &&
+             !category.includes('crypto');
+    });
+  }, [chartData, showInvestments]);
+
+  // Recalculate summary based on filtered data
+  const filteredSummary = useMemo(() => {
+    if (filteredChartData.length === 0) {
+      return { totalAmount: 0, totalCategories: 0, diversificationIndex: 0, topCategory: null };
+    }
+
+    const totalAmount = filteredChartData.reduce((sum, item) => sum + (item?.amount || 0), 0);
+    const totalCategories = filteredChartData.length;
+    
+    // Recalculate percentages
+    const dataWithPercentages = filteredChartData.map(item => ({
+      ...item,
+      percentage: totalAmount > 0 ? ((item?.amount || 0) / totalAmount) * 100 : 0
+    }));
+
+    // Calculate diversity index (Shannon entropy)
+    const diversificationIndex = dataWithPercentages.reduce((index, item) => {
+      const p = item.percentage / 100;
+      return p > 0 ? index - (p * Math.log(p)) : index;
+    }, 0);
+
+    // Find top category
+    const topCategory = dataWithPercentages.length > 0 
+      ? dataWithPercentages[0]?.category 
+      : null;
+
+    return {
+      totalAmount,
+      totalCategories,
+      diversificationIndex,
+      topCategory,
+      dataWithPercentages
+    };
+  }, [filteredChartData]);
+
   // Chart.js configuration for interactive donut chart
   const interactiveChartData = {
-    labels: (chartData || []).slice(0, 8).map(item => 
+    labels: (filteredSummary.dataWithPercentages || filteredChartData || []).slice(0, 8).map(item => 
       (item?.category || 'Unknown').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     ),
     datasets: [{
-      data: (chartData || []).slice(0, 8).map(item => item?.amount || 0),
+      data: (filteredSummary.dataWithPercentages || filteredChartData || []).slice(0, 8).map(item => item?.amount || 0),
       backgroundColor: [
         '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
         '#FF9F40', '#FF6384', '#C9CBCF'
@@ -59,7 +113,8 @@ const CategoryBreakdown = ({ categoryData }) => {
           label: function(context) {
             const label = context.label || '';
             const value = context.parsed || 0;
-            const categoryItem = Array.isArray(chartData) && chartData.length > 0 ? chartData.find(item => 
+            const displayData = filteredSummary.dataWithPercentages || filteredChartData;
+            const categoryItem = Array.isArray(displayData) && displayData.length > 0 ? displayData.find(item => 
               item && item.category && item.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) === label
             ) : null;
             const percentage = categoryItem?.percentage || 0;
@@ -78,8 +133,27 @@ const CategoryBreakdown = ({ categoryData }) => {
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Category Breakdown</h3>
-        <p className="text-sm text-gray-600 mt-1">Spending by category (last 6 months)</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Category Breakdown</h3>
+            <p className="text-sm text-gray-600 mt-1">Spending by category (last 6 months)</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="showInvestments"
+              checked={showInvestments}
+              onChange={(e) => setShowInvestments(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+            />
+            <label 
+              htmlFor="showInvestments" 
+              className="text-sm text-gray-700 cursor-pointer select-none"
+            >
+              Show Investments
+            </label>
+          </div>
+        </div>
       </div>
       
       <div className="p-6">
@@ -92,7 +166,7 @@ const CategoryBreakdown = ({ categoryData }) => {
               <PieChart className="w-8 h-8 text-gray-400 mb-1" />
               <div className="text-center">
                 <p className="text-lg font-bold text-gray-900">
-                  ₹{summary?.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 0 }) || '0'}
+                  ₹{filteredSummary?.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 0 }) || '0'}
                 </p>
                 <p className="text-xs text-gray-500">Total</p>
               </div>
@@ -102,7 +176,7 @@ const CategoryBreakdown = ({ categoryData }) => {
         
         {/* Category List */}
         <div className="space-y-3">
-          {(chartData || []).slice(0, 8).map((category, index) => {
+          {(filteredSummary.dataWithPercentages || filteredChartData || []).slice(0, 8).map((category, index) => {
             if (!category) return null;
             return (
               <div key={index} className="flex items-center justify-between">
@@ -125,9 +199,9 @@ const CategoryBreakdown = ({ categoryData }) => {
             );
           })}
           
-          {chartData && chartData.length > 8 && (
+          {filteredChartData && filteredChartData.length > 8 && (
             <div className="text-xs text-gray-500 text-center pt-2">
-              +{chartData.length - 8} more categories
+              +{filteredChartData.length - 8} more categories
             </div>
           )}
         </div>
@@ -136,22 +210,22 @@ const CategoryBreakdown = ({ categoryData }) => {
         <div className="mt-6 pt-6 border-t border-gray-200">
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
-              <p className="text-lg font-bold text-gray-900">{summary?.totalCategories || 0}</p>
+              <p className="text-lg font-bold text-gray-900">{filteredSummary?.totalCategories || 0}</p>
               <p className="text-xs text-gray-500">Categories</p>
             </div>
             <div>
               <p className="text-lg font-bold text-gray-900">
-                {summary?.diversificationIndex?.toFixed(2) || '0.00'}
+                {filteredSummary?.diversificationIndex?.toFixed(2) || '0.00'}
               </p>
               <p className="text-xs text-gray-500">Diversity Index</p>
             </div>
           </div>
         </div>
         
-        {summary?.topCategory && (
+        {filteredSummary?.topCategory && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm font-medium text-blue-900">
-              Top Category: {summary.topCategory}
+              Top Category: {filteredSummary.topCategory}
             </p>
           </div>
         )}
