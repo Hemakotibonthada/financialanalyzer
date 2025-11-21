@@ -23,6 +23,7 @@ import { toast } from 'react-toastify';
 import ExpenseFormModal from '../components/ExpenseFormModal';
 import BudgetFormModal from '../components/BudgetFormModal';
 import InvestorFormModal from '../components/InvestorFormModal';
+import TransactionFormModal from '../components/TransactionFormModal';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const CompanyExpensesDashboard = () => {
@@ -41,6 +42,9 @@ const CompanyExpensesDashboard = () => {
   const [showInvestorModal, setShowInvestorModal] = useState(false);
   const [selectedInvestor, setSelectedInvestor] = useState(null);
   const [investorLoading, setInvestorLoading] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [transactionLoading, setTransactionLoading] = useState(false);
   const [filters, setFilters] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
@@ -57,6 +61,9 @@ const CompanyExpensesDashboard = () => {
     }
     if (activeTab === 'investors') {
       fetchInvestors();
+    }
+    if (activeTab === 'transactions') {
+      fetchTransactions();
     }
   }, [filters, activeTab]);
 
@@ -177,6 +184,48 @@ const CompanyExpensesDashboard = () => {
     fetchInvestors();
   };
 
+  const fetchTransactions = async () => {
+    try {
+      setTransactionLoading(true);
+      const response = await api.get('/company-expenses/transactions');
+      setTransactions(response.data.transactions || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to fetch transactions');
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+
+    try {
+      await api.delete(`/company-expenses/transactions/${id}`);
+      toast.success('Transaction deleted successfully');
+      fetchTransactions();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      toast.error('Failed to delete transaction');
+    }
+  };
+
+  const openAddTransactionModal = () => {
+    setSelectedTransaction(null);
+    setShowTransactionModal(true);
+  };
+
+  const openEditTransactionModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowTransactionModal(true);
+  };
+
+  const handleTransactionModalSuccess = () => {
+    setShowTransactionModal(false);
+    setSelectedTransaction(null);
+    fetchTransactions();
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
 
@@ -276,6 +325,7 @@ const CompanyExpensesDashboard = () => {
               if (activeTab === 'expenses') openAddModal();
               else if (activeTab === 'budget') openAddBudgetModal();
               else if (activeTab === 'investors') openAddInvestorModal();
+              else if (activeTab === 'transactions') openAddTransactionModal();
               // Add handlers for other tabs as needed
             }}
             className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -773,44 +823,230 @@ const CompanyExpensesDashboard = () => {
         {/* Transactions Tab */}
         {activeTab === 'transactions' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Transaction History</h2>
-              <p className="text-gray-600 mb-6">Track all company financial transactions in one place.</p>
-              
-              {/* Transaction Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Total Transactions</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">0</p>
-                </div>
-                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-                  <p className="text-sm text-gray-600">Income</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(0)}</p>
-                </div>
-                <div className="border border-red-200 rounded-lg p-4 bg-red-50">
-                  <p className="text-sm text-gray-600">Expenses</p>
-                  <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(0)}</p>
-                </div>
-                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                  <p className="text-sm text-gray-600">Net</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(0)}</p>
+            {transactionLoading ? (
+              <div className="bg-white rounded-lg shadow p-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Transaction Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Transactions</p>
+                        <p className="text-2xl font-bold text-gray-900 mt-1">{transactions.length}</p>
+                      </div>
+                      <CreditCard className="w-8 h-8 text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white border border-green-200 rounded-lg p-4 bg-green-50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Income</p>
+                        <p className="text-2xl font-bold text-green-600 mt-1">
+                          {formatCurrency(transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}
+                        </p>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-green-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white border border-red-200 rounded-lg p-4 bg-red-50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Expenses</p>
+                        <p className="text-2xl font-bold text-red-600 mt-1">
+                          {formatCurrency(transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}
+                        </p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-red-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white border border-blue-200 rounded-lg p-4 bg-blue-50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Net Cash Flow</p>
+                        <p className="text-2xl font-bold text-blue-600 mt-1">
+                          {formatCurrency(
+                            transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0) -
+                            transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0)
+                          )}
+                        </p>
+                      </div>
+                      <Wallet className="w-8 h-8 text-blue-400" />
+                    </div>
+                  </div>
+                </div>
 
-              {/* Transaction List */}
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">No transactions recorded</p>
-                <p className="text-sm text-gray-500 mb-4">Add your first transaction to track cash flow</p>
-                <button
-                  onClick={openAddModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Transaction
-                </button>
-              </div>
-            </div>
+                {/* Transaction List */}
+                {transactions.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-8">
+                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                      <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-900 font-semibold mb-2">No transactions recorded</p>
+                      <p className="text-sm text-gray-500 mb-4">Add your first transaction to track cash flow</p>
+                      <button
+                        onClick={openAddTransactionModal}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Transaction
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Description
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Category
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Party
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Payment
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Amount
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {transactions.map((transaction) => (
+                            <tr key={transaction._id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {new Date(transaction.transactionDate).toLocaleDateString()}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {transaction.description}
+                                </div>
+                                {transaction.referenceNumber && (
+                                  <div className="text-xs text-gray-500">
+                                    Ref: {transaction.referenceNumber}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  transaction.type === 'Income' ? 'bg-green-100 text-green-800' :
+                                  transaction.type === 'Expense' ? 'bg-red-100 text-red-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {transaction.type}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-700">{transaction.category}</span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {transaction.partyName ? (
+                                  <div>
+                                    <div className="text-sm text-gray-900">{transaction.partyName}</div>
+                                    <div className="text-xs text-gray-500">{transaction.partyType}</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-700">{transaction.paymentMethod}</span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className={`text-sm font-semibold ${
+                                  transaction.type === 'Income' ? 'text-green-600' :
+                                  transaction.type === 'Expense' ? 'text-red-600' :
+                                  'text-blue-600'
+                                }`}>
+                                  {transaction.type === 'Income' ? '+' : transaction.type === 'Expense' ? '-' : ''}
+                                  {formatCurrency(transaction.totalAmount || transaction.amount)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  transaction.paymentStatus === 'Completed' ? 'bg-green-100 text-green-800' :
+                                  transaction.paymentStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  transaction.paymentStatus === 'Failed' ? 'bg-red-100 text-red-800' :
+                                  transaction.paymentStatus === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {transaction.paymentStatus}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button
+                                  onClick={() => openEditTransactionModal(transaction)}
+                                  className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                  title="Edit Transaction"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTransaction(transaction._id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  title="Delete Transaction"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Transaction Summary */}
+                    <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Total Income: </span>
+                          <span className="font-semibold text-green-600">
+                            {formatCurrency(transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Total Expenses: </span>
+                          <span className="font-semibold text-red-600">
+                            {formatCurrency(transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Net Cash Flow: </span>
+                          <span className="font-semibold text-blue-600">
+                            {formatCurrency(
+                              transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0) -
+                              transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0)
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -1048,6 +1284,19 @@ const CompanyExpensesDashboard = () => {
           }}
           investor={selectedInvestor}
           onSuccess={handleInvestorModalSuccess}
+        />
+      )}
+
+      {/* Transaction Modal */}
+      {showTransactionModal && (
+        <TransactionFormModal
+          isOpen={showTransactionModal}
+          onClose={() => {
+            setShowTransactionModal(false);
+            setSelectedTransaction(null);
+          }}
+          transaction={selectedTransaction}
+          onSuccess={handleTransactionModalSuccess}
         />
       )}
     </MainLayout>
