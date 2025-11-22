@@ -42,6 +42,32 @@ const Dashboard = () => {
   const [showFullDashboard, setShowFullDashboard] = useState(false);
 
   useEffect(() => {
+    // Clear cache if user changes (security measure)
+    if (user?.id || user?.email) {
+      const currentUserKey = user.id || user.email;
+      const lastUserKey = sessionStorage.getItem('last_user_key');
+      
+      if (lastUserKey && lastUserKey !== currentUserKey) {
+        // User changed - clear all cached data
+        console.log('[Security] User changed, clearing all cached data');
+        try {
+          const keysToRemove = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && (key.includes('dashboard') || key.includes('cache') || key.includes('report'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => sessionStorage.removeItem(key));
+        } catch (error) {
+          console.error('Error clearing cached data:', error);
+        }
+      }
+      
+      // Store current user key for next comparison
+      sessionStorage.setItem('last_user_key', currentUserKey);
+    }
+    
     // Show initial critical data immediately
     fetchDashboardData();
     
@@ -51,7 +77,7 @@ const Dashboard = () => {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [user?.id, user?.email]);
 
   const handleLogout = () => {
     logout();
@@ -69,13 +95,14 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Check cache first (5 minute cache)
-      const cacheKey = 'dashboard_data';
-      const cacheTime = 'dashboard_cache_time';
+      // Check cache first (5 minute cache) - MUST include user ID to prevent data leakage
+      const userCacheKey = user?.id || user?.email || 'anonymous';
+      const cacheKey = `dashboard_data_${userCacheKey}`;
+      const cacheTime = `dashboard_cache_time_${userCacheKey}`;
       const cachedData = sessionStorage.getItem(cacheKey);
       const cachedTime = sessionStorage.getItem(cacheTime);
       
-      if (cachedData && cachedTime) {
+      if (cachedData && cachedTime && user) {
         const age = Date.now() - parseInt(cachedTime);
         if (age < 5 * 60 * 1000) { // 5 minutes
           setDashboardData(JSON.parse(cachedData));
@@ -104,9 +131,12 @@ const Dashboard = () => {
 
       setDashboardData(response.data.data);
       
-      // Cache the response
-      sessionStorage.setItem('dashboard_data', JSON.stringify(response.data.data));
-      sessionStorage.setItem('dashboard_cache_time', Date.now().toString());
+      // Cache the response with user-specific key
+      if (user) {
+        const userCacheKey = user.id || user.email || 'anonymous';
+        sessionStorage.setItem(`dashboard_data_${userCacheKey}`, JSON.stringify(response.data.data));
+        sessionStorage.setItem(`dashboard_cache_time_${userCacheKey}`, Date.now().toString());
+      }
       
     } catch (error) {
       const errorMessage = error.message || 'Failed to load dashboard data';

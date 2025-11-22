@@ -32,7 +32,7 @@ const CompanyExpensesDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
-  const [activeTab, setActiveTab] = useState('expenses'); // 'expenses', 'budget', 'transactions', 'investors'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'expenses', 'budget', 'transactions', 'investors'
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [investors, setInvestors] = useState([]);
@@ -56,13 +56,13 @@ const CompanyExpensesDashboard = () => {
   useEffect(() => {
     fetchExpenses();
     fetchAnalytics();
-    if (activeTab === 'budget') {
+    if (activeTab === 'budget' || activeTab === 'overview') {
       fetchBudgets();
     }
-    if (activeTab === 'investors') {
+    if (activeTab === 'investors' || activeTab === 'overview') {
       fetchInvestors();
     }
-    if (activeTab === 'transactions') {
+    if (activeTab === 'transactions' || activeTab === 'overview') {
       fetchTransactions();
     }
   }, [filters, activeTab]);
@@ -451,6 +451,202 @@ const CompanyExpensesDashboard = () => {
           </div>
         )}
 
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Overview Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <DollarSign className="w-8 h-8 opacity-80" />
+                  <span className="text-xs font-semibold bg-white bg-opacity-20 px-2 py-1 rounded">TOTAL</span>
+                </div>
+                <p className="text-3xl font-bold">{formatCurrency((analytics?.totalAmount || 0) + budgets.reduce((sum, b) => sum + (b.amount || 0), 0))}</p>
+                <p className="text-sm opacity-90 mt-1">Total Budget + Expenses</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <TrendingUp className="w-8 h-8 opacity-80" />
+                  <span className="text-xs font-semibold bg-white bg-opacity-20 px-2 py-1 rounded">PAID</span>
+                </div>
+                <p className="text-3xl font-bold">{formatCurrency(analytics?.paidAmount || 0)}</p>
+                <p className="text-sm opacity-90 mt-1">Paid Expenses</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <Calendar className="w-8 h-8 opacity-80" />
+                  <span className="text-xs font-semibold bg-white bg-opacity-20 px-2 py-1 rounded">PENDING</span>
+                </div>
+                <p className="text-3xl font-bold">{formatCurrency(analytics?.pendingAmount || 0)}</p>
+                <p className="text-sm opacity-90 mt-1">Pending Payments</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <Users className="w-8 h-8 opacity-80" />
+                  <span className="text-xs font-semibold bg-white bg-opacity-20 px-2 py-1 rounded">INVESTORS</span>
+                </div>
+                <p className="text-3xl font-bold">{formatCurrency(investors.reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0))}</p>
+                <p className="text-sm opacity-90 mt-1">Total Investment</p>
+              </div>
+            </div>
+
+            {/* Key Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Expenses Summary */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Expenses Summary
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Total Count</span>
+                    <span className="font-semibold text-gray-900">{expenses.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Total Amount</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(analytics?.totalAmount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Paid</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(analytics?.paidAmount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Pending</span>
+                    <span className="font-semibold text-orange-600">{formatCurrency(analytics?.pendingAmount || 0)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Budget Summary */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-indigo-600" />
+                  Budget Summary
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Total Budgets</span>
+                    <span className="font-semibold text-gray-900">{budgets.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Total Budget</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(budgets.reduce((sum, b) => sum + (b.amount || 0), 0))}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Spent</span>
+                    <span className="font-semibold text-red-600">{formatCurrency(budgets.reduce((sum, b) => sum + (b.spent || 0), 0))}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Remaining</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(budgets.reduce((sum, b) => sum + ((b.amount || 0) - (b.spent || 0)), 0))}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transactions Summary */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-indigo-600" />
+                  Transactions Summary
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Total Count</span>
+                    <span className="font-semibold text-gray-900">{transactions.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Income</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-sm text-gray-600">Expenses</span>
+                    <span className="font-semibold text-red-600">{formatCurrency(transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Net</span>
+                    <span className={`font-semibold ${(transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0) - transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0) - transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + (t.totalAmount || t.amount || 0), 0))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Investors Overview */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-600" />
+                Investors Overview
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-2xl font-bold text-gray-900">{investors.length}</p>
+                  <p className="text-sm text-gray-600 mt-1">Total Investors</p>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{investors.filter(inv => inv.hasBoardSeat || inv.boardSeat).length}</p>
+                  <p className="text-sm text-gray-600 mt-1">Board Seats</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{investors.filter(inv => inv.hasVotingRights || inv.votingRights).length}</p>
+                  <p className="text-sm text-gray-600 mt-1">Voting Rights</p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-600">{formatCurrency(investors.reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0))}</p>
+                  <p className="text-sm text-gray-600 mt-1">Total Funding</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Recent Expenses */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Expenses</h3>
+                <div className="space-y-3">
+                  {expenses.slice(0, 5).map(expense => (
+                    <div key={expense.id || expense._id} className="flex justify-between items-center py-2 border-b last:border-0">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{expense.description || 'No description'}</p>
+                        <p className="text-xs text-gray-500">{expense.date ? new Date(expense.date).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                      <span className="font-semibold text-gray-900">{formatCurrency(expense.amountInINR || expense.amount || 0)}</span>
+                    </div>
+                  ))}
+                  {expenses.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No expenses yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Transactions */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+                <div className="space-y-3">
+                  {transactions.slice(0, 5).map(transaction => (
+                    <div key={transaction.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{transaction.description || 'No description'}</p>
+                        <p className="text-xs text-gray-500">{transaction.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                      <span className={`font-semibold ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
+                        {transaction.type === 'Income' ? '+' : '-'}{formatCurrency(transaction.totalAmount || transaction.amount || 0)}
+                      </span>
+                    </div>
+                  ))}
+                  {transactions.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No transactions yet</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filters */}
         {activeTab === 'expenses' && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -599,9 +795,9 @@ const CompanyExpensesDashboard = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {expenses.map((expense) => (
-                    <tr key={expense._id} className="hover:bg-gray-50">
+                    <tr key={expense.id || expense._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(expense.expenseDate).toLocaleDateString()}
+                        {expense.date ? new Date(expense.date).toLocaleDateString() : 'Invalid Date'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded">
@@ -610,13 +806,24 @@ const CompanyExpensesDashboard = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {expense.description}
+                        {expense.budgetId && (() => {
+                          const linkedBudget = budgets.find(b => b.id === expense.budgetId || b._id === expense.budgetId);
+                          return linkedBudget ? (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                <Target className="w-3 h-3 mr-1" />
+                                {linkedBudget.name}
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {expense.vendor?.name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {formatCurrency(expense.amountInINR)}
-                        {expense.currency !== 'INR' && (
+                        {formatCurrency(expense.amountInINR || expense.amount)}
+                        {expense.currency && expense.currency !== 'INR' && (
                           <span className="text-xs text-gray-500 ml-1">
                             ({expense.currency} {expense.amount})
                           </span>
@@ -643,7 +850,7 @@ const CompanyExpensesDashboard = () => {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(expense._id)}
+                            onClick={() => handleDelete(expense.id || expense._id)}
                             className="text-red-600 hover:text-red-900"
                             title="Delete"
                           >
@@ -759,6 +966,18 @@ const CompanyExpensesDashboard = () => {
                             {budget.description && (
                               <p className="text-sm text-gray-600 mt-2">{budget.description}</p>
                             )}
+                            {/* Show linked expenses count */}
+                            {(() => {
+                              const linkedExpenses = expenses.filter(e => e.budgetId === budget.id || e.budgetId === budget._id);
+                              const linkedAmount = linkedExpenses.reduce((sum, e) => sum + (e.amountInINR || e.amount || 0), 0);
+                              return linkedExpenses.length > 0 ? (
+                                <div className="mt-2 flex items-center gap-2 text-sm">
+                                  <span className="text-indigo-600 font-medium">{linkedExpenses.length} expense(s) linked</span>
+                                  <span className="text-gray-400">|</span>
+                                  <span className="text-gray-600">Total: {formatCurrency(linkedAmount)}</span>
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
                           <div className="flex gap-2 ml-4">
                             <button
@@ -1235,7 +1454,7 @@ const CompanyExpensesDashboard = () => {
                         <div>
                           <span className="text-gray-600">With Board Seats: </span>
                           <span className="font-semibold text-blue-600">
-                            {investors.filter(inv => inv.boardSeat).length}
+                            {investors.filter(inv => inv.hasBoardSeat || inv.boardSeat).length}
                           </span>
                         </div>
                       </div>

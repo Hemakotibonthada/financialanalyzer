@@ -99,7 +99,8 @@ const EMITracker = () => {
     setSyncDialogOpen,
     setUpcomingPayments,
     upcomingPayments,
-    userProfile
+    userProfile,
+    setManualEMIDialogOpen
   });
 
   // Loans Given handlers
@@ -248,7 +249,7 @@ const EMITracker = () => {
 
           {activeTab === 3 && (
             <UpcomingPaymentsTab
-              upcomingPayments={upcomingPayments}
+              overview={overview}
               upcomingMonthsToShow={upcomingMonthsToShow}
               setUpcomingMonthsToShow={setUpcomingMonthsToShow}
               onMarkAsPaid={emiHandlers.handleMarkAsPaid}
@@ -266,11 +267,19 @@ const EMITracker = () => {
                 setSelectedEMI(emi);
                 setDeleteConfirmOpen(true);
               }}
+              onMarkAsPaid={emiHandlers.handleMarkAsPaid}
             />
           )}
 
           {activeTab === 5 && (
-            <CompletedEMIsTab overview={overview} />
+            <CompletedEMIsTab 
+              overview={overview}
+              onEMIClick={(emi) => {
+                setSelectedEMI(emi);
+                setEmiDetailOpen(true);
+              }}
+              onExport={() => setExportDialogOpen(true)}
+            />
           )}
 
           {activeTab === 6 && (
@@ -306,7 +315,7 @@ const EMITracker = () => {
       <ManualEMIDialog
         open={manualEMIDialogOpen}
         onClose={emiHandlers.handleCloseManualEMIDialog}
-        onCreate={emiHandlers.handleCreateManualEMI}
+        onCreate={emiHandlers.handleSaveEMI}
         data={emiHandlers.manualEMIData}
         errors={emiHandlers.manualEMIErrors}
         loading={emiHandlers.manualEMILoading}
@@ -340,7 +349,7 @@ const EMITracker = () => {
         selectedEMI={selectedEMI}
         selectedEmiChartData={selectedEmiChartData}
         onEdit={() => {
-          emiHandlers.setEditEMIDialogOpen(true);
+          emiHandlers.handleEditEMI(selectedEMI);
           setEmiDetailOpen(false);
         }}
         onDelete={() => {

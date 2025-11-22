@@ -143,26 +143,25 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     
     // 1. Income Stability (25 points)
     let incomeStabilityScore = 0;
-    if (profileMonthlyIncome > 0 && totalIncome > 0) {
-      const incomeVariation = Math.abs(totalIncome - profileMonthlyIncome) / profileMonthlyIncome;
-      if (incomeVariation <= 0.05) incomeStabilityScore = 25; // Very stable income
-      else if (incomeVariation <= 0.10) incomeStabilityScore = 23;
-      else if (incomeVariation <= 0.20) incomeStabilityScore = 20;
-      else if (incomeVariation <= 0.30) incomeStabilityScore = 15;
-      else incomeStabilityScore = 10;
+    
+    // Collect income data from trends
+    const incomeValues = [];
+    // Simple approach: check if user has consistent monthly income
+    if (profileMonthlyIncome > 0) {
+      // User has set their monthly income in profile
+      incomeStabilityScore = 20;
       healthFactors.push({
         factor: 'Income Stability',
         score: incomeStabilityScore,
-        description: incomeStabilityScore >= 20 ? 'Very stable income' : 
-                     incomeStabilityScore >= 15 ? 'Fairly stable income' : 'Income needs stabilization'
+        description: `Monthly income: ₹${Math.round(profileMonthlyIncome).toLocaleString('en-IN')}`
       });
-    } else if (profileMonthlyIncome > 0) {
-      // Has profile income but no transaction income yet
+    } else if (totalIncome > 0) {
+      // Has income transactions but no profile income
       incomeStabilityScore = 15;
       healthFactors.push({
         factor: 'Income Stability',
         score: incomeStabilityScore,
-        description: 'Income profile set - add income transactions to track stability'
+        description: 'Income recorded - set monthly income in profile for better tracking'
       });
     } else {
       // No income data at all
@@ -170,7 +169,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       healthFactors.push({
         factor: 'Income Stability',
         score: incomeStabilityScore,
-        description: 'Set up monthly income in profile to track income stability'
+        description: 'Set up monthly income in Profile to track stability'
       });
     }
     financialHealthScore += incomeStabilityScore;
@@ -485,13 +484,23 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       
       const budgetAmount = parseFloat(budget.amount) || 0;
       const spentAmount = parseFloat(categorySpent.toFixed(2));
-      const percentUsed = budgetAmount > 0 ? Math.min(100, (spentAmount / budgetAmount) * 100) : 0;
       
-      // Determine status based on percentage
+      // Handle edge case: if budget is 0, status should be 'good' with 0% used
+      let percentUsed = 0;
       let status = 'good';
-      if (percentUsed >= 100) status = 'over';
-      else if (percentUsed >= 90) status = 'critical';
-      else if (percentUsed >= 75) status = 'warning';
+      
+      if (budgetAmount > 0) {
+        percentUsed = Math.min(100, (spentAmount / budgetAmount) * 100);
+        
+        // Determine status based on percentage
+        if (percentUsed >= 100) status = 'over';
+        else if (percentUsed >= 90) status = 'critical';
+        else if (percentUsed >= 75) status = 'warning';
+      } else if (spentAmount > 0) {
+        // If there's spending but no budget, mark as over
+        status = 'over';
+        percentUsed = 100;
+      }
       
       return {
         category: budget.category,

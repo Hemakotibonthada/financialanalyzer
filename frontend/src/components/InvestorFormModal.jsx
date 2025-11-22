@@ -191,6 +191,9 @@ const InvestorFormModal = ({ isOpen, onClose, investor, onSuccess }) => {
 
       const investorData = {
         ...formData,
+        investorType: formData.type, // Backend expects 'investorType', frontend uses 'type'
+        hasBoardSeat: formData.boardSeat, // Backend expects 'hasBoardSeat', frontend uses 'boardSeat'
+        hasVotingRights: formData.votingRights, // Backend expects 'hasVotingRights', frontend uses 'votingRights'
         investmentAmount: parseFloat(formData.investmentAmount),
         equityPercentage: formData.equityPercentage ? parseFloat(formData.equityPercentage) : null,
         preferredShares: formData.preferredShares ? parseInt(formData.preferredShares) : null,

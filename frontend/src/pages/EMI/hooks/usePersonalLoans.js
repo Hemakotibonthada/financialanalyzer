@@ -22,11 +22,15 @@ export const usePersonalLoans = () => {
         axios.get(`${API_URL}/personal-loans/summary`, config)
       ]);
       
-      setPersonalLoans(loansRes.data.data || []);
-      setPersonalLoansSummary(summaryRes.data.data || null);
+      console.log('Personal loans response:', loansRes.data);
+      console.log('Personal loans summary response:', summaryRes.data);
+      
+      setPersonalLoans(loansRes.data.loans || loansRes.data.data || []);
+      setPersonalLoansSummary(summaryRes.data.summary || summaryRes.data.data || null);
     } catch (err) {
       console.error('Error fetching personal loans:', err);
-      throw err;
+      setPersonalLoans([]);
+      setPersonalLoansSummary(null);
     } finally {
       setPersonalLoansLoading(false);
     }

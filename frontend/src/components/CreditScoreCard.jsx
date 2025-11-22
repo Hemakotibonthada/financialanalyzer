@@ -31,7 +31,10 @@ const CreditScoreCard = () => {
         const { canFetchCreditScore, hasProfile, missingFields, hasCreditScore, lastCreditUpdate } = statusResponse.data.data;
         
         if (!hasProfile || !canFetchCreditScore) {
-          setError(`Profile incomplete: ${missingFields.join(', ')} required for credit score`);
+          const fieldsText = (missingFields && Array.isArray(missingFields) && missingFields.length > 0) 
+            ? missingFields.join(', ') 
+            : 'required fields';
+          setError(`Profile incomplete: ${fieldsText} required for credit score`);
           return;
         }
 

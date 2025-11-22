@@ -11,42 +11,56 @@ import {
 import { formatCurrency } from '../utils/formatters';
 
 const OverviewCards = ({ overview, animateCards, personalLoansSummary }) => {
-  if (!overview) return null;
+  console.log('🎴 OverviewCards - Received overview:', overview);
+  console.log('🎴 OverviewCards - Overview stats:', overview?.overview);
+  console.log('🎴 OverviewCards - Active EMIs array:', overview?.activeEMIs);
+  
+  if (!overview) {
+    console.warn('⚠️ OverviewCards - No overview data received!');
+    return null;
+  }
 
+  // Extract the nested overview stats
+  const stats = overview.overview || {};
+  
   const cardConfigs = [
     {
       title: 'Active EMIs',
-      value: overview?.totalActiveEMIs || 0,
-      subtitle: `${overview?.totalCompletedEMIs || 0} completed`,
+      value: stats.totalActiveEMIs || 0,
+      subtitle: `${stats.totalCompletedEMIs || 0} completed`,
       icon: CreditCardIcon,
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       delay: '0ms'
     },
     {
       title: 'Outstanding Amount',
-      value: formatCurrency((overview?.totalOutstanding || 0) + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0)),
+      value: formatCurrency((stats.totalOutstanding || 0) + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0)),
       subtitle: 'Total remaining debt',
       icon: AccountBalanceIcon,
       gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
       delay: '100ms',
       caption: personalLoansSummary && personalLoansSummary.totalOutstanding > 0 ? 
-        `(EMI: ${formatCurrency(overview?.totalOutstanding || 0)} + Personal Loans: ${formatCurrency(personalLoansSummary.totalOutstanding)})` : null
+        `(EMI: ${formatCurrency(stats.totalOutstanding || 0)} + Personal Loans: ${formatCurrency(personalLoansSummary.totalOutstanding)})` : null
     },
     {
       title: 'Monthly Burden',
-      value: formatCurrency(overview?.totalMonthlyPayment || 0),
+      value: formatCurrency((stats.monthlyBurden || 0) + ((personalLoansSummary && personalLoansSummary.monthlyPayments) || 0)),
       subtitle: 'Paid monthly',
       icon: TrendingUpIcon,
       gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      delay: '200ms'
+      delay: '200ms',
+      caption: personalLoansSummary && personalLoansSummary.monthlyPayments > 0 ? 
+        `(EMI: ${formatCurrency(stats.monthlyBurden || 0)} + Personal Loans: ${formatCurrency(personalLoansSummary.monthlyPayments)})` : null
     },
     {
       title: 'Total Paid',
-      value: formatCurrency(overview?.totalPaid || 0),
+      value: formatCurrency((stats.totalAmountPaid || 0) + ((personalLoansSummary && personalLoansSummary.totalPaid) || 0)),
       subtitle: 'Successfully paid',
       icon: CheckCircleIcon,
       gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-      delay: '300ms'
+      delay: '300ms',
+      caption: personalLoansSummary && personalLoansSummary.totalPaid > 0 ? 
+        `(EMI: ${formatCurrency(stats.totalAmountPaid || 0)} + Personal Loans: ${formatCurrency(personalLoansSummary.totalPaid)})` : null
     }
   ];
 

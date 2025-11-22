@@ -134,6 +134,53 @@ export const usePersonalLoansHandlers = ({ fetchPersonalLoans }) => {
       formData: personalLoanRepaymentData,
       setFormData: setPersonalLoanRepaymentData
     },
+    // Handler functions for tab
+    handleAddPersonalLoan: () => {
+      setSelectedPersonalLoan(null);
+      setPersonalLoanFormData({
+        lenderName: '',
+        relationship: 'Friend',
+        principalAmount: '',
+        loanTakenDate: new Date().toISOString().split('T')[0],
+        interestRate: 0,
+        interestType: 'none',
+        purpose: '',
+        contactDetails: { phone: '', email: '' },
+        notes: '',
+        priority: 'medium',
+        tags: []
+      });
+      setPersonalLoanDialogOpen(true);
+    },
+    handleEditPersonalLoan: (loan) => {
+      setSelectedPersonalLoan(loan);
+      setPersonalLoanFormData({
+        ...loan,
+        loanTakenDate: new Date(loan.loanTakenDate || loan.dateBorrowed).toISOString().split('T')[0]
+      });
+      setPersonalLoanDialogOpen(true);
+    },
+    handleAddPersonalLoanRepayment: (loan) => {
+      setSelectedPersonalLoan(loan);
+      setPersonalLoanRepaymentData({ amount: '', notes: '' });
+      setPersonalLoanRepaymentDialogOpen(true);
+    },
+    handleDeletePersonalLoan: async (loan) => {
+      if (!confirm('Are you sure you want to delete this personal loan record?')) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        
+        await axios.delete(`${API_URL}/personal-loans/${loan._id || loan.id}`, config);
+        alert('Personal loan deleted successfully!');
+        fetchPersonalLoans();
+      } catch (err) {
+        console.error('Error deleting personal loan:', err);
+        alert(err.response?.data?.message || 'Failed to delete personal loan');
+      }
+    },
+    // Legacy handlers
     openAddDialog: () => {
       setSelectedPersonalLoan(null);
       setPersonalLoanFormData({
@@ -165,6 +212,6 @@ export const usePersonalLoansHandlers = ({ fetchPersonalLoans }) => {
       setPersonalLoanRepaymentDialogOpen(true);
     },
     handleMarkPersonalLoanRepaid,
-    handleDeletePersonalLoan
+    handleDeletePersonalLoan: handleDeletePersonalLoan
   };
 };

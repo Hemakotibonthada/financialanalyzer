@@ -20,9 +20,13 @@ export const useEMIData = (selectedPeriod, trendsMonths) => {
 
     try {
       const token = localStorage.getItem('token');
+      console.log('🔑 Token exists:', !!token, 'Length:', token?.length);
+      
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
+
+      console.log('📡 Fetching EMI data from:', API_URL);
 
       const [overviewRes, upcomingRes, chartsRes, insightsRes] = await Promise.all([
         axios.get(`${API_URL}/emi/overview`, config),
@@ -31,10 +35,75 @@ export const useEMIData = (selectedPeriod, trendsMonths) => {
         axios.get(`${API_URL}/emi/insights`, config)
       ]);
 
-      setOverview(overviewRes.data.data);
+      console.log('📥 Raw API Responses:', {
+        overview: overviewRes.data,
+        upcoming: upcomingRes.data,
+        charts: chartsRes.data,
+        insights: insightsRes.data
+      });
+
+      // Backend returns: { success: true, data: { overview: {...}, activeEMIs: [...], completedEMIs: [...] } }
+      // We need to destructure the data properly
+      const overviewData = overviewRes.data.data;
+      console.log('📊 Overview data structure:', overviewData);
+      
+      // Transform insights from object to array format expected by InsightsSection
+      const insightsData = insightsRes.data.data;
+      const insightsArray = [];
+      
+      if (insightsData && typeof insightsData === 'object') {
+        // Add recommendations as insights
+        if (insightsData.recommendations && Array.isArray(insightsData.recommendations)) {
+          insightsData.recommendations.forEach(rec => {
+            insightsArray.push({
+              title: 'Recommendation',
+              description: rec,
+              severity: 'info',
+              action: 'Review'
+            });
+          });
+        }
+        
+        // Add other insights based on data
+        if (insightsData.totalMonthlyBurden > 0) {
+          insightsArray.push({
+            title: 'Monthly EMI Burden',
+            description: `Your total monthly EMI obligation is ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(insightsData.totalMonthlyBurden)}`,
+            severity: insightsData.totalMonthlyBurden > 50000 ? 'warning' : 'success'
+          });
+        }
+        
+        if (insightsData.avgInterestRate > 0) {
+          insightsArray.push({
+            title: 'Average Interest Rate',
+            description: `Your average EMI interest rate is ${insightsData.avgInterestRate.toFixed(2)}% p.a.`,
+            severity: insightsData.avgInterestRate > 15 ? 'warning' : 'info'
+          });
+        }
+        
+        if (insightsData.totalOutstanding > 0) {
+          insightsArray.push({
+            title: 'Total Outstanding',
+            description: `Total remaining amount across all EMIs: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(insightsData.totalOutstanding)}`,
+            severity: 'info'
+          });
+        }
+      }
+      
+      // Set the complete overview object (includes overview stats, activeEMIs, completedEMIs)
+      setOverview(overviewData);
       setUpcomingPayments(upcomingRes.data.data);
       setChartData(chartsRes.data.data);
-      setInsights(insightsRes.data.data);
+      setInsights(insightsArray); // Use transformed array
+
+      console.log('📊 EMI Data Loaded:', {
+        overview: overviewRes.data.data,
+        activeEMIs: overviewRes.data.data?.activeEMIs?.length || 0,
+        completedEMIs: overviewRes.data.data?.completedEMIs?.length || 0,
+        upcomingPayments: upcomingRes.data.data,
+        chartData: chartsRes.data.data,
+        insights: insightsRes.data.data
+      });
 
       console.debug('EMI fetchAllData - API_URL:', API_URL, {
         overviewCount: overviewRes.data?.data ? Object.keys(overviewRes.data.data).length : 0,

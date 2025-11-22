@@ -143,12 +143,27 @@ api.interceptors.response.use(
 
     // Handle specific HTTP status codes
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login (remove from both storages)
+      // Unauthorized - clear ALL data to prevent data leakage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('token_expiry');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
+      
+      // Clear all cached data
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.includes('dashboard') || key.includes('cache') || key.includes('report'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => sessionStorage.removeItem(key));
+      } catch (e) {
+        console.error('Error clearing cache on 401:', e);
+      }
+      
       window.location.href = '/login';
     } else if (error.response?.status === 503) {
       error.message = 'Service temporarily unavailable. Please try again later.';

@@ -24,6 +24,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
     referenceNumber: '',
     project: '',
     department: 'General',
+    budgetId: '', // Link to budget
     isBillable: false,
     isRecurring: false,
     recurringFrequency: 'Monthly',
@@ -38,6 +39,22 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
   const [existingAttachments, setExistingAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [budgets, setBudgets] = useState([]);
+
+  // Fetch budgets for dropdown
+  useEffect(() => {
+    const fetchBudgets = async () => {
+      try {
+        const response = await api.get('/company-expenses/budgets');
+        setBudgets(response.data.budgets || []);
+      } catch (error) {
+        console.error('Error fetching budgets:', error);
+      }
+    };
+    if (isOpen) {
+      fetchBudgets();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (expense) {
@@ -60,6 +77,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
         referenceNumber: expense.referenceNumber || '',
         project: expense.project || '',
         department: expense.department || 'General',
+        budgetId: expense.budgetId || '',
         isBillable: expense.isBillable || false,
         isRecurring: expense.isRecurring || false,
         recurringFrequency: expense.recurringDetails?.frequency || 'Monthly',
@@ -115,15 +133,45 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
   const handleFiles = (fileList) => {
     const newFiles = Array.from(fileList);
+    
+    // Check total file count
+    const totalFiles = files.length + newFiles.length;
+    if (totalFiles > 5) {
+      toast.error(`Maximum 5 files allowed. You have ${files.length} files already.`);
+      return;
+    }
+    
+    // Validate each file
     const validFiles = newFiles.filter(file => {
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 10 * 1024 * 1024; // 10MB per file
       if (file.size > maxSize) {
-        toast.error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
         return false;
       }
+      
+      // Check file type
+      const allowedTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`File "${file.name}" type not supported. Only images, PDFs, and Office documents allowed.`);
+        return false;
+      }
+      
       return true;
     });
-    setFiles(prev => [...prev, ...validFiles]);
+    
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+      toast.success(`${validFiles.length} file(s) added successfully`);
+    }
   };
 
   const removeFile = (index) => {
@@ -145,40 +193,77 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields before submission
+    if (!formData.description || !formData.description.trim()) {
+      toast.error('Please enter a description');
+      return;
+    }
+    if (!formData.amount || isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    if (!formData.category || !formData.category.trim()) {
+      toast.error('Please select a category');
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const submitData = new FormData();
 
-      // Append all form fields
-      Object.keys(formData).forEach(key => {
-        if (key === 'tags') {
-          // Convert comma-separated string to array
-          const tagsArray = formData[key].split(',').map(t => t.trim()).filter(t => t);
-          submitData.append(key, JSON.stringify(tagsArray));
-        } else if (key.startsWith('vendor')) {
-          // Handle vendor object
-          const vendorKey = key.replace('vendor', '').charAt(0).toLowerCase() + key.replace('vendor', '').slice(1);
-          if (!submitData.has('vendor')) {
-            submitData.append('vendor', JSON.stringify({}));
-          }
-        } else if (key === 'recurringFrequency' && formData.isRecurring) {
-          // Handle recurring details
-          submitData.append('recurringDetails', JSON.stringify({
-            frequency: formData[key],
-            startDate: formData.expenseDate
-          }));
-        } else {
-          submitData.append(key, formData[key]);
-        }
-      });
+      // Append required fields first to ensure they're included
+      submitData.append('description', formData.description.trim());
+      submitData.append('amount', formData.amount);
+      submitData.append('category', formData.category);
+      
+      // Append other basic fields
+      submitData.append('expenseDate', formData.expenseDate || new Date().toISOString().split('T')[0]);
+      submitData.append('paymentMethod', formData.paymentMethod || 'Credit Card');
+      submitData.append('paymentStatus', formData.paymentStatus || 'Paid');
+      submitData.append('department', formData.department || 'General');
+      submitData.append('currency', formData.currency || 'INR');
+      
+      // Append optional fields only if they have values
+      if (formData.subcategory) submitData.append('subcategory', formData.subcategory);
+      if (formData.invoiceNumber) submitData.append('invoiceNumber', formData.invoiceNumber);
+      if (formData.referenceNumber) submitData.append('referenceNumber', formData.referenceNumber);
+      if (formData.project) submitData.append('project', formData.project);
+      if (formData.notes) submitData.append('notes', formData.notes);
+      if (formData.amountInINR) submitData.append('amountInINR', formData.amountInINR);
+      if (formData.exchangeRate) submitData.append('exchangeRate', formData.exchangeRate);
+      if (formData.taxPercentage) submitData.append('taxPercentage', formData.taxPercentage);
+      if (formData.budgetId) submitData.append('budgetId', formData.budgetId);
+      
+      // Append boolean fields
+      submitData.append('isBillable', formData.isBillable || false);
+      submitData.append('isRecurring', formData.isRecurring || false);
+      submitData.append('taxDeductible', formData.taxDeductible || false);
+      submitData.append('reimbursable', formData.reimbursable || false);
 
-      // Append vendor data separately
+      // Append vendor data if provided
       if (formData.vendorName || formData.vendorEmail || formData.vendorPhone) {
-        submitData.set('vendor', JSON.stringify({
-          name: formData.vendorName,
-          email: formData.vendorEmail,
-          phone: formData.vendorPhone
+        submitData.append('vendor', JSON.stringify({
+          name: formData.vendorName || '',
+          email: formData.vendorEmail || '',
+          phone: formData.vendorPhone || ''
+        }));
+      }
+      
+      // Append tags if provided
+      if (formData.tags) {
+        const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t);
+        if (tagsArray.length > 0) {
+          submitData.append('tags', JSON.stringify(tagsArray));
+        }
+      }
+      
+      // Append recurring details if applicable
+      if (formData.isRecurring && formData.recurringFrequency) {
+        submitData.append('recurringDetails', JSON.stringify({
+          frequency: formData.recurringFrequency,
+          startDate: formData.expenseDate
         }));
       }
 
@@ -187,24 +272,115 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
         submitData.append('attachments', file);
       });
 
-      let response;
-      if (expense) {
-        // Update existing expense
-        // Don't set Content-Type - let axios/browser set it with boundary
-        response = await api.put(`/company-expenses/${expense._id}`, submitData);
-        toast.success('Expense updated successfully');
-      } else {
-        // Create new expense
-        // Don't set Content-Type - let axios/browser set it with boundary
-        response = await api.post('/company-expenses', submitData);
-        toast.success('Expense created successfully');
-      }
+      console.log('Submitting expense with fields:', Array.from(submitData.keys()));
 
-      onSuccess(response.data.data);
-      onClose();
+      let response;
+      try {
+        if (expense) {
+          // Update existing expense
+          response = await api.put(`/company-expenses/${expense._id}`, submitData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          toast.success('Expense updated successfully');
+        } else {
+          // Create new expense
+          response = await api.post('/company-expenses', submitData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          toast.success('Expense created successfully');
+        }
+        
+        onSuccess(response.data.data);
+        onClose();
+      } catch (uploadError) {
+        // If upload with files fails and we have files, try without them using JSON
+        if (files.length > 0 && uploadError.response?.status === 400) {
+          console.log('File upload failed, retrying without attachments using JSON...');
+          toast.warning('File upload failed. Saving expense without attachments...');
+          
+          // Create JSON data without files
+          const jsonData = {
+            description: formData.description.trim(),
+            amount: parseFloat(formData.amount),
+            category: formData.category,
+            date: formData.expenseDate || new Date().toISOString().split('T')[0],
+            paymentMethod: formData.paymentMethod || 'Credit Card',
+            paymentStatus: formData.paymentStatus || 'Paid',
+            department: formData.department || 'General',
+            currency: formData.currency || 'INR',
+            isBillable: formData.isBillable || false,
+            isRecurring: formData.isRecurring || false,
+            taxDeductible: formData.taxDeductible || false,
+            reimbursable: formData.reimbursable || false
+          };
+          
+          // Add optional fields
+          if (formData.subcategory) jsonData.subcategory = formData.subcategory;
+          if (formData.invoiceNumber) jsonData.invoiceNumber = formData.invoiceNumber;
+          if (formData.referenceNumber) jsonData.referenceNumber = formData.referenceNumber;
+          if (formData.project) jsonData.project = formData.project;
+          if (formData.notes) jsonData.notes = formData.notes;
+          if (formData.amountInINR) jsonData.amountInINR = parseFloat(formData.amountInINR);
+          if (formData.exchangeRate) jsonData.exchangeRate = parseFloat(formData.exchangeRate);
+          if (formData.taxPercentage) jsonData.taxPercentage = parseFloat(formData.taxPercentage);
+          if (formData.budgetId) jsonData.budgetId = formData.budgetId;
+          
+          // Add vendor if provided
+          if (formData.vendorName || formData.vendorEmail || formData.vendorPhone) {
+            jsonData.vendor = {
+              name: formData.vendorName || '',
+              email: formData.vendorEmail || '',
+              phone: formData.vendorPhone || ''
+            };
+          }
+          
+          // Add tags if provided
+          if (formData.tags) {
+            const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t);
+            if (tagsArray.length > 0) {
+              jsonData.tags = tagsArray;
+            }
+          }
+          
+          // Add recurring details if applicable
+          if (formData.isRecurring && formData.recurringFrequency) {
+            jsonData.recurringDetails = {
+              frequency: formData.recurringFrequency,
+              startDate: formData.expenseDate || new Date().toISOString().split('T')[0]
+            };
+          }
+          
+          try {
+            if (expense) {
+              response = await api.put(`/company-expenses/${expense._id}`, jsonData);
+            } else {
+              response = await api.post('/company-expenses', jsonData);
+            }
+            
+            toast.success('Expense saved without attachments. Please configure storage CORS to enable file uploads.');
+            onSuccess(response.data.data);
+            onClose();
+            return;
+          } catch (retryError) {
+            console.error('Retry without files also failed:', retryError);
+            throw retryError; // Fall through to main error handler
+          }
+        }
+        throw uploadError; // Re-throw if not a file upload issue
+      }
     } catch (error) {
       console.error('Error saving expense:', error);
-      toast.error(error.response?.data?.message || 'Failed to save expense');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save expense';
+      toast.error(errorMessage);
+      
+      // Log detailed error for debugging
+      if (error.response?.data) {
+        console.error('Server response:', error.response.data);
+      }
     } finally {
       setLoading(false);
     }
@@ -450,7 +626,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
             {/* Organization Details */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Department
@@ -474,6 +650,26 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     <option value="IT">IT</option>
                     <option value="Administration">Administration</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Budget <span className="text-gray-400 text-xs">(Optional)</span>
+                  </label>
+                  <select
+                    name="budgetId"
+                    value={formData.budgetId}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">No Budget</option>
+                    {budgets.map(budget => (
+                      <option key={budget.id} value={budget.id}>
+                        {budget.name} - {budget.department} ({budget.status})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Link this expense to a budget for tracking</p>
                 </div>
 
                 <div>

@@ -103,32 +103,40 @@ const PricingSection = ({ navigate }) => {
           </div>
 
           {/* Enterprise Plan */}
-          <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-purple-600 transition">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
-            <div className="text-4xl font-bold text-gray-900 mb-6">
-              Custom
+          <div className="group bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-purple-600 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+              <div className="text-5xl font-bold text-gray-900 mb-2">
+                Custom
+              </div>
+              <p className="text-gray-500 mb-6">For large organizations</p>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 group-hover:scale-125 transition-transform" />
+                  <span>Everything in Pro</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 group-hover:scale-125 transition-transform" />
+                  <span>Multi-user access</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 group-hover:scale-125 transition-transform" />
+                  <span>API access</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 group-hover:scale-125 transition-transform" />
+                  <span>Dedicated support</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 group-hover:scale-125 transition-transform" />
+                  <span>Custom integrations</span>
+                </li>
+              </ul>
+              <button className="w-full py-3 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-300 font-semibold group-hover:scale-105">
+                Contact Sales
+              </button>
             </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-center space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Everything in Pro</span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Multi-user access</span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>API access</span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Dedicated support</span>
-              </li>
-            </ul>
-            <button className="w-full py-3 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
-              Contact Sales
-            </button>
           </div>
         </div>
       </div>

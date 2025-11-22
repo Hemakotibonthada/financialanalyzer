@@ -12,69 +12,96 @@ const bucket = admin.storage().bucket();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit per file
-    files: 10, // Max 10 files
-    fieldSize: 50 * 1024 * 1024, // 50MB per field
-    parts: 1000, // Max 1000 parts in multipart form
-    headerPairs: 2000 // Increase header pairs limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit per file (reduced for stability)
+    files: 5, // Max 5 files (reduced for stability)
+    fieldSize: 10 * 1024 * 1024, // 10MB per field
+    parts: 50, // Reduced parts limit
+    fields: 50, // Limit number of non-file fields
+    headerPairs: 100 // Reduced header pairs
   },
   fileFilter: (req, file, cb) => {
-    // Accept images, PDFs, and documents
-    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|txt|image\//;
-    const mimetype = allowedTypes.test(file.mimetype);
-    const extname = file.originalname ? allowedTypes.test(file.originalname.toLowerCase().split('.').pop()) : true;
+    console.log('File filter - checking file:', file.originalname, 'mimetype:', file.mimetype);
     
-    if (mimetype || extname) {
+    // Accept images, PDFs, and documents
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain'
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
       return cb(null, true);
     }
-    cb(new Error('Invalid file type. Only images, PDFs, and documents are allowed.'));
+    
+    console.log('File rejected - invalid type:', file.mimetype);
+    cb(new Error('Invalid file type. Only images, PDFs, and Office documents are allowed.'));
   }
 });
 
 // Multer error handler middleware
 const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    console.error('Multer error:', err);
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: 'File too large. Maximum size is 50MB per file.'
-      });
-    }
-    if (err.code === 'LIMIT_FILE_COUNT') {
-      return res.status(400).json({
-        success: false,
-        message: 'Too many files. Maximum is 10 files.'
-      });
-    }
-    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      return res.status(400).json({
-        success: false,
-        message: 'Unexpected file field.'
-      });
-    }
-    if (err.code === 'LIMIT_PART_COUNT') {
-      return res.status(400).json({
-        success: false,
-        message: 'Too many form parts.'
-      });
-    }
+    console.error('Multer error:', err.code, err.message);
+    console.error('Request headers:', JSON.stringify(req.headers, null, 2));
+    
+    const errorResponses = {
+      'LIMIT_FILE_SIZE': 'File too large. Maximum size is 10MB per file.',
+      'LIMIT_FILE_COUNT': 'Too many files. Maximum is 5 files.',
+      'LIMIT_UNEXPECTED_FILE': 'Unexpected file field. Use "attachments" field name.',
+      'LIMIT_PART_COUNT': 'Too many form parts. Reduce number of fields or files.',
+      'LIMIT_FIELD_KEY': 'Field name too long.',
+      'LIMIT_FIELD_VALUE': 'Field value too long.',
+      'LIMIT_FIELD_COUNT': 'Too many fields in form.'
+    };
+    
     return res.status(400).json({
       success: false,
-      message: `Upload error: ${err.message}`
+      message: errorResponses[err.code] || `Upload error: ${err.message}`,
+      code: err.code,
+      debug: {
+        contentType: req.headers['content-type'],
+        contentLength: req.headers['content-length']
+      }
     });
   } else if (err) {
-    console.error('File upload error:', err);
-    // Handle "Unexpected end of form" error
+    console.error('File upload error:', err.message);
+    console.error('Error stack:', err.stack);
+    console.error('Request headers:', JSON.stringify(req.headers, null, 2));
+    
+    // Handle specific error types
     if (err.message && err.message.includes('Unexpected end of form')) {
       return res.status(400).json({
         success: false,
-        message: 'Form upload interrupted. Please try again with a smaller file or check your connection.'
+        message: 'Form parsing interrupted. This may be a CORS or network issue.',
+        suggestion: 'Try without attachments first. If that works, the issue is file upload permissions.',
+        debug: {
+          errorType: 'UNEXPECTED_END_OF_FORM',
+          contentType: req.headers['content-type'],
+          contentLength: req.headers['content-length']
+        }
       });
     }
+    
+    if (err.message && err.message.includes('Invalid file type')) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+        allowedTypes: 'JPEG, PNG, GIF, PDF, DOC, DOCX, XLS, XLSX, TXT'
+      });
+    }
+    
     return res.status(400).json({
       success: false,
-      message: err.message || 'File upload failed'
+      message: err.message || 'File upload failed',
+      suggestion: 'Check file size and format',
+      debug: {
+        contentType: req.headers['content-type'],
+        contentLength: req.headers['content-length']
+      }
     });
   }
   next();
@@ -211,6 +238,8 @@ router.get('/analytics', authenticateToken, async (req, res) => {
     const analytics = {
       total: filteredDocs.length,
       totalAmount: 0,
+      paidAmount: 0,
+      pendingAmount: 0,
       byCategory: {},
       byStatus: {},
       byPaymentMethod: {}
@@ -218,14 +247,22 @@ router.get('/analytics', authenticateToken, async (req, res) => {
     
     filteredDocs.forEach(doc => {
       const data = doc.data();
-      const amount = parseFloat(data.amount) || 0;
+      // Support both amount and amountInINR fields
+      const amount = parseFloat(data.amountInINR || data.amount) || 0;
       
       analytics.totalAmount += amount;
+      
+      // Calculate paid vs pending amounts
+      const status = (data.paymentStatus || data.status || 'pending').toLowerCase();
+      if (status === 'paid') {
+        analytics.paidAmount += amount;
+      } else {
+        analytics.pendingAmount += amount;
+      }
       
       const category = data.category || 'Uncategorized';
       analytics.byCategory[category] = (analytics.byCategory[category] || 0) + amount;
       
-      const status = data.paymentStatus || data.status || 'pending';
       analytics.byStatus[status] = (analytics.byStatus[status] || 0) + 1;
       
       const method = data.paymentMethod || 'cash';
@@ -233,11 +270,10 @@ router.get('/analytics', authenticateToken, async (req, res) => {
     });
     
     analytics.totalAmount = parseFloat(analytics.totalAmount.toFixed(2));
+    analytics.paidAmount = parseFloat(analytics.paidAmount.toFixed(2));
+    analytics.pendingAmount = parseFloat(analytics.pendingAmount.toFixed(2));
     
-    res.json({
-      success: true,
-      data: analytics
-    });
+    res.json(analytics);
   } catch (error) {
     console.error('Get analytics error:', error);
     console.error('Error stack:', error.stack);
@@ -251,13 +287,44 @@ router.get('/analytics', authenticateToken, async (req, res) => {
 
 // Create new company expense
 router.post('/', authenticateToken, (req, res, next) => {
-  // Add timeout and error handling
-  const uploadMiddleware = upload.array('attachments', 10);
+  console.log('=== Company Expense Upload Started ===');
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('Content-Length:', req.headers['content-length']);
+  console.log('Request method:', req.method);
+  
+  // Check if this is a multipart request
+  const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
+  console.log('Is multipart:', isMultipart);
+  
+  if (!isMultipart) {
+    // Not a file upload, skip multer - this is JSON
+    console.log('JSON request detected, skipping multer');
+    return next();
+  }
+  
+  // Add timeout and error handling with reduced file count
+  const uploadMiddleware = upload.array('attachments', 5);
+  
+  // Set timeout for large uploads
+  req.setTimeout(300000); // 5 minutes
   
   uploadMiddleware(req, res, (err) => {
     if (err) {
-      console.error('Multer upload error:', err);
+      console.error('Multer upload error:', err.message);
+      console.error('Error type:', err.constructor.name);
       return handleMulterError(err, req, res, next);
+    }
+    
+    console.log('Multer parsing successful');
+    console.log('Files received:', req.files?.length || 0);
+    console.log('Body fields:', Object.keys(req.body || {}).length);
+    
+    if (req.files && req.files.length > 0) {
+      console.log('File details:', req.files.map(f => ({
+        name: f.originalname,
+        size: f.size,
+        type: f.mimetype
+      })));
     }
     
     // Check if body was parsed
@@ -265,7 +332,12 @@ router.post('/', authenticateToken, (req, res, next) => {
       console.error('Empty request body after multer');
       return res.status(400).json({
         success: false,
-        message: 'No form data received. Please check your upload and try again.'
+        message: 'No form data received. The form submission was incomplete.',
+        suggestion: 'Try submitting without attachments first to isolate the issue',
+        debug: {
+          filesReceived: req.files?.length || 0,
+          bodyFields: Object.keys(req.body || {}).length
+        }
       });
     }
     
@@ -280,15 +352,39 @@ router.post('/', authenticateToken, (req, res, next) => {
     console.log('Files count:', req.files?.length || 0);
     
     // Validate required fields
-    if (!req.body.description || !req.body.amount || !req.body.category) {
-      console.log('Validation failed - missing fields:', {
-        hasDescription: !!req.body.description,
-        hasAmount: !!req.body.amount,
-        hasCategory: !!req.body.category
+    const hasDescription = req.body.description && req.body.description.trim().length > 0;
+    const hasAmount = req.body.amount && !isNaN(parseFloat(req.body.amount));
+    const hasCategory = req.body.category && req.body.category.trim().length > 0;
+    
+    console.log('Validation check:', {
+      hasDescription,
+      hasAmount,
+      hasCategory,
+      description: req.body.description,
+      amount: req.body.amount,
+      category: req.body.category
+    });
+    
+    if (!hasDescription || !hasAmount || !hasCategory) {
+      console.error('Validation failed - missing or invalid fields:', {
+        hasDescription,
+        hasAmount,
+        hasCategory,
+        bodyKeys: Object.keys(req.body),
+        body: req.body
       });
+      
+      const missingFields = [];
+      if (!hasDescription) missingFields.push('description');
+      if (!hasAmount) missingFields.push(`amount (received: ${req.body.amount})`);
+      if (!hasCategory) missingFields.push('category');
+      
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: description, amount, and category are required'
+        message: `Missing or invalid required fields: ${missingFields.join(', ')}`,
+        receivedFields: Object.keys(req.body),
+        receivedData: { description: req.body.description, amount: req.body.amount, category: req.body.category },
+        help: 'Please ensure all required fields are provided with valid data'
       });
     }
     
@@ -370,6 +466,7 @@ router.post('/', authenticateToken, (req, res, next) => {
       vendor: vendor,
       project: req.body.project || '',
       department: req.body.department || '',
+      budgetId: req.body.budgetId || '', // Link to budget
       notes: req.body.notes || '',
       tags: tags,
       attachments: attachmentUrls,
@@ -387,6 +484,56 @@ router.post('/', authenticateToken, (req, res, next) => {
     
     const expenseRef = await db.collection('companyExpenses').add(expenseData);
     const newDoc = await expenseRef.get();
+    
+    // Update budget spent amount if budgetId is provided
+    if (req.body.budgetId) {
+      try {
+        const budgetRef = db.collection('companyBudgets').doc(req.body.budgetId);
+        const budgetDoc = await budgetRef.get();
+        
+        if (budgetDoc.exists && budgetDoc.data().userId === userId) {
+          const currentSpent = budgetDoc.data().spent || 0;
+          const expenseAmount = parseFloat(req.body.amountInINR || req.body.amount || 0);
+          await budgetRef.update({
+            spent: currentSpent + expenseAmount,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log(`Updated budget ${req.body.budgetId} spent amount:`, currentSpent + expenseAmount);
+        }
+      } catch (budgetError) {
+        console.error('Error updating budget:', budgetError);
+        // Don't fail the expense creation if budget update fails
+      }
+    }
+    
+    // Auto-create transaction if payment status is 'Paid' or 'paid'
+    const paymentStatus = (req.body.paymentStatus || 'pending').toLowerCase();
+    if (paymentStatus === 'paid') {
+      try {
+        const transactionData = {
+          type: 'Expense',
+          description: `Expense: ${req.body.description}`,
+          date: expenseData.date,
+          amount: parseFloat(req.body.amountInINR || req.body.amount || 0),
+          totalAmount: parseFloat(req.body.amountInINR || req.body.amount || 0),
+          category: req.body.category,
+          paymentMethod: req.body.paymentMethod || 'cash',
+          department: req.body.department || '',
+          project: req.body.project || '',
+          notes: `Auto-created from expense: ${req.body.description}`,
+          relatedExpenseId: expenseRef.id,
+          userId,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('companyTransactions').add(transactionData);
+        console.log('Auto-created transaction for paid expense:', expenseRef.id);
+      } catch (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        // Don't fail the expense creation if transaction creation fails
+      }
+    }
     
     res.json({
       success: true,
@@ -623,13 +770,18 @@ router.get('/report', authenticateToken, async (req, res) => {
       query = query.where('date', '<=', admin.firestore.Timestamp.fromDate(new Date(endDate)));
     }
     
-    const expensesSnapshot = await query.orderBy('date', 'desc').get();
+    const expensesSnapshot = await query.get();
     
     const expenses = expensesSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       date: doc.data().date?.toDate ? doc.data().date.toDate().toISOString() : doc.data().date
-    }));
+    })).sort((a, b) => {
+      // Sort by date descending (newest first)
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
     
     if (format === 'json') {
       res.json({
@@ -665,7 +817,6 @@ router.get('/budgets', authenticateToken, async (req, res) => {
     
     const budgetsSnapshot = await db.collection('companyBudgets')
       .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
       .get();
     
     const budgets = budgetsSnapshot.docs.map(doc => ({
@@ -675,7 +826,12 @@ router.get('/budgets', authenticateToken, async (req, res) => {
       endDate: doc.data().endDate?.toDate ? doc.data().endDate.toDate().toISOString() : doc.data().endDate,
       createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt,
       updatedAt: doc.data().updatedAt?.toDate ? doc.data().updatedAt.toDate().toISOString() : doc.data().updatedAt
-    }));
+    })).sort((a, b) => {
+      // Sort by createdAt descending (newest first)
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
     
     console.log('Found budgets:', budgets.length);
     
@@ -1170,7 +1326,6 @@ router.get('/investors', authenticateToken, async (req, res) => {
     
     const investorsSnapshot = await db.collection('companyInvestors')
       .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
       .get();
     
     const investors = investorsSnapshot.docs.map(doc => {
@@ -1182,6 +1337,11 @@ router.get('/investors', authenticateToken, async (req, res) => {
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
         updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt
       };
+    }).sort((a, b) => {
+      // Sort by createdAt descending (newest first)
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
     });
     
     console.log('Found investors:', investors.length);

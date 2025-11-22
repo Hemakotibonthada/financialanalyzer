@@ -584,6 +584,40 @@ class AnalyticsService {
         budgetStatus: budgetAnalysis.status
       });
       
+      // Check if user has NO data at all (new user)
+      // A new user has no transactions at all (spending = 0, investments = 0)
+      // and no profile setup (no monthly income, no budget)
+      const hasAnyTransactions = monthlyTrends.trends && monthlyTrends.trends.some(t => 
+        t.totalSpending > 0 || t.totalInvestments > 0 || t.transactionCount > 0
+      );
+      
+      const hasNoData = (
+        !hasAnyTransactions &&
+        monthlyIncomeData.amount === 0 &&
+        !budgetAnalysis.hasBudget
+      );
+      
+      // For new users with no data, return perfect score (clean slate)
+      if (hasNoData) {
+        logger.info(`  ℹ️  No data found for new user - returning perfect score`);
+        return {
+          score: 100,
+          grade: 'A',
+          factors: [
+            { factor: 'Income Stability', score: 25, description: 'Perfect - Ready to start tracking income' },
+            { factor: 'Spending Discipline', score: 25, description: 'Perfect - Ready to create budgets' },
+            { factor: 'Savings Rate', score: 25, description: 'Perfect - Ready to save and invest' },
+            { factor: 'Financial Awareness', score: 25, description: 'Perfect - Start your financial journey!' }
+          ],
+          recommendations: [
+            'Welcome! Start by adding your monthly income in Profile',
+            'Create budget categories to track spending',
+            'Set savings goals to build wealth',
+            'Add your first financial analysis to see insights'
+          ]
+        };
+      }
+      
       let score = 0;
       const factors = [];
 
@@ -876,11 +910,12 @@ class AnalyticsService {
       };
     }
     
+    // If no income data at all, return lower score (not perfect, needs setup)
     if (incomes.length < 2) {
       return { 
         factor: 'Income Stability', 
-        score: 15, 
-        description: 'Limited income history - continue tracking'
+        score: 10, 
+        description: 'Set up monthly income in Profile to track stability'
       };
     }
     
@@ -929,8 +964,8 @@ class AnalyticsService {
       
       return { 
         factor: 'Spending Discipline', 
-        score: 12, 
-        description: 'Set monthly budgets to improve spending control'
+        score: 5, 
+        description: 'Create budgets in Profile to track spending discipline'
       };
     }
     
@@ -983,8 +1018,8 @@ class AnalyticsService {
     if (totalIncome === 0) {
       return { 
         factor: 'Savings Rate', 
-        score: 10, 
-        description: 'Track income to calculate savings rate'
+        score: 5, 
+        description: 'Add income and track expenses to calculate savings rate'
       };
     }
     
@@ -1067,11 +1102,11 @@ class AnalyticsService {
     
     const description = indicators.length > 0 
       ? `Good financial awareness: ${indicators.join(', ')}`
-      : 'Set up budgets and goals to improve awareness';
+      : 'Set up your profile, budgets, and goals to get started';
     
     return {
       factor: 'Financial Awareness',
-      score: Math.max(10, score), // Minimum 10 points for using the app
+      score: Math.max(5, score), // Minimum 5 points for registering
       description
     };
   }
@@ -1087,8 +1122,8 @@ class AnalyticsService {
       if (activeEMIs.length === 0) {
         return {
           factor: 'EMI Burden',
-          score: 5, // Bonus points for debt-free
-          description: '🎉 No active EMIs - Debt-free!'
+          score: 0, // Neutral for no EMIs (neither good nor bad for scoring)
+          description: 'No active EMIs - Add if you have any loans'
         };
       }
 

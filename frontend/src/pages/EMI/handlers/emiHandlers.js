@@ -12,7 +12,8 @@ export const useEMIHandlers = ({
   setSyncDialogOpen,
   setUpcomingPayments,
   upcomingPayments,
-  userProfile
+  userProfile,
+  setManualEMIDialogOpen
 }) => {
   // Manual EMI State
   const [manualEMIData, setManualEMIData] = useState({
@@ -162,6 +163,7 @@ export const useEMIHandlers = ({
   };
 
   const handleCloseManualEMIDialog = () => {
+    setManualEMIDialogOpen(false);
     setManualEMIData({
       cardProvider: '',
       customProviderName: '',
@@ -193,9 +195,13 @@ export const useEMIHandlers = ({
   const handleDeleteEMI = async (selectedEMI) => {
     if (!selectedEMI) return;
 
+    if (!window.confirm('Are you sure you want to delete this EMI? This action cannot be undone.')) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
-      const deletedEmiId = selectedEMI.id;
+      const deletedEmiId = selectedEMI._id || selectedEMI.id;
       
       await axios.delete(
         `${API_URL}/emi/${deletedEmiId}`,
@@ -222,7 +228,85 @@ export const useEMIHandlers = ({
       fetchAllData();
     } catch (err) {
       console.error('Error deleting EMI:', err);
-      alert('Failed to delete EMI');
+      alert(err.response?.data?.message || 'Failed to delete EMI');
+    }
+  };
+
+  const handleEditEMI = async (emi) => {
+    if (!emi) return;
+    
+    // Populate form with EMI data for editing
+    setManualEMIData({
+      _id: emi._id || emi.id,
+      cardProvider: emi.cardProvider || '',
+      customProviderName: emi.customProviderName || '',
+      cardLastFourDigits: emi.cardLastFourDigits || '',
+      cardHolderName: emi.cardHolderName || '',
+      merchantName: emi.merchantName || '',
+      productDescription: emi.productDescription || '',
+      category: emi.category || 'electronics',
+      invoiceNumber: emi.invoiceNumber || '',
+      principalAmount: emi.principalAmount || '',
+      interestRate: emi.interestRate || '',
+      processingFee: emi.processingFee || '',
+      prepaymentCharges: emi.prepaymentCharges || '',
+      emiAmount: emi.emiAmount || '',
+      totalTenure: emi.totalTenure || '',
+      repaymentType: emi.repaymentType || 'MONTHLY',
+      startDate: emi.startDate ? new Date(emi.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      reminderDate: emi.reminderDate || '',
+      lenderContact: emi.lenderContact || '',
+      loanAccountNumber: emi.loanAccountNumber || '',
+      insuranceIncluded: emi.insuranceIncluded || 'no',
+      autoDebit: emi.autoDebit || 'no',
+      notes: emi.notes || '',
+      tags: emi.tags || []
+    });
+    
+    setEditEMIDialogOpen(true);
+    setManualEMIDialogOpen(true);
+  };
+
+  const handleUpdateEMI = async () => {
+    if (!validateManualEMI()) return;
+    if (!manualEMIData._id) {
+      alert('EMI ID is missing. Cannot update.');
+      return;
+    }
+
+    setManualEMILoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const { _id, ...updateData } = manualEMIData;
+      
+      await axios.put(
+        `${API_URL}/emi/${_id}`,
+        updateData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert('EMI updated successfully!');
+      handleCloseManualEMIDialog();
+      setEditEMIDialogOpen(false);
+      fetchAllData();
+    } catch (err) {
+      console.error('Error updating EMI:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to update EMI';
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setManualEMILoading(false);
+    }
+  };
+
+  const handleSaveEMI = async () => {
+    if (editEMIDialogOpen && manualEMIData._id) {
+      // Update existing EMI
+      await handleUpdateEMI();
+    } else {
+      // Create new EMI
+      await handleCreateManualEMI();
     }
   };
 
@@ -234,11 +318,23 @@ export const useEMIHandlers = ({
       confirmAction: async () => {
         try {
           const token = localStorage.getItem('token');
-          await axios.post(
+          
+          // Prepare payment data with amount
+          const paymentData = {
+            installmentNumber,
+            paidDate: new Date().toISOString(),
+            amount: emiDetails?.emiAmount || emiDetails?.amount
+          };
+          
+          console.log('Marking payment as paid:', { emiId, paymentData });
+          
+          const response = await axios.post(
             `${API_URL}/emi/${emiId}/mark-paid`,
-            { installmentNumber, paidDate: new Date().toISOString() },
+            paymentData,
             { headers: { Authorization: `Bearer ${token}` } }
           );
+
+          console.log('Mark as paid response:', response.data);
 
           if (upcomingPayments && upcomingPayments.monthlyBreakdown) {
             const updatedBreakdown = upcomingPayments.monthlyBreakdown.map(month => ({
@@ -270,10 +366,11 @@ export const useEMIHandlers = ({
           fetchAllData();
         } catch (err) {
           console.error('Error marking payment as paid:', err);
+          const errorMessage = err.response?.data?.message || 'Failed to mark payment as paid. Please try again.';
           setConfirmationDialog(prev => ({
             ...prev,
             title: 'Error',
-            message: 'Failed to mark payment as paid. Please try again.',
+            message: errorMessage,
             isError: true
           }));
         }
@@ -383,6 +480,9 @@ export const useEMIHandlers = ({
     handleSyncStatements,
     handleManualEMIChange,
     handleCreateManualEMI,
+    handleSaveEMI,
+    handleUpdateEMI,
+    handleEditEMI,
     handleCloseManualEMIDialog,
     handleDeleteEMI,
     handleMarkAsPaid,

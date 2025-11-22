@@ -269,6 +269,20 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      // CRITICAL: Clear any cached data from previous user before setting new user
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.includes('dashboard') || key.includes('cache') || key.includes('report'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => sessionStorage.removeItem(key));
+      } catch (error) {
+        console.error('Error clearing cached data on login:', error);
+      }
+      
       setToken(authToken);
       setUser(user);
       
@@ -321,6 +335,20 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('storageType', storageType);
       
+      // Clear any existing cached data
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.includes('dashboard') || key.includes('cache') || key.includes('report'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => sessionStorage.removeItem(key));
+      } catch (error) {
+        console.error('Error clearing cached data on registration:', error);
+      }
+      
       setToken(authToken);
       setUser(user);
       
@@ -346,7 +374,9 @@ export const AuthProvider = ({ children }) => {
     
     setUser(null);
     setToken(null);
-    // remove from both storages
+    
+    // CRITICAL: Clear ALL storage to prevent data leakage between users
+    // Remove authentication data
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('token_expiry');
@@ -354,6 +384,33 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('storageType');
+    
+    // Clear ALL cached data (dashboard, reports, etc.)
+    // This is critical for multi-user security
+    try {
+      // Clear all sessionStorage items that contain cached data
+      const keysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.includes('dashboard') || key.includes('cache') || key.includes('report'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => sessionStorage.removeItem(key));
+      
+      // Also clear from localStorage
+      const lsKeysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('dashboard') || key.includes('cache') || key.includes('report'))) {
+          lsKeysToRemove.push(key);
+        }
+      }
+      lsKeysToRemove.forEach(key => localStorage.removeItem(key));
+    } catch (error) {
+      console.error('Error clearing cached data:', error);
+    }
+    
     toast.info('Logged out successfully');
   };
 
