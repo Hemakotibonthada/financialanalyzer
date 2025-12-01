@@ -10,6 +10,8 @@ const EMI = require('../models/EMI');
 const User = require('../models/User');
 const FinancialProfile = require('../models/FinancialProfile');
 const PersonalLoan = require('../models/PersonalLoan');
+const Transaction = require('../models/Transaction');
+const { CacheHelpers } = require('../middleware/cacheMiddleware');
 const logger = require('../utils/logger');
 const CreditCardStatementService = require('../services/creditCardStatementService');
 const EMIExtractionService = require('../services/emiExtractionService');
@@ -1508,7 +1510,47 @@ router.post('/:id/mark-paid', authenticate, async (req, res) => {
     };
     
     await emi.addPayment(payment);
-    
+
+    // Create a corresponding transaction so this EMI payment shows up in monthly spending
+    try {
+      const paidDateObj = payment.paidDate instanceof Date ? payment.paidDate : new Date(payment.paidDate);
+      const startOfDay = new Date(paidDateObj);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(paidDateObj);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existing = await Transaction.findOne({
+        userId: req.user._id,
+        amount: payment.amount,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        category: { $regex: /emi/i }
+      });
+
+      if (!existing) {
+        await Transaction.create({
+          userId: req.user._id,
+          date: payment.paidDate,
+          description: `EMI payment - ${emi.merchantName}`,
+          amount: Math.abs(payment.amount),
+          currency: 'INR',
+          type: 'debit',
+          category: 'EMI',
+          merchantName: emi.merchantName,
+          source: 'manual',
+          referenceNumber: emi._id.toString()
+        });
+
+        // Invalidate dashboard / analytics caches for this user so UI reflects new transaction
+        try {
+          await CacheHelpers.invalidateUserCache(req.user._id);
+        } catch (ciErr) {
+          logger.warn('Failed to invalidate cache after EMI transaction creation:', ciErr);
+        }
+      }
+    } catch (txErr) {
+      logger.warn('Failed to create transaction for EMI payment:', txErr);
+    }
+
     res.json({
       success: true,
       message: 'Payment recorded successfully',
@@ -1882,7 +1924,45 @@ router.post('/:id/mark-paid', authenticate, async (req, res) => {
     }
     
     await emi.save();
-    
+    // Create a corresponding transaction so this EMI payment shows up in monthly spending
+    try {
+      const paidDateObj = payment.paidDate instanceof Date ? payment.paidDate : new Date(payment.paidDate);
+      const startOfDay = new Date(paidDateObj);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(paidDateObj);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existing = await Transaction.findOne({
+        userId: req.user._id,
+        amount: payment.amount,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        category: { $regex: /emi/i }
+      });
+
+      if (!existing) {
+        await Transaction.create({
+          userId: req.user._id,
+          date: payment.paidDate,
+          description: `EMI payment - ${emi.merchantName}`,
+          amount: Math.abs(payment.amount),
+          currency: 'INR',
+          type: 'debit',
+          category: 'EMI',
+          merchantName: emi.merchantName,
+          source: 'manual',
+          referenceNumber: emi._id.toString()
+        });
+
+        try {
+          await CacheHelpers.invalidateUserCache(req.user._id);
+        } catch (ciErr) {
+          logger.warn('Failed to invalidate cache after EMI transaction creation:', ciErr);
+        }
+      }
+    } catch (txErr) {
+      logger.warn('Failed to create transaction for EMI payment:', txErr);
+    }
+
     res.json({
       success: true,
       message: 'Payment marked as paid',
