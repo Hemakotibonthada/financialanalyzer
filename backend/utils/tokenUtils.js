@@ -6,10 +6,18 @@ const RefreshToken = require('../models/RefreshToken');
  * Generate access token (short-lived: 15 minutes)
  */
 const generateAccessToken = (userId) => {
+  // Use configured expiry if provided, otherwise fall back to 15 minutes
+  const expiresIn = process.env.JWT_EXPIRES_IN || '15m';
+
+  // If expiresIn is explicitly set to 'none' or empty, generate a token without exp claim
+  if (!expiresIn || expiresIn.toLowerCase() === 'none') {
+    return jwt.sign({ id: userId }, process.env.JWT_SECRET);
+  }
+
   return jwt.sign(
     { id: userId },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn }
   );
 };
 
