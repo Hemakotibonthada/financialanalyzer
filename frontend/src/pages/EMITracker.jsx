@@ -208,6 +208,10 @@ const EMITracker = () => {
     relationship: 'Friend',
     principalAmount: '',
     loanTakenDate: new Date().toISOString().split('T')[0],
+    repaymentOption: 'one-time', // 'one-time' | 'emi'
+    repayDate: '',
+    emiTenureMonths: 0,
+    emiFrequency: 'monthly',
     interestRate: 0,
     interestType: 'none',
     purpose: '',
@@ -552,6 +556,10 @@ const EMITracker = () => {
         relationship: 'Friend',
         principalAmount: '',
         loanTakenDate: new Date().toISOString().split('T')[0],
+        repaymentOption: 'one-time',
+        repayDate: '',
+        emiTenureMonths: 0,
+        emiFrequency: 'monthly',
         interestRate: 0,
         interestType: 'none',
         purpose: '',
@@ -1889,6 +1897,9 @@ const EMITracker = () => {
         <Tabs 
           value={activeTab} 
           onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             px: 2,
             '& .MuiTabs-indicator': {
@@ -4728,6 +4739,53 @@ const EMITracker = () => {
               onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, loanTakenDate: e.target.value })}
               InputLabelProps={{ shrink: true }}
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Repayment Option</InputLabel>
+              <Select
+                value={personalLoanFormData.repaymentOption}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, repaymentOption: e.target.value })}
+                label="Repayment Option"
+              >
+                <MenuItem value="one-time">One-time (On date)</MenuItem>
+                <MenuItem value="emi">Installments (EMI)</MenuItem>
+              </Select>
+            </FormControl>
+
+            {personalLoanFormData.repaymentOption === 'one-time' && (
+              <TextField
+                label="Repay Date"
+                type="date"
+                fullWidth
+                value={personalLoanFormData.repayDate}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, repayDate: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+
+            {personalLoanFormData.repaymentOption === 'emi' && (
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="EMI Tenure (months)"
+                  type="number"
+                  fullWidth
+                  value={personalLoanFormData.emiTenureMonths}
+                  onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, emiTenureMonths: parseInt(e.target.value || 0) })}
+                />
+                <FormControl fullWidth>
+                  <InputLabel>EMI Frequency</InputLabel>
+                  <Select
+                    value={personalLoanFormData.emiFrequency}
+                    onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, emiFrequency: e.target.value })}
+                    label="EMI Frequency"
+                  >
+                    <MenuItem value="monthly">Monthly</MenuItem>
+                    <MenuItem value="weekly">Weekly</MenuItem>
+                    <MenuItem value="biweekly">Bi-weekly</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            )}
 
             <FormControl fullWidth>
               <InputLabel>Interest Type</InputLabel>
