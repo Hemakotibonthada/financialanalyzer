@@ -151,8 +151,8 @@ router.put('/:id', authenticate, async (req, res) => {
     
     // Update allowed fields
     const allowedUpdates = [
-      'lenderName', 'relationship', 'interestRate', 'interestType',
-      'purpose', 'contactDetails', 'notes', 'priority', 'tags'
+      'lenderName', 'relationship', 'principalAmount', 'loanTakenDate', 'repaymentDate',
+      'interestRate', 'interestType', 'purpose', 'contactDetails', 'notes', 'priority', 'tags'
     ];
     
     allowedUpdates.forEach(field => {
