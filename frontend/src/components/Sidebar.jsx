@@ -70,6 +70,12 @@ const Sidebar = () => {
       path: '/networth',
       color: 'emerald'
     }
+    ,{
+      label: 'Personal Docs',
+      icon: Upload,
+      path: '/personal-docs',
+      color: 'purple'
+    }
   ];
 
   const advancedItems = [
