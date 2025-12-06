@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Collapse,
   Select,
   MenuItem,
   FormControl,
@@ -228,6 +229,8 @@ const EMITracker = () => {
     amount: '',
     notes: ''
   });
+  // Message shown inside Personal Loans tab (instead of alert())
+  const [personalLoanMessage, setPersonalLoanMessage] = useState(null);
 
   // Confirmation Dialog State
   const [confirmationDialog, setConfirmationDialog] = useState({
@@ -542,11 +545,11 @@ const EMITracker = () => {
       if (selectedPersonalLoan) {
         // Update existing loan
         await axios.put(`${API_URL}/personal-loans/${selectedPersonalLoan._id}`, personalLoanFormData, config);
-        alert('Personal loan updated successfully!');
+        setPersonalLoanMessage({ type: 'success', text: 'Personal loan updated successfully!' });
       } else {
         // Create new loan
         await axios.post(`${API_URL}/personal-loans`, personalLoanFormData, config);
-        alert('Personal loan added successfully!');
+        setPersonalLoanMessage({ type: 'success', text: 'Personal loan added successfully!' });
       }
       
       setPersonalLoanDialogOpen(false);
@@ -572,6 +575,13 @@ const EMITracker = () => {
         tags: []
       });
       fetchPersonalLoans();
+      // Auto-dismiss message after 6s
+      if (personalLoanMessage === null) {
+        // ensure setPersonalLoanMessage exists in closure; set a removal timer
+        setTimeout(() => setPersonalLoanMessage(null), 6000);
+      } else {
+        setTimeout(() => setPersonalLoanMessage(null), 6000);
+      }
     } catch (err) {
       console.error('Error saving personal loan:', err);
       alert(err.response?.data?.message || 'Failed to save personal loan');
@@ -1117,6 +1127,20 @@ const EMITracker = () => {
       >
         <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} position="relative" zIndex={1}>
           <Box>
+              {/* Inline message for create/update actions */}
+              <Box mb={2}>
+                <Collapse in={!!personalLoanMessage}>
+                  {personalLoanMessage && (
+                    <Alert
+                      severity={personalLoanMessage.type}
+                      onClose={() => setPersonalLoanMessage(null)}
+                      sx={{ mb: 2 }}
+                    >
+                      {personalLoanMessage.text}
+                    </Alert>
+                  )}
+                </Collapse>
+              </Box>
             <Typography 
               variant="h3" 
               sx={{
