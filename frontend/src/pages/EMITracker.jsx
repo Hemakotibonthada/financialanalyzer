@@ -305,12 +305,12 @@ const EMITracker = () => {
   }, [selectedPeriod, trendsMonths]);
 
   useEffect(() => {
-    // Fetch loans given when tab 6 is active
-    if (activeTab === 6) {
+    // Fetch loans given when tab 7 is active
+    if (activeTab === 7) {
       fetchLoansGiven();
     }
-    // Fetch personal loans when tab 7 is active
-    if (activeTab === 7) {
+    // Fetch personal loans when tab 8 is active
+    if (activeTab === 8) {
       fetchPersonalLoans();
     }
   }, [activeTab]);
@@ -611,7 +611,7 @@ const EMITracker = () => {
 
   // Calculate debt analysis when data changes
   useEffect(() => {
-    if (overview && userProfile && activeTab === 8) {
+    if (overview && userProfile && activeTab === 1) {
       calculateDebtAnalysis();
     }
   }, [overview, userProfile, emergencyFundGoal, currentEmergencyFund, activeTab]);
@@ -2464,7 +2464,7 @@ const EMITracker = () => {
                     <Button
                       size="small"
                       variant="outlined"
-                      onClick={() => setActiveTab(3)}
+                      onClick={() => setActiveTab(4)}
                     >
                       View Upcoming
                     </Button>
@@ -2472,7 +2472,7 @@ const EMITracker = () => {
                       size="small"
                       variant="contained"
                       sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-                      onClick={() => setActiveTab(8)}
+                      onClick={() => setActiveTab(1)}
                     >
                       Debt Freedom Plan
                     </Button>
@@ -2768,6 +2768,11 @@ const EMITracker = () => {
             iconPosition="start"
           />
           <Tab 
+            label="Debt Freedom Plan" 
+            icon={<TrendingUpIcon />} 
+            iconPosition="start"
+          />
+          <Tab 
             label="Monthly Trends" 
             icon={<TrendingUpIcon />} 
             iconPosition="start"
@@ -2800,11 +2805,6 @@ const EMITracker = () => {
           <Tab 
             label="Personal Loans" 
             icon={<MoneyIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Debt Freedom Plan" 
-            icon={<TrendingUpIcon />} 
             iconPosition="start"
           />
         </Tabs>
@@ -2938,7 +2938,7 @@ const EMITracker = () => {
 
       {/* Reports Tab */}
       {/* Monthly Trends Tab */}
-      {activeTab === 1 && monthlyTrends && (
+      {activeTab === 2 && monthlyTrends && (
         <Box sx={{ p: 3 }}>
           {/* Header Section */}
           <Box sx={{ mb: 4 }}>
@@ -3375,7 +3375,7 @@ const EMITracker = () => {
       )}
 
       {/* Reports Tab */}
-      {activeTab === 2 && chartData && (
+      {activeTab === 3 && chartData && (
         <Grid container spacing={3} direction="column">
           {/* Bar Chart - Monthly EMI Burden */}
           <Grid item xs={12}>
@@ -3756,7 +3756,7 @@ const EMITracker = () => {
       )}
 
       {/* Upcoming Payments Tab */}
-      {activeTab === 3 && upcomingPayments && (
+      {activeTab === 4 && upcomingPayments && (
         <Box>
           {/* Time Period Selector */}
           <Card elevation={2} sx={{ mb: 3, p: 2 }}>
@@ -3917,7 +3917,7 @@ const EMITracker = () => {
       )}
 
       {/* Active EMIs Tab */}
-      {activeTab === 4 && overview && (
+      {activeTab === 5 && overview && (
         <Grid container spacing={3}>
           {overview.activeEMIs.map((emi) => (
             <Grid item xs={12} md={6} lg={4} key={emi.id}>
@@ -4073,7 +4073,7 @@ const EMITracker = () => {
       )}
 
       {/* Tab 5: Completed EMIs */}
-      {activeTab === 5 && overview && (
+      {activeTab === 6 && overview && (
         <>
           {overview.completedEMIs && overview.completedEMIs.length === 0 ? (
             <Box 
@@ -4205,7 +4205,7 @@ const EMITracker = () => {
       )}
 
       {/* Tab 6: Loans Given to Friends & Family */}
-      {activeTab === 6 && (
+      {activeTab === 7 && (
         <Box>
           {/* Summary Cards */}
           {loansGivenSummary && (
@@ -4390,7 +4390,7 @@ const EMITracker = () => {
       )}
 
       {/* Tab 8: Debt Freedom Plan */}
-      {activeTab === 8 && (
+      {activeTab === 1 && (
         <Box>
           {!overview || !overview.overview || !overview.activeEMIs || overview.activeEMIs.length === 0 || !userProfile || !userProfile.monthlyIncome || userProfile.monthlyIncome === 0 ? (
             <Box textAlign="center" py={8}>
@@ -6310,7 +6310,7 @@ const EMITracker = () => {
         </Box>
       )}
 
-      {activeTab === 7 && (
+      {activeTab === 8 && (
         <Box>
           {/* Summary Cards */}
           {personalLoansSummary && (

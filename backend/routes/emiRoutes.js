@@ -3991,4 +3991,108 @@ router.get('/export/csv', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @route POST /api/emi/balance-transfer-request
+ * @desc Request balance transfer for an EMI
+ * @access Private
+ */
+router.post('/balance-transfer-request', authenticate, async (req, res) => {
+  try {
+    const { emiId, provider, offerRate, processingFee, currentRate, remainingAmount, remainingInstallments } = req.body;
+
+    if (!emiId || !provider || !offerRate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: emiId, provider, offerRate'
+      });
+    }
+
+    // Find the EMI
+    const emi = await EMI.findById(emiId);
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+
+    // Verify ownership
+    if (emi.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
+
+    // Calculate potential savings
+    const monthlySavings = Math.max(0, ((currentRate - offerRate) / currentRate) * (emi.emiAmount || 0) * 0.35);
+    const totalSavings = monthlySavings * (remainingInstallments || emi.remainingInstallments || 0) - (processingFee || 0);
+
+    // Store the request in user's profile or create a notification
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+    if (profile) {
+      if (!profile.preferences) profile.preferences = {};
+      if (!profile.preferences.debtFreedom) profile.preferences.debtFreedom = {};
+      if (!profile.preferences.debtFreedom.balanceTransferRequests) {
+        profile.preferences.debtFreedom.balanceTransferRequests = [];
+      }
+
+      profile.preferences.debtFreedom.balanceTransferRequests.push({
+        emiId,
+        emiName: emi.merchantName,
+        provider,
+        offerRate,
+        processingFee: processingFee || 0,
+        currentRate: currentRate || emi.interestRate,
+        remainingAmount: remainingAmount || emi.remainingAmount,
+        remainingInstallments: remainingInstallments || emi.remainingInstallments,
+        monthlySavings,
+        totalSavings,
+        requestDate: new Date(),
+        status: 'pending'
+      });
+
+      // Keep only last 50 requests
+      if (profile.preferences.debtFreedom.balanceTransferRequests.length > 50) {
+        profile.preferences.debtFreedom.balanceTransferRequests = 
+          profile.preferences.debtFreedom.balanceTransferRequests.slice(-50);
+      }
+
+      await profile.save();
+    }
+
+    // Send notification
+    try {
+      await NotificationService.create({
+        userId: req.user._id,
+        title: '🔄 Balance Transfer Request Sent',
+        message: `Your request for ${provider} balance transfer on ${emi.merchantName} has been submitted. Potential savings: ₹${Math.round(totalSavings).toLocaleString()}`,
+        type: 'balance_transfer',
+        priority: 'medium'
+      });
+    } catch (notifError) {
+      logger.error('Notification error:', notifError);
+    }
+
+    res.json({
+      success: true,
+      message: `Balance transfer request sent to ${provider}`,
+      data: {
+        monthlySavings: Math.round(monthlySavings),
+        totalSavings: Math.round(totalSavings),
+        processingFee: processingFee || 0,
+        netBenefit: Math.round(totalSavings)
+      }
+    });
+
+  } catch (error) {
+    logger.error('Balance transfer request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process balance transfer request',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
