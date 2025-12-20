@@ -332,9 +332,7 @@ const EMITracker = () => {
 
         const emergencyFund = profileData?.preferences?.debtFreedom?.emergencyFund;
         if (emergencyFund && typeof emergencyFund === 'object') {
-          if (typeof emergencyFund.goalAmount === 'number' && !Number.isNaN(emergencyFund.goalAmount)) {
-            setEmergencyFundGoal(emergencyFund.goalAmount);
-          }
+          // Load current amount and contributions
           if (typeof emergencyFund.currentAmount === 'number' && !Number.isNaN(emergencyFund.currentAmount)) {
             setCurrentEmergencyFund(emergencyFund.currentAmount);
           }
@@ -342,6 +340,7 @@ const EMITracker = () => {
             const latest = emergencyFund.contributions[emergencyFund.contributions.length - 1];
             setLastContribution(latest);
           }
+          // Note: Goal will be auto-calculated based on EMIs and expenses
         }
       } else {
         console.error('❌ Unexpected API response structure:', response.data);
@@ -352,9 +351,7 @@ const EMITracker = () => {
 
         const emergencyFund = fallbackProfile?.preferences?.debtFreedom?.emergencyFund;
         if (emergencyFund && typeof emergencyFund === 'object') {
-          if (typeof emergencyFund.goalAmount === 'number' && !Number.isNaN(emergencyFund.goalAmount)) {
-            setEmergencyFundGoal(emergencyFund.goalAmount);
-          }
+          // Load current amount and contributions
           if (typeof emergencyFund.currentAmount === 'number' && !Number.isNaN(emergencyFund.currentAmount)) {
             setCurrentEmergencyFund(emergencyFund.currentAmount);
           }
@@ -362,6 +359,7 @@ const EMITracker = () => {
             const latest = emergencyFund.contributions[emergencyFund.contributions.length - 1];
             setLastContribution(latest);
           }
+          // Note: Goal will be auto-calculated based on EMIs and expenses
         }
       }
     } catch (err) {
@@ -608,6 +606,35 @@ const EMITracker = () => {
       availableIncome
     });
   };
+
+  // Auto-calculate emergency fund goal based on monthly obligations
+  useEffect(() => {
+    if (overview && userProfile) {
+      const monthlyIncome = userProfile?.monthlyIncome || 0;
+      const monthlyBurden = overview.overview?.monthlyBurden || 0;
+      
+      // Emergency fund should cover 6 months of expenses
+      // Estimate monthly expenses as 30% of income (typical living expenses) + EMI burden
+      const estimatedMonthlyExpenses = monthlyIncome > 0 ? (monthlyIncome * 0.30) : 30000;
+      const totalMonthlyObligations = monthlyBurden + estimatedMonthlyExpenses;
+      
+      // Calculate 6 months of obligations as the goal
+      const calculatedGoal = Math.round(totalMonthlyObligations * 6);
+      
+      // Auto-set goal if it's not already set or if it's significantly different (>20% change)
+      if (calculatedGoal > 0) {
+        if (emergencyFundGoal === 0 || Math.abs(emergencyFundGoal - calculatedGoal) / calculatedGoal > 0.2) {
+          setEmergencyFundGoal(calculatedGoal);
+          console.log('✅ Emergency fund goal auto-calculated:', {
+            monthlyBurden,
+            estimatedMonthlyExpenses,
+            totalMonthlyObligations,
+            calculatedGoal: calculatedGoal.toLocaleString()
+          });
+        }
+      }
+    }
+  }, [overview, userProfile]);
 
   // Calculate debt analysis when data changes
   useEffect(() => {
@@ -4680,6 +4707,18 @@ const EMITracker = () => {
                     </Box>
                   </Box>
                   <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 2, mb: 2 }}>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2" fontWeight="bold" gutterBottom>
+                        🤖 Smart Goal Calculation
+                      </Typography>
+                      <Typography variant="body2">
+                        Your emergency fund goal is automatically calculated as <strong>6 months</strong> of your total monthly obligations 
+                        (EMI burden + estimated living expenses). Goal updates when your financial situation changes.
+                      </Typography>
+                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                        Current calculation: (₹{Math.round((overview?.overview?.monthlyBurden || 0) + ((userProfile?.monthlyIncome || 0) * 0.30)).toLocaleString()} × 6 months)
+                      </Typography>
+                    </Alert>
                     {emergencyFundMessage && (
                       <Alert severity={emergencyFundMessage.type} sx={{ mb: 2 }}>
                         <Typography variant="body2">{emergencyFundMessage.text}</Typography>
@@ -4699,13 +4738,14 @@ const EMITracker = () => {
                       </Grid>
                       <Grid item xs={12} md={6}>
                         <TextField
-                          label="Emergency Fund Goal"
+                          label="Emergency Fund Goal (Auto-Calculated)"
                           type="number"
                           fullWidth
                           value={emergencyFundGoal}
                           onChange={(e) => setEmergencyFundGoal(parseFloat(e.target.value) || 0)}
                           InputProps={{ startAdornment: '₹' }}
                           size="small"
+                          helperText="Auto-adjusts based on your EMIs & expenses"
                         />
                       </Grid>
                       <Grid item xs={12} md={6}>
