@@ -5582,74 +5582,75 @@ const EMITracker = () => {
 
             {/* NEW FEATURES */}
 
-            {/* Enhanced Debt-Free Date Projector */}
+            {/* Slim & Sleek Debt-Free Date Projector */}
             <Grid item xs={12}>
               <Card elevation={0} sx={{
                 ...chartCardHoverEffect,
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white'
+                color: 'white',
+                overflow: 'hidden'
               }}>
-                <CardContent>
-                  <Typography variant="h4" fontWeight="bold" mb={2}>
-                    📅 Interactive Debt-Free Date Projector
-                  </Typography>
-                  <Typography variant="body1" sx={{ opacity: 0.95, mb: 4 }}>
-                    See exactly when you'll be debt-free and how much you'll save with different payment strategies
-                  </Typography>
+                <CardContent sx={{ pb: 3 }}>
+                  {/* Compact Header */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Box>
+                      <Typography variant="h5" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        📅 Debt-Free Date Projector
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.85 }}>
+                        Adjust slider to see your path to freedom
+                      </Typography>
+                    </Box>
+                    <Chip 
+                      label={`₹${customExtraPayment.toLocaleString()}/mo extra`}
+                      sx={{ 
+                        bgcolor: 'rgba(255,255,255,0.25)', 
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                        height: 36
+                      }} 
+                    />
+                  </Box>
 
-                  {/* Interactive Slider */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mb: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={2}>
-                      💰 Adjust Extra Monthly Payment
-                    </Typography>
-                    <Box sx={{ px: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                        <Typography variant="body2" sx={{ minWidth: 80 }}>₹0</Typography>
-                        <Box sx={{ flex: 1, position: 'relative' }}>
-                          <input
-                            type="range"
-                            min="0"
-                            max={Math.round(debtAnalysis.availableIncome * 0.5)}
-                            step="500"
-                            value={customExtraPayment}
-                            onChange={(e) => setCustomExtraPayment(parseInt(e.target.value))}
-                            style={{
-                              width: '100%',
-                              height: '8px',
-                              borderRadius: '4px',
-                              background: 'rgba(255,255,255,0.3)',
-                              outline: 'none',
-                              cursor: 'pointer'
-                            }}
-                          />
-                        </Box>
-                        <Typography variant="body2" sx={{ minWidth: 120 }}>
-                          ₹{Math.round(debtAnalysis.availableIncome * 0.5).toLocaleString()}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ textAlign: 'center', mt: 2 }}>
-                        <Typography variant="h3" fontWeight="bold">
-                          ₹{customExtraPayment.toLocaleString()}
-                        </Typography>
-                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                          Extra Payment Per Month
-                        </Typography>
-                      </Box>
+                  {/* Compact Slider */}
+                  <Box sx={{ px: 2, mb: 3 }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max={Math.round(debtAnalysis.availableIncome * 0.5)}
+                      step="500"
+                      value={customExtraPayment}
+                      onChange={(e) => setCustomExtraPayment(parseInt(e.target.value))}
+                      style={{
+                        width: '100%',
+                        height: '6px',
+                        borderRadius: '3px',
+                        background: `linear-gradient(to right, #4caf50 0%, #4caf50 ${(customExtraPayment / (Math.round(debtAnalysis.availableIncome * 0.5))) * 100}%, rgba(255,255,255,0.3) ${(customExtraPayment / (Math.round(debtAnalysis.availableIncome * 0.5))) * 100}%, rgba(255,255,255,0.3) 100%)`,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        WebkitAppearance: 'none',
+                        appearance: 'none'
+                      }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>₹0</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>₹{Math.round(debtAnalysis.availableIncome * 0.5).toLocaleString()}</Typography>
                     </Box>
                   </Box>
                   
-                  {/* Comparison Cards */}
-                  <Grid container spacing={3}>
-                    {/* Current Pace */}
+                  {/* Compact 3-Column Comparison */}
+                  <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ p: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.95)', color: '#333', height: '100%' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                          <Box sx={{ fontSize: '2rem' }}>🐌</Box>
-                          <Typography variant="h6" fontWeight="bold" color="#ef6c00">
-                            Current Pace
-                          </Typography>
-                        </Box>
-                        <Typography variant="h2" fontWeight="bold" color="#ef6c00" mb={1}>
+                      <Box sx={{ 
+                        p: 2, 
+                        borderRadius: 2, 
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        textAlign: 'center'
+                      }}>
+                        <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>🐌 Current Pace</Typography>
+                        <Typography variant="h4" fontWeight="bold">
                           {(() => {
                             const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                               emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
@@ -5658,67 +5659,45 @@ const EMITracker = () => {
                             return years > 0 ? `${years}y ${remainingMonths}m` : `${longestEMI}mo`;
                           })()}
                         </Typography>
-                        <Chip 
-                          label={(() => {
+                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>
+                          {(() => {
                             const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                               emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
                             const date = new Date();
                             date.setMonth(date.getMonth() + longestEMI);
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
                           })()}
-                          sx={{ bgcolor: '#fff3e0', color: '#ef6c00', fontWeight: 'bold', mb: 2 }}
-                        />
-                        <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2, mt: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            <strong>Total Interest:</strong>
-                          </Typography>
-                          <Typography variant="h6" color="error.main" fontWeight="bold">
-                            {formatCurrency(
-                              overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0)
-                            )}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                            Monthly: {formatCurrency(debtAnalysis.monthlyBurden)}
-                          </Typography>
-                        </Box>
+                        </Typography>
                       </Box>
                     </Grid>
 
-                    {/* With Custom Extra */}
                     <Grid item xs={12} md={4}>
                       <Box sx={{ 
-                        p: 3, 
+                        p: 2, 
                         borderRadius: 2, 
-                        bgcolor: 'rgba(255,255,255,0.95)', 
-                        color: '#333',
-                        height: '100%',
-                        border: '3px solid #2196f3',
-                        position: 'relative',
-                        overflow: 'hidden'
+                        bgcolor: 'rgba(76,175,80,0.25)',
+                        border: '2px solid #4caf50',
+                        textAlign: 'center',
+                        position: 'relative'
                       }}>
-                        <Box sx={{ 
-                          position: 'absolute', 
-                          top: -10, 
-                          right: -10, 
-                          bgcolor: '#2196f3', 
-                          color: 'white',
-                          px: 2,
-                          py: 0.5,
-                          borderRadius: 1,
-                          transform: 'rotate(15deg)',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold'
-                        }}>
-                          YOUR PLAN
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                          <Box sx={{ fontSize: '2rem' }}>💪</Box>
-                          <Typography variant="h6" fontWeight="bold" color="#2196f3">
-                            Custom Extra
-                          </Typography>
-                        </Box>
-                        <Typography variant="h2" fontWeight="bold" color="#2196f3" mb={1}>
+                        {customExtraPayment > 0 && (
+                          <Chip 
+                            label="ACTIVE"
+                            size="small"
+                            sx={{ 
+                              position: 'absolute',
+                              top: -8,
+                              right: 8,
+                              bgcolor: '#4caf50',
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '0.65rem',
+                              height: 18
+                            }}
+                          />
+                        )}
+                        <Typography variant="caption" sx={{ opacity: 0.9, display: 'block', mb: 0.5 }}>💪 Your Plan</Typography>
+                        <Typography variant="h4" fontWeight="bold" color="#4caf50">
                           {(() => {
                             const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                               emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
@@ -5730,61 +5709,28 @@ const EMITracker = () => {
                             return years > 0 ? `${years}y ${remainingMonths}m` : `${acceleratedMonths}mo`;
                           })()}
                         </Typography>
-                        <Chip 
-                          label={(() => {
+                        <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mt: 0.5 }}>
+                          Save {(() => {
                             const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                               emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
                             const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
                             const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                            const acceleratedMonths = Math.max(1, longestEMI - reduction);
-                            const date = new Date();
-                            date.setMonth(date.getMonth() + acceleratedMonths);
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                          })()}
-                          sx={{ bgcolor: '#e3f2fd', color: '#2196f3', fontWeight: 'bold', mb: 2 }}
-                        />
-                        <Box sx={{ bgcolor: '#e8f5e9', p: 2, borderRadius: 1, mb: 2 }}>
-                          <Typography variant="body2" color="success.main" fontWeight="bold" gutterBottom>
-                            ⏱️ TIME SAVED:
-                          </Typography>
-                          <Typography variant="h5" color="success.main" fontWeight="bold">
-                            {(() => {
-                              const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                                emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                              const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                              const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                              return reduction;
-                            })()} months
-                          </Typography>
-                        </Box>
-                        <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            <strong>Estimated Interest:</strong>
-                          </Typography>
-                          <Typography variant="h6" color="success.main" fontWeight="bold">
-                            {formatCurrency(
-                              overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 
-                                (customExtraPayment > 0 ? 0.85 : 1)
-                            )}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                            Monthly: {formatCurrency(debtAnalysis.monthlyBurden + customExtraPayment)}
-                          </Typography>
-                        </Box>
+                            return reduction;
+                          })()} months
+                        </Typography>
                       </Box>
                     </Grid>
 
-                    {/* Aggressive Mode */}
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ p: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.95)', color: '#333', height: '100%' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                          <Box sx={{ fontSize: '2rem' }}>🚀</Box>
-                          <Typography variant="h6" fontWeight="bold" color="#4caf50">
-                            Aggressive Mode
-                          </Typography>
-                        </Box>
-                        <Typography variant="h2" fontWeight="bold" color="#4caf50" mb={1}>
+                      <Box sx={{ 
+                        p: 2, 
+                        borderRadius: 2, 
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        textAlign: 'center'
+                      }}>
+                        <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>🚀 Max Push</Typography>
+                        <Typography variant="h4" fontWeight="bold">
                           {(() => {
                             const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                               emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
@@ -5797,492 +5743,140 @@ const EMITracker = () => {
                             return years > 0 ? `${years}y ${remainingMonths}m` : `${acceleratedMonths}mo`;
                           })()}
                         </Typography>
-                        <Chip 
-                          label={(() => {
-                            const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                              emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                            const aggressiveExtra = Math.round(debtAnalysis.availableIncome * 0.5);
-                            const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                            const reduction = Math.floor((aggressiveExtra / avgEMI) * 0.7);
-                            const acceleratedMonths = Math.max(1, longestEMI - reduction);
-                            const date = new Date();
-                            date.setMonth(date.getMonth() + acceleratedMonths);
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                          })()}
-                          sx={{ bgcolor: '#e8f5e9', color: '#4caf50', fontWeight: 'bold', mb: 2 }}
-                        />
-                        <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2, mt: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            <strong>Maximum Savings:</strong>
-                          </Typography>
-                          <Typography variant="h6" color="success.main" fontWeight="bold">
-                            {formatCurrency(
-                              overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 0.25
-                            )}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                            Monthly: {formatCurrency(debtAnalysis.monthlyBurden + Math.round(debtAnalysis.availableIncome * 0.5))}
-                          </Typography>
-                        </Box>
+                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>
+                          ₹{Math.round(debtAnalysis.availableIncome * 0.5).toLocaleString()}/mo
+                        </Typography>
                       </Box>
                     </Grid>
                   </Grid>
 
-                  {/* Visual Timeline Comparison */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={3}>
-                      📊 Visual Timeline Comparison
-                    </Typography>
-                    <Box sx={{ height: 300 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[
-                            {
-                              name: 'Current Pace',
-                              months: overview.activeEMIs.reduce((max, emi) => 
-                                emi.remainingInstallments > max ? emi.remainingInstallments : max, 0),
-                              interest: overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0)
-                            },
-                            {
-                              name: 'Your Plan',
-                              months: (() => {
-                                const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                                  emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                                const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                                const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                                return Math.max(1, longestEMI - reduction);
-                              })(),
-                              interest: overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 
-                                (customExtraPayment > 0 ? 0.85 : 1)
-                            },
-                            {
-                              name: 'Aggressive',
-                              months: (() => {
-                                const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                                  emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                                const aggressiveExtra = Math.round(debtAnalysis.availableIncome * 0.5);
-                                const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                                const reduction = Math.floor((aggressiveExtra / avgEMI) * 0.7);
-                                return Math.max(1, longestEMI - reduction);
-                              })(),
-                              interest: overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 0.75
-                            }
-                          ]}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
-                          <XAxis dataKey="name" stroke="white" />
-                          <YAxis stroke="white" />
-                          <RechartsTooltip 
-                            contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px' }}
-                            formatter={(value, name) => [
-                              name === 'months' ? `${value} months` : formatCurrency(value),
-                              name === 'months' ? 'Duration' : 'Interest'
-                            ]}
-                          />
-                          <Legend />
-                          <Bar dataKey="months" name="Months to Freedom" fill="#42a5f5" radius={[8, 8, 0, 0]} />
-                          <Bar dataKey="interest" name="Total Interest" fill="#ff7043" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
-
-                  {/* Detailed Breakdown */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={2}>
-                      📋 Detailed Savings Breakdown
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1, textAlign: 'center' }}>
-                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>Interest Saved</Typography>
-                          <Typography variant="h5" fontWeight="bold">
-                            {formatCurrency(
-                              overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 
-                                (customExtraPayment > 0 ? 0.15 : 0)
-                            )}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1, textAlign: 'center' }}>
-                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>Time Saved</Typography>
-                          <Typography variant="h5" fontWeight="bold">
-                            {(() => {
+                  {/* Compact Visual Chart */}
+                  <Box sx={{ mt: 3, height: 200 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          {
+                            name: 'Current',
+                            months: overview.activeEMIs.reduce((max, emi) => 
+                              emi.remainingInstallments > max ? emi.remainingInstallments : max, 0),
+                            savings: 0
+                          },
+                          {
+                            name: 'Your Plan',
+                            months: (() => {
                               const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                                 emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
                               const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
                               const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                              return reduction;
-                            })()} months
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1, textAlign: 'center' }}>
-                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>Total Extra Paid</Typography>
-                          <Typography variant="h5" fontWeight="bold">
-                            {formatCurrency(
-                              customExtraPayment * (() => {
-                                const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                                  emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                                const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                                const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                                return Math.max(1, longestEMI - reduction);
-                              })()
-                            )}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1, textAlign: 'center' }}>
-                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>Net Benefit</Typography>
-                          <Typography variant="h5" fontWeight="bold" color="#4caf50">
-                            {formatCurrency(
-                              (overview.activeEMIs.reduce((sum, emi) => 
-                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 0.15) -
-                              (customExtraPayment * (() => {
-                                const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                                  emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                                const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                                const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                                return Math.max(0, reduction * 0.1);
-                              })())
-                            )}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
+                              return Math.max(1, longestEMI - reduction);
+                            })(),
+                            savings: overview.activeEMIs.reduce((sum, emi) => 
+                              sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 
+                              (customExtraPayment > 0 ? 0.15 : 0)
+                          },
+                          {
+                            name: 'Max Push',
+                            months: (() => {
+                              const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                                emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                              const aggressiveExtra = Math.round(debtAnalysis.availableIncome * 0.5);
+                              const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                              const reduction = Math.floor((aggressiveExtra / avgEMI) * 0.7);
+                              return Math.max(1, longestEMI - reduction);
+                            })(),
+                            savings: overview.activeEMIs.reduce((sum, emi) => 
+                              sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 0.25
+                          }
+                        ]}
+                        margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
+                        <YAxis stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', fontSize: '12px' }}
+                          formatter={(value, name) => [
+                            name === 'months' ? `${value} months` : formatCurrency(value),
+                            name === 'months' ? 'Time' : 'Interest Saved'
+                          ]}
+                        />
+                        <Bar dataKey="months" fill="#42a5f5" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </Box>
 
-                  {/* Month-by-Month Payment Projection */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={3}>
-                      📈 Month-by-Month Payment Projection
-                    </Typography>
-                    <Box sx={{ height: 350 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={(() => {
-                            const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                              emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                            const totalDebt = overview.activeEMIs.reduce((sum, emi) => sum + emi.remainingAmount, 0);
-                            const monthlyPrincipal = totalDebt / longestEMI;
-                            const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                            const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                            const acceleratedMonths = Math.max(1, longestEMI - reduction);
-                            
-                            const months = [];
-                            for (let i = 0; i <= Math.min(longestEMI, 24); i++) {
-                              const currentDebt = Math.max(0, totalDebt - (monthlyPrincipal * i));
-                              const acceleratedDebt = i <= acceleratedMonths ? Math.max(0, totalDebt - ((totalDebt / acceleratedMonths) * i)) : 0;
-                              months.push({
-                                month: i === 0 ? 'Now' : `${i}mo`,
-                                current: Math.round(currentDebt),
-                                withExtra: Math.round(acceleratedDebt)
-                              });
-                            }
-                            return months;
-                          })()}
-                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
-                          <XAxis dataKey="month" stroke="white" />
-                          <YAxis stroke="white" />
-                          <RechartsTooltip 
-                            contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', color: 'white' }}
-                            formatter={(value) => formatCurrency(value)}
-                          />
-                          <Legend />
-                          <Line type="monotone" dataKey="current" name="Current Pace" stroke="#ff7043" strokeWidth={2} dot={{ fill: '#ff7043', r: 3 }} />
-                          <Line type="monotone" dataKey="withExtra" name="With Extra Payment" stroke="#4caf50" strokeWidth={2} dot={{ fill: '#4caf50', r: 3 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                  {/* Compact Stats Row */}
+                  <Box sx={{ 
+                    mt: 3, 
+                    display: 'flex', 
+                    gap: 2, 
+                    flexWrap: 'wrap',
+                    justifyContent: 'space-around',
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    p: 2,
+                    borderRadius: 2
+                  }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>Interest Saved</Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(
+                          overview.activeEMIs.reduce((sum, emi) => 
+                            sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0) * 
+                            (customExtraPayment > 0 ? 0.15 : 0)
+                        )}
+                      </Typography>
                     </Box>
-                    <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 2, opacity: 0.9 }}>
-                      *Projection shows remaining debt balance over the next {Math.min(24, overview.activeEMIs.reduce((max, emi) => 
-                        emi.remainingInstallments > max ? emi.remainingInstallments : max, 0))} months
-                    </Typography>
-                  </Box>
-
-                  {/* Payment Calendar Visualization */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={3}>
-                      📅 12-Month Payment Calendar
-                    </Typography>
-                    <Grid container spacing={1}>
-                      {(() => {
-                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        const currentMonth = new Date().getMonth();
-                        const longestEMI = overview.activeEMIs.reduce((max, emi) => 
-                          emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                        const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                        const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                        const acceleratedMonths = Math.max(1, longestEMI - reduction);
-                        
-                        return Array.from({ length: 12 }, (_, i) => {
-                          const monthIndex = (currentMonth + i) % 12;
-                          const isPaid = i >= longestEMI;
-                          const isPaidWithExtra = i >= acceleratedMonths;
-                          
-                          return (
-                            <Grid item xs={6} sm={4} md={2} key={i}>
-                              <Box sx={{ 
-                                p: 2, 
-                                borderRadius: 1, 
-                                textAlign: 'center',
-                                bgcolor: isPaidWithExtra 
-                                  ? 'rgba(76, 175, 80, 0.3)' 
-                                  : isPaid 
-                                  ? 'rgba(255, 255, 255, 0.05)' 
-                                  : 'rgba(255, 112, 67, 0.3)',
-                                border: isPaidWithExtra ? '2px solid #4caf50' : '1px solid rgba(255,255,255,0.2)'
-                              }}>
-                                <Typography variant="caption" fontWeight="bold" display="block">
-                                  {months[monthIndex]}
-                                </Typography>
-                                <Typography variant="caption" sx={{ fontSize: '1.5rem' }}>
-                                  {isPaidWithExtra ? '✅' : isPaid ? '⏳' : '💰'}
-                                </Typography>
-                                <Typography variant="caption" display="block" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
-                                  {isPaidWithExtra ? 'Free!' : 'Paying'}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                          );
-                        });
-                      })()}
-                    </Grid>
-                    <Box sx={{ mt: 2, display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'rgba(255, 112, 67, 0.3)', border: '1px solid rgba(255,255,255,0.2)' }} />
-                        <Typography variant="caption">Current Plan</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'rgba(76, 175, 80, 0.3)', border: '2px solid #4caf50' }} />
-                        <Typography variant="caption">With Extra Payment</Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  {/* Snowball vs Avalanche Comparison */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={2}>
-                      ⚔️ Payoff Strategy: Snowball vs Avalanche
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, mb: 3 }}>
-                      Choose your battle strategy to conquer debt faster
-                    </Typography>
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={6}>
-                        <Box sx={{ 
-                          p: 3, 
-                          borderRadius: 2, 
-                          bgcolor: 'rgba(255,255,255,0.1)', 
-                          border: '2px solid rgba(100,181,246,0.5)',
-                          height: '100%'
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                            <Box sx={{ fontSize: '1.5rem' }}>⛄</Box>
-                            <Typography variant="h6" fontWeight="bold">Snowball Method</Typography>
-                          </Box>
-                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
-                            Pay off smallest debt first, then roll that payment to the next smallest
-                          </Typography>
-                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', p: 2, borderRadius: 1, mb: 2 }}>
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                              Your Payoff Order:
-                            </Typography>
-                            {overview.activeEMIs
-                              .sort((a, b) => a.remainingAmount - b.remainingAmount)
-                              .slice(0, 3)
-                              .map((emi, index) => (
-                                <Typography key={emi.id} variant="caption" display="block" sx={{ mb: 0.5 }}>
-                                  {index + 1}. {emi.merchantName} - {formatCurrency(emi.remainingAmount)}
-                                </Typography>
-                              ))}
-                          </Box>
-                          <Box sx={{ bgcolor: 'rgba(33, 150, 243, 0.2)', p: 2, borderRadius: 1 }}>
-                            <Typography variant="caption" display="block" fontWeight="bold">✅ Pros:</Typography>
-                            <Typography variant="caption" display="block">• Quick wins boost motivation</Typography>
-                            <Typography variant="caption" display="block">• Psychological satisfaction</Typography>
-                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>⚠️ Cons:</Typography>
-                            <Typography variant="caption" display="block">• May pay more interest overall</Typography>
-                          </Box>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Box sx={{ 
-                          p: 3, 
-                          borderRadius: 2, 
-                          bgcolor: 'rgba(255,255,255,0.1)', 
-                          border: '2px solid rgba(255,87,34,0.5)',
-                          height: '100%'
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                            <Box sx={{ fontSize: '1.5rem' }}>🔥</Box>
-                            <Typography variant="h6" fontWeight="bold">Avalanche Method</Typography>
-                          </Box>
-                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
-                            Pay off highest interest rate first to minimize total interest paid
-                          </Typography>
-                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', p: 2, borderRadius: 1, mb: 2 }}>
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                              Your Payoff Order:
-                            </Typography>
-                            {overview.activeEMIs
-                              .sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))
-                              .slice(0, 3)
-                              .map((emi, index) => (
-                                <Typography key={emi.id} variant="caption" display="block" sx={{ mb: 0.5 }}>
-                                  {index + 1}. {emi.merchantName} - {emi.interestRate || 0}% APR
-                                </Typography>
-                              ))}
-                          </Box>
-                          <Box sx={{ bgcolor: 'rgba(255, 87, 34, 0.2)', p: 2, borderRadius: 1 }}>
-                            <Typography variant="caption" display="block" fontWeight="bold">✅ Pros:</Typography>
-                            <Typography variant="caption" display="block">• Saves most money on interest</Typography>
-                            <Typography variant="caption" display="block">• Mathematically optimal</Typography>
-                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>⚠️ Cons:</Typography>
-                            <Typography variant="caption" display="block">• Takes longer to see first payoff</Typography>
-                          </Box>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                    <Alert severity="info" sx={{ mt: 2, bgcolor: 'rgba(33,150,243,0.2)', color: 'white', '& .MuiAlert-icon': { color: 'white' } }}>
-                      <Typography variant="body2">
-                        <strong>💡 Our Recommendation:</strong> {(() => {
-                          const avgInterest = overview.activeEMIs.reduce((sum, emi) => sum + (emi.interestRate || 0), 0) / overview.activeEMIs.length;
-                          const hasHighInterest = overview.activeEMIs.some(emi => (emi.interestRate || 0) > 20);
-                          return hasHighInterest 
-                            ? 'Use Avalanche! You have high-interest debts that are costing you significantly.'
-                            : avgInterest > 15
-                            ? 'Avalanche method will save you more. Focus on interest rates.'
-                            : 'Snowball can work well for you. Quick wins will keep you motivated!';
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>Months Saved</Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {(() => {
+                          const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                            emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                          const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                          const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
+                          return reduction;
                         })()}
                       </Typography>
-                    </Alert>
+                    </Box>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>Freedom Date</Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {(() => {
+                          const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                            emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                          const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                          const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
+                          const acceleratedMonths = Math.max(1, longestEMI - reduction);
+                          const date = new Date();
+                          date.setMonth(date.getMonth() + acceleratedMonths);
+                          return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                        })()}
+                      </Typography>
+                    </Box>
                   </Box>
 
-                  {/* Milestone Tracker */}
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
-                    <Typography variant="h6" fontWeight="bold" mb={3}>
-                      🎯 Debt Freedom Milestones
-                    </Typography>
-                    <Grid container spacing={2}>
-                      {(() => {
+                  {/* Compact Action Tip */}
+                  {customExtraPayment > 0 && (
+                    <Alert 
+                      severity="success" 
+                      sx={{ 
+                        mt: 2,
+                        py: 1,
+                        bgcolor: 'rgba(76,175,80,0.2)', 
+                        color: 'white',
+                        '& .MuiAlert-icon': { color: '#4caf50' },
+                        '& .MuiAlert-message': { fontSize: '0.875rem' }
+                      }}
+                    >
+                      💡 Add ₹{customExtraPayment.toLocaleString()}/mo to your highest-interest EMI to save {(() => {
                         const longestEMI = overview.activeEMIs.reduce((max, emi) => 
                           emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
                         const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
                         const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
-                        const acceleratedMonths = Math.max(1, longestEMI - reduction);
-                        const quarterMark = Math.floor(acceleratedMonths * 0.25);
-                        const halfMark = Math.floor(acceleratedMonths * 0.5);
-                        const threeQuarterMark = Math.floor(acceleratedMonths * 0.75);
-                        
-                        const milestones = [
-                          { 
-                            label: '25% Complete', 
-                            months: quarterMark, 
-                            emoji: '🌱',
-                            achieved: false 
-                          },
-                          { 
-                            label: '50% Halfway There!', 
-                            months: halfMark, 
-                            emoji: '🚀',
-                            achieved: false 
-                          },
-                          { 
-                            label: '75% Almost Free', 
-                            months: threeQuarterMark, 
-                            emoji: '⭐',
-                            achieved: false 
-                          },
-                          { 
-                            label: '100% Debt Free!', 
-                            months: acceleratedMonths, 
-                            emoji: '🎉',
-                            achieved: false 
-                          }
-                        ];
-                        
-                        return milestones.map((milestone, index) => {
-                          const targetDate = new Date();
-                          targetDate.setMonth(targetDate.getMonth() + milestone.months);
-                          
-                          return (
-                            <Grid item xs={12} sm={6} md={3} key={index}>
-                              <Box sx={{ 
-                                p: 2, 
-                                borderRadius: 1, 
-                                bgcolor: 'rgba(255,255,255,0.1)',
-                                border: index === 3 ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.2)',
-                                textAlign: 'center'
-                              }}>
-                                <Typography variant="h3" sx={{ mb: 1 }}>{milestone.emoji}</Typography>
-                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                                  {milestone.label}
-                                </Typography>
-                                <Chip 
-                                  label={targetDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                                  size="small"
-                                  sx={{ 
-                                    bgcolor: 'rgba(255,255,255,0.2)', 
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    mt: 1
-                                  }}
-                                />
-                                <Typography variant="caption" display="block" sx={{ mt: 1, opacity: 0.8 }}>
-                                  In {milestone.months} months
-                                </Typography>
-                              </Box>
-                            </Grid>
-                          );
-                        });
-                      })()}
-                    </Grid>
-                  </Box>
-
-                  {/* Action Recommendation */}
-                  <Alert 
-                    severity="success" 
-                    sx={{ 
-                      mt: 3, 
-                      bgcolor: 'rgba(255,255,255,0.95)', 
-                      color: '#333',
-                      '& .MuiAlert-icon': { color: '#4caf50' }
-                    }}
-                  >
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      💡 Your Personalized Action Plan
-                    </Typography>
-                    <Typography variant="body2" paragraph>
-                      {customExtraPayment === 0 
-                        ? `Start with just ₹${debtAnalysis.recommendedMonthlyExtra?.toLocaleString()}/month extra payment to save ${Math.floor((debtAnalysis.recommendedMonthlyExtra || 0) / (debtAnalysis.monthlyBurden / overview.activeEMIs.length) * 0.7)} months!`
-                        : customExtraPayment < 2000
-                        ? `Good start! Try to increase to ₹${Math.min(5000, Math.round(debtAnalysis.availableIncome * 0.3)).toLocaleString()}/month for better results.`
-                        : customExtraPayment < 5000
-                        ? `Great progress! You're on track to save significant interest. Consider the aggressive mode if possible.`
-                        : `Excellent! You're maximizing your debt repayment. Keep this momentum to achieve financial freedom faster!`
-                      }
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      🎯 Next Steps:
-                    </Typography>
-                    <Box component="ol" sx={{ pl: 2, mt: 1, mb: 0 }}>
-                      <Typography component="li" variant="body2">Set up auto-debit for ₹{customExtraPayment.toLocaleString()} extra to your highest-interest EMI</Typography>
-                      <Typography component="li" variant="body2">Choose between Snowball (motivation) or Avalanche (savings) strategy</Typography>
-                      <Typography component="li" variant="body2">Mark your milestones on calendar and celebrate each achievement</Typography>
-                    </Box>
-                  </Alert>
+                        return reduction;
+                      })()} months!
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
