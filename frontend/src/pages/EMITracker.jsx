@@ -1447,17 +1447,11 @@ const EMITracker = () => {
       confirmAction: async () => {
         try {
           const token = localStorage.getItem('token');
-          await axios.post(
-            `${API_URL}/emi/${emiId}/mark-paid`,
-            { installmentNumber, paidDate: new Date().toISOString() },
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
-          );
-
-          // Optimistically update the activeEMIs in the overview state
+          
+          // First, optimistically update the UI BEFORE the API call
+          let updatedActiveEMIs = null;
           if (overview && overview.activeEMIs) {
-            const updatedActiveEMIs = overview.activeEMIs.map(emi => {
+            updatedActiveEMIs = overview.activeEMIs.map(emi => {
               if ((emi.id || emi.emiId || emi._id) === emiId) {
                 const newPaidInstallments = (emi.paidInstallments || 0) + 1;
                 const newRemainingInstallments = Math.max(0, emi.totalTenure - newPaidInstallments);
@@ -1478,6 +1472,15 @@ const EMITracker = () => {
               activeEMIs: updatedActiveEMIs
             });
           }
+
+          // Then make the API call
+          await axios.post(
+            `${API_URL}/emi/${emiId}/mark-paid`,
+            { installmentNumber, paidDate: new Date().toISOString() },
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
 
           // Immediately update the UI by removing the paid EMI from upcomingPayments
           if (upcomingPayments && upcomingPayments.monthlyBreakdown) {
@@ -1501,17 +1504,23 @@ const EMITracker = () => {
             ...prev,
             open: true,
             title: 'Success',
-            message: 'Payment marked as paid!',
+            message: 'Payment marked as paid! Card updated.',
             isSuccess: true,
             confirmAction: () => {
               setConfirmationDialog(prev => ({ ...prev, open: false }));
             }
           }));
 
-          // Refresh data in background to sync with backend
-          fetchAllData();
+          // Refresh data in background after a slight delay to ensure optimistic update is visible
+          setTimeout(() => {
+            fetchAllData();
+          }, 500);
         } catch (err) {
           console.error('Error marking payment as paid:', err);
+          
+          // Revert optimistic update on error
+          fetchAllData();
+          
           setConfirmationDialog(prev => ({
             ...prev,
             title: 'Error',
