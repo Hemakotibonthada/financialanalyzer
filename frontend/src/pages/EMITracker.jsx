@@ -5881,113 +5881,203 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
-            {/* Interactive Debt Payoff Simulator */}
+            {/* Sleek Interactive Debt Payoff Simulator */}
             <Grid item xs={12}>
-              <Card elevation={0} sx={chartCardHoverEffect}>
-                <CardContent>
-                  <Typography variant="h5" fontWeight="bold" mb={3}>
-                    🎮 Interactive Debt Payoff Simulator
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mb={3}>
-                    Adjust your extra monthly payment to see real-time impact on payoff timeline
-                  </Typography>
-                  
-                  <Grid container spacing={4}>
-                    <Grid item xs={12} md={6}>
-                      <Box sx={{ mb: 4 }}>
-                        <Typography variant="body2" gutterBottom>
-                          Extra Monthly Payment: <strong>₹{earlyPaymentAmount || 0}</strong>
-                        </Typography>
-                        <Box sx={{ px: 2 }}>
-                          <input 
-                            type="range" 
-                            min="0" 
-                            max="10000" 
-                            step="500"
-                            value={earlyPaymentAmount || 0}
-                            onChange={(e) => setEarlyPaymentAmount(e.target.value)}
-                            style={{ 
-                              width: '100%', 
-                              height: '8px',
-                              borderRadius: '4px',
-                              outline: 'none',
-                              background: `linear-gradient(to right, #667eea 0%, #764ba2 ${(earlyPaymentAmount || 0) / 100}%, #e0e0e0 ${(earlyPaymentAmount || 0) / 100}%, #e0e0e0 100%)`
-                            }}
-                          />
-                        </Box>
-                        <Box display="flex" justifyContent="space-between" mt={1}>
-                          <Typography variant="caption">₹0</Typography>
-                          <Typography variant="caption">₹10,000</Typography>
-                        </Box>
-                      </Box>
+              <Card elevation={0} sx={{
+                ...chartCardHoverEffect,
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                color: 'white'
+              }}>
+                <CardContent sx={{ pb: 3 }}>
+                  {/* Compact Header with Value Display */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Box>
+                      <Typography variant="h5" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        🎮 Debt Payoff Simulator
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.85 }}>
+                        See real-time impact of extra payments
+                      </Typography>
+                    </Box>
+                    <Chip 
+                      label={`₹${(earlyPaymentAmount || 0).toLocaleString()}/mo`}
+                      sx={{ 
+                        bgcolor: 'rgba(255,255,255,0.25)', 
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                        height: 36
+                      }} 
+                    />
+                  </Box>
 
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                          <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
-                            <Typography variant="caption" color="text.secondary">Time Saved</Typography>
-                            <Typography variant="h5" fontWeight="bold" color="primary">
-                              {(() => {
-                                const extra = parseFloat(earlyPaymentAmount) || 0;
-                                const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                                const monthsSaved = extra > 0 ? Math.floor((extra / avgEMI) * 0.8) : 0;
-                                return `${monthsSaved} months`;
-                              })()}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
-                            <Typography variant="caption" color="text.secondary">Interest Saved</Typography>
-                            <Typography variant="h5" fontWeight="bold" color="success.main">
-                              {formatCurrency((() => {
-                                const extra = parseFloat(earlyPaymentAmount) || 0;
-                                const totalInterest = overview.activeEMIs.reduce((sum, emi) => 
-                                  sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0);
-                                return extra > 0 ? Math.floor(totalInterest * (extra / 10000) * 0.15) : 0;
-                              })())}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </Grid>
+                  {/* Compact Slider */}
+                  <Box sx={{ px: 2, mb: 3 }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10000"
+                      step="500"
+                      value={earlyPaymentAmount || 0}
+                      onChange={(e) => setEarlyPaymentAmount(e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: '6px',
+                        borderRadius: '3px',
+                        background: `linear-gradient(to right, #4caf50 0%, #4caf50 ${((earlyPaymentAmount || 0) / 10000) * 100}%, rgba(255,255,255,0.3) ${((earlyPaymentAmount || 0) / 10000) * 100}%, rgba(255,255,255,0.3) 100%)`,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        WebkitAppearance: 'none',
+                        appearance: 'none'
+                      }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>₹0</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>₹10,000</Typography>
+                    </Box>
+                  </Box>
 
-                    <Grid item xs={12} md={6}>
-                      <Box sx={{ height: 280 }}>
+                  <Grid container spacing={2}>
+                    {/* Chart Section */}
+                    <Grid item xs={12} md={7}>
+                      <Box sx={{ 
+                        bgcolor: 'rgba(255,255,255,0.1)', 
+                        borderRadius: 2, 
+                        p: 2,
+                        height: 240
+                      }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={[
-                            { 
-                              name: 'Current', 
-                              months: overview.activeEMIs.reduce((max, emi) => 
-                                emi.remainingInstallments > max ? emi.remainingInstallments : max, 0),
-                              fill: '#ff6b6b'
-                            },
-                            { 
-                              name: 'With Extra', 
-                              months: (() => {
-                                const longest = overview.activeEMIs.reduce((max, emi) => 
-                                  emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
-                                const extra = parseFloat(earlyPaymentAmount) || 0;
-                                const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
-                                const reduction = extra > 0 ? Math.floor((extra / avgEMI) * 0.8) : 0;
-                                return Math.max(6, longest - reduction);
-                              })(),
-                              fill: '#51cf66'
-                            }
-                          ]}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis label={{ value: 'Months', angle: -90, position: 'insideLeft' }} />
-                            <RechartsTooltip />
-                            <Bar dataKey="months" radius={[8, 8, 0, 0]}>
-                              {[0, 1].map((index) => (
-                                <Cell key={index} fill={index === 0 ? '#ff6b6b' : '#51cf66'} />
-                              ))}
+                          <BarChart 
+                            data={[
+                              { 
+                                name: 'Current', 
+                                months: overview.activeEMIs.reduce((max, emi) => 
+                                  emi.remainingInstallments > max ? emi.remainingInstallments : max, 0)
+                              },
+                              { 
+                                name: 'Accelerated', 
+                                months: (() => {
+                                  const longest = overview.activeEMIs.reduce((max, emi) => 
+                                    emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                                  const extra = parseFloat(earlyPaymentAmount) || 0;
+                                  const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                                  const reduction = extra > 0 ? Math.floor((extra / avgEMI) * 0.8) : 0;
+                                  return Math.max(6, longest - reduction);
+                                })()
+                              }
+                            ]}
+                            margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
+                            <XAxis dataKey="name" stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
+                            <YAxis stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
+                            <RechartsTooltip 
+                              contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', fontSize: '12px' }}
+                              formatter={(value) => [`${value} months`, 'Duration']}
+                            />
+                            <Bar dataKey="months" radius={[6, 6, 0, 0]}>
+                              <Cell fill="#ff6b6b" />
+                              <Cell fill="#51cf66" />
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>
                       </Box>
                     </Grid>
+
+                    {/* Stats Cards */}
+                    <Grid item xs={12} md={5}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {/* Time Saved */}
+                        <Box sx={{ 
+                          bgcolor: 'rgba(255,255,255,0.15)', 
+                          borderRadius: 2, 
+                          p: 2,
+                          textAlign: 'center'
+                        }}>
+                          <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                            ⏱️ Time Saved
+                          </Typography>
+                          <Typography variant="h4" fontWeight="bold">
+                            {(() => {
+                              const extra = parseFloat(earlyPaymentAmount) || 0;
+                              const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                              const monthsSaved = extra > 0 ? Math.floor((extra / avgEMI) * 0.8) : 0;
+                              return monthsSaved;
+                            })()} mo
+                          </Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>
+                            Faster payoff
+                          </Typography>
+                        </Box>
+
+                        {/* Interest Saved */}
+                        <Box sx={{ 
+                          bgcolor: 'rgba(76, 175, 80, 0.25)', 
+                          borderRadius: 2, 
+                          p: 2,
+                          border: '1px solid rgba(76, 175, 80, 0.5)',
+                          textAlign: 'center'
+                        }}>
+                          <Typography variant="caption" sx={{ opacity: 0.9, display: 'block', mb: 0.5 }}>
+                            💰 Interest Saved
+                          </Typography>
+                          <Typography variant="h4" fontWeight="bold" color="#4caf50">
+                            {formatCurrency((() => {
+                              const extra = parseFloat(earlyPaymentAmount) || 0;
+                              const totalInterest = overview.activeEMIs.reduce((sum, emi) => 
+                                sum + (emi.emiAmount * emi.remainingInstallments - emi.remainingAmount), 0);
+                              return extra > 0 ? Math.floor(totalInterest * (extra / 10000) * 0.15) : 0;
+                            })())}
+                          </Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mt: 0.5 }}>
+                            Money in pocket
+                          </Typography>
+                        </Box>
+
+                        {/* New Payoff Date */}
+                        <Box sx={{ 
+                          bgcolor: 'rgba(255,255,255,0.15)', 
+                          borderRadius: 2, 
+                          p: 2,
+                          textAlign: 'center'
+                        }}>
+                          <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                            🎯 Freedom Date
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold">
+                            {(() => {
+                              const longest = overview.activeEMIs.reduce((max, emi) => 
+                                emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                              const extra = parseFloat(earlyPaymentAmount) || 0;
+                              const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                              const reduction = extra > 0 ? Math.floor((extra / avgEMI) * 0.8) : 0;
+                              const acceleratedMonths = Math.max(6, longest - reduction);
+                              const date = new Date();
+                              date.setMonth(date.getMonth() + acceleratedMonths);
+                              return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                            })()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
                   </Grid>
+
+                  {/* Action Tip */}
+                  {(earlyPaymentAmount || 0) > 0 && (
+                    <Alert 
+                      severity="success" 
+                      sx={{ 
+                        mt: 2,
+                        py: 0.5,
+                        bgcolor: 'rgba(76,175,80,0.2)', 
+                        color: 'white',
+                        '& .MuiAlert-icon': { color: '#4caf50' },
+                        '& .MuiAlert-message': { fontSize: '0.875rem' }
+                      }}
+                    >
+                      🚀 Start with your highest-interest EMI to maximize savings!
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
