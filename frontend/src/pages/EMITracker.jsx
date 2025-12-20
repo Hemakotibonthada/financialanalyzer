@@ -5911,8 +5911,33 @@ const EMITracker = () => {
                     />
                   </Box>
 
-                  {/* Compact Slider */}
+                  {/* Slider with Linear Progress Style */}
                   <Box sx={{ px: 2, mb: 3 }}>
+                    <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                      Adjust extra monthly payment
+                    </Typography>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={((earlyPaymentAmount || 0) / 10000) * 100}
+                      sx={{ 
+                        height: 8, 
+                        borderRadius: 4,
+                        bgcolor: 'rgba(255,255,255,0.3)',
+                        mb: 1,
+                        cursor: 'pointer',
+                        '& .MuiLinearProgress-bar': {
+                          background: 'linear-gradient(90deg, #11998e 0%, #38ef7d 100%)',
+                          borderRadius: 4
+                        }
+                      }}
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const percentage = x / rect.width;
+                        const value = Math.round(percentage * 10000 / 500) * 500;
+                        setEarlyPaymentAmount(Math.min(10000, Math.max(0, value)));
+                      }}
+                    />
                     <input
                       type="range"
                       min="0"
@@ -5922,17 +5947,18 @@ const EMITracker = () => {
                       onChange={(e) => setEarlyPaymentAmount(e.target.value)}
                       style={{
                         width: '100%',
-                        height: '6px',
-                        borderRadius: '3px',
-                        background: `linear-gradient(to right, #4caf50 0%, #4caf50 ${((earlyPaymentAmount || 0) / 10000) * 100}%, rgba(255,255,255,0.3) ${((earlyPaymentAmount || 0) / 10000) * 100}%, rgba(255,255,255,0.3) 100%)`,
-                        outline: 'none',
+                        height: '4px',
+                        opacity: 0,
+                        position: 'absolute',
                         cursor: 'pointer',
-                        WebkitAppearance: 'none',
-                        appearance: 'none'
+                        zIndex: 10
                       }}
                     />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="caption" sx={{ opacity: 0.7 }}>₹0</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9, fontWeight: 'bold' }}>
+                        {Math.round(((earlyPaymentAmount || 0) / 10000) * 100)}% Complete
+                      </Typography>
                       <Typography variant="caption" sx={{ opacity: 0.7 }}>₹10,000</Typography>
                     </Box>
                   </Box>
