@@ -1454,6 +1454,30 @@ const EMITracker = () => {
             }
           );
 
+          // Optimistically update the activeEMIs in the overview state
+          if (overview && overview.activeEMIs) {
+            const updatedActiveEMIs = overview.activeEMIs.map(emi => {
+              if ((emi.id || emi.emiId || emi._id) === emiId) {
+                const newPaidInstallments = (emi.paidInstallments || 0) + 1;
+                const newRemainingInstallments = Math.max(0, emi.totalTenure - newPaidInstallments);
+                const completionPercentage = Math.round((newPaidInstallments / emi.totalTenure) * 100);
+                
+                return {
+                  ...emi,
+                  paidInstallments: newPaidInstallments,
+                  remainingInstallments: newRemainingInstallments,
+                  completionPercentage: completionPercentage
+                };
+              }
+              return emi;
+            });
+
+            setOverview({
+              ...overview,
+              activeEMIs: updatedActiveEMIs
+            });
+          }
+
           // Immediately update the UI by removing the paid EMI from upcomingPayments
           if (upcomingPayments && upcomingPayments.monthlyBreakdown) {
             const updatedBreakdown = upcomingPayments.monthlyBreakdown.map(month => ({
@@ -1483,7 +1507,7 @@ const EMITracker = () => {
             }
           }));
 
-          // Refresh data in background
+          // Refresh data in background to sync with backend
           fetchAllData();
         } catch (err) {
           console.error('Error marking payment as paid:', err);
