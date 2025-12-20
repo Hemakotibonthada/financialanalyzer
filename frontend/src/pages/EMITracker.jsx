@@ -6640,6 +6640,210 @@ const EMITracker = () => {
               </Grid>
             </Box>
           )}
+
+          {/* NEW: Smart Income Suggestions */}
+          <Grid item xs={12}>
+            <Card elevation={0} sx={{
+              ...chartCardHoverEffect,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              mt: 4
+            }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+                  <Typography variant="h4" fontWeight="bold">
+                    💡 Smart Income Boost Suggestions
+                  </Typography>
+                  <Chip 
+                    label={`Need: ₹${debtAnalysis.recommendedMonthlyExtra?.toLocaleString()}/mo`}
+                    sx={{ 
+                      bgcolor: 'rgba(255,255,255,0.3)', 
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '1rem'
+                    }} 
+                  />
+                </Box>
+                <Typography variant="h6" sx={{ mb: 3, opacity: 0.95 }}>
+                  Based on your ₹{debtAnalysis.totalOutstanding.toLocaleString()} debt, here are personalized ways to generate extra income:
+                </Typography>
+
+                <Grid container spacing={3}>
+                  {/* Quick Wins - Under 1 Month */}
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        🚀 Quick Wins (Start This Week)
+                      </Typography>
+                      <Box component="ul" sx={{ pl: 2, '& li': { mb: 1.5 } }}>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Freelance Your Skills</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Platforms: Upwork, Fiverr, Freelancer
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.5).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra).toLocaleString()}/month
+                            <br />Best for: Writing, Design, Programming, Data Entry
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Online Tutoring</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Platforms: Chegg, Vedantu, Unacademy
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.4).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.8).toLocaleString()}/month
+                            <br />Time: 1-2 hours/day after work
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Sell Unused Items</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Platforms: OLX, Quikr, Facebook Marketplace
+                            <br />One-time boost: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 2).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 4).toLocaleString()}
+                            <br />Items: Electronics, Furniture, Books, Clothes
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Food Delivery Partner</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Apps: Swiggy, Zomato, Uber Eats
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.6).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 1.2).toLocaleString()}/month
+                            <br />Flexibility: Choose your own hours
+                          </Typography>
+                        </li>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  {/* Medium-Term - 1-3 Months */}
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        📈 Medium-Term Growth (1-3 Months)
+                      </Typography>
+                      <Box component="ul" sx={{ pl: 2, '& li': { mb: 1.5 } }}>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Start a Blog/YouTube Channel</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Monetization: Ads, Sponsorships, Affiliate
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.3).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 2).toLocaleString()}/month (grows over time)
+                            <br />Topics: Finance, Tech, Lifestyle, Education
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Rent Out Spare Room/Parking</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Platforms: Airbnb, NoBroker, OLX
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 1.5).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 3).toLocaleString()}/month
+                            <br />Low effort, passive income
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Consulting in Your Field</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Leverage your expertise
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 3).toLocaleString()}/month
+                            <br />Charge: ₹1,000-₹5,000/hour based on expertise
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body1" fontWeight="600">Content Creation (Instagram/TikTok)</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            Monetization: Brand collaborations, affiliate
+                            <br />Target: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.5).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 4).toLocaleString()}/month
+                            <br />Build following: 10K+ for sponsorships
+                          </Typography>
+                        </li>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  {/* Passive Income Streams */}
+                  <Grid item xs={12}>
+                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        💰 Passive Income Opportunities
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Stock Photography</Typography>
+                            <Typography variant="caption" display="block">Upload photos to Shutterstock, Adobe Stock</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>
+                              Earn: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.2).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.8).toLocaleString()}/mo
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Create Digital Products</Typography>
+                            <Typography variant="caption" display="block">Sell templates, courses, ebooks</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>
+                              Earn: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.5).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 2).toLocaleString()}/mo
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Affiliate Marketing</Typography>
+                            <Typography variant="caption" display="block">Promote products, earn commission</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>
+                              Earn: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.3).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 1.5).toLocaleString()}/mo
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>App/Website Testing</Typography>
+                            <Typography variant="caption" display="block">Test apps on UserTesting, TryMyUI</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>
+                              Earn: ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.15).toLocaleString()}-₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.5).toLocaleString()}/mo
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  </Grid>
+
+                  {/* Action Plan */}
+                  <Grid item xs={12}>
+                    <Alert severity="success" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', '& .MuiAlert-icon': { color: 'white' } }}>
+                      <Typography variant="h6" fontWeight="bold" gutterBottom>🎯 Your Personalized Action Plan</Typography>
+                      <Box component="ol" sx={{ pl: 2, '& li': { mb: 1 } }}>
+                        <li>
+                          <Typography variant="body2">
+                            <strong>Week 1:</strong> Sign up for 2-3 freelancing platforms and create profiles. List unused items for sale.
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body2">
+                            <strong>Week 2-4:</strong> Apply for 10+ freelance gigs daily. Start 1 side hustle that matches your skills.
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body2">
+                            <strong>Month 2:</strong> Once earning ₹{Math.round(debtAnalysis.recommendedMonthlyExtra * 0.5).toLocaleString()}/month extra, add it to EMI prepayments.
+                          </Typography>
+                        </li>
+                        <li>
+                          <Typography variant="body2">
+                            <strong>Month 3+:</strong> Scale successful income streams to hit ₹{debtAnalysis.recommendedMonthlyExtra?.toLocaleString()}/month target.
+                          </Typography>
+                        </li>
+                      </Box>
+                      <Typography variant="body2" sx={{ mt: 2, fontWeight: 'bold' }}>
+                        💪 Goal: Generate ₹{debtAnalysis.recommendedMonthlyExtra?.toLocaleString()}/month extra to become debt-free {(() => {
+                          const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                            emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                          const extraPayment = debtAnalysis.recommendedMonthlyExtra || 0;
+                          const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                          const reduction = extraPayment > 0 ? Math.floor((extraPayment / avgEMI) * 0.7) : 0;
+                          return reduction;
+                        })()} months faster!
+                      </Typography>
+                    </Alert>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
         </Box>
       )}
 

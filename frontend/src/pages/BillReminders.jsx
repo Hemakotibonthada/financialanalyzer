@@ -441,7 +441,6 @@ const BillReminders = () => {
               </div>
             )}
           </div>
-          </div>
         </div>
 
         {/* Bills List */}
