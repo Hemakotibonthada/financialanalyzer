@@ -143,6 +143,28 @@ class WebSocketService {
     logger.info(`🔔 Emitted notification for user ${userId}: ${notification.title}`);
   }
 
+  // Low-level helper used by Notification model/services
+  sendToUser(userRoomOrUserId, event, payload) {
+    if (!this.io) {
+      logger.warn('WebSocket service not initialized');
+      return;
+    }
+
+    const roomName = String(userRoomOrUserId).startsWith('user-')
+      ? String(userRoomOrUserId)
+      : `user-${userRoomOrUserId}`;
+
+    this.io.to(roomName).emit(event, {
+      ...payload,
+      timestamp: new Date()
+    });
+  }
+
+  // Backwards-compatible alias used by some routes
+  sendNotification(userId, notification) {
+    return this.emitNotification(userId, notification);
+  }
+
   // Broadcast to all connected users (admin functionality)
   broadcast(event, data) {
     if (!this.io) {

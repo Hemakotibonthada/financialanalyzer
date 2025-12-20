@@ -174,6 +174,11 @@ const EMITracker = () => {
   const [selectedEMIForEarlyPayment, setSelectedEMIForEarlyPayment] = useState(null);
   const [emergencyFundGoal, setEmergencyFundGoal] = useState(180000); // 6 months of 30k
   const [currentEmergencyFund, setCurrentEmergencyFund] = useState(0);
+  const [emergencyFundSaving, setEmergencyFundSaving] = useState(false);
+  const [emergencyFundMessage, setEmergencyFundMessage] = useState(null);
+  const [emergencyFundContribution, setEmergencyFundContribution] = useState('');
+  const [contributionSaving, setContributionSaving] = useState(false);
+  const [lastContribution, setLastContribution] = useState(null);
   const [repaymentStrategy, setRepaymentStrategy] = useState('avalanche'); // avalanche or snowball
   const [acceleratorBoostPct, setAcceleratorBoostPct] = useState(20); // % of available income to channel as extra payment
   const [guardrailSettings, setGuardrailSettings] = useState(() => {
@@ -324,16 +329,119 @@ const EMITracker = () => {
         console.log('✅ Extracted Profile Object:', profileData);
         console.log('✅ Monthly Income Found:', profileData.monthlyIncome);
         setUserProfile(profileData);
+
+        const emergencyFund = profileData?.preferences?.debtFreedom?.emergencyFund;
+        if (emergencyFund && typeof emergencyFund === 'object') {
+          if (typeof emergencyFund.goalAmount === 'number' && !Number.isNaN(emergencyFund.goalAmount)) {
+            setEmergencyFundGoal(emergencyFund.goalAmount);
+          }
+          if (typeof emergencyFund.currentAmount === 'number' && !Number.isNaN(emergencyFund.currentAmount)) {
+            setCurrentEmergencyFund(emergencyFund.currentAmount);
+          }
+          if (Array.isArray(emergencyFund.contributions) && emergencyFund.contributions.length > 0) {
+            const latest = emergencyFund.contributions[emergencyFund.contributions.length - 1];
+            setLastContribution(latest);
+          }
+        }
       } else {
         console.error('❌ Unexpected API response structure:', response.data);
         // Fallback to try other structures
         const fallbackProfile = response.data?.data?.profile || response.data?.data || response.data?.profile;
         console.log('⚠️ Using fallback profile:', fallbackProfile);
         setUserProfile(fallbackProfile);
+
+        const emergencyFund = fallbackProfile?.preferences?.debtFreedom?.emergencyFund;
+        if (emergencyFund && typeof emergencyFund === 'object') {
+          if (typeof emergencyFund.goalAmount === 'number' && !Number.isNaN(emergencyFund.goalAmount)) {
+            setEmergencyFundGoal(emergencyFund.goalAmount);
+          }
+          if (typeof emergencyFund.currentAmount === 'number' && !Number.isNaN(emergencyFund.currentAmount)) {
+            setCurrentEmergencyFund(emergencyFund.currentAmount);
+          }
+          if (Array.isArray(emergencyFund.contributions) && emergencyFund.contributions.length > 0) {
+            const latest = emergencyFund.contributions[emergencyFund.contributions.length - 1];
+            setLastContribution(latest);
+          }
+        }
       }
     } catch (err) {
       console.error('❌ Error fetching profile:', err);
       console.error('Error details:', err.response?.data);
+    }
+  };
+
+  const saveEmergencyFundStatus = async () => {
+    setEmergencyFundSaving(true);
+    setEmergencyFundMessage(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `${API_URL}/profile/debt-freedom/emergency-fund`,
+        {
+          currentAmount: Number(currentEmergencyFund) || 0,
+          goalAmount: Number(emergencyFundGoal) || 0
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      const saved = response.data?.data?.emergencyFund;
+      if (saved) {
+        if (typeof saved.goalAmount === 'number' && !Number.isNaN(saved.goalAmount)) setEmergencyFundGoal(saved.goalAmount);
+        if (typeof saved.currentAmount === 'number' && !Number.isNaN(saved.currentAmount)) setCurrentEmergencyFund(saved.currentAmount);
+        if (Array.isArray(saved.contributions) && saved.contributions.length > 0) {
+          setLastContribution(saved.contributions[saved.contributions.length - 1]);
+        }
+      }
+
+      setEmergencyFundMessage({ type: 'success', text: 'Emergency fund saved to your profile.' });
+      setTimeout(() => setEmergencyFundMessage(null), 6000);
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to save emergency fund.';
+      setEmergencyFundMessage({ type: 'error', text: message });
+      setTimeout(() => setEmergencyFundMessage(null), 8000);
+    } finally {
+      setEmergencyFundSaving(false);
+    }
+  };
+
+  const addEmergencyFundContribution = async () => {
+    setContributionSaving(true);
+    setEmergencyFundMessage(null);
+    try {
+      const amount = Number(emergencyFundContribution);
+      if (!amount || amount <= 0) {
+        setEmergencyFundMessage({ type: 'error', text: 'Enter a positive contribution amount.' });
+        setContributionSaving(false);
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_URL}/profile/debt-freedom/emergency-fund/contribution`,
+        { amount },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const saved = response.data?.data?.emergencyFund;
+      if (saved) {
+        if (typeof saved.currentAmount === 'number' && !Number.isNaN(saved.currentAmount)) setCurrentEmergencyFund(saved.currentAmount);
+        if (typeof saved.goalAmount === 'number' && !Number.isNaN(saved.goalAmount)) setEmergencyFundGoal(saved.goalAmount);
+        if (Array.isArray(saved.contributions) && saved.contributions.length > 0) {
+          setLastContribution(saved.contributions[saved.contributions.length - 1]);
+        }
+      }
+
+      setEmergencyFundContribution('');
+      setEmergencyFundMessage({ type: 'success', text: 'Contribution added and saved.' });
+      setTimeout(() => setEmergencyFundMessage(null), 6000);
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to add contribution.';
+      setEmergencyFundMessage({ type: 'error', text: message });
+      setTimeout(() => setEmergencyFundMessage(null), 8000);
+    } finally {
+      setContributionSaving(false);
     }
   };
 
@@ -442,7 +550,7 @@ const EMITracker = () => {
     }
 
     // Calculate emergency fund status
-    const emergencyFundPercentage = (currentEmergencyFund / emergencyFundGoal) * 100;
+    const emergencyFundPercentage = emergencyFundGoal > 0 ? (currentEmergencyFund / emergencyFundGoal) * 100 : 0;
     const emergencyFundMonths = monthlyIncome > 0 ? currentEmergencyFund / monthlyIncome : 0;
 
     // Calculate available income after EMIs
@@ -2202,6 +2310,335 @@ const EMITracker = () => {
             </Card>
           </Grid>
         </Grid>
+      )}
+
+      {/* Priority Tips + Next Schedule (shown on open, below summary cards) - ALWAYS VISIBLE */}
+      {overview && (
+        <Card
+          elevation={3}
+          sx={{
+            mb: 4,
+            bgcolor: 'white',
+            borderRadius: 4,
+            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.15)',
+            border: '2px solid',
+            borderColor: '#667eea',
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%)'
+          }}
+        >
+          <Box
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              p: 2,
+              color: 'white'
+            }}
+          >
+            <Typography variant="h5" fontWeight={900} sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              🎯 Priority Dashboard
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.95, mt: 0.5 }}>
+              Your most important actions, schedules & progress at a glance
+            </Typography>
+          </Box>
+          <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+            {(() => {
+              const activeEmis = overview.activeEMIs || [];
+              const withDue = activeEmis
+                .filter((emi) => emi.nextDueDate)
+                .map((emi) => ({
+                  ...emi,
+                  dueDateObj: new Date(emi.nextDueDate)
+                }))
+                .filter((emi) => !Number.isNaN(emi.dueDateObj.getTime()))
+                .sort((a, b) => a.dueDateObj - b.dueDateObj);
+
+              const soonest = withDue[0] || null;
+              const topApr = [...activeEmis]
+                .sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))[0] || null;
+
+              const scheduleItems = withDue.slice(0, 3);
+              const today = new Date();
+
+              const soonestDays = soonest
+                ? Math.ceil((soonest.dueDateObj - today) / (1000 * 60 * 60 * 24))
+                : null;
+
+              const dti = currentDti || 0;
+              const highDti = dti > 50;
+              const warnDti = dti > 40 && dti <= 50;
+
+              // Calculate next month total
+              const nextMonthTotal = upcomingPayments?.monthlyBreakdown?.[0]?.totalAmount || 0;
+
+              // Calculate debt-free progress
+              const totalOriginal = (overview.overview?.totalOutstanding || 0) + (overview.overview?.totalAmountPaid || 0);
+              const debtFreeProgress = totalOriginal > 0 ? ((overview.overview?.totalAmountPaid || 0) / totalOriginal) * 100 : 0;
+
+              // Emergency fund status
+              const efPercentage = emergencyFundGoal > 0 ? (currentEmergencyFund / emergencyFundGoal) * 100 : 0;
+              const efStatus = efPercentage >= 100 ? 'success' : efPercentage >= 50 ? 'warning' : 'error';
+
+              return (
+                <>
+                  {/* Summary Overview Section */}
+                  <Box sx={{ mb: 3, p: 2.5, bgcolor: '#f8f9fa', borderRadius: 3, border: '1px solid #e0e0e0' }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Active EMIs</Typography>
+                        <Typography variant="h5" fontWeight={800} color="primary">{overview.overview?.totalActiveEMIs || 0}</Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Outstanding</Typography>
+                        <Typography variant="h5" fontWeight={800} color="error">{formatCurrency(overview.overview?.totalOutstanding || 0)}</Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Monthly Burden</Typography>
+                        <Typography variant="h5" fontWeight={800} color="warning.main">{formatCurrency(overview.overview?.monthlyBurden || 0)}</Typography>
+                      </Grid>
+                      <Grid item xs={6} sm={3}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Total Paid</Typography>
+                        <Typography variant="h5" fontWeight={800} color="success.main">{formatCurrency(overview.overview?.totalAmountPaid || 0)}</Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  {/* Quick Stats Row */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{ bgcolor: '#e8f5e9', border: '2px solid #4caf50', borderRadius: 3 }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="caption" fontWeight={700} color="#2e7d32">🛡️ EMERGENCY FUND</Typography>
+                          <Typography variant="h6" fontWeight={900} color="#2e7d32">
+                            {efPercentage.toFixed(0)}% funded
+                          </Typography>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={Math.min(efPercentage, 100)}
+                            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: '#c8e6c9', '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }}
+                          />
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                            {formatCurrency(currentEmergencyFund)} / {formatCurrency(emergencyFundGoal)}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{ bgcolor: '#e3f2fd', border: '2px solid #2196f3', borderRadius: 3 }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="caption" fontWeight={700} color="#1565c0">📅 NEXT MONTH DUE</Typography>
+                          <Typography variant="h6" fontWeight={900} color="#1565c0">
+                            {nextMonthTotal > 0 ? formatCurrency(nextMonthTotal) : formatCurrency(overview.overview?.monthlyBurden || 0)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            {nextMonthTotal > 0 
+                              ? `${upcomingPayments?.monthlyBreakdown?.[0]?.emis?.length || 0} EMI payment(s)`
+                              : `~${overview.overview?.totalActiveEMIs || 0} active EMI(s)`}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{ bgcolor: '#f3e5f5', border: '2px solid #9c27b0', borderRadius: 3 }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="caption" fontWeight={700} color="#6a1b9a">🎉 DEBT-FREE PROGRESS</Typography>
+                          <Typography variant="h6" fontWeight={900} color="#6a1b9a">
+                            {totalOriginal > 0 ? `${debtFreeProgress.toFixed(1)}%` : 'N/A'}
+                          </Typography>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={Math.min(debtFreeProgress, 100)}
+                            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: '#e1bee7', '& .MuiLinearProgress-bar': { bgcolor: '#9c27b0' } }}
+                          />
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                            {totalOriginal > 0 
+                              ? `Remaining: ${formatCurrency(overview.overview?.totalOutstanding || 0)}`
+                              : 'No debt to track'}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+
+                  <Box display="flex" gap={1} flexWrap="wrap" justifyContent="flex-end" sx={{ mb: 2 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => setActiveTab(3)}
+                    >
+                      View Upcoming
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                      onClick={() => setActiveTab(8)}
+                    >
+                      Debt Freedom Plan
+                    </Button>
+                  </Box>
+
+                  <Grid container spacing={2.5}>
+                    <Grid item xs={12} md={7}>
+                      <Box
+                        sx={{
+                          p: 2.5,
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'background.paper'
+                        }}
+                      >
+                        <Typography variant="subtitle1" fontWeight={800} mb={1.5}>
+                          📅 Next due schedule
+                        </Typography>
+
+                        {activeEmis.length === 0 ? (
+                          <Alert severity="info" sx={{ borderRadius: 2, mb: 2 }}>
+                            <Typography variant="subtitle2" fontWeight={800}>
+                              🎉 No active EMIs!
+                            </Typography>
+                            <Typography variant="body2">
+                              You're EMI-free! Start building your emergency fund and savings.
+                            </Typography>
+                          </Alert>
+                        ) : soonest ? (
+                          <Alert
+                            severity={soonestDays !== null && soonestDays <= 7 ? 'warning' : 'info'}
+                            sx={{ borderRadius: 2, mb: 2 }}
+                          >
+                            <Typography variant="subtitle2" fontWeight={800}>
+                              {soonest.merchantName} {soonestDays !== null ? `due in ${soonestDays} day(s)` : 'due soon'}
+                            </Typography>
+                            <Typography variant="body2">
+                              Amount: {formatCurrency(soonest.emiAmount)} • Due: {soonest.dueDateObj.toLocaleDateString()}
+                            </Typography>
+                          </Alert>
+                        ) : (
+                          <Alert severity="info" sx={{ borderRadius: 2, mb: 2 }}>
+                            No upcoming due dates found on active EMIs.
+                          </Alert>
+                        )}
+
+                        {scheduleItems.length > 0 && (
+                          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                  <TableCell sx={{ fontWeight: 800 }}>EMI</TableCell>
+                                  <TableCell align="right" sx={{ fontWeight: 800 }}>Amount</TableCell>
+                                  <TableCell align="right" sx={{ fontWeight: 800 }}>Due</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {scheduleItems.map((emi) => (
+                                  <TableRow key={emi.id || emi._id} hover>
+                                    <TableCell>
+                                      <Typography variant="body2" fontWeight={700}>
+                                        {emi.merchantName}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {emi.cardProvider}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell align="right">{formatCurrency(emi.emiAmount)}</TableCell>
+                                    <TableCell align="right">{emi.dueDateObj.toLocaleDateString()}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        )}
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12} md={5}>
+                      <Box
+                        sx={{
+                          p: 2.5,
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'background.paper',
+                          height: '100%'
+                        }}
+                      >
+                        <Typography variant="subtitle1" fontWeight={800} mb={1.5}>
+                          💡 Most important tips
+                        </Typography>
+
+                        {activeEmis.length === 0 ? (
+                          <>
+                            <Alert severity="success" sx={{ borderRadius: 2, mb: 1.5 }}>
+                              <Typography variant="subtitle2" fontWeight={800}>
+                                Build emergency fund first
+                              </Typography>
+                              <Typography variant="body2">
+                                Aim for 6 months of expenses ({formatCurrency(emergencyFundGoal)}) before taking new EMIs.
+                              </Typography>
+                            </Alert>
+                            <Alert severity="info" sx={{ borderRadius: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={800}>
+                                Stay debt-free
+                              </Typography>
+                              <Typography variant="body2">
+                                Avoid new EMIs unless necessary. Save and invest for your future goals.
+                              </Typography>
+                            </Alert>
+                          </>
+                        ) : (
+                          <>
+                            {highDti && (
+                          <Alert severity="error" sx={{ borderRadius: 2, mb: 1.5 }}>
+                            <Typography variant="subtitle2" fontWeight={800}>
+                              Stop new EMIs for now
+                            </Typography>
+                            <Typography variant="body2">
+                              Your DTI is {dti.toFixed(1)}%. Keep it under 50% before taking new credit.
+                            </Typography>
+                          </Alert>
+                        )}
+
+                        {warnDti && (
+                          <Alert severity="warning" sx={{ borderRadius: 2, mb: 1.5 }}>
+                            <Typography variant="subtitle2" fontWeight={800}>
+                              Reduce burden (DTI {dti.toFixed(1)}%)
+                            </Typography>
+                            <Typography variant="body2">
+                              Avoid new EMIs and consider consolidation / balance transfer for high-rate EMIs.
+                            </Typography>
+                          </Alert>
+                        )}
+
+                        {!!topApr && (
+                          <Alert severity="info" sx={{ borderRadius: 2, mb: 1.5 }}>
+                            <Typography variant="subtitle2" fontWeight={800}>
+                              Avalanche target
+                            </Typography>
+                            <Typography variant="body2">
+                              Focus extra payments on <strong>{topApr.merchantName}</strong> ({topApr.interestRate || 0}% APR) to save interest.
+                            </Typography>
+                          </Alert>
+                        )}
+
+                            <Alert severity="success" sx={{ borderRadius: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={800}>
+                                Use the plan tab weekly
+                              </Typography>
+                              <Typography variant="body2">
+                                Open <strong>Debt Freedom Plan</strong> to see payoff order, guardrails, and quick actions.
+                              </Typography>
+                            </Alert>
+                          </>
+                        )}
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
       )}
 
       {/* Enhanced Insights Section */}
@@ -4243,15 +4680,71 @@ const EMITracker = () => {
                     </Box>
                   </Box>
                   <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 2, mb: 2 }}>
-                    <TextField
-                      label="Update Emergency Fund Amount"
-                      type="number"
-                      fullWidth
-                      value={currentEmergencyFund}
-                      onChange={(e) => setCurrentEmergencyFund(parseFloat(e.target.value) || 0)}
-                      InputProps={{ startAdornment: '₹' }}
-                      size="small"
-                    />
+                    {emergencyFundMessage && (
+                      <Alert severity={emergencyFundMessage.type} sx={{ mb: 2 }}>
+                        <Typography variant="body2">{emergencyFundMessage.text}</Typography>
+                      </Alert>
+                    )}
+                    <Grid container spacing={1.5}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Current Emergency Fund"
+                          type="number"
+                          fullWidth
+                          value={currentEmergencyFund}
+                          onChange={(e) => setCurrentEmergencyFund(parseFloat(e.target.value) || 0)}
+                          InputProps={{ startAdornment: '₹' }}
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Emergency Fund Goal"
+                          type="number"
+                          fullWidth
+                          value={emergencyFundGoal}
+                          onChange={(e) => setEmergencyFundGoal(parseFloat(e.target.value) || 0)}
+                          InputProps={{ startAdornment: '₹' }}
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Add This Month"
+                          type="number"
+                          fullWidth
+                          value={emergencyFundContribution}
+                          onChange={(e) => setEmergencyFundContribution(e.target.value)}
+                          InputProps={{ startAdornment: '₹' }}
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          {lastContribution
+                            ? `Last add: ₹${(lastContribution.amount || 0).toLocaleString()} on ${new Date(lastContribution.date).toLocaleDateString()}`
+                            : 'No contributions recorded yet.'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button
+                          variant="contained"
+                          startIcon={<SaveIcon />}
+                          onClick={saveEmergencyFundStatus}
+                          disabled={emergencyFundSaving}
+                        >
+                          {emergencyFundSaving ? 'Saving…' : 'Save to Profile'}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                          onClick={addEmergencyFundContribution}
+                          disabled={contributionSaving}
+                        >
+                          {contributionSaving ? 'Adding…' : 'Add Contribution'}
+                        </Button>
+                      </Grid>
+                    </Grid>
                   </Box>
                   <Alert severity={debtAnalysis.emergencyFundPercentage >= 100 ? 'success' : debtAnalysis.emergencyFundPercentage >= 50 ? 'warning' : 'error'}>
                     <Typography variant="body2">
@@ -4259,7 +4752,7 @@ const EMITracker = () => {
                         ? '✅ Great! Your emergency fund is fully funded.'
                         : debtAnalysis.emergencyFundPercentage >= 50
                         ? '⚠️ Build your emergency fund to 6 months of expenses before aggressive EMI prepayment.'
-                        : '🚨 PRIORITY: Build emergency fund first! Aim for {formatCurrency(emergencyFundGoal - currentEmergencyFund)} more.'}
+                        : `🚨 PRIORITY: Build emergency fund first! Aim for ${formatCurrency(Math.max(0, emergencyFundGoal - currentEmergencyFund))} more.`}
                     </Typography>
                   </Alert>
                 </CardContent>

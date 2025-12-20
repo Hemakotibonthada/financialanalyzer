@@ -70,6 +70,70 @@ const financialProfileSchema = new mongoose.Schema({
     budgetAlerts: {
       type: Boolean,
       default: true
+    },
+    debtFreedom: {
+      autoSweep: {
+        enabled: {
+          type: Boolean,
+          default: false
+        },
+        sweepPercentage: {
+          type: Number,
+          min: 0,
+          max: 100,
+          default: 0
+        },
+        updatedAt: {
+          type: Date
+        }
+      },
+      lateFeeShield: {
+        enabled: {
+          type: Boolean,
+          default: false
+        },
+        notifyDaysBefore: {
+          type: Number,
+          min: 0,
+          max: 31,
+          default: 3
+        },
+        updatedAt: {
+          type: Date
+        }
+      },
+      emergencyFund: {
+        currentAmount: {
+          type: Number,
+          min: 0,
+          default: 0
+        },
+        goalAmount: {
+          type: Number,
+          min: 0,
+          default: 0
+        },
+        contributions: [
+          {
+            amount: {
+              type: Number,
+              min: 0
+            },
+            date: {
+              type: Date,
+              default: Date.now
+            },
+            note: {
+              type: String,
+              trim: true,
+              maxlength: 200
+            }
+          }
+        ],
+        updatedAt: {
+          type: Date
+        }
+      }
     }
   },
   gmailSettings: {
