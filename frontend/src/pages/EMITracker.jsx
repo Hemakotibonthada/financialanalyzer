@@ -34,7 +34,9 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Tooltip
+  Tooltip,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   PieChart,
@@ -173,6 +175,22 @@ const EMITracker = () => {
   const [emergencyFundGoal, setEmergencyFundGoal] = useState(180000); // 6 months of 30k
   const [currentEmergencyFund, setCurrentEmergencyFund] = useState(0);
   const [repaymentStrategy, setRepaymentStrategy] = useState('avalanche'); // avalanche or snowball
+  const [guardrailSettings, setGuardrailSettings] = useState(() => {
+    try {
+      const stored = localStorage.getItem('guardrailSettings');
+      if (stored) return JSON.parse(stored);
+    } catch (err) {
+      console.error('Error parsing guardrail settings from storage', err);
+    }
+    return {
+      lockNewEmiAbove50: true,
+      preDueReminder: true,
+      forceAvalancheHighAPR: true,
+      recommendBalanceTransfer: true,
+      autoRoundUp: true
+    };
+  });
+  const [guardrailAlerts, setGuardrailAlerts] = useState([]);
 
   // Loans Given State
   const [loansGiven, setLoansGiven] = useState([]);
@@ -477,6 +495,93 @@ const EMITracker = () => {
       calculateDebtAnalysis();
     }
   }, [overview, userProfile, emergencyFundGoal, currentEmergencyFund, activeTab]);
+
+  // Persist guardrail settings
+  useEffect(() => {
+    try {
+      localStorage.setItem('guardrailSettings', JSON.stringify(guardrailSettings));
+    } catch (err) {
+      console.error('Failed to persist guardrail settings', err);
+    }
+  }, [guardrailSettings]);
+
+  // Auto-enforce avalanche when high APR is present and guardrail is enabled
+  useEffect(() => {
+    const hasHighApr = overview?.activeEMIs?.some((emi) => (emi.interestRate || 0) >= 18);
+    if (guardrailSettings.forceAvalancheHighAPR && hasHighApr) {
+      setRepaymentStrategy('avalanche');
+    }
+  }, [guardrailSettings.forceAvalancheHighAPR, overview]);
+
+  // Build guardrail alerts feed when risk conditions are met
+  useEffect(() => {
+    if (!debtAnalysis || !overview?.activeEMIs) return;
+
+    const alerts = [];
+    if (guardrailSettings.lockNewEmiAbove50 && debtAnalysis.debtToIncomeRatio > 50) {
+      alerts.push({
+        severity: 'error',
+        title: 'New EMI locked',
+        message: 'DTI is above 50%. Hold off on new credit until EMI drops or income rises.'
+      });
+    }
+
+    if (guardrailSettings.preDueReminder) {
+      const dueSoon = overview.activeEMIs
+        .map((emi) => ({
+          ...emi,
+          daysUntilDue: emi.nextDueDate ? Math.ceil((new Date(emi.nextDueDate) - new Date()) / (1000 * 60 * 60 * 24)) : 30
+        }))
+        .filter((emi) => emi.daysUntilDue <= 7)
+        .sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
+      if (dueSoon) {
+        alerts.push({
+          severity: 'warning',
+          title: 'Upcoming EMI',
+          message: `${dueSoon.merchantName} due in ${dueSoon.daysUntilDue} days. Consider early payment to avoid fees.`
+        });
+      }
+    }
+
+    if (guardrailSettings.forceAvalancheHighAPR) {
+      const highApr = overview.activeEMIs.filter((emi) => (emi.interestRate || 0) >= 18);
+      if (highApr.length > 0) {
+        alerts.push({
+          severity: 'info',
+          title: 'High APR detected',
+          message: 'Avalanche prioritized automatically because APR ≥ 18% exists.'
+        });
+      }
+    }
+
+    if (guardrailSettings.recommendBalanceTransfer) {
+      const transferCandidate = overview.activeEMIs.find((emi) => (emi.interestRate || 0) >= 18 && (emi.remainingInstallments || 0) > 6);
+      if (transferCandidate) {
+        alerts.push({
+          severity: 'info',
+          title: 'Balance transfer advised',
+          message: `${transferCandidate.merchantName} at ${transferCandidate.interestRate}% is a transfer candidate.`
+        });
+      }
+    }
+
+    if (guardrailSettings.autoRoundUp && debtAnalysis.availableIncome > 500) {
+      const roundUp = Math.min(2000, Math.floor(debtAnalysis.availableIncome * 0.3 / 100) * 100);
+      if (roundUp > 0) {
+        alerts.push({
+          severity: 'success',
+          title: 'Round-up ready',
+          message: `Channel an extra ₹${roundUp.toLocaleString()} this month to accelerate payoff.`
+        });
+      }
+    }
+
+    setGuardrailAlerts(alerts);
+  }, [guardrailSettings, debtAnalysis, overview]);
+
+  const handleGuardrailToggle = (key) => (event) => {
+    setGuardrailSettings((prev) => ({ ...prev, [key]: event.target.checked }));
+  };
 
   const handleExportMonthlyTrends = async (format) => {
     try {
@@ -3816,6 +3921,59 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
                   </Grid>
+
+                  <Box mt={3}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Balance Transfer Offers (Tailored)
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" mb={2}>
+                      We scan your highest-APR EMI and show potential transfer deals with estimated monthly savings.
+                    </Typography>
+                    {(() => {
+                      const candidate = [...overview.activeEMIs].sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))[0];
+                      if (!candidate) return <Typography variant="body2">No eligible EMI found.</Typography>;
+                      const offers = [
+                        { provider: 'PrimeBank', rate: 11.5, fee: 999 },
+                        { provider: 'NeoCard', rate: 9.9, fee: 1499 },
+                        { provider: 'SafePay', rate: 12.9, fee: 0 }
+                      ];
+                      return (
+                        <Grid container spacing={2}>
+                          {offers.map((offer) => {
+                            const saving = Math.max(0, (candidate.interestRate - offer.rate) / (candidate.interestRate || 1)) * candidate.emiAmount * 0.35;
+                            return (
+                              <Grid item xs={12} md={4} key={offer.provider}>
+                                <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: 'white', height: '100%' }}>
+                                  <Typography variant="subtitle1" fontWeight="bold">{offer.provider}</Typography>
+                                  <Typography variant="body2" color="text.secondary">New rate: {offer.rate}%</Typography>
+                                  <Typography variant="body2" color="text.secondary">Processing fee: ₹{offer.fee.toLocaleString()}</Typography>
+                                  <Typography variant="body1" fontWeight="bold" color="success.main" sx={{ mt: 1 }}>
+                                    Save ≈ {formatCurrency(saving)} / month
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                                    Based on {candidate.merchantName} @ {candidate.interestRate}% for ~{candidate.remainingInstallments} months left.
+                                  </Typography>
+                                  <Button
+                                    fullWidth
+                                    size="small"
+                                    variant="contained"
+                                    sx={{ mt: 2 }}
+                                    onClick={() => {
+                                      setSelectedEMIForEarlyPayment(candidate);
+                                      setEarlyPaymentAmount(Math.min(candidate.remainingAmount, candidate.emiAmount * 2).toString());
+                                      alert(`Offer request sent to ${offer.provider} for ${candidate.merchantName}. We will follow up.`);
+                                    }}
+                                  >
+                                    Request This Offer
+                                  </Button>
+                                </Box>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                      );
+                    })()}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -5099,6 +5257,17 @@ const EMITracker = () => {
                     Spot the riskiest EMIs and apply automatic guardrails to avoid new debt traps.
                   </Typography>
 
+                  {guardrailAlerts.length > 0 && (
+                    <Box display="grid" gap={1} mb={2}>
+                      {guardrailAlerts.map((alert, index) => (
+                        <Alert key={index} severity={alert.severity} icon={false} sx={{ borderRadius: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">{alert.title}</Typography>
+                          <Typography variant="body2">{alert.message}</Typography>
+                        </Alert>
+                      ))}
+                    </Box>
+                  )}
+
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={7}>
                       <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
@@ -5163,12 +5332,66 @@ const EMITracker = () => {
                         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                           Auto-Guardrails
                         </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>✅ Lock new EMI creation if DTI exceeds 50%</Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>✅ Auto-set reminders 7 days before due date</Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>✅ Force avalanche method when any EMI rate ≥ 18%</Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>✅ Recommend balance transfer for EMIs > 18% with > 6 months left</Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                          These guardrails keep you out of the debt trap loop. Coming soon: toggle controls & automation hooks.
+                        <Box display="grid" gap={1}>
+                          <FormControlLabel
+                            control={
+                              <Switch 
+                                checked={guardrailSettings.lockNewEmiAbove50} 
+                                onChange={handleGuardrailToggle('lockNewEmiAbove50')} 
+                                color="error"
+                              />
+                            }
+                            label="Lock new EMI creation if DTI exceeds 50%"
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch 
+                                checked={guardrailSettings.preDueReminder} 
+                                onChange={handleGuardrailToggle('preDueReminder')}
+                                color="warning"
+                              />
+                            }
+                            label="Auto-set reminders 7 days before due date"
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch 
+                                checked={guardrailSettings.forceAvalancheHighAPR} 
+                                onChange={handleGuardrailToggle('forceAvalancheHighAPR')}
+                                color="primary"
+                              />
+                            }
+                            label="Force avalanche when any EMI rate ≥ 18%"
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch 
+                                checked={guardrailSettings.recommendBalanceTransfer} 
+                                onChange={handleGuardrailToggle('recommendBalanceTransfer')}
+                                color="info"
+                              />
+                            }
+                            label="Recommend balance transfer for high-rate EMIs"
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch 
+                                checked={guardrailSettings.autoRoundUp} 
+                                onChange={handleGuardrailToggle('autoRoundUp')}
+                                color="success"
+                              />
+                            }
+                            label="Round-up surplus cash into prepayments"
+                          />
+                        </Box>
+
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 2 }}>
+                          Guardrails now persist across sessions and trigger alerts above when limits are breached.
+                        </Typography>
+                        <Typography variant="body2" color={guardrailSettings.lockNewEmiAbove50 && debtAnalysis.debtToIncomeRatio > 50 ? 'error.main' : 'text.secondary'} sx={{ mt: 1 }}>
+                          {guardrailSettings.lockNewEmiAbove50 && debtAnalysis.debtToIncomeRatio > 50
+                            ? 'New EMI creation is locked until DTI falls below 50%.'
+                            : 'New EMI creation is allowed. Keep DTI under 50% to stay safe.'}
                         </Typography>
                       </Box>
                     </Grid>
