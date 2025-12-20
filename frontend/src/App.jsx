@@ -25,7 +25,7 @@ const ReportDetail = lazy(() => import('./pages/ReportDetail'));
 const CreditScoreDetail = lazy(() => import('./pages/CreditScoreDetail'));
 const AdvancedAnalytics = lazy(() => import('./pages/AdvancedAnalytics'));
 const EMITracker = lazy(() => import('./pages/EMITracker'));
-const PersonalDocs = lazy(() => import('./pages/PersonalDocs'));
+const FinancialInsuranceAnalyzer = lazy(() => import('./pages/FinancialInsuranceAnalyzer'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const TransactionSearch = lazy(() => import('./components/TransactionSearch'));
 const CSVImportExport = lazy(() => import('./components/CSVImportExport'));
@@ -124,10 +124,10 @@ function App() {
                   <EMITracker />
                 </ProtectedRoute>
               } />
-
-              <Route path="/personal-docs" element={
+              
+              <Route path="/financial-analyzer" element={
                 <ProtectedRoute>
-                  <PersonalDocs />
+                  <FinancialInsuranceAnalyzer />
                 </ProtectedRoute>
               } />
               

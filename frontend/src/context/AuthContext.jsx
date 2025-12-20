@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, options = {}) => {
     try {
       const response = await authService.login({ email, password });
-      const { user, accessToken, token: legacyToken } = response.data.data;
+      const { user, accessToken, refreshToken, token: legacyToken } = response.data.data;
       
       // Handle both accessToken (new) and token (legacy) naming
       const authToken = accessToken || legacyToken;
@@ -113,6 +113,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', authToken);
         localStorage.setItem('token_expiry', endOfMonth.toISOString());
         localStorage.setItem('user', JSON.stringify(user));
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
         // remove any session token
         sessionStorage.removeItem('token');
         
@@ -123,19 +126,26 @@ export const AuthProvider = ({ children }) => {
             now: now.toISOString(),
             endOfMonth: endOfMonth.toISOString(),
             storedExpiry,
-            validDate: !isNaN(new Date(storedExpiry).getTime())
+            validDate: !isNaN(new Date(storedExpiry).getTime()),
+            hasRefreshToken: !!refreshToken
           });
         }
       } else {
-        sessionStorage.setItem('token', authToken);
-        sessionStorage.setItem('user', JSON.stringify(user));
-        // ensure no lingering persistent token
-        localStorage.removeItem('token');
-        localStorage.removeItem('token_expiry');
-        localStorage.removeItem('user');
+        // For session-only, use 24 hours expiry (token lifetime)
+        const now = new Date();
+        const expiry24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('token_expiry', expiry24h.toISOString());
+        localStorage.setItem('user', JSON.stringify(user));
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
         
         if (import.meta.env.DEV) {
-          console.debug('[auth] Login without remember - using session storage');
+          console.debug('[auth] Login without remember - using 24h token expiry', {
+            expiry: expiry24h.toISOString(),
+            hasRefreshToken: !!refreshToken
+          });
         }
       }
 
@@ -155,7 +165,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       const response = await authService.register({ name, email, password });
-      const { user, accessToken, token: legacyToken } = response.data.data;
+      const { user, accessToken, refreshToken, token: legacyToken } = response.data.data;
       
       // Handle both accessToken (new) and token (legacy) naming
       const authToken = accessToken || legacyToken;
@@ -164,9 +174,15 @@ export const AuthProvider = ({ children }) => {
         throw new Error('No authentication token received');
       }
       
-      // Set token first, then user to trigger proper state updates
+      // Set token with 24 hours expiry
+      const now = new Date();
+      const expiry24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       localStorage.setItem('token', authToken);
+      localStorage.setItem('token_expiry', expiry24h.toISOString());
       localStorage.setItem('user', JSON.stringify(user));
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
       setToken(authToken);
       setUser(user);
       
@@ -185,6 +201,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     // remove from both storages
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('token_expiry');
     sessionStorage.removeItem('token');

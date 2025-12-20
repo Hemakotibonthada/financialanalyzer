@@ -17,7 +17,9 @@ import {
   ChevronRight,
   BarChart3,
   Menu,
-  X
+  X,
+  TrendingUp,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -69,12 +71,12 @@ const Sidebar = () => {
       icon: Wallet,
       path: '/networth',
       color: 'emerald'
-    }
-    ,{
+    },
+    {
       label: 'Personal Docs',
-      icon: Upload,
-      path: '/personal-docs',
-      color: 'purple'
+      icon: FileText,
+      path: '/financial-analyzer',
+      color: 'violet'
     }
   ];
 
@@ -118,6 +120,7 @@ const Sidebar = () => {
       orange: active ? 'bg-orange-100 text-orange-700' : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600',
       emerald: active ? 'bg-emerald-100 text-emerald-700' : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-600',
       purple: active ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600',
+      violet: active ? 'bg-violet-100 text-violet-700' : 'text-gray-700 hover:bg-violet-50 hover:text-violet-600',
       red: active ? 'bg-red-100 text-red-700' : 'text-gray-700 hover:bg-red-50 hover:text-red-600'
     };
     return colors[color] || colors.gray;

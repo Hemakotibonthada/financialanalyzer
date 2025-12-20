@@ -164,6 +164,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/investments', require('./routes/investmentRoutes')); // Investment portfolio tracking
 app.use('/api/goals', require('./routes/goalRoutes')); // Financial goals management
 app.use('/api/networth', require('./routes/netWorthRoutes')); // Net worth tracking
+app.use('/api/financial', require('./routes/financialAnalyzerRoutes')); // Financial & Insurance Analyzer
 
 // 404 handler
 app.use((req, res) => {

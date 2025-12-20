@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <RestoreSuccess Condition=" '$(RestoreSuccess)' == '' ">True</RestoreSuccess>
+    <RestoreTool Condition=" '$(RestoreTool)' == '' ">NuGet</RestoreTool>
+    <ProjectAssetsFile Condition=" '$(ProjectAssetsFile)' == '' ">$(MSBuildThisFileDirectory)project.assets.json</ProjectAssetsFile>
+    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
+    <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">C:\Users\v-hbonthada\.nuget\packages\;C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages</NuGetPackageFolders>
+    <NuGetProjectStyle Condition=" '$(NuGetProjectStyle)' == '' ">PackageReference</NuGetProjectStyle>
+    <NuGetToolVersion Condition=" '$(NuGetToolVersion)' == '' ">6.14.1</NuGetToolVersion>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <SourceRoot Include="C:\Users\v-hbonthada\.nuget\packages\" />
+    <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
+  </ItemGroup>
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)microsoft.windows.cppwinrt\2.0.211028.7\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(NuGetPackageRoot)microsoft.windows.cppwinrt\2.0.211028.7\build\native\Microsoft.Windows.CppWinRT.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.ui.xaml\2.8.0\buildTransitive\Microsoft.UI.Xaml.props" Condition="Exists('$(NuGetPackageRoot)microsoft.ui.xaml\2.8.0\buildTransitive\Microsoft.UI.Xaml.props')" />
+  </ImportGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Pkgruntime_win10-x86_Microsoft_Net_UWPCoreRuntimeSdk Condition=" '$(Pkgruntime_win10-x86_Microsoft_Net_UWPCoreRuntimeSdk)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-x86.microsoft.net.uwpcoreruntimesdk\2.2.12</Pkgruntime_win10-x86_Microsoft_Net_UWPCoreRuntimeSdk>
+    <Pkgruntime_win10-x86_Microsoft_Net_Native_SharedLibrary Condition=" '$(Pkgruntime_win10-x86_Microsoft_Net_Native_SharedLibrary)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-x86.microsoft.net.native.sharedlibrary\2.2.8-rel-29722-00</Pkgruntime_win10-x86_Microsoft_Net_Native_SharedLibrary>
+    <Pkgruntime_win10-x86_Microsoft_Net_Native_Compiler Condition=" '$(Pkgruntime_win10-x86_Microsoft_Net_Native_Compiler)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-x86.microsoft.net.native.compiler\2.2.10-rel-29722-00</Pkgruntime_win10-x86_Microsoft_Net_Native_Compiler>
+    <Pkgruntime_win10-x64_Microsoft_Net_UWPCoreRuntimeSdk Condition=" '$(Pkgruntime_win10-x64_Microsoft_Net_UWPCoreRuntimeSdk)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-x64.microsoft.net.uwpcoreruntimesdk\2.2.12</Pkgruntime_win10-x64_Microsoft_Net_UWPCoreRuntimeSdk>
+    <Pkgruntime_win10-x64_Microsoft_Net_Native_SharedLibrary Condition=" '$(Pkgruntime_win10-x64_Microsoft_Net_Native_SharedLibrary)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-x64.microsoft.net.native.sharedlibrary\2.2.8-rel-29722-00</Pkgruntime_win10-x64_Microsoft_Net_Native_SharedLibrary>
+    <Pkgruntime_win10-x64_Microsoft_Net_Native_Compiler Condition=" '$(Pkgruntime_win10-x64_Microsoft_Net_Native_Compiler)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-x64.microsoft.net.native.compiler\2.2.10-rel-29722-00</Pkgruntime_win10-x64_Microsoft_Net_Native_Compiler>
+    <Pkgruntime_win10-arm64_Microsoft_Net_Native_SharedLibrary Condition=" '$(Pkgruntime_win10-arm64_Microsoft_Net_Native_SharedLibrary)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-arm64.microsoft.net.native.sharedlibrary\2.2.8-rel-29722-00</Pkgruntime_win10-arm64_Microsoft_Net_Native_SharedLibrary>
+    <Pkgruntime_win10-arm64_Microsoft_Net_Native_Compiler Condition=" '$(Pkgruntime_win10-arm64_Microsoft_Net_Native_Compiler)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-arm64.microsoft.net.native.compiler\2.2.10-rel-29722-00</Pkgruntime_win10-arm64_Microsoft_Net_Native_Compiler>
+    <Pkgruntime_win10-arm_Microsoft_Net_UWPCoreRuntimeSdk Condition=" '$(Pkgruntime_win10-arm_Microsoft_Net_UWPCoreRuntimeSdk)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-arm.microsoft.net.uwpcoreruntimesdk\2.2.12</Pkgruntime_win10-arm_Microsoft_Net_UWPCoreRuntimeSdk>
+    <Pkgruntime_win10-arm_Microsoft_Net_Native_SharedLibrary Condition=" '$(Pkgruntime_win10-arm_Microsoft_Net_Native_SharedLibrary)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-arm.microsoft.net.native.sharedlibrary\2.2.8-rel-29722-00</Pkgruntime_win10-arm_Microsoft_Net_Native_SharedLibrary>
+    <Pkgruntime_win10-arm_Microsoft_Net_Native_Compiler Condition=" '$(Pkgruntime_win10-arm_Microsoft_Net_Native_Compiler)' == '' ">C:\Users\v-hbonthada\.nuget\packages\runtime.win10-arm.microsoft.net.native.compiler\2.2.10-rel-29722-00</Pkgruntime_win10-arm_Microsoft_Net_Native_Compiler>
+    <PkgMicrosoft_Web_WebView2 Condition=" '$(PkgMicrosoft_Web_WebView2)' == '' ">C:\Users\v-hbonthada\.nuget\packages\microsoft.web.webview2\1.0.1264.42</PkgMicrosoft_Web_WebView2>
+    <PkgMicrosoft_UI_Xaml Condition=" '$(PkgMicrosoft_UI_Xaml)' == '' ">C:\Users\v-hbonthada\.nuget\packages\microsoft.ui.xaml\2.8.0</PkgMicrosoft_UI_Xaml>
+    <PkgMicrosoft_JavaScript_Hermes Condition=" '$(PkgMicrosoft_JavaScript_Hermes)' == '' ">C:\Users\v-hbonthada\.nuget\packages\microsoft.javascript.hermes\0.1.27</PkgMicrosoft_JavaScript_Hermes>
+    <PkgMicrosoft_Net_UWPCoreRuntimeSdk Condition=" '$(PkgMicrosoft_Net_UWPCoreRuntimeSdk)' == '' ">C:\Users\v-hbonthada\.nuget\packages\microsoft.net.uwpcoreruntimesdk\2.2.12</PkgMicrosoft_Net_UWPCoreRuntimeSdk>
+    <PkgMicrosoft_Net_Native_Compiler Condition=" '$(PkgMicrosoft_Net_Native_Compiler)' == '' ">C:\Users\v-hbonthada\.nuget\packages\microsoft.net.native.compiler\2.2.10-rel-29722-00</PkgMicrosoft_Net_Native_Compiler>
+  </PropertyGroup>
+</Project>

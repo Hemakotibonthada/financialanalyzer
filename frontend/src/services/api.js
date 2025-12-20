@@ -116,10 +116,25 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - Handle errors
+// Track if we're currently refreshing to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+const subscribeTokenRefresh = (cb) => {
+  refreshSubscribers.push(cb);
+};
+
+const onRefreshed = (token) => {
+  refreshSubscribers.map(cb => cb(token));
+  refreshSubscribers = [];
+};
+
+// Response interceptor - Handle errors with automatic token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
     // Handle network errors
     if (error.code === 'ECONNABORTED') {
       console.error('Request timeout');
@@ -132,15 +147,76 @@ api.interceptors.response.use(
       error.message = 'Unable to connect to server. Please try again.';
     }
 
-    // Handle specific HTTP status codes
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login (remove from both storages)
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('token_expiry');
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-      window.location.href = '/login';
+    // Handle 401 Unauthorized - Try to refresh token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Already refreshing, queue this request
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        // Call refresh token endpoint
+        const response = await axios.post(`${API_URL}/auth/refresh-token`, {
+          refreshToken
+        });
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        
+        // Update tokens in storage
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        
+        // Calculate expiry (24 hours from now)
+        const expiry = new Date();
+        expiry.setHours(expiry.getHours() + 24);
+        localStorage.setItem('token_expiry', expiry.toISOString());
+
+        console.log('✅ Token refreshed successfully');
+        
+        // Update the authorization header
+        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        
+        // Notify all queued requests
+        onRefreshed(accessToken);
+        isRefreshing = false;
+        
+        // Retry the original request
+        return api(originalRequest);
+      } catch (refreshError) {
+        console.error('❌ Token refresh failed:', refreshError);
+        isRefreshing = false;
+        refreshSubscribers = [];
+        
+        // Clear all auth data and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('token_expiry');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        
+        // Only redirect if not already on login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        
+        return Promise.reject(refreshError);
+      }
     } else if (error.response?.status === 503) {
       error.message = 'Service temporarily unavailable. Please try again later.';
     } else if (error.response?.status >= 500) {

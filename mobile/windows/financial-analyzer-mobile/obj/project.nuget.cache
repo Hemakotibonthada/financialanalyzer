@@ -1,0 +1,146 @@
+{
+  "version": 2,
+  "dgSpecHash": "+UrVlaFhTV0=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\boost\\1.83.0\\boost.1.83.0.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.javascript.hermes\\0.1.27\\microsoft.javascript.hermes.0.1.27.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.net.native.compiler\\2.2.10-rel-29722-00\\microsoft.net.native.compiler.2.2.10-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.net.uwpcoreruntimesdk\\2.2.12\\microsoft.net.uwpcoreruntimesdk.2.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.netcore.platforms\\2.1.0\\microsoft.netcore.platforms.2.1.0.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.netcore.universalwindowsplatform\\6.2.12\\microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.ui.xaml\\2.8.0\\microsoft.ui.xaml.2.8.0.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.web.webview2\\1.0.1264.42\\microsoft.web.webview2.1.0.1264.42.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\microsoft.windows.cppwinrt\\2.0.211028.7\\microsoft.windows.cppwinrt.2.0.211028.7.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm-aot.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-arm-aot.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm.microsoft.net.native.compiler\\2.2.10-rel-29722-00\\runtime.win10-arm.microsoft.net.native.compiler.2.2.10-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm.microsoft.net.native.sharedlibrary\\2.2.8-rel-29722-00\\runtime.win10-arm.microsoft.net.native.sharedlibrary.2.2.8-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm.microsoft.net.uwpcoreruntimesdk\\2.2.12\\runtime.win10-arm.microsoft.net.uwpcoreruntimesdk.2.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-arm.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm64-aot.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-arm64-aot.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm64.microsoft.net.native.compiler\\2.2.10-rel-29722-00\\runtime.win10-arm64.microsoft.net.native.compiler.2.2.10-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-arm64.microsoft.net.native.sharedlibrary\\2.2.8-rel-29722-00\\runtime.win10-arm64.microsoft.net.native.sharedlibrary.2.2.8-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x64-aot.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-x64-aot.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x64.microsoft.net.native.compiler\\2.2.10-rel-29722-00\\runtime.win10-x64.microsoft.net.native.compiler.2.2.10-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x64.microsoft.net.native.sharedlibrary\\2.2.8-rel-29722-00\\runtime.win10-x64.microsoft.net.native.sharedlibrary.2.2.8-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x64.microsoft.net.uwpcoreruntimesdk\\2.2.12\\runtime.win10-x64.microsoft.net.uwpcoreruntimesdk.2.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x64.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-x64.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x86-aot.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-x86-aot.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x86.microsoft.net.native.compiler\\2.2.10-rel-29722-00\\runtime.win10-x86.microsoft.net.native.compiler.2.2.10-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x86.microsoft.net.native.sharedlibrary\\2.2.8-rel-29722-00\\runtime.win10-x86.microsoft.net.native.sharedlibrary.2.2.8-rel-29722-00.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x86.microsoft.net.uwpcoreruntimesdk\\2.2.12\\runtime.win10-x86.microsoft.net.uwpcoreruntimesdk.2.2.12.nupkg.sha512",
+    "C:\\Users\\v-hbonthada\\.nuget\\packages\\runtime.win10-x86.microsoft.netcore.universalwindowsplatform\\6.2.12\\runtime.win10-x86.microsoft.netcore.universalwindowsplatform.6.2.12.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'Microsoft.NETCore.Platforms 2.1.0' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "Microsoft.NETCore.Platforms",
+      "targetGraphs": [
+        "native,Version=v0.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'NETStandard.Library 2.0.3' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "NETStandard.Library",
+      "targetGraphs": [
+        "native,Version=v0.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-arm.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-arm.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-arm"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-arm-aot.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-arm-aot.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-arm-aot"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-arm64-aot.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-arm64-aot.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-arm64-aot"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-x64.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-x64.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-x64"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-x64-aot.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-x64-aot.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-x64-aot"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-x86.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-x86.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-x86"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'runtime.win10-x86-aot.Microsoft.NETCore.UniversalWindowsPlatform 6.2.12' was restored using 'UAP,Version=v10.0.17763, .NETFramework,Version=v4.6.1' instead of the project target framework 'native,Version=v0.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\v-hbonthada\\WorkSpace\\Financial_Analyzer\\mobile\\windows\\financial-analyzer-mobile\\financial-analyzer-mobile.vcxproj",
+      "libraryId": "runtime.win10-x86-aot.Microsoft.NETCore.UniversalWindowsPlatform",
+      "targetGraphs": [
+        "native,Version=v0.0/win10-x86-aot"
+      ]
+    }
+  ]
+}

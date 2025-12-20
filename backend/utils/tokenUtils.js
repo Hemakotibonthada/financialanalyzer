@@ -3,11 +3,11 @@ const crypto = require('crypto');
 const RefreshToken = require('../models/RefreshToken');
 
 /**
- * Generate access token (short-lived: 15 minutes)
+ * Generate access token (long-lived for active sessions: 24 hours)
  */
 const generateAccessToken = (userId) => {
-  // Use configured expiry if provided, otherwise fall back to 15 minutes
-  const expiresIn = process.env.JWT_EXPIRES_IN || '15m';
+  // Use configured expiry if provided, otherwise fall back to 24 hours for active sessions
+  const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
 
   // If expiresIn is explicitly set to 'none' or empty, generate a token without exp claim
   if (!expiresIn || expiresIn.toLowerCase() === 'none') {
