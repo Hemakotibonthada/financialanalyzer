@@ -172,6 +172,7 @@ const EMITracker = () => {
   const [debtAnalysis, setDebtAnalysis] = useState(null);
   const [earlyPaymentAmount, setEarlyPaymentAmount] = useState('');
   const [selectedEMIForEarlyPayment, setSelectedEMIForEarlyPayment] = useState(null);
+  const [earlyPaymentDialogOpen, setEarlyPaymentDialogOpen] = useState(false);
   const [emergencyFundGoal, setEmergencyFundGoal] = useState(180000); // 6 months of 30k
   const [currentEmergencyFund, setCurrentEmergencyFund] = useState(0);
   const [emergencyFundSaving, setEmergencyFundSaving] = useState(false);
@@ -2083,6 +2084,133 @@ const EMITracker = () => {
               OK
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Early Payment Dialog */}
+      <Dialog
+        open={earlyPaymentDialogOpen}
+        onClose={() => {
+          setEarlyPaymentDialogOpen(false);
+          setSelectedEMIForEarlyPayment(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          fontWeight: 'bold'
+        }}>
+          💰 Early Payment Calculator
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedEMIForEarlyPayment && (
+            <>
+              <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">Selected EMI</Typography>
+                <Typography variant="h6" fontWeight="bold">{selectedEMIForEarlyPayment.merchantName}</Typography>
+                <Typography variant="body2" color="text.secondary">{selectedEMIForEarlyPayment.cardProvider}</Typography>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Remaining</Typography>
+                    <Typography variant="body1" fontWeight="bold">{formatCurrency(selectedEMIForEarlyPayment.remainingAmount)}</Typography>
+                  </Box>
+                  <Box textAlign="right">
+                    <Typography variant="caption" color="text.secondary">Interest Rate</Typography>
+                    <Typography variant="body1" fontWeight="bold" color="error">{selectedEMIForEarlyPayment.interestRate}%</Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              <TextField
+                label="Payment Amount"
+                type="number"
+                fullWidth
+                value={earlyPaymentAmount}
+                onChange={(e) => setEarlyPaymentAmount(e.target.value)}
+                InputProps={{
+                  startAdornment: <Typography sx={{ mr: 1 }}>₹</Typography>,
+                }}
+                helperText="Enter the amount you want to pay"
+                sx={{ mb: 3 }}
+              />
+
+              {earlyPaymentAmount && parseFloat(earlyPaymentAmount) > 0 && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Impact Summary</Typography>
+                  <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                    <li>
+                      <Typography variant="body2">
+                        Months Reduced: ~{Math.floor(parseFloat(earlyPaymentAmount) / selectedEMIForEarlyPayment.emiAmount)}
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2">
+                        Interest Saved: {formatCurrency(Math.min(
+                          debtAnalysis.calculateEarlyRepaymentSavings(selectedEMIForEarlyPayment), 
+                          parseFloat(earlyPaymentAmount) * 0.15
+                        ))}
+                      </Typography>
+                    </li>
+                    <li>
+                      <Typography variant="body2">
+                        New Completion: {Math.max(0, selectedEMIForEarlyPayment.remainingInstallments - Math.floor(parseFloat(earlyPaymentAmount) / selectedEMIForEarlyPayment.emiAmount))} months
+                      </Typography>
+                    </li>
+                  </Box>
+                </Alert>
+              )}
+
+              <Alert severity="info">
+                <Typography variant="body2">
+                  💡 <strong>Next Step:</strong> Contact {selectedEMIForEarlyPayment.cardProvider} to process this early payment. This calculator shows projected savings only.
+                </Typography>
+              </Alert>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={() => {
+              setEarlyPaymentDialogOpen(false);
+              setSelectedEMIForEarlyPayment(null);
+            }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!earlyPaymentAmount || parseFloat(earlyPaymentAmount) <= 0}
+            sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+            onClick={() => {
+              if (selectedEMIForEarlyPayment && earlyPaymentAmount) {
+                const amount = parseFloat(earlyPaymentAmount);
+                const savings = debtAnalysis.calculateEarlyRepaymentSavings(selectedEMIForEarlyPayment);
+                const monthsReduced = Math.floor(amount / selectedEMIForEarlyPayment.emiAmount);
+                
+                setConfirmationDialog({
+                  open: true,
+                  title: '💰 Payment Impact',
+                  message: 
+                    `Payment: ${formatCurrency(amount)}\n` +
+                    `EMI: ${selectedEMIForEarlyPayment.merchantName}\n\n` +
+                    `✅ Months Reduced: ${monthsReduced}\n` +
+                    `✅ Interest Saved: ${formatCurrency(Math.min(savings, amount * 0.15))}\n` +
+                    `✅ New Completion: ${selectedEMIForEarlyPayment.remainingInstallments - monthsReduced} months\n\n` +
+                    `Contact ${selectedEMIForEarlyPayment.cardProvider} to process this payment.`,
+                  isSuccess: true,
+                  confirmAction: () => {
+                    setConfirmationDialog(prev => ({ ...prev, open: false }));
+                  }
+                });
+                setEarlyPaymentDialogOpen(false);
+              }
+            }}
+          >
+            View Details
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -4960,6 +5088,7 @@ const EMITracker = () => {
                                 onClick={() => {
                                   setSelectedEMIForEarlyPayment(emi);
                                   setEarlyPaymentAmount(emi.remainingAmount.toString());
+                                  setEarlyPaymentDialogOpen(true);
                                 }}
                               >
                                 Pay Off
