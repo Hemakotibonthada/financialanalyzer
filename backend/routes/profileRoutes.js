@@ -175,6 +175,126 @@ router.put('/preferences', authenticate, async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/profile/debt-freedom/emergency-fund
+ * @desc    Update emergency fund status (stored in profile.preferences.debtFreedom.emergencyFund)
+ * @access  Private
+ */
+router.put('/debt-freedom/emergency-fund', authenticate, async (req, res) => {
+  try {
+    const { currentAmount, goalAmount } = req.body || {};
+
+    if (currentAmount !== undefined && (typeof currentAmount !== 'number' || Number.isNaN(currentAmount) || currentAmount < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid currentAmount'
+      });
+    }
+
+    if (goalAmount !== undefined && (typeof goalAmount !== 'number' || Number.isNaN(goalAmount) || goalAmount < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid goalAmount'
+      });
+    }
+
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found'
+      });
+    }
+
+    if (!profile.preferences) profile.preferences = {};
+    if (!profile.preferences.debtFreedom) profile.preferences.debtFreedom = {};
+    if (!profile.preferences.debtFreedom.emergencyFund) profile.preferences.debtFreedom.emergencyFund = {};
+
+    if (currentAmount !== undefined) profile.preferences.debtFreedom.emergencyFund.currentAmount = currentAmount;
+    if (goalAmount !== undefined) profile.preferences.debtFreedom.emergencyFund.goalAmount = goalAmount;
+    profile.preferences.debtFreedom.emergencyFund.updatedAt = new Date();
+
+    await profile.save();
+
+    return res.json({
+      success: true,
+      message: 'Emergency fund updated successfully',
+      data: {
+        emergencyFund: profile.preferences.debtFreedom.emergencyFund
+      }
+    });
+  } catch (error) {
+    logger.error('Update emergency fund error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error updating emergency fund'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/profile/debt-freedom/emergency-fund/contribution
+ * @desc    Add a monthly contribution to emergency fund and update currentAmount
+ * @access  Private
+ */
+router.post('/debt-freedom/emergency-fund/contribution', authenticate, async (req, res) => {
+  try {
+    const { amount, note } = req.body || {};
+
+    if (amount === undefined || typeof amount !== 'number' || Number.isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Contribution amount must be a positive number'
+      });
+    }
+
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found'
+      });
+    }
+
+    if (!profile.preferences) profile.preferences = {};
+    if (!profile.preferences.debtFreedom) profile.preferences.debtFreedom = {};
+    if (!profile.preferences.debtFreedom.emergencyFund) profile.preferences.debtFreedom.emergencyFund = {};
+    if (!profile.preferences.debtFreedom.emergencyFund.contributions) profile.preferences.debtFreedom.emergencyFund.contributions = [];
+
+    profile.preferences.debtFreedom.emergencyFund.currentAmount =
+      (profile.preferences.debtFreedom.emergencyFund.currentAmount || 0) + amount;
+
+    profile.preferences.debtFreedom.emergencyFund.contributions.push({
+      amount,
+      note: note || undefined,
+      date: new Date()
+    });
+
+    if (profile.preferences.debtFreedom.emergencyFund.contributions.length > 120) {
+      profile.preferences.debtFreedom.emergencyFund.contributions.shift();
+    }
+
+    profile.preferences.debtFreedom.emergencyFund.updatedAt = new Date();
+    await profile.save();
+
+    return res.json({
+      success: true,
+      message: 'Contribution added and emergency fund updated',
+      data: {
+        emergencyFund: profile.preferences.debtFreedom.emergencyFund
+      }
+    });
+  } catch (error) {
+    logger.error('Add emergency fund contribution error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error adding contribution'
+    });
+  }
+});
+
+/**
  * @route   PUT /api/profile/budget
  * @desc    Set budget limits for categories
  * @access  Private

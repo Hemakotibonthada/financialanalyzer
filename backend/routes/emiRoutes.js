@@ -9,16 +9,66 @@ const { authenticate } = require('../middleware/auth');
 const EMI = require('../models/EMI');
 const User = require('../models/User');
 const FinancialProfile = require('../models/FinancialProfile');
+const BillReminder = require('../models/BillReminder');
 const PersonalLoan = require('../models/PersonalLoan');
+const Transaction = require('../models/Transaction');
+const { CacheHelpers } = require('../middleware/cacheMiddleware');
 const logger = require('../utils/logger');
+const NotificationService = require('../services/notificationService');
 const CreditCardStatementService = require('../services/creditCardStatementService');
 const EMIExtractionService = require('../services/emiExtractionService');
 const EMIAnalyticsService = require('../services/emiAnalyticsService');
-const { getUserDocumentPassword } = require('../utils/documentPasswordGenerator');
 
 // Initialize services
 const emiExtractionService = new EMIExtractionService();
 const emiAnalyticsService = new EMIAnalyticsService();
+
+async function upsertEmiBillReminder({ userId, emi, dueDate, reminderDays, frequency = 'monthly' }) {
+  const normalizedDueDate = dueDate ? new Date(dueDate) : null;
+  if (!normalizedDueDate || Number.isNaN(normalizedDueDate.getTime())) {
+    return { status: 'skipped', reason: 'invalid_due_date' };
+  }
+
+  const title = `EMI Due: ${emi.merchantName}`;
+  const description = `Auto reminder for EMI ${emi._id}`;
+
+  const existing = await BillReminder.findOne({
+    userId,
+    title,
+    dueDate: normalizedDueDate,
+    status: { $in: ['pending', 'overdue'] }
+  });
+
+  if (existing) {
+    let changed = false;
+    if (typeof reminderDays === 'number' && existing.reminderDays !== reminderDays) {
+      existing.reminderDays = reminderDays;
+      changed = true;
+    }
+    if (frequency && existing.frequency !== frequency) {
+      existing.frequency = frequency;
+      changed = true;
+    }
+    if (changed) await existing.save();
+    return { status: 'updated', billReminderId: existing._id };
+  }
+
+  const bill = new BillReminder({
+    userId,
+    title,
+    description,
+    amount: emi.emiAmount || 0,
+    category: 'loan',
+    dueDate: normalizedDueDate,
+    frequency,
+    reminderDays: typeof reminderDays === 'number' ? reminderDays : 7,
+    autoCreateExpense: false,
+    notes: `Linked EMI: ${emi._id}`
+  });
+
+  await bill.save();
+  return { status: 'created', billReminderId: bill._id };
+}
 
 /**
  * @route GET /api/emi/overview
@@ -40,6 +90,278 @@ router.get('/overview', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch EMI overview',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Debt Freedom Automation Endpoints
+ * Used by the EMI Tracker "Debt Freedom Plan" tab.
+ */
+
+/**
+ * @route POST /api/emi/one-click-prepay
+ * @desc Create a lightweight prepayment intent + notification
+ * @access Private
+ */
+router.post('/one-click-prepay', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { emiId, amount } = req.body || {};
+
+    if (!emiId) {
+      return res.status(400).json({
+        success: false,
+        message: 'emiId is required'
+      });
+    }
+
+    const emi = await EMI.findOne({ _id: emiId, userId });
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+
+    if (emi.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only active EMIs can be prepaid'
+      });
+    }
+
+    const remainingAmount = emi.emiAmount * emi.remainingInstallments;
+    const normalizedAmount = Math.max(0, Number(amount || 0));
+    if (!normalizedAmount || normalizedAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'amount must be a positive number'
+      });
+    }
+
+    const cappedAmount = Math.min(normalizedAmount, remainingAmount);
+
+    await NotificationService.createNotification(userId, {
+      type: 'success',
+      title: 'Prepayment planned',
+      message: `Prepayment intent recorded for ${emi.merchantName}: ₹${Math.round(cappedAmount).toLocaleString()}.`,
+      priority: 'medium',
+      category: 'finance',
+      relatedResource: {
+        resourceType: 'emi',
+        resourceId: emi._id
+      },
+      data: {
+        emiId: emi._id,
+        merchantName: emi.merchantName,
+        amount: cappedAmount,
+        remainingAmount
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Prepayment intent recorded',
+      data: { emiId: emi._id, amount: cappedAmount }
+    });
+  } catch (error) {
+    logger.error('One-click prepay error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to record prepayment intent',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route POST /api/emi/auto-sweep
+ * @desc Store auto-sweep preference for debt freedom automation
+ * @access Private
+ */
+router.post('/auto-sweep', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { sweepPercentage = 20 } = req.body || {};
+    const pct = Number(sweepPercentage);
+
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'sweepPercentage must be between 1 and 100'
+      });
+    }
+
+    const profile = await FinancialProfile.findOne({ userId });
+    if (!profile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Financial profile not found. Please complete your profile first.'
+      });
+    }
+
+    profile.preferences = profile.preferences || {};
+    profile.preferences.debtFreedom = profile.preferences.debtFreedom || {};
+    profile.preferences.debtFreedom.autoSweep = {
+      enabled: true,
+      sweepPercentage: pct,
+      updatedAt: new Date()
+    };
+    await profile.save();
+
+    await NotificationService.createNotification(userId, {
+      type: 'info',
+      title: 'Auto-sweep enabled',
+      message: `Auto-sweep enabled: ${pct}% of surplus will be suggested towards your priority EMI.`,
+      priority: 'low',
+      category: 'finance',
+      data: { sweepPercentage: pct }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Auto-sweep preference saved',
+      data: { sweepPercentage: pct }
+    });
+  } catch (error) {
+    logger.error('Auto-sweep setup error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save auto-sweep preference',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route POST /api/emi/late-fee-shield
+ * @desc Enable "late-fee shield" by creating/updating EMI bill reminders
+ * @access Private
+ */
+router.post('/late-fee-shield', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { notifyDaysBefore = 5 } = req.body || {};
+    const days = Number(notifyDaysBefore);
+    if (!Number.isFinite(days) || days < 0 || days > 31) {
+      return res.status(400).json({
+        success: false,
+        message: 'notifyDaysBefore must be between 0 and 31'
+      });
+    }
+
+    const profile = await FinancialProfile.findOne({ userId });
+    if (profile) {
+      profile.preferences = profile.preferences || {};
+      profile.preferences.debtFreedom = profile.preferences.debtFreedom || {};
+      profile.preferences.debtFreedom.lateFeeShield = {
+        enabled: true,
+        notifyDaysBefore: days,
+        updatedAt: new Date()
+      };
+      await profile.save();
+    }
+
+    const activeEmis = await EMI.find({ userId, status: 'active' });
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const emi of activeEmis) {
+      if (!emi.nextDueDate) {
+        skipped += 1;
+        continue;
+      }
+      const frequency = emi.repaymentType === 'ON_REQUEST' ? 'once' : 'monthly';
+      const result = await upsertEmiBillReminder({
+        userId,
+        emi,
+        dueDate: emi.nextDueDate,
+        reminderDays: days,
+        frequency
+      });
+      if (result.status === 'created') created += 1;
+      else if (result.status === 'updated') updated += 1;
+      else skipped += 1;
+    }
+
+    await NotificationService.createNotification(userId, {
+      type: 'success',
+      title: 'Late-fee shield armed',
+      message: `EMI reminders updated. You will be notified ${days} day(s) before due dates.`,
+      priority: 'medium',
+      category: 'reminder',
+      data: { notifyDaysBefore: days, created, updated, skipped }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Late-fee shield enabled',
+      data: { notifyDaysBefore: days, created, updated, skipped }
+    });
+  } catch (error) {
+    logger.error('Late-fee shield error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to enable late-fee shield',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route POST /api/emi/reminders/pre-due
+ * @desc Create an EMI bill reminder (defaults to 7 days before due)
+ * @access Private
+ */
+router.post('/reminders/pre-due', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { emiId, daysUntilDue } = req.body || {};
+
+    if (!emiId) {
+      return res.status(400).json({
+        success: false,
+        message: 'emiId is required'
+      });
+    }
+
+    const emi = await EMI.findOne({ _id: emiId, userId });
+    if (!emi) {
+      return res.status(404).json({
+        success: false,
+        message: 'EMI not found'
+      });
+    }
+
+    let dueDate = emi.nextDueDate;
+    if (!dueDate) {
+      const deltaDays = Math.max(1, Number(daysUntilDue || 7));
+      dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + deltaDays);
+    }
+
+    const frequency = emi.repaymentType === 'ON_REQUEST' ? 'once' : 'monthly';
+    const result = await upsertEmiBillReminder({
+      userId,
+      emi,
+      dueDate,
+      reminderDays: 7,
+      frequency
+    });
+
+    return res.json({
+      success: true,
+      message: 'Pre-due reminder scheduled',
+      data: { status: result.status, billReminderId: result.billReminderId || null }
+    });
+  } catch (error) {
+    logger.error('Schedule pre-due reminder error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to schedule reminder',
       error: error.message
     });
   }
@@ -540,21 +862,8 @@ router.get('/monthly-trends/export', authenticate, async (req, res) => {
     
     // Export based on format
     if (format === 'excel') {
-      // Generate document password
-      const password = await getUserDocumentPassword(userId, User, FinancialProfile);
-      
       // Create Excel workbook
       const workbook = new ExcelJS.Workbook();
-      
-      // Add workbook protection
-      workbook.model = {
-        ...workbook.model,
-        workbookProtection: {
-          lockStructure: true,
-          password: password
-        }
-      };
-      
       const worksheet = workbook.addWorksheet('Monthly Trends');
       
       // Add title
@@ -765,7 +1074,6 @@ router.get('/monthly-trends/export', authenticate, async (req, res) => {
       // Set response headers
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=monthly-trends-${Date.now()}.xlsx`);
-      res.setHeader('X-Document-Password', password); // Send password in header for client info
       
       // Write to response
       await workbook.xlsx.write(res);
@@ -1523,7 +1831,47 @@ router.post('/:id/mark-paid', authenticate, async (req, res) => {
     };
     
     await emi.addPayment(payment);
-    
+
+    // Create a corresponding transaction so this EMI payment shows up in monthly spending
+    try {
+      const paidDateObj = payment.paidDate instanceof Date ? payment.paidDate : new Date(payment.paidDate);
+      const startOfDay = new Date(paidDateObj);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(paidDateObj);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existing = await Transaction.findOne({
+        userId: req.user._id,
+        amount: payment.amount,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        category: { $regex: /emi/i }
+      });
+
+      if (!existing) {
+        await Transaction.create({
+          userId: req.user._id,
+          date: payment.paidDate,
+          description: `EMI payment - ${emi.merchantName}`,
+          amount: Math.abs(payment.amount),
+          currency: 'INR',
+          type: 'debit',
+          category: 'EMI',
+          merchantName: emi.merchantName,
+          source: 'manual',
+          referenceNumber: emi._id.toString()
+        });
+
+        // Invalidate dashboard / analytics caches for this user so UI reflects new transaction
+        try {
+          await CacheHelpers.invalidateUserCache(req.user._id);
+        } catch (ciErr) {
+          logger.warn('Failed to invalidate cache after EMI transaction creation:', ciErr);
+        }
+      }
+    } catch (txErr) {
+      logger.warn('Failed to create transaction for EMI payment:', txErr);
+    }
+
     res.json({
       success: true,
       message: 'Payment recorded successfully',
@@ -1897,7 +2245,45 @@ router.post('/:id/mark-paid', authenticate, async (req, res) => {
     }
     
     await emi.save();
-    
+    // Create a corresponding transaction so this EMI payment shows up in monthly spending
+    try {
+      const paidDateObj = payment.paidDate instanceof Date ? payment.paidDate : new Date(payment.paidDate);
+      const startOfDay = new Date(paidDateObj);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(paidDateObj);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existing = await Transaction.findOne({
+        userId: req.user._id,
+        amount: payment.amount,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        category: { $regex: /emi/i }
+      });
+
+      if (!existing) {
+        await Transaction.create({
+          userId: req.user._id,
+          date: payment.paidDate,
+          description: `EMI payment - ${emi.merchantName}`,
+          amount: Math.abs(payment.amount),
+          currency: 'INR',
+          type: 'debit',
+          category: 'EMI',
+          merchantName: emi.merchantName,
+          source: 'manual',
+          referenceNumber: emi._id.toString()
+        });
+
+        try {
+          await CacheHelpers.invalidateUserCache(req.user._id);
+        } catch (ciErr) {
+          logger.warn('Failed to invalidate cache after EMI transaction creation:', ciErr);
+        }
+      }
+    } catch (txErr) {
+      logger.warn('Failed to create transaction for EMI payment:', txErr);
+    }
+
     res.json({
       success: true,
       message: 'Payment marked as paid',
