@@ -133,7 +133,34 @@ const financialProfileSchema = new mongoose.Schema({
         updatedAt: {
           type: Date
         }
-      }
+      },
+      balanceTransferRequests: [
+        {
+          emiId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'EMI'
+          },
+          emiName: String,
+          provider: String,
+          offerRate: Number,
+          processingFee: Number,
+          currentRate: Number,
+          remainingAmount: Number,
+          remainingInstallments: Number,
+          monthlySavings: Number,
+          totalSavings: Number,
+          requestDate: {
+            type: Date,
+            default: Date.now
+          },
+          status: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected', 'completed'],
+            default: 'pending'
+          },
+          notes: String
+        }
+      ]
     }
   },
   gmailSettings: {
