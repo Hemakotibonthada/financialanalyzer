@@ -4,7 +4,8 @@ import {
   Bell, Plus, Check, X, Clock, AlertCircle, Calendar, 
   DollarSign, Filter, Search, Edit, Trash2, Eye, 
   CheckCircle, XCircle, AlertTriangle, Zap, TrendingUp,
-  CreditCard, Smartphone, Building, Droplet, Lightbulb, Wifi, Phone, Shield, RefreshCw
+  CreditCard, Smartphone, Building, Droplet, Lightbulb, Wifi, Phone, Shield, RefreshCw,
+  Download, Upload, Pause, Play, CheckSquare, Square, MinusSquare
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import api from '../services/api';
@@ -23,6 +24,11 @@ const BillReminders = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [billToDelete, setBillToDelete] = useState(null);
+  const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+  const [snoozeDays, setSnoozeDays] = useState(1);
+  const [selectedBills, setSelectedBills] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -169,6 +175,119 @@ const BillReminders = () => {
     }
   };
 
+  const handleSnoozeBill = async (billId, days) => {
+    try {
+      await api.post(`/bill-reminders/${billId}/snooze`, { days });
+      toast.success(`Bill snoozed for ${days} day(s)`);
+      setShowSnoozeModal(false);
+      setSnoozeDays(1);
+      setSelectedBill(null);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to snooze bill');
+    }
+  };
+
+  const handleRequestApproval = async (billId) => {
+    try {
+      await api.post(`/bill-reminders/${billId}/request-approval`);
+      toast.success('Approval request sent');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to request approval');
+    }
+  };
+
+  const handleBulkSelect = (billId) => {
+    setSelectedBills(prev => 
+      prev.includes(billId) 
+        ? prev.filter(id => id !== billId)
+        : [...prev, billId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedBills.length === filteredBills.length) {
+      setSelectedBills([]);
+    } else {
+      setSelectedBills(filteredBills.map(bill => bill._id));
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    try {
+      await Promise.all(selectedBills.map(billId => 
+        api.post(`/bill-reminders/${billId}/approve`)
+      ));
+      toast.success(`${selectedBills.length} bills approved`);
+      setSelectedBills([]);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to approve bills');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Delete ${selectedBills.length} bills?`)) return;
+    
+    try {
+      await Promise.all(selectedBills.map(billId => 
+        api.delete(`/bill-reminders/${billId}`)
+      ));
+      toast.success(`${selectedBills.length} bills deleted`);
+      setSelectedBills([]);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete bills');
+    }
+  };
+
+  const handleExport = async (format = 'csv', billsToExport = bills) => {
+    try {
+      const content = format === 'csv' 
+        ? generateCSV(billsToExport)
+        : JSON.stringify(billsToExport, null, 2);
+      
+      const blob = new Blob([content], { 
+        type: format === 'csv' ? 'text/csv' : 'application/json' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `bill-reminders-${new Date().toISOString().split('T')[0]}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Bills exported successfully as ${format.toUpperCase()}`);
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export bills');
+    }
+  };
+
+  const generateCSV = (data) => {
+    if (!data || data.length === 0) {
+      return 'No data to export';
+    }
+    
+    const headers = ['Title', 'Category', 'Amount', 'Due Date', 'Status', 'Frequency', 'Auto Pay'];
+    const rows = data.map(bill => [
+      bill.title,
+      bill.category,
+      bill.amount,
+      new Date(bill.dueDate).toLocaleDateString(),
+      bill.status,
+      bill.frequency,
+      bill.autoPayEnabled ? 'Yes' : 'No'
+    ]);
+    
+    return [headers, ...rows].map(row => row.join(',')).join('\n');
+  };
+
   const filteredBills = bills.filter(bill =>
     bill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     bill.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -176,13 +295,22 @@ const BillReminders = () => {
 
   // Header actions for MainLayout
   const headerActions = (
-    <button
-      onClick={() => setShowAddModal(true)}
-      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-    >
-      <Plus className="w-5 h-5" />
-      Add Bill
-    </button>
+    <div className="flex gap-3">
+      <button
+        onClick={() => setShowExportModal(true)}
+        className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:shadow-md transition-all duration-200 flex items-center gap-2"
+      >
+        <Download className="w-5 h-5" />
+        Export
+      </button>
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+      >
+        <Plus className="w-5 h-5" />
+        Add Bill
+      </button>
+    </div>
   );
 
   if (loading) {
@@ -249,33 +377,70 @@ const BillReminders = () => {
 
         {/* Filters and Search */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-2 flex-wrap">
-              {['all', 'pending', 'awaiting_approval', 'approved', 'paid', 'overdue'].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    filter === f
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {f.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                </button>
-              ))}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                {['all', 'pending', 'awaiting_approval', 'approved', 'paid', 'overdue'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      filter === f
+                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {f.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search bills..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
             </div>
-            
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search bills..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
+
+            {/* Bulk Actions Bar */}
+            {selectedBills.length > 0 && (
+              <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                <div className="flex items-center gap-3">
+                  <CheckSquare className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium text-gray-700">
+                    {selectedBills.length} bill{selectedBills.length > 1 ? 's' : ''} selected
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleBulkApprove}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Approve All
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete All
+                  </button>
+                  <button
+                    onClick={() => setSelectedBills([])}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           </div>
         </div>
 
@@ -317,6 +482,12 @@ const BillReminders = () => {
                 }}
                 onDelete={() => handleDeleteBill(bill._id)}
                 onMarkPaid={() => handleMarkPaid(bill._id, { amount: bill.amount })}
+                onSnooze={() => {
+                  setSelectedBill(bill);
+                  setShowSnoozeModal(true);
+                }}
+                onSelect={handleBulkSelect}
+                isSelected={selectedBills.includes(bill._id)}
                 getCategoryIcon={getCategoryIcon}
                 getCategoryColor={getCategoryColor}
                 getStatusBadge={getStatusBadge}
@@ -376,6 +547,25 @@ const BillReminders = () => {
             getStatusBadge={getStatusBadge}
           />
         )}
+
+        {showSnoozeModal && selectedBill && (
+          <SnoozeModal
+            bill={selectedBill}
+            onClose={() => {
+              setShowSnoozeModal(false);
+              setSelectedBill(null);
+            }}
+            onSnooze={handleSnoozeBill}
+          />
+        )}
+
+        {showExportModal && (
+          <ExportModal
+            bills={filteredBills}
+            onClose={() => setShowExportModal(false)}
+            onExport={handleExport}
+          />
+        )}
     </MainLayout>
   );
 };
@@ -399,9 +589,185 @@ const StatCard = ({ title, value, amount, icon, gradient, onClick, pulse }) => (
   </div>
 );
 
+// Snooze Modal Component
+const SnoozeModal = ({ bill, onClose, onSnooze }) => {
+  const [days, setDays] = useState(7);
+
+  const handleSnooze = () => {
+    onSnooze(bill._id, days);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+              <Pause className="w-8 h-8 text-orange-600" />
+            </div>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
+            Snooze Bill Reminder
+          </h2>
+          
+          <p className="text-gray-600 text-center mb-4">
+            {bill.title} - ₹{bill.amount.toLocaleString()}
+          </p>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Snooze for (days)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="30"
+              value={days}
+              onChange={(e) => setDays(parseInt(e.target.value) || 1)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              placeholder="Number of days"
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              New due date: {new Date(new Date(bill.dueDate).getTime() + days * 24 * 60 * 60 * 1000).toLocaleDateString()}
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSnooze}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg hover:shadow-md transition-all font-medium"
+            >
+              Snooze
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Export Modal Component
+const ExportModal = ({ bills, onClose, onExport }) => {
+  const [format, setFormat] = useState('csv');
+  const [dateRange, setDateRange] = useState('all');
+
+  const handleExport = () => {
+    let filteredBills = bills;
+    
+    // Apply date range filter
+    if (dateRange !== 'all') {
+      const now = new Date();
+      const startDate = new Date();
+      
+      switch (dateRange) {
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          break;
+      }
+      
+      filteredBills = bills.filter(bill => 
+        new Date(bill.dueDate) >= startDate && new Date(bill.dueDate) <= now
+      );
+    }
+    
+    onExport(format, filteredBills);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <Download className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
+            Export Bills
+          </h2>
+          
+          <p className="text-gray-600 text-center mb-6">
+            Export your bill reminders data
+          </p>
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Export Format
+              </label>
+              <select
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="csv">CSV (Excel)</option>
+                <option value="json">JSON (Data)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date Range
+              </label>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Bills</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last Month</option>
+                <option value="quarter">Last 3 Months</option>
+                <option value="year">Last Year</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-md transition-all font-medium flex items-center justify-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Bill Card Component
 const BillCard = ({ 
-  bill, onApprove, onView, onEdit, onDelete, onMarkPaid,
+  bill, onApprove, onView, onEdit, onDelete, onMarkPaid, onSnooze, onSelect, isSelected,
   getCategoryIcon, getCategoryColor, getStatusBadge, getDaysUntilDue 
 }) => {
   const daysUntilDue = getDaysUntilDue(bill.dueDate);
@@ -409,10 +775,24 @@ const BillCard = ({
   const isDueSoon = daysUntilDue >= 0 && daysUntilDue <= 3;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-200 hover:shadow-xl">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-200 hover:shadow-xl relative">
+      {/* Selection Checkbox */}
+      <div className="absolute top-4 left-4 z-10">
+        <button
+          onClick={() => onSelect(bill._id)}
+          className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-md hover:shadow-lg transition-all"
+        >
+          {isSelected ? (
+            <CheckSquare className="w-5 h-5 text-purple-600" />
+          ) : (
+            <Square className="w-5 h-5 text-gray-400" />
+          )}
+        </button>
+      </div>
+
       {/* Header with Category */}
       <div className={`p-4 bg-gradient-to-r ${getCategoryColor(bill.category)} text-white`}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pl-8">
           <div className="flex items-center gap-2">
             {getCategoryIcon(bill.category)}
             <span className="font-medium capitalize">{bill.category}</span>
@@ -473,12 +853,21 @@ const BillCard = ({
           )}
           
           {(bill.status === 'pending' || bill.status === 'approved' || bill.status === 'overdue') && (
-            <button
-              onClick={onMarkPaid}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-md transition-all text-sm font-medium"
-            >
-              Mark Paid
-            </button>
+            <>
+              <button
+                onClick={onMarkPaid}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-md transition-all text-sm font-medium"
+              >
+                Mark Paid
+              </button>
+              <button
+                onClick={onSnooze}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg hover:shadow-md transition-all flex items-center gap-1"
+                title="Snooze"
+              >
+                <Pause className="w-4 h-4" />
+              </button>
+            </>
           )}
           
           <button
