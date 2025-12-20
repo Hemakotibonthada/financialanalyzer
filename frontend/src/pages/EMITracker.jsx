@@ -5961,6 +5961,296 @@ const EMITracker = () => {
                     </Grid>
                   </Box>
 
+                  {/* Month-by-Month Payment Projection */}
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" mb={3}>
+                      📈 Month-by-Month Payment Projection
+                    </Typography>
+                    <Box sx={{ height: 350 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={(() => {
+                            const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                              emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                            const totalDebt = overview.activeEMIs.reduce((sum, emi) => sum + emi.remainingAmount, 0);
+                            const monthlyPrincipal = totalDebt / longestEMI;
+                            const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                            const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
+                            const acceleratedMonths = Math.max(1, longestEMI - reduction);
+                            
+                            const months = [];
+                            for (let i = 0; i <= Math.min(longestEMI, 24); i++) {
+                              const currentDebt = Math.max(0, totalDebt - (monthlyPrincipal * i));
+                              const acceleratedDebt = i <= acceleratedMonths ? Math.max(0, totalDebt - ((totalDebt / acceleratedMonths) * i)) : 0;
+                              months.push({
+                                month: i === 0 ? 'Now' : `${i}mo`,
+                                current: Math.round(currentDebt),
+                                withExtra: Math.round(acceleratedDebt)
+                              });
+                            }
+                            return months;
+                          })()}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" />
+                          <XAxis dataKey="month" stroke="white" />
+                          <YAxis stroke="white" />
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', color: 'white' }}
+                            formatter={(value) => formatCurrency(value)}
+                          />
+                          <Legend />
+                          <Line type="monotone" dataKey="current" name="Current Pace" stroke="#ff7043" strokeWidth={2} dot={{ fill: '#ff7043', r: 3 }} />
+                          <Line type="monotone" dataKey="withExtra" name="With Extra Payment" stroke="#4caf50" strokeWidth={2} dot={{ fill: '#4caf50', r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                    <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 2, opacity: 0.9 }}>
+                      *Projection shows remaining debt balance over the next {Math.min(24, overview.activeEMIs.reduce((max, emi) => 
+                        emi.remainingInstallments > max ? emi.remainingInstallments : max, 0))} months
+                    </Typography>
+                  </Box>
+
+                  {/* Payment Calendar Visualization */}
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" mb={3}>
+                      📅 12-Month Payment Calendar
+                    </Typography>
+                    <Grid container spacing={1}>
+                      {(() => {
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const currentMonth = new Date().getMonth();
+                        const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                          emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                        const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                        const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
+                        const acceleratedMonths = Math.max(1, longestEMI - reduction);
+                        
+                        return Array.from({ length: 12 }, (_, i) => {
+                          const monthIndex = (currentMonth + i) % 12;
+                          const isPaid = i >= longestEMI;
+                          const isPaidWithExtra = i >= acceleratedMonths;
+                          
+                          return (
+                            <Grid item xs={6} sm={4} md={2} key={i}>
+                              <Box sx={{ 
+                                p: 2, 
+                                borderRadius: 1, 
+                                textAlign: 'center',
+                                bgcolor: isPaidWithExtra 
+                                  ? 'rgba(76, 175, 80, 0.3)' 
+                                  : isPaid 
+                                  ? 'rgba(255, 255, 255, 0.05)' 
+                                  : 'rgba(255, 112, 67, 0.3)',
+                                border: isPaidWithExtra ? '2px solid #4caf50' : '1px solid rgba(255,255,255,0.2)'
+                              }}>
+                                <Typography variant="caption" fontWeight="bold" display="block">
+                                  {months[monthIndex]}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontSize: '1.5rem' }}>
+                                  {isPaidWithExtra ? '✅' : isPaid ? '⏳' : '💰'}
+                                </Typography>
+                                <Typography variant="caption" display="block" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                                  {isPaidWithExtra ? 'Free!' : 'Paying'}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          );
+                        });
+                      })()}
+                    </Grid>
+                    <Box sx={{ mt: 2, display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'rgba(255, 112, 67, 0.3)', border: '1px solid rgba(255,255,255,0.2)' }} />
+                        <Typography variant="caption">Current Plan</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'rgba(76, 175, 80, 0.3)', border: '2px solid #4caf50' }} />
+                        <Typography variant="caption">With Extra Payment</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Snowball vs Avalanche Comparison */}
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" mb={2}>
+                      ⚔️ Payoff Strategy: Snowball vs Avalanche
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9, mb: 3 }}>
+                      Choose your battle strategy to conquer debt faster
+                    </Typography>
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <Box sx={{ 
+                          p: 3, 
+                          borderRadius: 2, 
+                          bgcolor: 'rgba(255,255,255,0.1)', 
+                          border: '2px solid rgba(100,181,246,0.5)',
+                          height: '100%'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <Box sx={{ fontSize: '1.5rem' }}>⛄</Box>
+                            <Typography variant="h6" fontWeight="bold">Snowball Method</Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
+                            Pay off smallest debt first, then roll that payment to the next smallest
+                          </Typography>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', p: 2, borderRadius: 1, mb: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                              Your Payoff Order:
+                            </Typography>
+                            {overview.activeEMIs
+                              .sort((a, b) => a.remainingAmount - b.remainingAmount)
+                              .slice(0, 3)
+                              .map((emi, index) => (
+                                <Typography key={emi.id} variant="caption" display="block" sx={{ mb: 0.5 }}>
+                                  {index + 1}. {emi.merchantName} - {formatCurrency(emi.remainingAmount)}
+                                </Typography>
+                              ))}
+                          </Box>
+                          <Box sx={{ bgcolor: 'rgba(33, 150, 243, 0.2)', p: 2, borderRadius: 1 }}>
+                            <Typography variant="caption" display="block" fontWeight="bold">✅ Pros:</Typography>
+                            <Typography variant="caption" display="block">• Quick wins boost motivation</Typography>
+                            <Typography variant="caption" display="block">• Psychological satisfaction</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>⚠️ Cons:</Typography>
+                            <Typography variant="caption" display="block">• May pay more interest overall</Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Box sx={{ 
+                          p: 3, 
+                          borderRadius: 2, 
+                          bgcolor: 'rgba(255,255,255,0.1)', 
+                          border: '2px solid rgba(255,87,34,0.5)',
+                          height: '100%'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <Box sx={{ fontSize: '1.5rem' }}>🔥</Box>
+                            <Typography variant="h6" fontWeight="bold">Avalanche Method</Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
+                            Pay off highest interest rate first to minimize total interest paid
+                          </Typography>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', p: 2, borderRadius: 1, mb: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                              Your Payoff Order:
+                            </Typography>
+                            {overview.activeEMIs
+                              .sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))
+                              .slice(0, 3)
+                              .map((emi, index) => (
+                                <Typography key={emi.id} variant="caption" display="block" sx={{ mb: 0.5 }}>
+                                  {index + 1}. {emi.merchantName} - {emi.interestRate || 0}% APR
+                                </Typography>
+                              ))}
+                          </Box>
+                          <Box sx={{ bgcolor: 'rgba(255, 87, 34, 0.2)', p: 2, borderRadius: 1 }}>
+                            <Typography variant="caption" display="block" fontWeight="bold">✅ Pros:</Typography>
+                            <Typography variant="caption" display="block">• Saves most money on interest</Typography>
+                            <Typography variant="caption" display="block">• Mathematically optimal</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold' }}>⚠️ Cons:</Typography>
+                            <Typography variant="caption" display="block">• Takes longer to see first payoff</Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                    <Alert severity="info" sx={{ mt: 2, bgcolor: 'rgba(33,150,243,0.2)', color: 'white', '& .MuiAlert-icon': { color: 'white' } }}>
+                      <Typography variant="body2">
+                        <strong>💡 Our Recommendation:</strong> {(() => {
+                          const avgInterest = overview.activeEMIs.reduce((sum, emi) => sum + (emi.interestRate || 0), 0) / overview.activeEMIs.length;
+                          const hasHighInterest = overview.activeEMIs.some(emi => (emi.interestRate || 0) > 20);
+                          return hasHighInterest 
+                            ? 'Use Avalanche! You have high-interest debts that are costing you significantly.'
+                            : avgInterest > 15
+                            ? 'Avalanche method will save you more. Focus on interest rates.'
+                            : 'Snowball can work well for you. Quick wins will keep you motivated!';
+                        })()}
+                      </Typography>
+                    </Alert>
+                  </Box>
+
+                  {/* Milestone Tracker */}
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, mt: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" mb={3}>
+                      🎯 Debt Freedom Milestones
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {(() => {
+                        const longestEMI = overview.activeEMIs.reduce((max, emi) => 
+                          emi.remainingInstallments > max ? emi.remainingInstallments : max, 0);
+                        const avgEMI = debtAnalysis.monthlyBurden / overview.activeEMIs.length;
+                        const reduction = customExtraPayment > 0 ? Math.floor((customExtraPayment / avgEMI) * 0.7) : 0;
+                        const acceleratedMonths = Math.max(1, longestEMI - reduction);
+                        const quarterMark = Math.floor(acceleratedMonths * 0.25);
+                        const halfMark = Math.floor(acceleratedMonths * 0.5);
+                        const threeQuarterMark = Math.floor(acceleratedMonths * 0.75);
+                        
+                        const milestones = [
+                          { 
+                            label: '25% Complete', 
+                            months: quarterMark, 
+                            emoji: '🌱',
+                            achieved: false 
+                          },
+                          { 
+                            label: '50% Halfway There!', 
+                            months: halfMark, 
+                            emoji: '🚀',
+                            achieved: false 
+                          },
+                          { 
+                            label: '75% Almost Free', 
+                            months: threeQuarterMark, 
+                            emoji: '⭐',
+                            achieved: false 
+                          },
+                          { 
+                            label: '100% Debt Free!', 
+                            months: acceleratedMonths, 
+                            emoji: '🎉',
+                            achieved: false 
+                          }
+                        ];
+                        
+                        return milestones.map((milestone, index) => {
+                          const targetDate = new Date();
+                          targetDate.setMonth(targetDate.getMonth() + milestone.months);
+                          
+                          return (
+                            <Grid item xs={12} sm={6} md={3} key={index}>
+                              <Box sx={{ 
+                                p: 2, 
+                                borderRadius: 1, 
+                                bgcolor: 'rgba(255,255,255,0.1)',
+                                border: index === 3 ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.2)',
+                                textAlign: 'center'
+                              }}>
+                                <Typography variant="h3" sx={{ mb: 1 }}>{milestone.emoji}</Typography>
+                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                  {milestone.label}
+                                </Typography>
+                                <Chip 
+                                  label={targetDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                  size="small"
+                                  sx={{ 
+                                    bgcolor: 'rgba(255,255,255,0.2)', 
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    mt: 1
+                                  }}
+                                />
+                                <Typography variant="caption" display="block" sx={{ mt: 1, opacity: 0.8 }}>
+                                  In {milestone.months} months
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          );
+                        });
+                      })()}
+                    </Grid>
+                  </Box>
+
                   {/* Action Recommendation */}
                   <Alert 
                     severity="success" 
@@ -5972,7 +6262,7 @@ const EMITracker = () => {
                     }}
                   >
                     <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      💡 Recommendation
+                      💡 Your Personalized Action Plan
                     </Typography>
                     <Typography variant="body2" paragraph>
                       {customExtraPayment === 0 
@@ -5985,8 +6275,13 @@ const EMITracker = () => {
                       }
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
-                      🎯 Next Step: Set up auto-debit for the extra ₹{customExtraPayment.toLocaleString()} to your highest-interest EMI
+                      🎯 Next Steps:
                     </Typography>
+                    <Box component="ol" sx={{ pl: 2, mt: 1, mb: 0 }}>
+                      <Typography component="li" variant="body2">Set up auto-debit for ₹{customExtraPayment.toLocaleString()} extra to your highest-interest EMI</Typography>
+                      <Typography component="li" variant="body2">Choose between Snowball (motivation) or Avalanche (savings) strategy</Typography>
+                      <Typography component="li" variant="body2">Mark your milestones on calendar and celebrate each achievement</Typography>
+                    </Box>
                   </Alert>
                 </CardContent>
               </Card>
