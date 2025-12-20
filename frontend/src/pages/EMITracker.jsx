@@ -175,6 +175,7 @@ const EMITracker = () => {
   const [emergencyFundGoal, setEmergencyFundGoal] = useState(180000); // 6 months of 30k
   const [currentEmergencyFund, setCurrentEmergencyFund] = useState(0);
   const [repaymentStrategy, setRepaymentStrategy] = useState('avalanche'); // avalanche or snowball
+  const [acceleratorBoostPct, setAcceleratorBoostPct] = useState(20); // % of available income to channel as extra payment
   const [guardrailSettings, setGuardrailSettings] = useState(() => {
     try {
       const stored = localStorage.getItem('guardrailSettings');
@@ -1376,6 +1377,25 @@ const EMITracker = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const projectDebtFreedom = (baseMonths, extraMonthly, baselineMonthly) => {
+    if (!baseMonths || !baselineMonthly) {
+      return { months: baseMonths || 0, targetDate: 'N/A', monthsSaved: 0, lift: 0 };
+    }
+
+    const effectiveMonthly = baselineMonthly + extraMonthly;
+    const lift = effectiveMonthly > 0 ? effectiveMonthly / baselineMonthly : 1;
+    const acceleratedMonths = lift > 0 ? baseMonths / lift : baseMonths;
+    const monthsSaved = Math.max(0, baseMonths - acceleratedMonths);
+
+    const targetDate = (() => {
+      const d = new Date();
+      d.setMonth(d.getMonth() + Math.max(0, Math.ceil(acceleratedMonths)));
+      return formatDate(d);
+    })();
+
+    return { months: acceleratedMonths, targetDate, monthsSaved, lift };
   };
 
   // Helper to show ordinal suffix for day numbers (e.g., 1st, 2nd)
@@ -4442,6 +4462,95 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
+            {/* Debt-Free Accelerator */}
+            <Grid item xs={12}>
+              {(() => {
+                const extraMonthly = Math.max(0, (debtAnalysis.availableIncome || 0) * (acceleratorBoostPct / 100));
+                const baseProjection = projectDebtFreedom(debtAnalysis.avgMonthsRemaining, 0, debtAnalysis.monthlyBurden);
+                const boostedProjection = projectDebtFreedom(debtAnalysis.avgMonthsRemaining, extraMonthly, debtAnalysis.monthlyBurden);
+                const aggressiveProjection = projectDebtFreedom(
+                  debtAnalysis.avgMonthsRemaining,
+                  extraMonthly + debtAnalysis.recommendedMonthlyExtra,
+                  debtAnalysis.monthlyBurden
+                );
+
+                return (
+                  <Card elevation={0} sx={chartCardHoverEffect}>
+                    <CardContent>
+                      <Typography variant="h5" fontWeight="bold" mb={1}>⚡ Debt-Free Accelerator</Typography>
+                      <Typography variant="body2" color="text.secondary" mb={3}>
+                        Allocate a slice of your available income to fast-track freedom. We project months saved instantly.
+                      </Typography>
+
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} md={4}>
+                          <FormControl fullWidth>
+                            <InputLabel>Extra allocation %</InputLabel>
+                            <Select
+                              value={acceleratorBoostPct}
+                              label="Extra allocation %"
+                              onChange={(e) => setAcceleratorBoostPct(parseInt(e.target.value, 10) || 0)}
+                            >
+                              {[10, 20, 30, 40, 50].map((pct) => (
+                                <MenuItem key={pct} value={pct}>{pct}% of available income</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                          <Typography variant="body2" sx={{ mt: 2 }}>
+                            Extra monthly contribution: <strong>{formatCurrency(extraMonthly)}</strong>
+                          </Typography>
+                          <Alert severity={extraMonthly > 0 ? 'success' : 'warning'} sx={{ mt: 2 }}>
+                            {extraMonthly > 0
+                              ? `Great! You are boosting payments by ₹${extraMonthly.toLocaleString()} each month.`
+                              : 'Set a % to start accelerating your payoff.'}
+                          </Alert>
+                        </Grid>
+
+                        <Grid item xs={12} md={8}>
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} sm={4}>
+                              <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                                <Typography variant="subtitle2" fontWeight="bold">Baseline</Typography>
+                                <Typography variant="h4" fontWeight="bold">{Math.round(baseProjection.months)} mo</Typography>
+                                <Typography variant="body2" color="text.secondary">Target: {baseProjection.targetDate}</Typography>
+                              </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                              <Box sx={{ p: 2, bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                                <Typography variant="subtitle2" fontWeight="bold">Current Boost</Typography>
+                                <Typography variant="h4" fontWeight="bold" color="success.main">
+                                  {Math.max(1, Math.round(boostedProjection.months))} mo
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Save ~{Math.max(0, Math.round(boostedProjection.monthsSaved))} months
+                                </Typography>
+                                <Chip label={`Freedom by ${boostedProjection.targetDate}`} color="success" size="small" sx={{ mt: 1 }} />
+                              </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                              <Box sx={{ p: 2, bgcolor: '#fff8e1', borderRadius: 2, border: '1px solid #ffe0b2' }}>
+                                <Typography variant="subtitle2" fontWeight="bold">Max Push (adds recommended extra)</Typography>
+                                <Typography variant="h4" fontWeight="bold" color="warning.main">
+                                  {Math.max(1, Math.round(aggressiveProjection.months))} mo
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Save ~{Math.max(0, Math.round(aggressiveProjection.monthsSaved))} months
+                                </Typography>
+                                <Chip label={`Freedom by ${aggressiveProjection.targetDate}`} color="warning" size="small" sx={{ mt: 1 }} />
+                              </Box>
+                            </Grid>
+                          </Grid>
+                          <Alert severity="info" sx={{ mt: 2 }}>
+                            We assume payoff speed scales with total monthly payment. Combine this with auto-sweep and guardrails to lock in gains.
+                          </Alert>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+            </Grid>
+
             {/* Spending Patterns Analysis */}
             <Grid item xs={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
@@ -5697,7 +5806,7 @@ const EMITracker = () => {
                     </Box>
                     <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
                       <Typography variant="subtitle2" fontWeight="bold">No-new-EMI pledge</Typography>
-                      <Typography variant="body2" color="text.secondary">30-day freeze on new credit while DTI > 40%.</Typography>
+                      <Typography variant="body2" color="text.secondary">30-day freeze on new credit while DTI {`>`} 40%.</Typography>
                     </Box>
                   </Box>
                 </CardContent>
