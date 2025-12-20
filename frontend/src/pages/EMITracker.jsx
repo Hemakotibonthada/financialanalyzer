@@ -178,6 +178,7 @@ const EMITracker = () => {
   const [emergencyFundMessage, setEmergencyFundMessage] = useState(null);
   const [emergencyFundContribution, setEmergencyFundContribution] = useState('');
   const [contributionSaving, setContributionSaving] = useState(false);
+  const [monthlyExpenses, setMonthlyExpenses] = useState(0); // Actual expenses from dashboard
   const [lastContribution, setLastContribution] = useState(null);
   const [repaymentStrategy, setRepaymentStrategy] = useState('avalanche'); // avalanche or snowball
   const [acceleratorBoostPct, setAcceleratorBoostPct] = useState(20); // % of available income to channel as extra payment
@@ -296,6 +297,7 @@ const EMITracker = () => {
   useEffect(() => {
     const loadData = async () => {
       await fetchUserProfile(); // Fetch profile first
+      await fetchMonthlyExpenses(); // Fetch actual expenses
       await fetchAllData(); // Then fetch EMI data
       fetchMonthlyTrends(trendsMonths);
     };
@@ -365,6 +367,35 @@ const EMITracker = () => {
     } catch (err) {
       console.error('❌ Error fetching profile:', err);
       console.error('Error details:', err.response?.data);
+    }
+  };
+
+  const fetchMonthlyExpenses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Get last 30 days of expenses from transactions
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const response = await axios.get(
+        `${API_URL}/transactions?startDate=${thirtyDaysAgo.toISOString().split('T')[0]}&type=expense`,
+        config
+      );
+      
+      if (response.data?.success && response.data?.data?.transactions) {
+        const totalExpenses = response.data.data.transactions.reduce(
+          (sum, txn) => sum + (txn.amount || 0), 0
+        );
+        // Average monthly expenses (last 30 days)
+        setMonthlyExpenses(totalExpenses);
+        console.log('✅ Monthly expenses fetched:', totalExpenses.toLocaleString());
+      }
+    } catch (err) {
+      console.error('Error fetching expenses:', err);
+      // Fallback to estimated expenses if fetch fails
+      setMonthlyExpenses(0);
     }
   };
 
@@ -613,10 +644,17 @@ const EMITracker = () => {
       const monthlyIncome = userProfile?.monthlyIncome || 0;
       const monthlyBurden = overview.overview?.monthlyBurden || 0;
       
-      // Emergency fund should cover 6 months of expenses
-      // Estimate monthly expenses as 30% of income (typical living expenses) + EMI burden
-      const estimatedMonthlyExpenses = monthlyIncome > 0 ? (monthlyIncome * 0.30) : 30000;
-      const totalMonthlyObligations = monthlyBurden + estimatedMonthlyExpenses;
+      // Use actual expenses from dashboard if available, otherwise estimate
+      let actualMonthlyExpenses = monthlyExpenses;
+      if (actualMonthlyExpenses === 0 && monthlyIncome > 0) {
+        // Fallback: estimate as 30% of income if no expense data available
+        actualMonthlyExpenses = monthlyIncome * 0.30;
+      } else if (actualMonthlyExpenses === 0) {
+        // Last resort fallback
+        actualMonthlyExpenses = 30000;
+      }
+      
+      const totalMonthlyObligations = monthlyBurden + actualMonthlyExpenses;
       
       // Calculate 6 months of obligations as the goal
       const calculatedGoal = Math.round(totalMonthlyObligations * 6);
@@ -627,14 +665,15 @@ const EMITracker = () => {
           setEmergencyFundGoal(calculatedGoal);
           console.log('✅ Emergency fund goal auto-calculated:', {
             monthlyBurden,
-            estimatedMonthlyExpenses,
+            actualMonthlyExpenses: actualMonthlyExpenses.toLocaleString(),
+            source: monthlyExpenses > 0 ? 'actual expenses from dashboard' : 'estimated (30% of income)',
             totalMonthlyObligations,
             calculatedGoal: calculatedGoal.toLocaleString()
           });
         }
       }
     }
-  }, [overview, userProfile]);
+  }, [overview, userProfile, monthlyExpenses]);
 
   // Calculate debt analysis when data changes
   useEffect(() => {
@@ -4713,11 +4752,17 @@ const EMITracker = () => {
                       </Typography>
                       <Typography variant="body2">
                         Your emergency fund goal is automatically calculated as <strong>6 months</strong> of your total monthly obligations 
-                        (EMI burden + estimated living expenses). Goal updates when your financial situation changes.
+                        (EMI burden + {monthlyExpenses > 0 ? 'actual expenses from your transactions' : 'estimated living expenses'}). 
+                        Goal updates when your financial situation changes.
                       </Typography>
                       <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        Current calculation: (₹{Math.round((overview?.overview?.monthlyBurden || 0) + ((userProfile?.monthlyIncome || 0) * 0.30)).toLocaleString()} × 6 months)
+                        Current calculation: ₹{Math.round((overview?.overview?.monthlyBurden || 0) + (monthlyExpenses > 0 ? monthlyExpenses : ((userProfile?.monthlyIncome || 0) * 0.30))).toLocaleString()} × 6 months = ₹{emergencyFundGoal.toLocaleString()}
                       </Typography>
+                      {monthlyExpenses > 0 && (
+                        <Typography variant="caption" display="block" sx={{ mt: 0.5, color: 'success.main' }}>
+                          ✅ Using actual expense data from your last 30 days
+                        </Typography>
+                      )}
                     </Alert>
                     {emergencyFundMessage && (
                       <Alert severity={emergencyFundMessage.type} sx={{ mb: 2 }}>
