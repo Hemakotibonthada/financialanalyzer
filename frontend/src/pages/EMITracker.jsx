@@ -191,6 +191,17 @@ const EMITracker = () => {
     };
   });
   const [guardrailAlerts, setGuardrailAlerts] = useState([]);
+  const [lastReminderEmiId, setLastReminderEmiId] = useState(null);
+  const [hardshipMode, setHardshipMode] = useState(false);
+  const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+  const [selectedReminderEmi, setSelectedReminderEmi] = useState(null);
+  const [reminderTab, setReminderTab] = useState(0);
+
+  const currentDti = overview?.overview?.monthlyBurden && userProfile?.monthlyIncome
+    ? (overview.overview.monthlyBurden / userProfile.monthlyIncome) * 100
+    : 0;
+  const isDtiLockActive = guardrailSettings.lockNewEmiAbove50 && currentDti > 50;
+  const isNewEmiLocked = isDtiLockActive || hardshipMode;
 
   // Loans Given State
   const [loansGiven, setLoansGiven] = useState([]);
@@ -540,6 +551,9 @@ const EMITracker = () => {
           title: 'Upcoming EMI',
           message: `${dueSoon.merchantName} due in ${dueSoon.daysUntilDue} days. Consider early payment to avoid fees.`
         });
+        if (dueSoon.id || dueSoon._id) {
+          schedulePreDueReminder(dueSoon);
+        }
       }
     }
 
@@ -581,6 +595,26 @@ const EMITracker = () => {
 
   const handleGuardrailToggle = (key) => (event) => {
     setGuardrailSettings((prev) => ({ ...prev, [key]: event.target.checked }));
+  };
+
+  const schedulePreDueReminder = async (emi) => {
+    const emiId = emi.id || emi._id;
+    if (!emiId || lastReminderEmiId === emiId) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/emi/reminders/pre-due`,
+        {
+          emiId,
+          merchantName: emi.merchantName,
+          daysUntilDue: emi.daysUntilDue || 7
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setLastReminderEmiId(emiId);
+    } catch (err) {
+      console.error('Failed to schedule pre-due reminder', err);
+    }
   };
 
   const handleExportMonthlyTrends = async (format) => {
@@ -1004,8 +1038,82 @@ const EMITracker = () => {
     }
   };
 
+  const handleRequestBalanceTransfer = async (offer, candidate) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/emi/balance-transfer-request`,
+        {
+          emiId: candidate.id || candidate._id,
+          provider: offer.provider,
+          offerRate: offer.rate,
+          processingFee: offer.fee,
+          currentRate: candidate.interestRate,
+          remainingAmount: candidate.remainingAmount,
+          remainingInstallments: candidate.remainingInstallments
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(`Offer request sent to ${offer.provider} for ${candidate.merchantName}. We will follow up.`);
+    } catch (err) {
+      console.error('Balance transfer request failed', err);
+      alert(err.response?.data?.message || 'Could not send balance transfer request. Please try again.');
+    }
+  };
+
+  const handleOneClickPrepay = async (emi) => {
+    if (!emi) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/emi/one-click-prepay`,
+        { emiId: emi.id || emi._id, amount: Math.min(emi.remainingAmount, emi.emiAmount) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Prepayment scheduled. Great move!');
+      fetchAllData();
+    } catch (err) {
+      console.error('One-click prepay failed', err);
+      alert(err.response?.data?.message || 'Could not schedule prepayment.');
+    }
+  };
+
+  const handleSetupAutoSweep = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/emi/auto-sweep`,
+        { sweepPercentage: 20 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Auto-sweep set to divert 20% surplus to highest-APR EMI.');
+    } catch (err) {
+      console.error('Auto-sweep setup failed', err);
+      alert(err.response?.data?.message || 'Could not set auto-sweep.');
+    }
+  };
+
+  const handleEnableLateFeeShield = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/emi/late-fee-shield`,
+        { notifyDaysBefore: 5 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Late-fee shield armed: you will get alerts and auto-pay nudges 5 days before due.');
+    } catch (err) {
+      console.error('Late fee shield failed', err);
+      alert(err.response?.data?.message || 'Could not enable late-fee shield.');
+    }
+  };
+
   // Manual EMI Dialog Handlers
   const handleOpenManualEMIDialog = () => {
+    if (isNewEmiLocked) {
+      alert('New EMI creation is locked (DTI > 50% or Hardship Mode on). Reduce EMI burden, increase income, or disable Hardship Mode to unlock.');
+      return;
+    }
     setManualEMIDialogOpen(true);
     setManualEMIErrors({});
   };
@@ -1459,28 +1567,37 @@ const EMITracker = () => {
             >
               Export Report
             </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenManualEMIDialog}
-              sx={{
-                background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-                color: 'white',
-                fontWeight: 700,
-                px: 3,
-                py: 1.5,
-                borderRadius: 3,
-                boxShadow: '0 8px 24px rgba(51, 8, 103, 0.4)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 12px 32px rgba(51, 8, 103, 0.5)',
-                  background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
-                }
-              }}
+            <Tooltip
+              title={isNewEmiLocked ? 'Locked: lower DTI below 50% or turn off Hardship Mode to add new EMIs.' : ''}
+              placement="top"
+              arrow
             >
-              Add Manual EMI
-            </Button>
+              <span>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleOpenManualEMIDialog}
+                  disabled={isNewEmiLocked}
+                  sx={{
+                    background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+                    color: 'white',
+                    fontWeight: 700,
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 3,
+                    boxShadow: '0 8px 24px rgba(51, 8, 103, 0.4)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 12px 32px rgba(51, 8, 103, 0.5)',
+                      background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+                    }
+                  }}
+                >
+                  Add Manual EMI
+                </Button>
+              </span>
+            </Tooltip>
             <Button
               variant="contained"
               startIcon={syncing ? <CircularProgress size={16} sx={{ color: 'white' }} /> : <DownloadIcon />}
@@ -3958,11 +4075,7 @@ const EMITracker = () => {
                                     size="small"
                                     variant="contained"
                                     sx={{ mt: 2 }}
-                                    onClick={() => {
-                                      setSelectedEMIForEarlyPayment(candidate);
-                                      setEarlyPaymentAmount(Math.min(candidate.remainingAmount, candidate.emiAmount * 2).toString());
-                                      alert(`Offer request sent to ${offer.provider} for ${candidate.merchantName}. We will follow up.`);
-                                    }}
+                                    onClick={() => handleRequestBalanceTransfer(offer, candidate)}
                                   >
                                     Request This Offer
                                   </Button>
@@ -4556,17 +4669,9 @@ const EMITracker = () => {
                                 fullWidth
                                 startIcon={<PaymentIcon />}
                                 onClick={() => {
-                                  alert(
-                                    `📱 Payment Reminder Set!\n\n` +
-                                    `EMI: ${emi.merchantName}\n` +
-                                    `Amount: ₹${emi.emiAmount.toLocaleString()}\n` +
-                                    `Due: ${formatDate(emi.nextDueDate)}\n\n` +
-                                    `Ways to Pay:\n` +
-                                    `1. ${emi.cardProvider} mobile app\n` +
-                                    `2. Net banking\n` +
-                                    `3. Auto-debit (if set up)\n\n` +
-                                    `💡 Set up auto-pay to never miss a payment!`
-                                  );
+                                  setSelectedReminderEmi(emi);
+                                  setReminderTab(0);
+                                  setReminderDialogOpen(true);
                                 }}
                               >
                                 {isUrgent ? 'Pay Now' : 'Set Reminder'}
@@ -5396,6 +5501,205 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
                   </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Relief & Negotiation Planner */}
+            <Grid item xs={12} md={6}>
+              <Card elevation={0} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" fontWeight="bold" mb={3}>🤝 Relief & Negotiation Planner</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Cut costs without new debt: request rate drops, tenure tweaks, or fee waivers on your worst EMIs.
+                  </Typography>
+                  {(() => {
+                    const targetEmi = [...overview.activeEMIs].sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))[0];
+                    if (!targetEmi) return <Typography variant="body2">No EMIs available.</Typography>;
+                    const threePointDropSavings = targetEmi.emiAmount * 0.12; // rough monthly save estimate
+                    const tenureReliefMonths = Math.ceil((targetEmi.emiAmount * 0.2) / (targetEmi.emiAmount || 1) * 12);
+                    return (
+                      <Box display="grid" gap={2}>
+                        <Box p={2} sx={{ bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Ask for 3% rate drop</Typography>
+                          <Typography variant="body2" color="text.secondary">On {targetEmi.merchantName} @ {targetEmi.interestRate}%</Typography>
+                          <Typography variant="body2" fontWeight="bold" color="success.main">Save ≈ {formatCurrency(threePointDropSavings)} / month</Typography>
+                        </Box>
+                        <Box p={2} sx={{ bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ffe0b2' }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Request fee/penalty waiver</Typography>
+                          <Typography variant="body2" color="text.secondary">Waive late/foreclosure fees to speed prepayment.</Typography>
+                          <Typography variant="caption" color="text.secondary">Mention spotless repayment streaks to negotiate.</Typography>
+                        </Box>
+                        <Box p={2} sx={{ bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #bbdefb' }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Extend tenure short-term</Typography>
+                          <Typography variant="body2" color="text.secondary">Add a few months temporarily to lower EMI during crunch.</Typography>
+                          <Typography variant="caption" color="text.secondary">Est. relief: {tenureReliefMonths} months cushion on {targetEmi.merchantName}.</Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Income Boost Sprint */}
+            <Grid item xs={12} md={6}>
+              <Card elevation={0} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" fontWeight="bold" mb={3}>⚡ Income Boost Sprint (30 days)</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Quick wins to unlock extra cash and push it into prepayments immediately.
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {[{title: 'Sell 3 idle items', impact: 3000, eta: '1 week'}, {title: 'Weekend gig (8 hrs)', impact: 2500, eta: 'This week'}, {title: 'Renegotiate 2 subscriptions', impact: 800, eta: '2 days'}]
+                      .map((item, idx) => (
+                        <Grid item xs={12} key={idx}>
+                          <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box>
+                              <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
+                              <Typography variant="caption" color="text.secondary">ETA: {item.eta}</Typography>
+                            </Box>
+                            <Chip label={`+₹${item.impact.toLocaleString()}`} color="success" />
+                          </Box>
+                        </Grid>
+                      ))}
+                  </Grid>
+                  <Alert severity="success" sx={{ mt: 2 }}>
+                    Channel the extra straight into {repaymentStrategy === 'avalanche' ? 'highest-APR EMI' : 'smallest balance'} for fastest freedom.
+                  </Alert>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Hardship Mode & Safety Net */}
+            <Grid item xs={12} md={6}>
+              <Card elevation={0} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                    <Typography variant="h5" fontWeight="bold">🛟 Hardship Mode</Typography>
+                    <FormControlLabel
+                      control={<Switch checked={hardshipMode} onChange={(e) => setHardshipMode(e.target.checked)} color="warning" />}
+                      label={hardshipMode ? 'On' : 'Off'}
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Temporarily prioritize survival: minimum payments, freeze new EMIs, and direct surplus to essentials.
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Box p={2} sx={{ bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ffe0b2' }}>
+                        <Typography variant="subtitle2" fontWeight="bold">Min-pay envelope</Typography>
+                        <Typography variant="body2" color="text.secondary">Allocate ₹{Math.round(debtAnalysis.monthlyBurden * 0.6).toLocaleString()} to keep EMIs current.</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box p={2} sx={{ bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                        <Typography variant="subtitle2" fontWeight="bold">Essential spend cap</Typography>
+                        <Typography variant="body2" color="text.secondary">Target monthly essentials ≤ {Math.max(0, debtAnalysis.availableIncome).toLocaleString()}.</Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    Hardship mode locks new EMIs and pauses extra prepayments until income stabilizes.
+                  </Alert>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* 6-Month Payoff Calendar */}
+            <Grid item xs={12} md={6}>
+              <Card elevation={0} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" fontWeight="bold" mb={2}>📅 6-Month Payoff Calendar</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>Projected progress if you maintain current payments.</Typography>
+                  <Grid container spacing={1}>
+                    {(() => {
+                      const months = Math.min(6, Math.max(1, Math.ceil(debtAnalysis.avgMonthsRemaining)));
+                      const monthlyPrincipal = overview.activeEMIs.reduce((sum, emi) => sum + (emi.remainingAmount / Math.max(1, emi.remainingInstallments)), 0);
+                      return Array.from({ length: months }).map((_, idx) => {
+                        const paid = monthlyPrincipal * (idx + 1);
+                        const remaining = Math.max(0, debtAnalysis.totalOutstanding - paid);
+                        return (
+                          <Grid item xs={12} sm={6} key={idx}>
+                            <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                              <Typography variant="subtitle2" fontWeight="bold">Month {idx + 1}</Typography>
+                              <Typography variant="caption" color="text.secondary">Projected remaining</Typography>
+                              <Typography variant="body1" fontWeight="bold">{formatCurrency(remaining)}</Typography>
+                            </Box>
+                          </Grid>
+                        );
+                      });
+                    })()}
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Automation Cockpit */}
+            <Grid item xs={12} md={6}>
+              <Card elevation={0} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" fontWeight="bold" mb={2}>🤖 Automation Cockpit</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>Set-and-enforce rules that keep you on track.</Typography>
+                  {(() => {
+                    const topEmi = [...overview.activeEMIs].sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))[0];
+                    const soonest = [...overview.activeEMIs]
+                      .map(emi => ({
+                        ...emi,
+                        daysUntilDue: emi.nextDueDate ? Math.ceil((new Date(emi.nextDueDate) - new Date()) / (1000 * 60 * 60 * 24)) : 30
+                      }))
+                      .sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
+                    return (
+                      <Box display="grid" gap={2}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          disabled={!topEmi}
+                          onClick={() => handleOneClickPrepay(topEmi)}
+                        >
+                          One-click prepay highest APR EMI {topEmi ? `(₹${topEmi.emiAmount.toLocaleString()})` : ''}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={handleSetupAutoSweep}
+                        >
+                          Auto-sweep 20% surplus to avalanche target
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          disabled={!soonest}
+                          onClick={handleEnableLateFeeShield}
+                        >
+                          Arm late-fee shield (alerts {soonest ? `${soonest.daysUntilDue}d` : ''} before due)
+                        </Button>
+                      </Box>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Behavioral Nudges & Streaks */}
+            <Grid item xs={12} md={6}>
+              <Card elevation={0} sx={chartCardHoverEffect}>
+                <CardContent>
+                  <Typography variant="h5" fontWeight="bold" mb={2}>🏅 Behavioral Nudges & Streaks</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>Small wins compound—keep your momentum.</Typography>
+                  <Box display="grid" gap={1.5}>
+                    <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">On-time streak</Typography>
+                      <Typography variant="body2" color="text.secondary">Maintain 3-month streak to unlock lower-risk profile.</Typography>
+                    </Box>
+                    <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">Round-up challenge</Typography>
+                      <Typography variant="body2" color="text.secondary">Add ₹100 daily for 10 days → prepay highest APR EMI.</Typography>
+                    </Box>
+                    <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">No-new-EMI pledge</Typography>
+                      <Typography variant="body2" color="text.secondary">30-day freeze on new credit while DTI > 40%.</Typography>
+                    </Box>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -6347,6 +6651,194 @@ const EMITracker = () => {
             }}
           >
             {exportLoading ? 'Exporting...' : 'Export Report'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Payment Reminder Dialog */}
+      <Dialog
+        open={reminderDialogOpen}
+        onClose={() => {
+          setReminderDialogOpen(false);
+          setSelectedReminderEmi(null);
+          setReminderTab(0);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 12px 36px rgba(0,0,0,0.18)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PaymentIcon color="primary" />
+          Payment & Reminder Assistant
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedReminderEmi ? (
+            <>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  mb: 2,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: '#f8fafc'
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {selectedReminderEmi.merchantName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedReminderEmi.cardProvider} {selectedReminderEmi.cardLastFourDigits || ''}
+                </Typography>
+                <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+                  <Chip label={`Due: ${formatDate(selectedReminderEmi.nextDueDate)}`} color="warning" />
+                  <Chip label={`Amount: ${formatCurrency(selectedReminderEmi.emiAmount)}`} color="primary" />
+                  <Chip label={`Tenure left: ${selectedReminderEmi.remainingInstallments || '—'} months`} />
+                </Box>
+              </Box>
+
+              <Tabs
+                value={reminderTab}
+                onChange={(_, value) => setReminderTab(value)}
+                variant="fullWidth"
+                sx={{ mb: 2 }}
+              >
+                <Tab label="Ways to Pay" />
+                <Tab label="Auto-pay Setup" />
+                <Tab label="Smart Nudges" />
+              </Tabs>
+
+              {reminderTab === 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Alert severity="info" icon={<PaymentIcon />}>
+                    Use any option below; we will keep this EMI pinned in reminders until it is marked paid.
+                  </Alert>
+                  <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle2" fontWeight="bold">Card/Billing App</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Pay via {selectedReminderEmi.cardProvider} app with saved card {selectedReminderEmi.cardLastFourDigits || ''}.
+                        </Typography>
+                        <Button fullWidth sx={{ mt: 1.5 }} variant="contained" color="primary">
+                          Open Provider App
+                        </Button>
+                      </CardContent>
+                    </Card>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle2" fontWeight="bold">Net Banking / UPI</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Use your bank portal or UPI ID to settle ₹{selectedReminderEmi.emiAmount?.toLocaleString()} instantly.
+                        </Typography>
+                        <Button fullWidth sx={{ mt: 1.5 }} variant="outlined">
+                          Copy Payment Details
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                </Box>
+              )}
+
+              {reminderTab === 1 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Alert severity="success" icon={<CheckCircleIcon />}>
+                    Recommended: cap auto-debit at ₹{(selectedReminderEmi.emiAmount * 1.05).toLocaleString()} to cover taxes/fees.
+                  </Alert>
+                  <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle2" fontWeight="bold">Set Standing Instruction</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Enable auto-debit on due date ({formatDate(selectedReminderEmi.nextDueDate)}) with max limit guard.
+                        </Typography>
+                        <Button fullWidth sx={{ mt: 1.5 }} variant="contained" color="success">
+                          Enable Auto-pay
+                        </Button>
+                      </CardContent>
+                    </Card>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle2" fontWeight="bold">Safety Checks</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Keep balance ≥ ₹{(selectedReminderEmi.emiAmount * 1.1).toLocaleString()} a day before due; avoid failed debits.
+                        </Typography>
+                        <Button fullWidth sx={{ mt: 1.5 }} variant="outlined" color="warning">
+                          Add Balance Alert
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                </Box>
+              )}
+
+              {reminderTab === 2 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Smart nudges for this EMI
+                  </Typography>
+                  <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="body2" fontWeight="bold">Pre-due reminder</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Nudge 3 days before due; share UPI link + outstanding amount.
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="body2" fontWeight="bold">Late-fee shield</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Alert if balance drops below ₹{(selectedReminderEmi.emiAmount * 0.75).toLocaleString()} within 48 hours of due.
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                  <Alert severity="info">
+                    We will keep this EMI highlighted in the reminder feed until you mark it paid or reschedule.
+                  </Alert>
+                </Box>
+              )}
+            </>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Pick an EMI to view payment options and set reminders.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ gap: 1.5 }}>
+          <Button
+            onClick={() => {
+              setReminderDialogOpen(false);
+              setSelectedReminderEmi(null);
+              setReminderTab(0);
+            }}
+            variant="outlined"
+          >
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              const emiId = selectedReminderEmi?.id || selectedReminderEmi?._id || null;
+              if (emiId) {
+                setLastReminderEmiId(emiId);
+              }
+              setReminderDialogOpen(false);
+              setSelectedReminderEmi(null);
+              setReminderTab(0);
+            }}
+            variant="contained"
+            startIcon={<CheckCircleIcon />}
+            disabled={!selectedReminderEmi}
+          >
+            Save reminder
           </Button>
         </DialogActions>
       </Dialog>
