@@ -172,6 +172,8 @@ const BillOfMaterials = () => {
     const totalItems = materials.length;
     const totalCost = materials.reduce((sum, item) => sum + (parseFloat(item.totalPrice) || 0), 0);
     const totalQuantity = materials.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+    const taxAmount = totalCost * 0.18;
+    const totalWithTax = totalCost + taxAmount;
     
     const categoryCount = materials.reduce((acc, item) => {
       acc[item.category] = (acc[item.category] || 0) + 1;
@@ -182,6 +184,8 @@ const BillOfMaterials = () => {
       totalItems,
       totalCost,
       totalQuantity,
+      taxAmount,
+      totalWithTax,
       categories: Object.entries(categoryCount).map(([key, value]) => ({ name: key, count: value }))
     });
   };
@@ -567,6 +571,37 @@ const BillOfMaterials = () => {
                   </Typography>
                 </CardContent>
               </Card>
+            </Grid>
+          </Box>
+
+          {/* Tax and Total Cards */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3, mb: 3 }}>
+            <Card sx={{ background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)', color: 'white', boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Tax (18% GST)
+                </Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  ₹{(stats.taxAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  GST on ₹{(stats.totalCost || 0).toLocaleString('en-IN')}
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)', color: 'white', boxShadow: 4, border: '2px solid rgba(255,255,255,0.3)' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Grand Total (Inc. Tax)
+                </Typography>
+                <Typography variant="h3" fontWeight="bold">
+                  ₹{(stats.totalWithTax || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Total amount payable
+                </Typography>
+              </CardContent>
+            </Card>
           </Box>
 
           {/* Search and Filters */}
@@ -760,15 +795,41 @@ const BillOfMaterials = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableRow sx={{ bgcolor: 'grey.50' }}>
                     <TableCell colSpan={4} align="right">
-                      <Typography variant="h6" fontWeight="bold">
-                        GRAND TOTAL:
+                      <Typography variant="body1" fontWeight="bold">
+                        SUBTOTAL:
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="h6" fontWeight="bold" color="primary">
+                      <Typography variant="body1" fontWeight="bold">
                         ₹{filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0).toLocaleString('en-IN')}
+                      </Typography>
+                    </TableCell>
+                    <TableCell colSpan={4}></TableCell>
+                  </TableRow>
+                  <TableRow sx={{ bgcolor: 'warning.lighter' }}>
+                    <TableCell colSpan={4} align="right">
+                      <Typography variant="body1" fontWeight="bold" color="warning.dark">
+                        TAX (18% GST):
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body1" fontWeight="bold" color="warning.dark">
+                        ₹{(filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) * 0.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </Typography>
+                    </TableCell>
+                    <TableCell colSpan={4}></TableCell>
+                  </TableRow>
+                  <TableRow sx={{ bgcolor: 'success.light' }}>
+                    <TableCell colSpan={4} align="right">
+                      <Typography variant="h6" fontWeight="bold" color="success.dark">
+                        GRAND TOTAL (Inc. Tax):
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="h6" fontWeight="bold" color="success.dark">
+                        ₹{(filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </Typography>
                     </TableCell>
                     <TableCell colSpan={4}></TableCell>
