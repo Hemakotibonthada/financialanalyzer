@@ -48,59 +48,8 @@ import Sidebar from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-const getDemoData = () => [
-  {
-    _id: '1',
-    name: 'Steel Beams',
-    description: 'High-grade structural steel beams',
-    quantity: 50,
-    unit: 'pcs',
-    unitPrice: 5000,
-    totalPrice: 250000,
-    category: 'materials',
-    supplier: 'Steel Corp Ltd',
-    siteLink: 'https://steelcorp.com/beams',
-    siteName: 'SteelCorp.com',
-    status: 'ordered',
-    priority: 'high',
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: '2',
-    name: 'Hydraulic Pumps',
-    description: 'Industrial hydraulic pumps - 10HP',
-    quantity: 5,
-    unit: 'units',
-    unitPrice: 45000,
-    totalPrice: 225000,
-    category: 'equipment',
-    supplier: 'HydroTech Systems',
-    siteLink: 'https://hydrotech.com/pumps',
-    siteName: 'HydroTech.com',
-    status: 'pending',
-    priority: 'urgent',
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: '3',
-    name: 'Welding Consumables',
-    description: 'Welding electrodes and consumables',
-    quantity: 100,
-    unit: 'kg',
-    unitPrice: 500,
-    totalPrice: 50000,
-    category: 'consumables',
-    supplier: 'WeldPro Supplies',
-    siteLink: 'https://weldpro.com/consumables',
-    siteName: 'WeldPro.com',
-    status: 'received',
-    priority: 'medium',
-    createdAt: new Date().toISOString()
-  }
-];
-
 const BillOfMaterials = () => {
-  const [materials, setMaterials] = useState(getDemoData());
+  const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -161,8 +110,8 @@ const BillOfMaterials = () => {
   }, [formData.quantity, formData.unitPrice]);
 
   const fetchMaterials = () => {
-    // Using local state only - refresh with demo data
-    setMaterials(getDemoData());
+    // Refresh materials list
+    calculateStats();
   };
 
 
@@ -452,11 +401,30 @@ const BillOfMaterials = () => {
         {/* Header */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%, #667eea 200%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientShift 8s ease infinite',
             borderRadius: 0,
             p: 4,
             mb: 3,
-            boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
+            boxShadow: '0 20px 60px rgba(102, 126, 234, 0.4)',
+            position: 'relative',
+            overflow: 'hidden',
+            '@keyframes gradientShift': {
+              '0%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+              '100%': { backgroundPosition: '0% 50%' }
+            },
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+              pointerEvents: 'none'
+            }
           }}
         >
           <Container maxWidth="xl">
@@ -512,7 +480,15 @@ const BillOfMaterials = () => {
         <Container maxWidth="xl">
           {/* Statistics Cards */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 3 }}>
-            <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+              color: 'white',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)'
+              }
+            }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
                   Total Items
@@ -525,7 +501,15 @@ const BillOfMaterials = () => {
                 </Typography>
               </CardContent>
             </Card>
-            <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', 
+              color: 'white',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: '0 12px 40px rgba(240, 147, 251, 0.4)'
+              }
+            }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
                   Total Cost
@@ -538,7 +522,15 @@ const BillOfMaterials = () => {
                 </Typography>
               </CardContent>
             </Card>
-            <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', 
+              color: 'white',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: '0 12px 40px rgba(79, 172, 254, 0.4)'
+              }
+            }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
                   Total Quantity
@@ -551,7 +543,15 @@ const BillOfMaterials = () => {
                 </Typography>
               </CardContent>
             </Card>
-            <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', 
+              color: 'white',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: '0 12px 40px rgba(250, 112, 154, 0.4)'
+              }
+            }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
                   Categories
@@ -568,7 +568,16 @@ const BillOfMaterials = () => {
 
           {/* Tax and Total Cards */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3, mb: 3 }}>
-            <Card sx={{ background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)', color: 'white', boxShadow: 3 }}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)', 
+              color: 'white', 
+              boxShadow: '0 8px 32px rgba(255, 107, 107, 0.3)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-8px) scale(1.02)',
+                boxShadow: '0 16px 48px rgba(255, 107, 107, 0.4)'
+              }
+            }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
                   Tax (18% GST)
@@ -581,7 +590,22 @@ const BillOfMaterials = () => {
                 </Typography>
               </CardContent>
             </Card>
-            <Card sx={{ background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)', color: 'white', boxShadow: 4, border: '2px solid rgba(255,255,255,0.3)' }}>
+            <Card sx={{ 
+              background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)', 
+              color: 'white', 
+              boxShadow: '0 12px 40px rgba(46, 204, 113, 0.4)', 
+              border: '3px solid rgba(255,255,255,0.3)',
+              transition: 'all 0.3s ease-in-out',
+              animation: 'pulse 3s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%, 100%': { transform: 'scale(1)', boxShadow: '0 12px 40px rgba(46, 204, 113, 0.4)' },
+                '50%': { transform: 'scale(1.02)', boxShadow: '0 16px 56px rgba(46, 204, 113, 0.6)' }
+              },
+              '&:hover': {
+                transform: 'translateY(-8px) scale(1.03)',
+                boxShadow: '0 20px 60px rgba(46, 204, 113, 0.5)'
+              }
+            }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
                   Grand Total (Inc. Tax)
@@ -643,28 +667,83 @@ const BillOfMaterials = () => {
 
           {/* Materials Table */}
           {filteredMaterials.length === 0 ? (
-            <Paper sx={{ p: 8, textAlign: 'center' }}>
-              <ShoppingCartIcon sx={{ fontSize: 80, color: 'action.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No materials found
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {searchTerm || filterCategory !== 'all' 
-                  ? 'Try adjusting your filters'
-                  : 'Start by adding your first material'}
-              </Typography>
-              {!searchTerm && filterCategory === 'all' && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    resetForm();
-                    setOpenDialog(true);
-                  }}
-                >
-                  Add First Material
-                </Button>
-              )}
+            <Paper sx={{ 
+              p: 8, 
+              textAlign: 'center',
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+              borderRadius: 4,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'radial-gradient(circle, rgba(102,126,234,0.1) 0%, transparent 70%)',
+                animation: 'rotate 20s linear infinite',
+              },
+              '@keyframes rotate': {
+                '0%': { transform: 'rotate(0deg)' },
+                '100%': { transform: 'rotate(360deg)' }
+              }
+            }}>
+              <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Box sx={{ 
+                  display: 'inline-block',
+                  p: 3,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  mb: 3,
+                  animation: 'float 3s ease-in-out infinite',
+                  '@keyframes float': {
+                    '0%, 100%': { transform: 'translateY(0px)' },
+                    '50%': { transform: 'translateY(-20px)' }
+                  }
+                }}>
+                  <ShoppingCartIcon sx={{ fontSize: 80, color: 'white' }} />
+                </Box>
+                <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, color: '#2c3e50' }}>
+                  {searchTerm || filterCategory !== 'all' ? 'No Materials Found' : 'Start Your Bill of Materials'}
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 4, color: '#7f8c8d', maxWidth: 500, mx: 'auto' }}>
+                  {searchTerm || filterCategory !== 'all' 
+                    ? 'Try adjusting your search filters to find materials'
+                    : 'Create your first material entry to start tracking costs, quantities, and suppliers'}
+                </Typography>
+                {!searchTerm && filterCategory === 'all' && (
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      resetForm();
+                      setOpenDialog(true);
+                    }}
+                    sx={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      px: 4,
+                      py: 1.5,
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      borderRadius: 3,
+                      textTransform: 'none',
+                      boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+                      transition: 'all 0.3s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 32px rgba(102, 126, 234, 0.5)',
+                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                      }
+                    }}
+                  >
+                    Add First Material
+                  </Button>
+                )}
+              </Box>
             </Paper>
           ) : (
             <TableContainer component={Paper}>
