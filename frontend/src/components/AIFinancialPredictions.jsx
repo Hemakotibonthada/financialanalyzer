@@ -146,22 +146,22 @@ const AIFinancialPredictions = () => {
           </div>
         </div>
         <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${
-          predictions.spending.nextMonth.trend === 'increasing' 
+          predictions?.spending?.nextMonth?.trend === 'increasing' 
             ? 'bg-orange-100 text-orange-700' 
-            : predictions.spending.nextMonth.trend === 'decreasing'
+            : predictions?.spending?.nextMonth?.trend === 'decreasing'
             ? 'bg-green-100 text-green-700'
             : 'bg-blue-100 text-blue-700'
         }`}>
-          {predictions.spending.nextMonth.trend === 'increasing' ? (
+          {predictions?.spending?.nextMonth?.trend === 'increasing' ? (
             <TrendingUp className="w-4 h-4" />
-          ) : predictions.spending.nextMonth.trend === 'decreasing' ? (
+          ) : predictions?.spending?.nextMonth?.trend === 'decreasing' ? (
             <TrendingDown className="w-4 h-4" />
           ) : (
             <Activity className="w-4 h-4" />
           )}
           <span className="text-sm font-semibold">
-            {predictions.spending.nextMonth.trend === 'increasing' ? '+' : predictions.spending.nextMonth.trend === 'decreasing' ? '-' : ''}
-            {predictions.spending.nextMonth.change}%
+            {predictions?.spending?.nextMonth?.trend === 'increasing' ? '+' : predictions?.spending?.nextMonth?.trend === 'decreasing' ? '-' : ''}
+            {predictions?.spending?.nextMonth?.change || 0}%
           </span>
         </div>
       </div>
@@ -169,7 +169,7 @@ const AIFinancialPredictions = () => {
       <div className="mb-6">
         <div className="flex items-baseline gap-2 mb-2">
           <span className="text-4xl font-bold text-gray-900">
-            ₹{predictions.spending.nextMonth.predicted.toLocaleString('en-IN')}
+            ₹{(predictions?.spending?.nextMonth?.predicted || 0).toLocaleString('en-IN')}
           </span>
           <span className="text-sm text-gray-500">predicted spending</span>
         </div>
@@ -177,18 +177,18 @@ const AIFinancialPredictions = () => {
           <div className="flex-1 bg-gray-200 rounded-full h-2">
             <div 
               className="bg-purple-600 h-2 rounded-full" 
-              style={{ width: `${predictions.spending.nextMonth.confidence}%` }}
+              style={{ width: `${predictions?.spending?.nextMonth?.confidence || 0}%` }}
             ></div>
           </div>
           <span className="text-sm font-semibold text-purple-600">
-            {predictions.spending.nextMonth.confidence}% confidence
+            {predictions?.spending?.nextMonth?.confidence || 0}% confidence
           </span>
         </div>
       </div>
 
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-gray-700 mb-3">Category Breakdown</h4>
-        {predictions.spending.categories.map((category, index) => (
+        {predictions?.spending?.categories?.map((category, index) => (
           <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
@@ -215,10 +215,10 @@ const AIFinancialPredictions = () => {
 
   const SavingsProjectionCard = () => {
     const chartData = {
-      labels: predictions.savings.projection.map(p => p.month),
+      labels: predictions?.savings?.projection?.map(p => p.month) || [],
       datasets: [{
         label: 'Projected Savings',
-        data: predictions.savings.projection.map(p => p.amount),
+        data: predictions?.savings?.projection?.map(p => p.amount) || [],
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
@@ -270,7 +270,7 @@ const AIFinancialPredictions = () => {
 
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">Goal Progress</h4>
-          {Object.entries(predictions.savings.goalAchievement).map(([goal, data], index) => (
+          {Object.entries(predictions?.savings?.goalAchievement || {}).map(([goal, data], index) => (
             <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-900 capitalize">
@@ -314,7 +314,7 @@ const AIFinancialPredictions = () => {
       </div>
 
       <div className="space-y-3">
-        {predictions.insights.map((insight, index) => (
+        {predictions?.insights?.map((insight, index) => (
           <div 
             key={index} 
             className={`p-4 rounded-lg border-l-4 ${
@@ -406,20 +406,20 @@ const AIFinancialPredictions = () => {
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-gray-900">💰 Savings Optimization</h4>
             <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
-              +₹{predictions.recommendations.savingsOptimization.potentialSavings.toLocaleString('en-IN')}/year
+              +₹{(predictions?.recommendations?.savingsOptimization?.potentialSavings || 0).toLocaleString('en-IN')}/year
             </span>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Current Monthly Saving:</span>
               <span className="font-semibold text-gray-900">
-                ₹{predictions.recommendations.savingsOptimization.current.toLocaleString('en-IN')}
+                ₹{(predictions?.recommendations?.savingsOptimization?.current || 0).toLocaleString('en-IN')}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Recommended:</span>
               <span className="font-bold text-green-600">
-                ₹{predictions.recommendations.savingsOptimization.recommended.toLocaleString('en-IN')}
+                ₹{(predictions?.recommendations?.savingsOptimization?.recommended || 0).toLocaleString('en-IN')}
               </span>
             </div>
           </div>
@@ -432,26 +432,26 @@ const AIFinancialPredictions = () => {
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-gray-900">🎯 Debt Payoff Strategy</h4>
             <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
-              Save {predictions.recommendations.debtPayoff.timeReduction}
+              Save {predictions?.recommendations?.debtPayoff?.timeReduction || 'N/A'}
             </span>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Current Strategy:</span>
               <span className="font-semibold text-gray-900 capitalize">
-                {predictions.recommendations.debtPayoff.current}
+                {predictions?.recommendations?.debtPayoff?.current || 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Recommended:</span>
               <span className="font-bold text-blue-600 capitalize">
-                {predictions.recommendations.debtPayoff.recommended}
+                {predictions?.recommendations?.debtPayoff?.recommended || 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Interest Savings:</span>
               <span className="font-bold text-green-600">
-                ₹{predictions.recommendations.debtPayoff.potentialSavings.toLocaleString('en-IN')}
+                ₹{(predictions?.recommendations?.debtPayoff?.potentialSavings || 0).toLocaleString('en-IN')}
               </span>
             </div>
           </div>
@@ -503,7 +503,7 @@ const AIFinancialPredictions = () => {
               <Activity className="w-5 h-5" />
               <span className="text-sm font-semibold">Active Insights</span>
             </div>
-            <div className="text-3xl font-bold">{predictions.insights.length}</div>
+            <div className="text-3xl font-bold">{predictions?.insights?.length || 0}</div>
             <div className="text-xs text-purple-100 mt-1">Actionable recommendations</div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">

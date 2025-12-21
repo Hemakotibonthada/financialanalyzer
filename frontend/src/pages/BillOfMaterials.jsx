@@ -382,12 +382,9 @@ const BillOfMaterials = () => {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
-          <Typography>Loading Bill of Materials...</Typography>
-        </Box>
-      </>
+      <Box className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Typography>Loading Bill of Materials...</Typography>
+      </Box>
     );
   }
 
@@ -744,7 +741,8 @@ const BillOfMaterials = () => {
               </Box>
             </Paper>
           ) : (
-            <TableContainer component={Paper}>
+            <>
+              <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'primary.main' }}>
@@ -929,6 +927,7 @@ const BillOfMaterials = () => {
                 </CardContent>
               </Card>
             </Box>
+            </>
           )}
         </Container>
 

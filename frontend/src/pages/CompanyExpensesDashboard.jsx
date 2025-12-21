@@ -201,64 +201,64 @@ const CompanyExpensesDashboard = () => {
           <div>
             {/* Analytics Cards */}
             {analytics && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{/* ... existing expenses content ... */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Expenses</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">
-                    {formatCurrency(analytics.totalAmount)}
-                  </p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm">Total Expenses</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(analytics.totalAmount)}
+                      </p>
+                    </div>
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <DollarSign className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Paid Amount</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">
-                    {formatCurrency(analytics.paidAmount)}
-                  </p>
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm">Paid Amount</p>
+                      <p className="text-2xl font-bold text-green-600 mt-1">
+                        {formatCurrency(analytics.paidAmount)}
+                      </p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Pending Amount</p>
-                  <p className="text-2xl font-bold text-orange-600 mt-1">
-                    {formatCurrency(analytics.pendingAmount)}
-                  </p>
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm">Pending Amount</p>
+                      <p className="text-2xl font-bold text-orange-600 mt-1">
+                        {formatCurrency(analytics.pendingAmount)}
+                      </p>
+                    </div>
+                    <div className="bg-orange-100 p-3 rounded-lg">
+                      <Calendar className="w-6 h-6 text-orange-600" />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <Calendar className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Count</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">
-                    {analytics.expenseCount}
-                  </p>
-                </div>
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <FileText className="w-6 h-6 text-purple-600" />
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm">Total Count</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {analytics.expenseCount}
+                      </p>
+                    </div>
+                    <div className="bg-purple-100 p-3 rounded-lg">
+                      <FileText className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -461,29 +461,30 @@ const CompanyExpensesDashboard = () => {
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
+          )}
         </div>
-        )}
-
-        {/* Tab Panel 1 - Bill of Materials */}
-        {activeTab === 1 && (
-          <BillOfMaterials />
-        )}
       </div>
-
-      {/* Modal */}
-      {showModal && (
-        <ExpenseFormModal
-          isOpen={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedExpense(null);
-          }}
-          expense={selectedExpense}
-          onSuccess={handleModalSuccess}
-        />
+        </div>
       )}
+
+      {/* Tab Panel 1 - Bill of Materials */}
+      {activeTab === 1 && (
+        <BillOfMaterials />
+      )}
+    </div>
+
+    {/* Modal */}
+    {showModal && (
+      <ExpenseFormModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedExpense(null);
+        }}
+        expense={selectedExpense}
+        onSuccess={handleModalSuccess}
+      />
+    )}
     </MainLayout>
   );
 };
