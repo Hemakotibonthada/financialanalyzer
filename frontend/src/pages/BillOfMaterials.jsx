@@ -513,65 +513,58 @@ const BillOfMaterials = () => {
         <Container maxWidth="xl">
           {/* Statistics Cards */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 3 }}>
-              <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Total Items
-                  </Typography>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.totalItems}
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    Across all categories
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Total Cost
-                  </Typography>
-                  <Typography variant="h3" fontWeight="bold">
-                    ₹{(stats.totalCost / 100000).toFixed(2)}L
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    Complete BOM value
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Total Quantity
-                  </Typography>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.totalQuantity}
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    Units ordered
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
-                    Categories
-                  </Typography>
-                  <Typography variant="h3" fontWeight="bold">
-                    {stats.categories.length}
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    Different types
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+            <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Total Items
+                </Typography>
+                <Typography variant="h3" fontWeight="bold">
+                  {stats.totalItems}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Across all categories
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Total Cost
+                </Typography>
+                <Typography variant="h3" fontWeight="bold">
+                  ₹{(stats.totalCost / 100000).toFixed(2)}L
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Complete BOM value
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Total Quantity
+                </Typography>
+                <Typography variant="h3" fontWeight="bold">
+                  {stats.totalQuantity}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Units ordered
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
+                  Categories
+                </Typography>
+                <Typography variant="h3" fontWeight="bold">
+                  {stats.categories.length}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Different types
+                </Typography>
+              </CardContent>
+            </Card>
           </Box>
 
           {/* Tax and Total Cards */}
