@@ -9,7 +9,8 @@ import {
   Briefcase, 
   Bell, 
   Search,
-  ArrowRight 
+  ArrowRight,
+  ClipboardList
 } from 'lucide-react';
 
 const NewFeaturesShowcase = () => {
@@ -95,6 +96,17 @@ const NewFeaturesShowcase = () => {
       bgColor: 'bg-cyan-50',
       iconColor: 'text-cyan-600',
       borderColor: 'border-cyan-200'
+    },
+    {
+      title: '📋 Bill of Materials',
+      description: 'Track materials, components, costs with links and suppliers',
+      icon: ClipboardList,
+      path: '/bill-of-materials',
+      color: 'indigo',
+      bgColor: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
+      borderColor: 'border-indigo-200',
+      badge: 'NEW'
     }
   ];
 
@@ -125,7 +137,13 @@ const NewFeaturesShowcase = () => {
                   <div className={`${feature.iconColor} p-2 rounded-lg bg-white shadow-sm`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <ArrowRight className={`w-5 h-5 ${feature.iconColor} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  {feature.badge ? (
+                    <span className="text-xs px-2 py-1 bg-green-500 text-white rounded-full font-semibold animate-pulse">
+                      {feature.badge}
+                    </span>
+                  ) : (
+                    <ArrowRight className={`w-5 h-5 ${feature.iconColor} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  )}
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1 text-sm">
                   {feature.title}

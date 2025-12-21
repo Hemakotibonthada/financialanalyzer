@@ -55,6 +55,7 @@ const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboa
 const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
 const CompanyExpensesDashboard = lazy(() => import('./pages/CompanyExpensesDashboard'));
 const Documents = lazy(() => import('./pages/Documents'));
+const BillOfMaterials = lazy(() => import('./pages/BillOfMaterials'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -315,6 +316,12 @@ function App() {
               <Route path="/portfolio-analytics" element={
                 <ProtectedRoute>
                   <PortfolioAnalyticsDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/bill-of-materials" element={
+                <ProtectedRoute>
+                  <BillOfMaterials />
                 </ProtectedRoute>
               } />
               
