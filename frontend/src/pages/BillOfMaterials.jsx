@@ -860,48 +860,77 @@ const BillOfMaterials = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell colSpan={4} align="right">
-                      <Typography variant="body1" fontWeight="bold">
-                        SUBTOTAL:
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" fontWeight="bold">
-                        ₹{filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0).toLocaleString('en-IN')}
-                      </Typography>
-                    </TableCell>
-                    <TableCell colSpan={4}></TableCell>
-                  </TableRow>
-                  <TableRow sx={{ bgcolor: 'warning.lighter' }}>
-                    <TableCell colSpan={4} align="right">
-                      <Typography variant="body1" fontWeight="bold" color="warning.dark">
-                        TAX (18% GST):
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" fontWeight="bold" color="warning.dark">
-                        ₹{(filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) * 0.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell colSpan={4}></TableCell>
-                  </TableRow>
-                  <TableRow sx={{ bgcolor: 'success.light' }}>
-                    <TableCell colSpan={4} align="right">
-                      <Typography variant="h6" fontWeight="bold" color="success.dark">
-                        GRAND TOTAL (Inc. Tax):
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="h6" fontWeight="bold" color="success.dark">
-                        ₹{(filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell colSpan={4}></TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* Order Summary Card - Right Side */}
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+              <Card sx={{ 
+                minWidth: 400,
+                maxWidth: 500,
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '2px solid #e9ecef'
+              }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h5" fontWeight="bold" sx={{ mb: 3, color: '#2c3e50', borderBottom: '2px solid #667eea', pb: 1 }}>
+                    Order Summary
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {/* Subtotal */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5, borderBottom: '1px solid #e9ecef' }}>
+                      <Typography variant="body1" sx={{ color: '#495057', fontWeight: 500 }}>
+                        Subtotal
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold" sx={{ color: '#2c3e50' }}>
+                        ₹{filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0).toLocaleString('en-IN')}
+                      </Typography>
+                    </Box>
+
+                    {/* Tax */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5, borderBottom: '1px solid #e9ecef' }}>
+                      <Box>
+                        <Typography variant="body1" sx={{ color: '#495057', fontWeight: 500 }}>
+                          Tax (18% GST)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#6c757d' }}>
+                          Goods & Services Tax
+                        </Typography>
+                      </Box>
+                      <Typography variant="h6" fontWeight="bold" sx={{ color: '#ff6b6b' }}>
+                        ₹{(filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) * 0.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </Typography>
+                    </Box>
+
+                    {/* Grand Total */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      py: 2.5,
+                      mt: 1,
+                      background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+                      borderRadius: 2,
+                      px: 2,
+                      boxShadow: '0 4px 16px rgba(46, 204, 113, 0.3)'
+                    }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
+                        Grand Total
+                      </Typography>
+                      <Typography variant="h4" fontWeight="bold" sx={{ color: 'white' }}>
+                        ₹{(filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) * 1.18).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </Typography>
+                    </Box>
+
+                    <Typography variant="caption" sx={{ color: '#6c757d', textAlign: 'center', mt: 1 }}>
+                      All prices are in Indian Rupees (₹)
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
           )}
         </Container>
 
