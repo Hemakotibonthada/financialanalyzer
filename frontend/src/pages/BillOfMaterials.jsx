@@ -600,52 +600,46 @@ const BillOfMaterials = () => {
           {/* Search and Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' }, gap: 2, alignItems: 'center' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search by name, description, or supplier..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    )
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Filter by Category</InputLabel>
-                  <Select
-                    value={filterCategory}
-                    label="Filter by Category"
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    startAdornment={<FilterIcon sx={{ mr: 1, color: 'action.active' }} />}
-                  >
-                    <MenuItem value="all">All Categories</MenuItem>
-                    {categories.map(cat => (
-                      <MenuItem key={cat.value} value={cat.value}>{cat.label}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    resetForm();
-                    setOpenDialog(true);
-                  }}
-                  sx={{ height: '40px' }}
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search by name, description, or supplier..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <FormControl size="small" sx={{ minWidth: 200 }}>
+                <InputLabel>Filter by Category</InputLabel>
+                <Select
+                  value={filterCategory}
+                  label="Filter by Category"
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  startAdornment={<FilterIcon sx={{ mr: 1, color: 'action.active' }} />}
                 >
-                  Add Item
-                </Button>
-              </Grid>
-            </Grid>
+                  <MenuItem value="all">All Categories</MenuItem>
+                  {categories.map(cat => (
+                    <MenuItem key={cat.value} value={cat.value}>{cat.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  resetForm();
+                  setOpenDialog(true);
+                }}
+                sx={{ height: '40px', minWidth: 120 }}
+              >
+                Add Item
+              </Button>
+            </Box>
           </Paper>
 
           {/* Materials Table */}
@@ -875,28 +869,25 @@ const BillOfMaterials = () => {
           </DialogTitle>
           <DialogContent sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Item Name *"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  error={!!formErrors.name}
-                  helperText={formErrors.name}
-                />
-              </Grid>
+              <TextField
+                fullWidth
+                label="Item Name *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                error={!!formErrors.name}
+                helperText={formErrors.name}
+              />
               
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </Grid>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={2}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
 
-              <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <FormControl fullWidth error={!!formErrors.category}>
                   <InputLabel>Category *</InputLabel>
                   <Select
@@ -909,18 +900,16 @@ const BillOfMaterials = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
 
-              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Supplier"
                   value={formData.supplier}
                   onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={4}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
                 <TextField
                   fullWidth
                   type="number"
@@ -931,9 +920,7 @@ const BillOfMaterials = () => {
                   helperText={formErrors.quantity}
                   InputProps={{ inputProps: { min: 0, step: 0.01 } }}
                 />
-              </Grid>
 
-              <Grid item xs={12} sm={4}>
                 <FormControl fullWidth>
                   <InputLabel>Unit</InputLabel>
                   <Select
@@ -946,9 +933,7 @@ const BillOfMaterials = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
 
-              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   type="number"
@@ -962,17 +947,15 @@ const BillOfMaterials = () => {
                     inputProps: { min: 0, step: 0.01 }
                   }}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12}>
-                <Alert severity="info">
-                  <Typography variant="body2" fontWeight="bold">
-                    Total Price: ₹{formData.totalPrice ? parseFloat(formData.totalPrice).toLocaleString('en-IN') : '0'}
-                  </Typography>
-                </Alert>
-              </Grid>
+              <Alert severity="info">
+                <Typography variant="body2" fontWeight="bold">
+                  Total Price: ₹{formData.totalPrice ? parseFloat(formData.totalPrice).toLocaleString('en-IN') : '0'}
+                </Typography>
+              </Alert>
 
-              <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <TextField
                   fullWidth
                   label="Site Name"
@@ -980,9 +963,7 @@ const BillOfMaterials = () => {
                   onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
                   placeholder="e.g., Amazon, Flipkart"
                 />
-              </Grid>
 
-              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Site Link"
@@ -993,9 +974,9 @@ const BillOfMaterials = () => {
                     startAdornment: <InputAdornment position="start"><LinkIcon /></InputAdornment>
                   }}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select
@@ -1010,9 +991,7 @@ const BillOfMaterials = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
 
-              <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Priority</InputLabel>
                   <Select
@@ -1027,20 +1006,18 @@ const BillOfMaterials = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Notes"
-                  multiline
-                  rows={2}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Additional notes or specifications"
-                />
-              </Grid>
-            </Grid>
+              <TextField
+                fullWidth
+                label="Notes"
+                multiline
+                rows={2}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Additional notes or specifications"
+              />
+            </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
             <Button 
