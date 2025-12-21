@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -30,6 +29,7 @@ import {
   InputAdornment,
   Fab
 } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -47,11 +47,62 @@ import {
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
+const getDemoData = () => [
+  {
+    _id: '1',
+    name: 'Steel Beams',
+    description: 'High-grade structural steel beams',
+    quantity: 50,
+    unit: 'pcs',
+    unitPrice: 5000,
+    totalPrice: 250000,
+    category: 'materials',
+    supplier: 'Steel Corp Ltd',
+    siteLink: 'https://steelcorp.com/beams',
+    siteName: 'SteelCorp.com',
+    status: 'ordered',
+    priority: 'high',
+    createdAt: new Date().toISOString()
+  },
+  {
+    _id: '2',
+    name: 'Hydraulic Pumps',
+    description: 'Industrial hydraulic pumps - 10HP',
+    quantity: 5,
+    unit: 'units',
+    unitPrice: 45000,
+    totalPrice: 225000,
+    category: 'equipment',
+    supplier: 'HydroTech Systems',
+    siteLink: 'https://hydrotech.com/pumps',
+    siteName: 'HydroTech.com',
+    status: 'pending',
+    priority: 'urgent',
+    createdAt: new Date().toISOString()
+  },
+  {
+    _id: '3',
+    name: 'Welding Consumables',
+    description: 'Welding electrodes and consumables',
+    quantity: 100,
+    unit: 'kg',
+    unitPrice: 500,
+    totalPrice: 50000,
+    category: 'consumables',
+    supplier: 'WeldPro Supplies',
+    siteLink: 'https://weldpro.com/consumables',
+    siteName: 'WeldPro.com',
+    status: 'received',
+    priority: 'medium',
+    createdAt: new Date().toISOString()
+  }
+];
 
 const BillOfMaterials = () => {
-  const [materials, setMaterials] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [materials, setMaterials] = useState(getDemoData());
+  const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,9 +147,7 @@ const BillOfMaterials = () => {
   const statuses = ['pending', 'ordered', 'received', 'completed'];
   const priorities = ['low', 'medium', 'high', 'urgent'];
 
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
+  // Using local state only - no API calls needed
 
   useEffect(() => {
     calculateStats();
@@ -112,73 +161,12 @@ const BillOfMaterials = () => {
     }
   }, [formData.quantity, formData.unitPrice]);
 
-  const fetchMaterials = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/bill-of-materials`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setMaterials(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching materials:', error);
-      // Use demo data for now
-      setMaterials(getDemoData());
-    } finally {
-      setLoading(false);
-    }
+  const fetchMaterials = () => {
+    // Using local state only - refresh with demo data
+    setMaterials(getDemoData());
   };
 
-  const getDemoData = () => [
-    {
-      _id: '1',
-      name: 'Steel Beams',
-      description: 'High-grade structural steel beams',
-      quantity: 50,
-      unit: 'pcs',
-      unitPrice: 5000,
-      totalPrice: 250000,
-      category: 'materials',
-      supplier: 'Steel Corp Ltd',
-      siteLink: 'https://steelcorp.com/beams',
-      siteName: 'SteelCorp.com',
-      status: 'ordered',
-      priority: 'high',
-      createdAt: new Date().toISOString()
-    },
-    {
-      _id: '2',
-      name: 'Hydraulic Pumps',
-      description: 'Industrial hydraulic pumps - 10HP',
-      quantity: 5,
-      unit: 'units',
-      unitPrice: 45000,
-      totalPrice: 225000,
-      category: 'equipment',
-      supplier: 'HydroTech Systems',
-      siteLink: 'https://hydrotech.com/pumps',
-      siteName: 'HydroTech.com',
-      status: 'pending',
-      priority: 'urgent',
-      createdAt: new Date().toISOString()
-    },
-    {
-      _id: '3',
-      name: 'Welding Consumables',
-      description: 'Welding electrodes and consumables',
-      quantity: 100,
-      unit: 'kg',
-      unitPrice: 500,
-      totalPrice: 50000,
-      category: 'consumables',
-      supplier: 'WeldPro Supplies',
-      siteLink: 'https://weldpro.com/consumables',
-      siteName: 'WeldPro.com',
-      status: 'received',
-      priority: 'medium',
-      createdAt: new Date().toISOString()
-    }
-  ];
+
 
   const calculateStats = () => {
     const totalItems = materials.length;
@@ -209,64 +197,32 @@ const BillOfMaterials = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleAddMaterial = async () => {
+  const handleAddMaterial = () => {
     if (!validateForm()) return;
 
-    try {
-      const token = localStorage.getItem('token');
-      const dataToSend = {
-        ...formData,
-        quantity: parseFloat(formData.quantity),
-        unitPrice: parseFloat(formData.unitPrice),
-        totalPrice: parseFloat(formData.totalPrice)
-      };
+    const dataToSend = {
+      ...formData,
+      quantity: parseFloat(formData.quantity),
+      unitPrice: parseFloat(formData.unitPrice),
+      totalPrice: parseFloat(formData.totalPrice)
+    };
 
-      if (editingMaterial) {
-        await axios.put(
-          `${API_URL}/bill-of-materials/${editingMaterial._id}`,
-          dataToSend,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        await axios.post(
-          `${API_URL}/bill-of-materials`,
-          dataToSend,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
-      setOpenDialog(false);
-      setEditingMaterial(null);
-      resetForm();
-      fetchMaterials();
-    } catch (error) {
-      console.error('Error saving material:', error);
-      // For demo, add to local state
-      if (editingMaterial) {
-        setMaterials(materials.map(m => 
-          m._id === editingMaterial._id ? { ...formData, _id: editingMaterial._id } : m
-        ));
-      } else {
-        setMaterials([...materials, { ...formData, _id: Date.now().toString(), createdAt: new Date().toISOString() }]);
-      }
-      setOpenDialog(false);
-      resetForm();
+    if (editingMaterial) {
+      setMaterials(materials.map(m => 
+        m._id === editingMaterial._id ? { ...dataToSend, _id: editingMaterial._id, createdAt: m.createdAt } : m
+      ));
+    } else {
+      setMaterials([...materials, { ...dataToSend, _id: Date.now().toString(), createdAt: new Date().toISOString() }]);
     }
+    
+    setOpenDialog(false);
+    setEditingMaterial(null);
+    resetForm();
   };
 
-  const handleDeleteMaterial = async (id) => {
+  const handleDeleteMaterial = (id) => {
     if (!window.confirm('Are you sure you want to delete this material?')) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/bill-of-materials/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchMaterials();
-    } catch (error) {
-      console.error('Error deleting material:', error);
-      setMaterials(materials.filter(m => m._id !== id));
-    }
+    setMaterials(materials.filter(m => m._id !== id));
   };
 
   const handleEditMaterial = (material) => {
@@ -552,8 +508,7 @@ const BillOfMaterials = () => {
 
         <Container maxWidth="xl">
           {/* Statistics Cards */}
-          <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 3 }}>
               <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
                 <CardContent>
                   <Typography variant="subtitle2" sx={{ opacity: 0.9, mb: 1 }}>
@@ -612,13 +567,11 @@ const BillOfMaterials = () => {
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid>
-          </Grid>
+          </Box>
 
           {/* Search and Filters */}
           <Paper sx={{ p: 2, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={6}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' }, gap: 2, alignItems: 'center' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -867,8 +820,7 @@ const BillOfMaterials = () => {
             </Box>
           </DialogTitle>
           <DialogContent sx={{ mt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <TextField
                   fullWidth
                   label="Item Name *"
