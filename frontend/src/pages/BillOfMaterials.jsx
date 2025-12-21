@@ -874,7 +874,7 @@ const BillOfMaterials = () => {
                 border: '2px solid #e9ecef'
               }}>
                 <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h5" fontWeight="bold" sx={{ mb: 3, color: '#2c3e50', borderBottom: '2px solid #667eea', pb: 1 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#2c3e50', borderBottom: '2px solid #667eea', pb: 1 }}>
                     Order Summary
                   </Typography>
                   
