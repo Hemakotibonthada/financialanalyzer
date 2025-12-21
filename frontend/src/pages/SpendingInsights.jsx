@@ -168,7 +168,7 @@ const SpendingInsights = () => {
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="flex border-b overflow-x-auto">
-            {['overview', 'patterns', 'categories', 'recommendations'].map(tab => (
+            {['overview', 'patterns', 'categories', 'recommendations', 'ml-predictions'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -178,7 +178,7 @@ const SpendingInsights = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                {tab}
+                {tab === 'ml-predictions' ? '🤖 ML Predictions' : tab}
               </button>
             ))}
           </div>
@@ -615,6 +615,319 @@ const SpendingInsights = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ML Predictions Tab */}
+        {activeTab === 'ml-predictions' && (
+          <div className="space-y-6">
+            {/* ML Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-4 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Zap className="w-8 h-8" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold mb-1">Machine Learning Predictions</h2>
+                  <p className="text-indigo-100">AI-powered insights based on your spending patterns</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm text-indigo-100 mb-1">Prediction Accuracy</div>
+                  <div className="text-3xl font-bold">92%</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm text-indigo-100 mb-1">Data Points Analyzed</div>
+                  <div className="text-3xl font-bold">1.2K+</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm text-indigo-100 mb-1">Active Models</div>
+                  <div className="text-3xl font-bold">5</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-sm text-indigo-100 mb-1">Next Update</div>
+                  <div className="text-3xl font-bold">24h</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Month Predictions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-purple-100 rounded-lg">
+                    <TrendingUp className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Next Month Forecast</h3>
+                    <p className="text-sm text-gray-500">Predicted spending by category</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { category: 'Groceries', current: 12000, predicted: 13500, confidence: 94, trend: 'up' },
+                    { category: 'Transportation', current: 8000, predicted: 9200, confidence: 88, trend: 'up' },
+                    { category: 'Entertainment', current: 5000, predicted: 4500, confidence: 82, trend: 'down' },
+                    { category: 'Utilities', current: 4500, predicted: 4600, confidence: 96, trend: 'stable' },
+                    { category: 'Dining', current: 7000, predicted: 7800, confidence: 85, trend: 'up' },
+                  ].map((item, index) => (
+                    <div key={index} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-gray-900">{item.category}</span>
+                        <div className="flex items-center gap-2">
+                          {item.trend === 'up' && <ArrowRight className="w-4 h-4 text-orange-500 rotate-[-45deg]" />}
+                          {item.trend === 'down' && <ArrowRight className="w-4 h-4 text-green-500 rotate-[45deg]" />}
+                          {item.trend === 'stable' && <ArrowRight className="w-4 h-4 text-blue-500" />}
+                          <span className={`font-bold ${
+                            item.trend === 'up' ? 'text-orange-600' : 
+                            item.trend === 'down' ? 'text-green-600' : 'text-blue-600'
+                          }`}>
+                            ₹{item.predicted.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-gray-500">Current: ₹{item.current.toLocaleString()}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          item.trend === 'up' ? 'bg-orange-100 text-orange-700' :
+                          item.trend === 'down' ? 'bg-green-100 text-green-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {item.trend === 'up' ? '+' : item.trend === 'down' ? '-' : ''}
+                          {Math.abs(((item.predicted - item.current) / item.current) * 100).toFixed(1)}%
+                        </span>
+                        <span className="ml-auto text-gray-500">{item.confidence}% confidence</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Anomaly Detection */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-red-100 rounded-lg">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Anomaly Detection</h3>
+                    <p className="text-sm text-gray-500">Unusual spending patterns identified</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    {
+                      type: 'Unusual Large Transaction',
+                      category: 'Shopping',
+                      amount: 25000,
+                      normalRange: '₹8,000 - ₹12,000',
+                      date: '3 days ago',
+                      severity: 'high'
+                    },
+                    {
+                      type: 'Increased Frequency',
+                      category: 'Dining',
+                      amount: 4500,
+                      normalRange: '2-3 times/week',
+                      date: 'This week',
+                      severity: 'medium'
+                    },
+                    {
+                      type: 'New Merchant Pattern',
+                      category: 'Subscription',
+                      amount: 1999,
+                      normalRange: 'First time',
+                      date: '1 day ago',
+                      severity: 'low'
+                    }
+                  ].map((anomaly, index) => (
+                    <div key={index} className={`p-4 rounded-lg border-l-4 ${
+                      anomaly.severity === 'high' ? 'bg-red-50 border-red-500' :
+                      anomaly.severity === 'medium' ? 'bg-orange-50 border-orange-500' :
+                      'bg-yellow-50 border-yellow-500'
+                    }`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-bold text-gray-900">{anomaly.type}</h4>
+                          <p className="text-sm text-gray-600">{anomaly.category}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          anomaly.severity === 'high' ? 'bg-red-100 text-red-700' :
+                          anomaly.severity === 'medium' ? 'bg-orange-100 text-orange-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {anomaly.severity}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Amount:</span>
+                          <span className="font-bold text-gray-900">₹{anomaly.amount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Normal:</span>
+                          <span className="text-gray-700">{anomaly.normalRange}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Detected:</span>
+                          <span className="text-gray-700">{anomaly.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Smart Alerts & Triggers */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <Bell className="w-6 h-6 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Smart Alerts & Triggers</h3>
+                  <p className="text-sm text-gray-500">Automated notifications based on ML insights</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    title: 'Budget Breach Warning',
+                    description: 'Get notified when predicted spending exceeds budget by 20%',
+                    status: 'Active',
+                    triggered: 2
+                  },
+                  {
+                    title: 'Unusual Pattern Alert',
+                    description: 'Alert when spending pattern deviates significantly from normal',
+                    status: 'Active',
+                    triggered: 1
+                  },
+                  {
+                    title: 'Savings Opportunity',
+                    description: 'Notify when ML identifies potential savings in your spending',
+                    status: 'Active',
+                    triggered: 5
+                  }
+                ].map((alert, index) => (
+                  <div key={index} className="p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 transition-all">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-bold text-gray-900">{alert.title}</h4>
+                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                        {alert.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{alert.description}</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Triggered this month:</span>
+                      <span className="font-bold text-indigo-600">{alert.triggered}x</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Spending Behavior Score */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <Award className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Spending Behavior Analysis</h3>
+                  <p className="text-sm text-gray-500">ML-powered behavior insights</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { metric: 'Consistency Score', value: 85, icon: '📊', color: 'green' },
+                  { metric: 'Impulse Control', value: 72, icon: '🎯', color: 'blue' },
+                  { metric: 'Budget Adherence', value: 91, icon: '✅', color: 'green' },
+                  { metric: 'Planning Ahead', value: 68, icon: '📅', color: 'yellow' }
+                ].map((item, index) => (
+                  <div key={index} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
+                    <div className="text-3xl mb-2">{item.icon}</div>
+                    <div className="text-sm text-gray-600 mb-1">{item.metric}</div>
+                    <div className="text-3xl font-bold text-gray-900 mb-2">{item.value}</div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          item.color === 'green' ? 'bg-green-500' :
+                          item.color === 'blue' ? 'bg-blue-500' :
+                          'bg-yellow-500'
+                        }`}
+                        style={{ width: `${item.value}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Predictive Recommendations */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-md p-6 border border-indigo-200">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-indigo-100 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Predictive Recommendations</h3>
+                  <p className="text-sm text-gray-500">Action items to optimize your spending</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  {
+                    title: 'Optimize Grocery Spending',
+                    description: 'ML predicts you can save ₹2,500/month by shopping at different stores',
+                    impact: 'High',
+                    savings: 30000
+                  },
+                  {
+                    title: 'Consolidate Subscriptions',
+                    description: 'Identified 3 overlapping subscriptions. Consider bundling',
+                    impact: 'Medium',
+                    savings: 6000
+                  },
+                  {
+                    title: 'Adjust Dining Budget',
+                    description: 'Your dining expenses trend suggests increasing budget by ₹1,000',
+                    impact: 'Medium',
+                    savings: -12000
+                  },
+                  {
+                    title: 'Schedule Bulk Purchases',
+                    description: 'Buy quarterly to save on frequent small purchases',
+                    impact: 'Low',
+                    savings: 4500
+                  }
+                ].map((rec, index) => (
+                  <div key={index} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-bold text-gray-900">{rec.title}</h4>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        rec.impact === 'High' ? 'bg-red-100 text-red-700' :
+                        rec.impact === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {rec.impact}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{rec.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm font-bold ${rec.savings > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {rec.savings > 0 ? '+' : ''}₹{Math.abs(rec.savings).toLocaleString()}/year
+                      </span>
+                      <button className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

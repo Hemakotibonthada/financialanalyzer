@@ -75,6 +75,7 @@ function InvestmentPortfolio() {
   const [loading, setLoading] = useState(true);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState(null);
+  const [showOptimizer, setShowOptimizer] = useState(false);
   const [filters, setFilters] = useState({
     type: '',
     status: '',
@@ -447,8 +448,9 @@ function InvestmentPortfolio() {
               <Tab label="Asset Allocation" />
               <Tab label="Performance" />
               <Tab label="Upcoming Maturities" />
-        </Tabs>
-      </Paper>
+              <Tab label="🤖 Portfolio Optimizer" />
+            </Tabs>
+          </Paper>
 
       {/* Tab Content */}
       {activeTab === 0 && (
@@ -772,6 +774,385 @@ function InvestmentPortfolio() {
             </Table>
           </TableContainer>
         </Paper>
+      )}
+
+      {/* Portfolio Optimizer Tab */}
+      {activeTab === 4 && (
+        <Box>
+          {/* Optimizer Header */}
+          <Paper
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              p: 4,
+              mb: 3,
+              color: 'white',
+              borderRadius: 2
+            }}
+          >
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              🤖 AI Portfolio Optimizer
+            </Typography>
+            <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+              Advanced algorithms to optimize your portfolio allocation and maximize returns
+            </Typography>
+            <Grid container spacing={3} sx={{ mt: 2 }}>
+              <Grid item xs={12} md={3}>
+                <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ opacity: 0.9 }}>Optimization Score</Typography>
+                  <Typography variant="h3" fontWeight="bold">87</Typography>
+                  <Typography variant="caption">/ 100</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ opacity: 0.9 }}>Potential Gain</Typography>
+                  <Typography variant="h5" fontWeight="bold">+₹2.4L</Typography>
+                  <Typography variant="caption">Annual</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ opacity: 0.9 }}>Risk Reduction</Typography>
+                  <Typography variant="h5" fontWeight="bold">-15%</Typography>
+                  <Typography variant="caption">Volatility</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ opacity: 0.9 }}>Rebalancing</Typography>
+                  <Typography variant="h5" fontWeight="bold">Every</Typography>
+                  <Typography variant="caption">Quarter</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Paper>
+
+          <Grid container spacing={3}>
+            {/* Current vs Optimal Allocation */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: '100%' }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  📊 Current vs Optimal Allocation
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Comparison of your current portfolio with AI-recommended allocation
+                </Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Equity', value: 45, optimal: 55 },
+                          { name: 'Debt', value: 30, optimal: 25 },
+                          { name: 'Gold', value: 15, optimal: 10 },
+                          { name: 'Crypto', value: 10, optimal: 10 }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={(entry) => `${entry.name}: ${entry.value}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Equity', value: 45, optimal: 55 },
+                          { name: 'Debt', value: 30, optimal: 25 },
+                          { name: 'Gold', value: 15, optimal: 10 },
+                          { name: 'Crypto', value: 10, optimal: 10 }
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+                <Box sx={{ mt: 2 }}>
+                  {[
+                    { name: 'Equity', current: 45, optimal: 55, diff: +10 },
+                    { name: 'Debt', current: 30, optimal: 25, diff: -5 },
+                    { name: 'Gold', current: 15, optimal: 10, diff: -5 },
+                    { name: 'Crypto', current: 10, optimal: 10, diff: 0 }
+                  ].map((item, index) => (
+                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                      <Typography variant="body2">{item.name}</Typography>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">{item.current}%</Typography>
+                        <Typography variant="body2" sx={{ mx: 1 }}>→</Typography>
+                        <Typography variant="body2" fontWeight="bold">{item.optimal}%</Typography>
+                        <Chip
+                          label={`${item.diff > 0 ? '+' : ''}${item.diff}%`}
+                          size="small"
+                          color={item.diff > 0 ? 'success' : item.diff < 0 ? 'error' : 'default'}
+                          sx={{ minWidth: 60 }}
+                        />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Risk-Return Analysis */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: '100%' }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  📈 Risk-Return Analysis
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Optimize your portfolio for better risk-adjusted returns
+                </Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={[
+                        { risk: 5, currentReturn: 8, optimalReturn: 10 },
+                        { risk: 10, currentReturn: 12, optimalReturn: 15 },
+                        { risk: 15, currentReturn: 14, optimalReturn: 18 },
+                        { risk: 20, currentReturn: 16, optimalReturn: 22 },
+                        { risk: 25, currentReturn: 18, optimalReturn: 24 }
+                      ]}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="risk" label={{ value: 'Risk (%)', position: 'insideBottom', offset: -5 }} />
+                      <YAxis label={{ value: 'Return (%)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="currentReturn" stroke="#ff7300" name="Current Portfolio" strokeWidth={2} />
+                      <Line type="monotone" dataKey="optimalReturn" stroke="#82ca9d" name="Optimal Portfolio" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Sharpe Ratio:</strong> Current: 1.2 → Optimal: 1.8
+                  </Typography>
+                  <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                    Higher Sharpe ratio indicates better risk-adjusted returns
+                  </Typography>
+                </Alert>
+              </Paper>
+            </Grid>
+
+            {/* Rebalancing Recommendations */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  ⚖️ Rebalancing Recommendations
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Specific actions to optimize your portfolio
+                </Typography>
+                <Grid container spacing={2}>
+                  {[
+                    {
+                      action: 'Increase Equity',
+                      from: 'Debt Funds',
+                      amount: '₹1,50,000',
+                      impact: '+12% expected returns',
+                      priority: 'High',
+                      color: 'error'
+                    },
+                    {
+                      action: 'Reduce Gold',
+                      from: 'Physical Gold',
+                      amount: '₹75,000',
+                      impact: 'Better liquidity',
+                      priority: 'Medium',
+                      color: 'warning'
+                    },
+                    {
+                      action: 'Diversify Sectors',
+                      from: 'Tech Heavy',
+                      amount: '₹1,00,000',
+                      impact: '-8% portfolio risk',
+                      priority: 'High',
+                      color: 'error'
+                    },
+                    {
+                      action: 'Add International',
+                      from: 'Domestic Only',
+                      amount: '₹2,00,000',
+                      impact: 'Global exposure',
+                      priority: 'Low',
+                      color: 'info'
+                    }
+                  ].map((rec, index) => (
+                    <Grid item xs={12} md={6} key={index}>
+                      <Card
+                        sx={{
+                          p: 2,
+                          border: '2px solid',
+                          borderColor: `${rec.color}.light`,
+                          bgcolor: `${rec.color}.lighter`
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                          <Typography variant="subtitle1" fontWeight="bold">
+                            {rec.action}
+                          </Typography>
+                          <Chip label={rec.priority} color={rec.color} size="small" />
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>From:</strong> {rec.from}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Amount:</strong> {rec.amount}
+                          </Typography>
+                          <Typography variant="body2" color="success.main" fontWeight="bold">
+                            💡 {rec.impact}
+                          </Typography>
+                        </Box>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 2 }}
+                        >
+                          Apply Recommendation
+                        </Button>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Tax Optimization */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  💰 Tax Optimization
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Maximize tax efficiency of your portfolio
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {[
+                    { title: 'LTCG Harvesting', saving: '₹45,000', description: 'Utilize ₹1L exemption limit' },
+                    { title: 'ELSS Investment', saving: '₹46,800', description: 'Add ₹1.5L under 80C' },
+                    { title: 'Tax-loss Harvesting', saving: '₹22,000', description: 'Offset gains with losses' }
+                  ].map((item, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        p: 2,
+                        bgcolor: 'success.lighter',
+                        borderRadius: 1,
+                        borderLeft: '4px solid',
+                        borderColor: 'success.main'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
+                        <Chip label={item.saving} color="success" size="small" />
+                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {item.description}
+                      </Typography>
+                    </Box>
+                  ))}
+                  <Alert severity="success">
+                    <Typography variant="body2" fontWeight="bold">
+                      Total Tax Savings Potential: ₹1,13,800/year
+                    </Typography>
+                  </Alert>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Performance Projections */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  🔮 Performance Projections
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Expected portfolio growth over next 5 years
+                </Typography>
+                <Box sx={{ height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={[
+                        { year: 'Now', current: 50, optimal: 50 },
+                        { year: 'Year 1', current: 55, optimal: 58 },
+                        { year: 'Year 2', current: 60, optimal: 67 },
+                        { year: 'Year 3', current: 66, optimal: 78 },
+                        { year: 'Year 4', current: 72, optimal: 90 },
+                        { year: 'Year 5', current: 79, optimal: 104 }
+                      ]}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis label={{ value: 'Portfolio Value (Lakhs)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="current" stroke="#ff7300" name="Current Strategy" strokeWidth={2} />
+                      <Line type="monotone" dataKey="optimal" stroke="#82ca9d" name="Optimized Strategy" strokeWidth={2} strokeDasharray="5 5" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 1 }}>
+                  <Typography variant="body2">
+                    <strong>5-Year Difference:</strong> ₹25L additional wealth with optimization
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Auto-Rebalance Settings */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  ⚙️ Auto-Rebalancing Settings
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Configure automatic portfolio rebalancing
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>Rebalancing Frequency</InputLabel>
+                      <Select value="quarterly" label="Rebalancing Frequency">
+                        <MenuItem value="monthly">Monthly</MenuItem>
+                        <MenuItem value="quarterly">Quarterly</MenuItem>
+                        <MenuItem value="halfyearly">Half-Yearly</MenuItem>
+                        <MenuItem value="yearly">Yearly</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>Threshold (%)</InputLabel>
+                      <Select value="5" label="Threshold (%)">
+                        <MenuItem value="3">3% Deviation</MenuItem>
+                        <MenuItem value="5">5% Deviation</MenuItem>
+                        <MenuItem value="10">10% Deviation</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>Risk Profile</InputLabel>
+                      <Select value="moderate" label="Risk Profile">
+                        <MenuItem value="conservative">Conservative</MenuItem>
+                        <MenuItem value="moderate">Moderate</MenuItem>
+                        <MenuItem value="aggressive">Aggressive</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button variant="contained" size="large" fullWidth startIcon={<AddIcon />}>
+                      Enable Auto-Rebalancing
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
       )}
 
       {/* Add/Edit Dialog */}

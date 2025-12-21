@@ -17,6 +17,7 @@ import CreditScoreCard from '../components/CreditScoreCard';
 import QuickExpenseEntry from '../components/QuickExpenseEntry';
 import QuickIncomeEntry from '../components/QuickIncomeEntry';
 import NewFeaturesShowcase from '../components/NewFeaturesShowcase';
+import AIFinancialPredictions from '../components/AIFinancialPredictions';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -229,6 +230,11 @@ const Dashboard = () => {
       {/* Financial Health Score */}
       <div className="mb-6">
         <FinancialHealth healthData={dashboardData?.charts?.financialHealth} />
+      </div>
+
+      {/* AI Financial Predictions */}
+      <div className="mb-6">
+        <AIFinancialPredictions />
       </div>
 
       {/* Charts Grid */}
