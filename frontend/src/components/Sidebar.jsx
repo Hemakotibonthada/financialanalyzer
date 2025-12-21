@@ -94,13 +94,6 @@ const Sidebar = () => {
       color: 'amber'
     },
     {
-      label: '📋 Bill of Materials',
-      icon: Receipt,
-      path: '/bill-of-materials',
-      color: 'indigo',
-      badge: 'NEW'
-    },
-    {
       label: 'Documents',
       icon: FileText,
       path: '/documents',

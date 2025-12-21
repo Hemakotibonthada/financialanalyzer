@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Tabs, Tab, Box } from '@mui/material';
 import MainLayout from '../components/MainLayout';
+import BillOfMaterials from './BillOfMaterials';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -20,6 +22,7 @@ import ExpenseFormModal from '../components/ExpenseFormModal';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const CompanyExpensesDashboard = () => {
+  const [activeTab, setActiveTab] = useState(0);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
@@ -163,7 +166,7 @@ const CompanyExpensesDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Company Expenses</h1>
-            <p className="text-gray-600 mt-1">Track and manage business expenses</p>
+            <p className="text-gray-600 mt-1">Track and manage business expenses & materials</p>
           </div>
           <button
             onClick={openAddModal}
@@ -174,9 +177,31 @@ const CompanyExpensesDashboard = () => {
           </button>
         </div>
 
-        {/* Analytics Cards */}
-        {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            sx={{
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 600,
+                minWidth: 120
+              }
+            }}
+          >
+            <Tab label="📊 Expenses Dashboard" />
+            <Tab label="📋 Bill of Materials" />
+          </Tabs>
+        </Box>
+
+        {/* Tab Panel 0 - Expenses Dashboard */}
+        {activeTab === 0 && (
+          <div>
+            {/* Analytics Cards */}
+            {analytics && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{/* ... existing expenses content ... */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -439,6 +464,12 @@ const CompanyExpensesDashboard = () => {
             )}
           </div>
         </div>
+        )}
+
+        {/* Tab Panel 1 - Bill of Materials */}
+        {activeTab === 1 && (
+          <BillOfMaterials />
+        )}
       </div>
 
       {/* Modal */}

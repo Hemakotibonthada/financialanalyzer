@@ -96,17 +96,6 @@ const NewFeaturesShowcase = () => {
       bgColor: 'bg-cyan-50',
       iconColor: 'text-cyan-600',
       borderColor: 'border-cyan-200'
-    },
-    {
-      title: '📋 Bill of Materials',
-      description: 'Track materials, components, costs with links and suppliers',
-      icon: ClipboardList,
-      path: '/bill-of-materials',
-      color: 'indigo',
-      bgColor: 'bg-indigo-50',
-      iconColor: 'text-indigo-600',
-      borderColor: 'border-indigo-200',
-      badge: 'NEW'
     }
   ];
 

@@ -44,7 +44,6 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -396,8 +395,7 @@ const BillOfMaterials = () => {
 
   return (
     <>
-      <Sidebar />
-      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+      <Box className="min-h-screen bg-gray-50 pb-8">{/* Removed sidebar and left margin */}
         {/* Header */}
         <Box
           sx={{
