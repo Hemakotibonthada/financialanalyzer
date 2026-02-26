@@ -190,6 +190,50 @@ app.use('/api/currency', require('./routes/currency')); // Currency conversion
 app.use('/api/security', require('./routes/security')); // Security features
 app.use('/api/company-expenses', require('./routes/companyExpenseRoutes')); // Company expenses tracking
 
+// ========== NEW ENHANCED ROUTES ==========
+// Split Expenses & Groups
+app.use('/api/split-expenses', require('./routes/splitExpenseRoutes'));
+// Receipt Scanning & OCR
+app.use('/api/receipts', require('./routes/receiptRoutes'));
+// Goal Tracking & Milestones
+app.use('/api/goal-tracking', require('./routes/goalTrackingRoutes'));
+// Bank Account Management
+app.use('/api/bank-accounts', require('./routes/bankAccountRoutes'));
+// Automation Rules Engine
+app.use('/api/automation', require('./routes/automationRoutes'));
+// Family Finance Management
+app.use('/api/family', require('./routes/familyRoutes'));
+// Financial Templates
+app.use('/api/templates', require('./routes/templateRoutes'));
+// AI Financial Chat
+app.use('/api/chat', require('./routes/chatRoutes'));
+// Market Data & Watchlist
+app.use('/api/market', require('./routes/marketRoutes'));
+// Currency Conversion & Alerts
+app.use('/api/currency-v2', require('./routes/currencyRoutes'));
+// Security Management
+app.use('/api/security-v2', require('./routes/securityRoutes'));
+// Smart Notifications
+app.use('/api/smart-notifications', require('./routes/notificationRoutes'));
+// Achievement System
+app.use('/api/achievements', require('./routes/achievements'));
+// Data Aggregation
+app.use('/api/aggregation', require('./routes/aggregation'));
+// Budget Optimization
+app.use('/api/budget-optimization', require('./routes/budgetOptimization'));
+// Smart Categorization
+app.use('/api/categorize', require('./routes/categorize'));
+// Financial Forecasting
+app.use('/api/forecast', require('./routes/forecast'));
+// Financial Reports
+app.use('/api/financial-reports', require('./routes/reports'));
+// Risk Assessment
+app.use('/api/risk-assessment', require('./routes/riskAssessment'));
+// Tax Optimization
+app.use('/api/tax-optimization', require('./routes/taxOptimization'));
+// Webhooks
+app.use('/api/webhooks', require('./routes/webhooks'));
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

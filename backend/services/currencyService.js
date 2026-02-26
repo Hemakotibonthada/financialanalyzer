@@ -1,183 +1,478 @@
+/**
+ * @fileoverview Currency Conversion Service
+ * Provides exchange rate lookups, currency conversion, historical rates,
+ * rate alerts, and supported currency metadata.
+ * Uses mock but realistic exchange rates with INR as the primary base.
+ * @module services/currencyService
+ */
+
+const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
-// Common currency symbols
-const CURRENCY_SYMBOLS = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  INR: '₹',
-  JPY: '¥',
-  AUD: 'A$',
-  CAD: 'C$',
-  CNY: '¥',
-  CHF: 'Fr'
-};
+/* ---------- Mongoose Schema ---------- */
 
-// Default exchange rates (relative to USD)
-// In production, fetch from API like exchangerate-api.com
-let exchangeRates = {
-  USD: 1.0,
-  EUR: 0.92,
-  GBP: 0.79,
-  INR: 83.12,
-  JPY: 149.50,
-  AUD: 1.53,
-  CAD: 1.37,
-  CNY: 7.24,
-  CHF: 0.89
-};
-
-let lastUpdated = new Date();
-const UPDATE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
-
-/**
- * Fetch latest exchange rates from API
- */
-async function updateExchangeRates() {
-  try {
-    // Using exchangerate-api.com free tier
-    const API_KEY = process.env.EXCHANGE_RATE_API_KEY || 'demo';
-    const response = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.rates) {
-        exchangeRates = {
-          USD: 1.0,
-          ...data.rates
-        };
-        lastUpdated = new Date();
-        logger.info('Exchange rates updated successfully');
-      }
-    }
-  } catch (error) {
-    logger.error('Failed to update exchange rates:', error);
-    // Continue using cached rates
-  }
-}
-
-/**
- * Convert amount from one currency to another
- * @param {number} amount - Amount to convert
- * @param {string} fromCurrency - Source currency code
- * @param {string} toCurrency - Target currency code
- * @returns {number} Converted amount
- */
-function convertCurrency(amount, fromCurrency = 'USD', toCurrency = 'USD') {
-  if (!amount || amount === 0) return 0;
-  if (fromCurrency === toCurrency) return amount;
-  
-  // Check if rates need updating
-  const timeSinceUpdate = Date.now() - lastUpdated.getTime();
-  if (timeSinceUpdate > UPDATE_INTERVAL) {
-    updateExchangeRates().catch(err => 
-      logger.error('Background rate update failed:', err)
-    );
-  }
-  
-  const fromRate = exchangeRates[fromCurrency.toUpperCase()] || 1;
-  const toRate = exchangeRates[toCurrency.toUpperCase()] || 1;
-  
-  // Convert to USD first, then to target currency
-  const usdAmount = amount / fromRate;
-  const convertedAmount = usdAmount * toRate;
-  
-  return Math.round(convertedAmount * 100) / 100; // Round to 2 decimals
-}
-
-/**
- * Get currency symbol
- * @param {string} currencyCode - Currency code (USD, EUR, etc.)
- * @returns {string} Currency symbol
- */
-function getCurrencySymbol(currencyCode) {
-  return CURRENCY_SYMBOLS[currencyCode.toUpperCase()] || currencyCode;
-}
-
-/**
- * Format amount with currency
- * @param {number} amount - Amount to format
- * @param {string} currency - Currency code
- * @returns {string} Formatted string (e.g., "$100.00")
- */
-function formatCurrency(amount, currency = 'USD') {
-  const symbol = getCurrencySymbol(currency);
-  const formatted = amount.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-  
-  // Some currencies put symbol after
-  if (currency === 'EUR') {
-    return `${formatted}${symbol}`;
-  }
-  
-  return `${symbol}${formatted}`;
-}
-
-/**
- * Get all supported currencies
- * @returns {Array} Array of currency objects
- */
-function getSupportedCurrencies() {
-  return [
-    { code: 'USD', name: 'US Dollar', symbol: '$' },
-    { code: 'EUR', name: 'Euro', symbol: '€' },
-    { code: 'GBP', name: 'British Pound', symbol: '£' },
-    { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-    { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-    { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-    { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-    { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-    { code: 'CHF', name: 'Swiss Franc', symbol: 'Fr' }
-  ];
-}
-
-/**
- * Get current exchange rates
- * @returns {Object} Current exchange rates
- */
-function getExchangeRates() {
-  return {
-    rates: exchangeRates,
-    lastUpdated: lastUpdated.toISOString()
-  };
-}
-
-/**
- * Convert multiple amounts
- * @param {Array} amounts - Array of {amount, currency} objects
- * @param {string} toCurrency - Target currency
- * @returns {Array} Converted amounts
- */
-function convertMultiple(amounts, toCurrency) {
-  return amounts.map(item => ({
-    ...item,
-    originalAmount: item.amount,
-    originalCurrency: item.currency,
-    convertedAmount: convertCurrency(item.amount, item.currency, toCurrency),
-    convertedCurrency: toCurrency
-  }));
-}
-
-// Initialize rates on module load
-updateExchangeRates().catch(err => 
-  logger.warn('Initial rate fetch failed, using defaults:', err)
+const rateAlertSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    fromCurrency: { type: String, required: true, uppercase: true },
+    toCurrency: { type: String, required: true, uppercase: true },
+    targetRate: { type: Number, required: true },
+    direction: { type: String, enum: ['above', 'below'], required: true },
+    isActive: { type: Boolean, default: true },
+    triggeredAt: { type: Date, default: null },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
 );
 
-// Update rates periodically
-setInterval(() => {
-  updateExchangeRates().catch(err => 
-    logger.error('Periodic rate update failed:', err)
-  );
-}, UPDATE_INTERVAL);
+rateAlertSchema.index({ isActive: 1 });
 
-module.exports = {
-  convertCurrency,
-  getCurrencySymbol,
-  formatCurrency,
-  getSupportedCurrencies,
-  getExchangeRates,
-  convertMultiple,
-  updateExchangeRates
+const RateAlert = mongoose.models.RateAlert || mongoose.model('RateAlert', rateAlertSchema);
+
+/* ---------- Currency Data ---------- */
+
+/**
+ * Supported currencies with metadata.
+ * Rates are expressed as 1 unit = X INR.
+ */
+const CURRENCIES = {
+  INR: { name: 'Indian Rupee', symbol: '₹', flag: '🇮🇳', rateToINR: 1 },
+  USD: { name: 'US Dollar', symbol: '$', flag: '🇺🇸', rateToINR: 83.25 },
+  EUR: { name: 'Euro', symbol: '€', flag: '🇪🇺', rateToINR: 90.40 },
+  GBP: { name: 'British Pound', symbol: '£', flag: '🇬🇧', rateToINR: 105.50 },
+  JPY: { name: 'Japanese Yen', symbol: '¥', flag: '🇯🇵', rateToINR: 0.555 },
+  AUD: { name: 'Australian Dollar', symbol: 'A$', flag: '🇦🇺', rateToINR: 54.20 },
+  CAD: { name: 'Canadian Dollar', symbol: 'C$', flag: '🇨🇦', rateToINR: 61.30 },
+  SGD: { name: 'Singapore Dollar', symbol: 'S$', flag: '🇸🇬', rateToINR: 62.10 },
+  AED: { name: 'UAE Dirham', symbol: 'د.إ', flag: '🇦🇪', rateToINR: 22.67 },
+  CHF: { name: 'Swiss Franc', symbol: 'CHF', flag: '🇨🇭', rateToINR: 94.80 },
+  CNY: { name: 'Chinese Yuan', symbol: '¥', flag: '🇨🇳', rateToINR: 11.45 },
+  HKD: { name: 'Hong Kong Dollar', symbol: 'HK$', flag: '🇭🇰', rateToINR: 10.65 },
+  NZD: { name: 'New Zealand Dollar', symbol: 'NZ$', flag: '🇳🇿', rateToINR: 49.80 },
+  SEK: { name: 'Swedish Krona', symbol: 'kr', flag: '🇸🇪', rateToINR: 7.85 },
+  KRW: { name: 'South Korean Won', symbol: '₩', flag: '🇰🇷', rateToINR: 0.0625 },
+  THB: { name: 'Thai Baht', symbol: '฿', flag: '🇹🇭', rateToINR: 2.38 },
+  MYR: { name: 'Malaysian Ringgit', symbol: 'RM', flag: '🇲🇾', rateToINR: 17.65 },
+  SAR: { name: 'Saudi Riyal', symbol: '﷼', flag: '🇸🇦', rateToINR: 22.19 },
+  ZAR: { name: 'South African Rand', symbol: 'R', flag: '🇿🇦', rateToINR: 4.52 },
+  BRL: { name: 'Brazilian Real', symbol: 'R$', flag: '🇧🇷', rateToINR: 16.70 },
 };
+
+/* ---------- Helpers ---------- */
+
+/**
+ * Apply a small random fluctuation to a base rate.
+ * @param {number} base - Base exchange rate.
+ * @param {number} [maxPct=0.5] - Maximum percentage deviation.
+ * @returns {number}
+ */
+function jitter(base, maxPct = 0.5) {
+  const change = base * ((Math.random() * 2 - 1) * maxPct) / 100;
+  return +(base + change).toFixed(4);
+}
+
+/**
+ * Validate that a currency code is supported.
+ * @param {string} code
+ * @returns {boolean}
+ */
+function isSupported(code) {
+  return !!CURRENCIES[code?.toUpperCase()];
+}
+
+/* ============================================================
+ *  Currency Service
+ * ============================================================ */
+const currencyService = {
+  /* ----------------------------------------------------------
+   *  getExchangeRates
+   * ---------------------------------------------------------- */
+  /**
+   * Get current exchange rates for all currencies relative to a base.
+   * @param {string} [baseCurrency='INR'] - Base currency code.
+   * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+   */
+  async getExchangeRates(baseCurrency = 'INR') {
+    try {
+      const base = baseCurrency.toUpperCase();
+      if (!isSupported(base)) throw new Error(`Unsupported base currency: ${base}`);
+
+      const baseToINR = jitter(CURRENCIES[base].rateToINR);
+      const rates = {};
+
+      for (const [code, info] of Object.entries(CURRENCIES)) {
+        if (code === base) {
+          rates[code] = 1;
+          continue;
+        }
+        const targetToINR = jitter(info.rateToINR);
+        // 1 base = (baseToINR / targetToINR) target
+        rates[code] = +(baseToINR / targetToINR).toFixed(6);
+      }
+
+      return {
+        success: true,
+        data: {
+          base,
+          rates,
+          timestamp: new Date(),
+          disclaimer: 'Rates are indicative and for informational purposes only.',
+        },
+      };
+    } catch (error) {
+      logger.error(`getExchangeRates error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  convert
+   * ---------------------------------------------------------- */
+  /**
+   * Convert an amount from one currency to another.
+   * @param {number} amount - Amount to convert.
+   * @param {string} from - Source currency code.
+   * @param {string} to - Target currency code.
+   * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+   */
+  async convert(amount, from, to) {
+    try {
+      if (amount == null || isNaN(amount)) throw new Error('A valid numeric amount is required');
+      if (amount < 0) throw new Error('Amount must be non-negative');
+
+      const fromCode = from?.toUpperCase();
+      const toCode = to?.toUpperCase();
+      if (!isSupported(fromCode)) throw new Error(`Unsupported currency: ${fromCode}`);
+      if (!isSupported(toCode)) throw new Error(`Unsupported currency: ${toCode}`);
+
+      if (fromCode === toCode) {
+        return {
+          success: true,
+          data: {
+            from: fromCode,
+            to: toCode,
+            amount,
+            convertedAmount: amount,
+            rate: 1,
+            inverseRate: 1,
+            timestamp: new Date(),
+          },
+        };
+      }
+
+      const fromToINR = jitter(CURRENCIES[fromCode].rateToINR);
+      const toToINR = jitter(CURRENCIES[toCode].rateToINR);
+      const rate = +(fromToINR / toToINR).toFixed(6);
+      const convertedAmount = +(amount * rate).toFixed(2);
+
+      return {
+        success: true,
+        data: {
+          from: fromCode,
+          to: toCode,
+          amount,
+          convertedAmount,
+          rate,
+          inverseRate: +(1 / rate).toFixed(6),
+          fromSymbol: CURRENCIES[fromCode].symbol,
+          toSymbol: CURRENCIES[toCode].symbol,
+          timestamp: new Date(),
+        },
+      };
+    } catch (error) {
+      logger.error(`convert error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  getHistoricalRates
+   * ---------------------------------------------------------- */
+  /**
+   * Get historical exchange rates for a base currency over a number of days.
+   * @param {string} [baseCurrency='INR']
+   * @param {number} [days=30]
+   * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+   */
+  async getHistoricalRates(baseCurrency = 'INR', days = 30) {
+    try {
+      const base = baseCurrency.toUpperCase();
+      if (!isSupported(base)) throw new Error(`Unsupported currency: ${base}`);
+
+      const safeDays = Math.min(365, Math.max(1, days));
+      const history = [];
+
+      for (let i = safeDays; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        // Skip weekends (forex markets closed on weekends)
+        if (date.getDay() === 0 || date.getDay() === 6) continue;
+
+        const dayRates = {};
+        const baseToINR = jitter(CURRENCIES[base].rateToINR, 1);
+
+        for (const [code, info] of Object.entries(CURRENCIES)) {
+          if (code === base) {
+            dayRates[code] = 1;
+            continue;
+          }
+          const targetToINR = jitter(info.rateToINR, 1);
+          dayRates[code] = +(baseToINR / targetToINR).toFixed(6);
+        }
+
+        history.push({
+          date: date.toISOString().split('T')[0],
+          rates: dayRates,
+        });
+      }
+
+      // Compute trend for a few key pairs
+      const trends = {};
+      const targetCodes = base === 'INR' ? ['USD', 'EUR', 'GBP'] : ['INR', 'USD', 'EUR'];
+      for (const tc of targetCodes) {
+        if (history.length >= 2) {
+          const first = history[0].rates[tc];
+          const last = history[history.length - 1].rates[tc];
+          trends[tc] = {
+            startRate: first,
+            endRate: last,
+            changePercent: +(((last - first) / first) * 100).toFixed(3),
+            direction: last >= first ? 'up' : 'down',
+          };
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          base,
+          days: safeDays,
+          dataPoints: history.length,
+          history,
+          trends,
+        },
+      };
+    } catch (error) {
+      logger.error(`getHistoricalRates error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  getSupportedCurrencies
+   * ---------------------------------------------------------- */
+  /**
+   * List all supported currencies with names and symbols.
+   * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
+   */
+  async getSupportedCurrencies() {
+    try {
+      const currencies = Object.entries(CURRENCIES).map(([code, info]) => ({
+        code,
+        name: info.name,
+        symbol: info.symbol,
+        flag: info.flag,
+      }));
+
+      return { success: true, data: currencies };
+    } catch (error) {
+      logger.error(`getSupportedCurrencies error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  getRateAlerts
+   * ---------------------------------------------------------- */
+  /**
+   * Get all rate alerts for a user.
+   * @param {string} userId
+   * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
+   */
+  async getRateAlerts(userId) {
+    try {
+      if (!userId) throw new Error('userId is required');
+
+      const alerts = await RateAlert.find({ userId, isActive: true })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      // Enrich with current rates
+      const enriched = alerts.map((alert) => {
+        const fromInfo = CURRENCIES[alert.fromCurrency];
+        const toInfo = CURRENCIES[alert.toCurrency];
+        let currentRate = null;
+        if (fromInfo && toInfo) {
+          currentRate = +(jitter(fromInfo.rateToINR) / jitter(toInfo.rateToINR)).toFixed(6);
+        }
+        return {
+          ...alert,
+          currentRate,
+          isTriggered: currentRate != null && (
+            (alert.direction === 'above' && currentRate >= alert.targetRate) ||
+            (alert.direction === 'below' && currentRate <= alert.targetRate)
+          ),
+        };
+      });
+
+      return { success: true, data: enriched };
+    } catch (error) {
+      logger.error(`getRateAlerts error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  createRateAlert
+   * ---------------------------------------------------------- */
+  /**
+   * Create a new rate alert.
+   * @param {string} userId
+   * @param {string} from - Source currency code.
+   * @param {string} to - Target currency code.
+   * @param {number} targetRate - Rate at which to trigger the alert.
+   * @param {'above'|'below'} direction - Trigger when rate goes above or below target.
+   * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+   */
+  async createRateAlert(userId, from, to, targetRate, direction) {
+    try {
+      if (!userId) throw new Error('userId is required');
+      if (!from || !to) throw new Error('from and to currencies are required');
+      if (targetRate == null || isNaN(targetRate) || targetRate <= 0) {
+        throw new Error('A valid positive targetRate is required');
+      }
+      if (!['above', 'below'].includes(direction)) {
+        throw new Error('Direction must be "above" or "below"');
+      }
+
+      const fromCode = from.toUpperCase();
+      const toCode = to.toUpperCase();
+      if (!isSupported(fromCode)) throw new Error(`Unsupported currency: ${fromCode}`);
+      if (!isSupported(toCode)) throw new Error(`Unsupported currency: ${toCode}`);
+      if (fromCode === toCode) throw new Error('from and to currencies must differ');
+
+      // Limit active alerts per user
+      const activeCount = await RateAlert.countDocuments({ userId, isActive: true });
+      if (activeCount >= 20) {
+        throw new Error('Maximum of 20 active rate alerts reached. Delete one before adding another.');
+      }
+
+      const alert = new RateAlert({
+        userId,
+        fromCurrency: fromCode,
+        toCurrency: toCode,
+        targetRate,
+        direction,
+      });
+
+      await alert.save();
+
+      const currentRate = +(jitter(CURRENCIES[fromCode].rateToINR) / jitter(CURRENCIES[toCode].rateToINR)).toFixed(6);
+
+      logger.info(`Rate alert created: ${fromCode}/${toCode} ${direction} ${targetRate} for user ${userId}`);
+      return {
+        success: true,
+        data: {
+          id: alert._id,
+          fromCurrency: fromCode,
+          toCurrency: toCode,
+          targetRate,
+          currentRate,
+          direction,
+          createdAt: alert.createdAt,
+        },
+      };
+    } catch (error) {
+      logger.error(`createRateAlert error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  deleteRateAlert
+   * ---------------------------------------------------------- */
+  /**
+   * Delete (deactivate) a rate alert.
+   * @param {string} userId
+   * @param {string} alertId
+   * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+   */
+  async deleteRateAlert(userId, alertId) {
+    try {
+      if (!userId || !alertId) throw new Error('userId and alertId are required');
+
+      const alert = await RateAlert.findOneAndUpdate(
+        { _id: alertId, userId, isActive: true },
+        { $set: { isActive: false } },
+        { new: true }
+      );
+
+      if (!alert) throw new Error('Rate alert not found or already deleted');
+
+      logger.info(`Rate alert ${alertId} deleted for user ${userId}`);
+      return { success: true, data: { id: alertId, deleted: true } };
+    } catch (error) {
+      logger.error(`deleteRateAlert error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  checkRateAlerts
+   * ---------------------------------------------------------- */
+  /**
+   * Check all active rate alerts against current rates and mark
+   * triggered ones. Returns a list of newly triggered alerts.
+   * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+   */
+  async checkRateAlerts() {
+    try {
+      const activeAlerts = await RateAlert.find({ isActive: true, triggeredAt: null });
+
+      const triggered = [];
+
+      for (const alert of activeAlerts) {
+        const fromInfo = CURRENCIES[alert.fromCurrency];
+        const toInfo = CURRENCIES[alert.toCurrency];
+        if (!fromInfo || !toInfo) continue;
+
+        const currentRate = +(jitter(fromInfo.rateToINR) / jitter(toInfo.rateToINR)).toFixed(6);
+
+        const isTriggered =
+          (alert.direction === 'above' && currentRate >= alert.targetRate) ||
+          (alert.direction === 'below' && currentRate <= alert.targetRate);
+
+        if (isTriggered) {
+          alert.triggeredAt = new Date();
+          alert.isActive = false;
+          await alert.save();
+
+          triggered.push({
+            alertId: alert._id,
+            userId: alert.userId,
+            pair: `${alert.fromCurrency}/${alert.toCurrency}`,
+            targetRate: alert.targetRate,
+            currentRate,
+            direction: alert.direction,
+            triggeredAt: alert.triggeredAt,
+          });
+        }
+      }
+
+      logger.info(`Rate alerts checked: ${triggered.length} triggered out of ${activeAlerts.length} active`);
+      return {
+        success: true,
+        data: {
+          checked: activeAlerts.length,
+          triggered: triggered.length,
+          alerts: triggered,
+        },
+      };
+    } catch (error) {
+      logger.error(`checkRateAlerts error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+};
+
+module.exports = currencyService;

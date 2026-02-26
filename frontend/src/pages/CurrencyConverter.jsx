@@ -1,0 +1,446 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  ArrowLeftRight, Search, Star, StarOff, Bell, BellRing, TrendingUp, TrendingDown,
+  RefreshCw, ChevronDown, Globe, DollarSign, Clock, Filter, X, Plus, Trash2, Check
+} from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import api from '../services/api';
+
+const AnimatedValue = ({ end, prefix = '₹', decimals = 2 }) => {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let start; const ref = { current: null };
+    const animate = (ts) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / 1200, 1);
+      setVal((1 - Math.pow(1 - p, 3)) * end);
+      if (p < 1) ref.current = requestAnimationFrame(animate);
+    };
+    ref.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(ref.current);
+  }, [end]);
+  return <span>{prefix}{val.toFixed(decimals)}</span>;
+};
+
+const POPULAR_CURRENCIES = [
+  { code: 'USD', name: 'US Dollar', symbol: '$', flag: '🇺🇸' },
+  { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺' },
+  { code: 'GBP', name: 'British Pound', symbol: '£', flag: '🇬🇧' },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', flag: '🇯🇵' },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹', flag: '🇮🇳' },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', flag: '🇦🇺' },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', flag: '🇨🇦' },
+  { code: 'CHF', name: 'Swiss Franc', symbol: 'Fr', flag: '🇨🇭' },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', flag: '🇨🇳' },
+  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', flag: '🇸🇬' },
+  { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', flag: '🇦🇪' },
+  { code: 'KRW', name: 'South Korean Won', symbol: '₩', flag: '🇰🇷' },
+];
+
+const HISTORICAL_DATA = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date(); d.setDate(d.getDate() - (29 - i));
+  return {
+    date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    rate: 83.2 + Math.sin(i * 0.3) * 1.5 + Math.random() * 0.5,
+    avg: 83.5,
+  };
+});
+
+export default function CurrencyConverter() {
+  const [loading, setLoading] = useState(true);
+  const [rates, setRates] = useState({});
+  const [fromCurrency, setFromCurrency] = useState('USD');
+  const [toCurrency, setToCurrency] = useState('INR');
+  const [amount, setAmount] = useState(1);
+  const [convertedAmount, setConvertedAmount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favorites, setFavorites] = useState(['USD-INR', 'EUR-INR', 'GBP-INR']);
+  const [alerts, setAlerts] = useState([
+    { id: 1, pair: 'USD-INR', target: 82.0, direction: 'below', active: true },
+    { id: 2, pair: 'EUR-INR', target: 92.0, direction: 'above', active: true },
+  ]);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [historicalData, setHistoricalData] = useState(HISTORICAL_DATA);
+  const [chartPeriod, setChartPeriod] = useState('1M');
+  const [newAlert, setNewAlert] = useState({ pair: 'USD-INR', target: '', direction: 'above' });
+  const [fromDropdownOpen, setFromDropdownOpen] = useState(false);
+  const [toDropdownOpen, setToDropdownOpen] = useState(false);
+
+  const fetchRates = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/currency/rates');
+      setRates(res.data?.rates || {});
+    } catch {
+      const mockRates = {};
+      POPULAR_CURRENCIES.forEach(c => {
+        mockRates[c.code] = c.code === 'INR' ? 1 : (80 + Math.random() * 10).toFixed(4);
+      });
+      mockRates['USD'] = 83.45; mockRates['EUR'] = 90.12; mockRates['GBP'] = 105.67;
+      mockRates['JPY'] = 0.56; mockRates['AUD'] = 54.32; mockRates['CAD'] = 61.78;
+      mockRates['CHF'] = 94.21; mockRates['CNY'] = 11.52; mockRates['SGD'] = 62.15;
+      mockRates['AED'] = 22.72; mockRates['KRW'] = 0.063;
+      setRates(mockRates);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchRates(); }, [fetchRates]);
+
+  useEffect(() => {
+    if (rates[fromCurrency] && rates[toCurrency]) {
+      const fromRate = fromCurrency === 'INR' ? 1 : rates[fromCurrency];
+      const toRate = toCurrency === 'INR' ? 1 : rates[toCurrency];
+      setConvertedAmount((amount * fromRate) / toRate);
+    }
+  }, [amount, fromCurrency, toCurrency, rates]);
+
+  const handleSwap = useCallback(() => {
+    setFromCurrency(toCurrency);
+    setToCurrency(fromCurrency);
+  }, [fromCurrency, toCurrency]);
+
+  const toggleFavorite = useCallback((pair) => {
+    setFavorites(prev => prev.includes(pair) ? prev.filter(f => f !== pair) : [...prev, pair]);
+  }, []);
+
+  const addAlert = useCallback(() => {
+    if (!newAlert.target) return;
+    setAlerts(prev => [...prev, { ...newAlert, id: Date.now(), active: true, target: parseFloat(newAlert.target) }]);
+    setNewAlert({ pair: 'USD-INR', target: '', direction: 'above' });
+    setShowAlertModal(false);
+  }, [newAlert]);
+
+  const deleteAlert = useCallback((id) => {
+    setAlerts(prev => prev.filter(a => a.id !== id));
+  }, []);
+
+  const filteredCurrencies = useMemo(() => {
+    if (!searchQuery) return POPULAR_CURRENCIES;
+    const q = searchQuery.toLowerCase();
+    return POPULAR_CURRENCIES.filter(c =>
+      c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const comparisonData = useMemo(() => {
+    return POPULAR_CURRENCIES.filter(c => c.code !== 'INR').map(c => ({
+      ...c,
+      rate: rates[c.code] || 0,
+      change: (Math.random() * 2 - 1).toFixed(2),
+    }));
+  }, [rates]);
+
+  const getCurrencyInfo = (code) => POPULAR_CURRENCIES.find(c => c.code === code) || { flag: '🌍', name: code, symbol: code };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center animate-fade-in-up">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 text-lg">Loading exchange rates...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white shadow-lg shadow-green-600/30">
+              <Globe className="w-6 h-6" />
+            </div>
+            Currency Converter
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Live exchange rates & conversions</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowAlertModal(true)} className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors border border-amber-200 dark:border-amber-800">
+            <BellRing className="w-4 h-4" /> Rate Alerts
+          </button>
+          <button onClick={fetchRates} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">
+            <RefreshCw className="w-4 h-4" /> Refresh Rates
+          </button>
+        </div>
+      </div>
+
+      {/* Converter Card */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 animate-fade-in-up shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-4 md:gap-6 items-end">
+          {/* From */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">From</label>
+            <div className="relative">
+              <button onClick={() => { setFromDropdownOpen(!fromDropdownOpen); setToDropdownOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-blue-400 transition-colors text-left">
+                <span className="text-2xl">{getCurrencyInfo(fromCurrency).flag}</span>
+                <div className="flex-1">
+                  <div className="font-semibold text-slate-900 dark:text-white">{fromCurrency}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{getCurrencyInfo(fromCurrency).name}</div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              </button>
+              {fromDropdownOpen && (
+                <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl max-h-60 overflow-y-auto">
+                  {POPULAR_CURRENCIES.map(c => (
+                    <button key={c.code} onClick={() => { setFromCurrency(c.code); setFromDropdownOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left">
+                      <span className="text-lg">{c.flag}</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{c.code}</span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <input type="number" value={amount} onChange={e => setAmount(parseFloat(e.target.value) || 0)}
+              className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-2xl font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+          </div>
+
+          {/* Swap */}
+          <div className="flex justify-center md:pb-4">
+            <button onClick={handleSwap}
+              className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all hover:scale-110 border border-blue-200 dark:border-blue-800">
+              <ArrowLeftRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* To */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">To</label>
+            <div className="relative">
+              <button onClick={() => { setToDropdownOpen(!toDropdownOpen); setFromDropdownOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-blue-400 transition-colors text-left">
+                <span className="text-2xl">{getCurrencyInfo(toCurrency).flag}</span>
+                <div className="flex-1">
+                  <div className="font-semibold text-slate-900 dark:text-white">{toCurrency}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{getCurrencyInfo(toCurrency).name}</div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              </button>
+              {toDropdownOpen && (
+                <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl max-h-60 overflow-y-auto">
+                  {POPULAR_CURRENCIES.map(c => (
+                    <button key={c.code} onClick={() => { setToCurrency(c.code); setToDropdownOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left">
+                      <span className="text-lg">{c.flag}</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{c.code}</span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="w-full p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800 text-2xl font-bold text-green-700 dark:text-green-400">
+              <AnimatedValue end={convertedAmount} prefix={getCurrencyInfo(toCurrency).symbol} />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span>Last updated: {new Date().toLocaleTimeString()}</span>
+          </div>
+          <div>1 {fromCurrency} = {(convertedAmount / (amount || 1)).toFixed(4)} {toCurrency}</div>
+        </div>
+      </div>
+
+      {/* Favorites */}
+      <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <Star className="w-5 h-5 text-amber-500" /> Favorite Pairs
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {favorites.map(pair => {
+            const [from, to] = pair.split('-');
+            const rate = rates[from] || 1;
+            return (
+              <div key={pair} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 flex items-center justify-between hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{getCurrencyInfo(from).flag}</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">{from}/{to}</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-slate-900 dark:text-white">{parseFloat(rate).toFixed(2)}</div>
+                  <div className="text-xs text-green-600 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> +0.12%</div>
+                </div>
+                <button onClick={() => toggleFavorite(pair)} className="p-1 text-amber-500 hover:text-amber-600">
+                  <Star className="w-4 h-4 fill-current" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Historical Chart */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-500" /> Historical Rates — {fromCurrency}/{toCurrency}
+          </h2>
+          <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            {['1W', '1M', '3M', '6M', '1Y'].map(p => (
+              <button key={p} onClick={() => setChartPeriod(p)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartPeriod === p ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={historicalData}>
+              <defs>
+                <linearGradient id="rateGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#94a3b8' }} />
+              <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} domain={['auto', 'auto']} />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff' }} />
+              <Legend />
+              <Area type="monotone" dataKey="rate" stroke="#3b82f6" fill="url(#rateGradient)" strokeWidth={2} name="Exchange Rate" />
+              <Area type="monotone" dataKey="avg" stroke="#f59e0b" fill="none" strokeWidth={1.5} strokeDasharray="5 5" name="Average" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Currency Comparison Table */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-green-500" /> Rates vs INR
+          </h2>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search currency..."
+              className="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-white" />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700">
+                <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Currency</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Rate (INR)</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Change</th>
+                <th className="text-center py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Favorite</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonData.filter(c => !searchQuery || c.code.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
+                <tr key={c.code} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{c.flag}</span>
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-white">{c.code}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{c.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-right font-semibold text-slate-900 dark:text-white">₹{parseFloat(c.rate).toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right">
+                    <span className={`inline-flex items-center gap-1 text-sm font-medium ${parseFloat(c.change) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {parseFloat(c.change) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                      {c.change}%
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <button onClick={() => toggleFavorite(`${c.code}-INR`)}
+                      className={`p-1.5 rounded-lg transition-colors ${favorites.includes(`${c.code}-INR`) ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'}`}>
+                      {favorites.includes(`${c.code}-INR`) ? <Star className="w-4 h-4 fill-current" /> : <StarOff className="w-4 h-4" />}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Active Alerts */}
+      {alerts.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Bell className="w-5 h-5 text-amber-500" /> Active Alerts
+          </h2>
+          <div className="space-y-3">
+            {alerts.map(alert => (
+              <div key={alert.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${alert.active ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-slate-200 dark:bg-slate-600 text-slate-400'}`}>
+                    <BellRing className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-slate-900 dark:text-white">{alert.pair}</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Alert when rate goes {alert.direction} {alert.target}</div>
+                  </div>
+                </div>
+                <button onClick={() => deleteAlert(alert.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Alert Modal */}
+      {showAlertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowAlertModal(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Create Rate Alert</h3>
+              <button onClick={() => setShowAlertModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Currency Pair</label>
+                <select value={newAlert.pair} onChange={e => setNewAlert(p => ({ ...p, pair: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                  {POPULAR_CURRENCIES.filter(c => c.code !== 'INR').map(c => (
+                    <option key={c.code} value={`${c.code}-INR`}>{c.code}/INR</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Direction</label>
+                <div className="flex gap-2">
+                  {['above', 'below'].map(d => (
+                    <button key={d} onClick={() => setNewAlert(p => ({ ...p, direction: d }))}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${newAlert.direction === d ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                      {d === 'above' ? '↑ Goes Above' : '↓ Goes Below'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Rate</label>
+                <input type="number" step="0.01" value={newAlert.target} onChange={e => setNewAlert(p => ({ ...p, target: e.target.value }))} placeholder="e.g. 84.50"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <button onClick={addAlert}
+                className="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                <Check className="w-4 h-4" /> Create Alert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
