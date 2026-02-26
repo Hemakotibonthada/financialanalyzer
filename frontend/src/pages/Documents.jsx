@@ -219,13 +219,13 @@ const Documents = () => {
       {/* Message Display */}
       {message.text && (
         <div className={`mb-6 p-4 rounded-lg ${
-          message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-          message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-          'bg-blue-50 text-blue-800 border border-blue-200'
+          message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
+          message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' :
+          'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
         }`}>
           <button
             onClick={() => setMessage({ type: '', text: '' })}
-            className="float-right text-gray-400 hover:text-gray-600"
+            className="float-right text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
           >
             ×
           </button>
@@ -238,7 +238,7 @@ const Documents = () => {
         {documentCategories.map((category) => (
           <div
             key={category.value}
-            className={`${category.bgColor} rounded-xl p-6 cursor-pointer hover:shadow-md transition-all border border-gray-100 ${
+            className={`${category.bgColor} rounded-xl p-6 cursor-pointer hover:shadow-md transition-all border border-gray-100 dark:border-slate-700 ${
               selectedCategory === category.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''
             }`}
             onClick={() => setSelectedCategory(selectedCategory === category.value ? 'all' : category.value)}
@@ -249,7 +249,7 @@ const Documents = () => {
             <h3 className={`text-center font-semibold ${category.textColor} mb-2`}>
               {category.label}
             </h3>
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600 dark:text-slate-400">
               {category.description}
             </p>
           </div>
@@ -257,15 +257,15 @@ const Documents = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 mb-6">
+        <div className="border-b border-gray-200 dark:border-slate-700">
           <nav className="flex space-x-8 px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('all')}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                 activeTab === 'all'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <FileText className="h-4 w-4" />
@@ -276,7 +276,7 @@ const Documents = () => {
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                 activeTab === 'search'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <Search className="h-4 w-4" />
@@ -287,7 +287,7 @@ const Documents = () => {
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                 activeTab === 'starred'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <Star className="h-4 w-4" />
@@ -298,7 +298,7 @@ const Documents = () => {
               className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                 activeTab === 'recent'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <Clock className="h-4 w-4" />
@@ -312,13 +312,13 @@ const Documents = () => {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search Box */}
             <div className="w-full md:w-96 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-200"
               />
             </div>
 
@@ -327,7 +327,7 @@ const Documents = () => {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-200"
               >
                 <option value="all">All Types</option>
                 {documentTypes.map(type => (
@@ -337,7 +337,7 @@ const Documents = () => {
 
               <button
                 onClick={handleAutoCategorize}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
               >
                 <Filter className="h-4 w-4" />
                 Auto-Categorize
@@ -349,15 +349,15 @@ const Documents = () => {
 
       {/* Documents Display */}
       {loading ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading documents...</p>
+          <p className="text-gray-600 dark:text-slate-400">Loading documents...</p>
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="bg-blue-50 rounded-lg p-12 text-center border border-blue-100">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-12 text-center border border-blue-100 dark:border-blue-800">
           <FileText className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-          <p className="text-blue-800 text-lg font-medium mb-2">No documents found.</p>
-          <p className="text-blue-600 mb-4">Upload your first document to get started.</p>
+          <p className="text-blue-800 dark:text-blue-400 text-lg font-medium mb-2">No documents found.</p>
+          <p className="text-blue-600 dark:text-blue-400 mb-4">Upload your first document to get started.</p>
           <button
             onClick={() => setShowUploadModal(true)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -367,45 +367,45 @@ const Documents = () => {
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+              <thead className="bg-gray-50 dark:bg-slate-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Document
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Size
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Uploaded
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                 {filteredDocuments.map((doc) => {
                   const category = documentCategories.find(c => c.value === doc.category);
                   return (
-                    <tr key={doc.id} className="hover:bg-gray-50">
+                    <tr key={doc.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className={`${category?.iconBg || 'bg-gray-100'} w-10 h-10 rounded-lg flex items-center justify-center mr-3`}>
                             <span className="text-xl">{category?.icon || '📄'}</span>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{doc.fileName || doc.name || 'Unnamed Document'}</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{doc.fileName || doc.name || 'Unnamed Document'}</div>
                             {doc.description && (
-                              <div className="text-sm text-gray-500">{doc.description}</div>
+                              <div className="text-sm text-gray-500 dark:text-slate-400">{doc.description}</div>
                             )}
                           </div>
                         </div>
@@ -415,13 +415,13 @@ const Documents = () => {
                           {category?.label || doc.category || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {doc.type || 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {formatFileSize(doc.fileSize)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -452,35 +452,35 @@ const Documents = () => {
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4">Upload Document</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-4 dark:text-white">Upload Document</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Select File
                 </label>
                 <input
                   type="file"
                   onChange={handleFileSelect}
                   accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx,.txt"
-                  className="w-full border border-gray-300 rounded-lg p-2"
+                  className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 dark:bg-slate-700 dark:text-slate-200"
                 />
                 {uploadFiles.length > 0 && (
-                  <p className="text-sm text-gray-600 mt-2">
+                  <p className="text-sm text-gray-600 dark:text-slate-400 mt-2">
                     Selected: {uploadFiles[0].name}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Category
                 </label>
                 <select
                   value={uploadCategory}
                   onChange={(e) => setUploadCategory(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
+                  className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 dark:bg-slate-700 dark:text-slate-200"
                 >
                   {documentCategories.map(cat => (
                     <option key={cat.value} value={cat.value}>
@@ -491,13 +491,13 @@ const Documents = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Type
                 </label>
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
+                  className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 dark:bg-slate-700 dark:text-slate-200"
                 >
                   {documentTypes.map(type => (
                     <option key={type.value} value={type.value}>{type.label}</option>
@@ -506,13 +506,13 @@ const Documents = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Description (Optional)
                 </label>
                 <textarea
                   value={uploadDescription}
                   onChange={(e) => setUploadDescription(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
+                  className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 dark:bg-slate-700 dark:text-slate-200"
                   rows="3"
                   placeholder="Add a description..."
                 />
@@ -533,7 +533,7 @@ const Documents = () => {
                   setUploadFiles([]);
                   setUploadDescription('');
                 }}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                className="flex-1 bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 py-2 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-500"
               >
                 Cancel
               </button>

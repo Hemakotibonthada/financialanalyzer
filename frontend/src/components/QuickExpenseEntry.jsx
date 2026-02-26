@@ -410,7 +410,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
       {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl dark:shadow-slate-900/30 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
               <div className="flex items-center justify-between">
@@ -469,8 +469,8 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
               {message.text && (
                 <div className={`mb-4 p-3 rounded-lg ${
                   message.type === 'success' 
-                    ? 'bg-green-100 text-green-700 border border-green-200' 
-                    : 'bg-red-100 text-red-700 border border-red-200'
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-700' 
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700'
                 }`}>
                   {message.text}
                 </div>
@@ -480,9 +480,9 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
               {activeTab === 'add' && (
                 <div>
                   {/* Today's Summary */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-100">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 mb-6 border border-blue-100 dark:border-blue-800">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-gray-700">
+                      <div className="flex items-center space-x-2 text-gray-700 dark:text-slate-300">
                         <Calendar className="w-5 h-5" />
                         <span className="font-medium">Today's Total</span>
                       </div>
@@ -491,7 +491,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                       </div>
                     </div>
                     {todayExpenses.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-600">
+                      <div className="mt-2 text-sm text-gray-600 dark:text-slate-400">
                         {todayExpenses.length} expense{todayExpenses.length !== 1 ? 's' : ''} recorded
                       </div>
                     )}
@@ -500,7 +500,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   {/* Expense Form */}
                   <form onSubmit={handleSubmit} className="space-y-4 mb-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                         What did you spend on? *
                       </label>
                       <input
@@ -508,7 +508,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                         value={expense.description}
                         onChange={(e) => setExpense({ ...expense, description: e.target.value })}
                     placeholder="e.g., Banana, Coffee, Taxi fare..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
                     required
                     autoFocus
                   />
@@ -516,11 +516,11 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Amount *
                     </label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <DollarSign className="absolute left-3 top-3 w-5 h-5 text-gray-400 dark:text-slate-500" />
                       <input
                         type="number"
                         value={expense.amount}
@@ -528,20 +528,20 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                         placeholder="100"
                         step="0.01"
                         min="0"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full pl-10 p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Currency
                     </label>
                     <select
                       value={expense.currency}
                       onChange={(e) => setExpense({ ...expense, currency: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
                     >
                       {currencies.map(curr => (
                         <option key={curr.code} value={curr.code}>
@@ -553,7 +553,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Date
                   </label>
                   <input
@@ -561,12 +561,12 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                     value={expense.date}
                     onChange={(e) => setExpense({ ...expense, date: e.target.value })}
                     max={new Date().toISOString().split('T')[0]}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Category
                   </label>
                   <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
@@ -577,8 +577,8 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                         onClick={() => setExpense({ ...expense, category: cat.value })}
                         className={`p-2 border rounded-lg text-xs flex flex-col items-center justify-center transition-all ${
                           expense.category === cat.value
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium ring-2 ring-blue-200'
-                            : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 text-gray-700'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium ring-2 ring-blue-200'
+                            : 'border-gray-300 dark:border-slate-600 hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                         }`}
                       >
                         <span className="text-xl mb-1">{cat.icon}</span>
@@ -611,21 +611,21 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   {/* Today's Expenses List */}
                   {todayExpenses.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3">Today's Expenses</h4>
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Today's Expenses</h4>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
                         {todayExpenses.map((exp) => (
                           <div
                             key={exp._id}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                           >
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
                                 <span className="text-lg">
                                   {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.icon || '💰' : '💰'}
                                 </span>
-                                <span className="font-medium text-gray-900">{exp.description}</span>
+                                <span className="font-medium text-gray-900 dark:text-white">{exp.description}</span>
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">
+                              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                                 {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.label || 'Other' : 'Other'} • 
                                 {new Date(exp.date).toLocaleTimeString('en-IN', { 
                                   hour: '2-digit', 
@@ -634,7 +634,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                               </div>
                             </div>
                             <div className="flex items-center space-x-3">
-                              <span className="font-semibold text-gray-900">
+                              <span className="font-semibold text-gray-900 dark:text-white">
                                 {formatCurrency(exp.amount)}
                               </span>
                               <button
@@ -660,13 +660,13 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   <div className="space-y-3">
                     {/* Search Bar */}
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-5 h-5" />
                       <input
                         type="text"
                         placeholder="Search expenses by description or category..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-slate-700 dark:text-white"
                       />
                     </div>
 
@@ -676,7 +676,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                         <select
                           value={filterCategory}
                           onChange={(e) => setFilterCategory(e.target.value)}
-                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                           <option value="all">🔍 All Categories</option>
                           {Array.isArray(categories) && categories.map(cat => (
@@ -689,7 +689,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                         <select
                           value={filterDateRange}
                           onChange={(e) => setFilterDateRange(e.target.value)}
-                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                           <option value="week">📅 This Week</option>
                           <option value="month">📅 This Month</option>
@@ -722,33 +722,33 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   {/* Expense History List */}
                   <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                     {allExpenses.length === 0 ? (
-                      <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
-                        <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
-                          <Calendar className="w-10 h-10 text-gray-400" />
+                      <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-700 rounded-xl">
+                        <div className="bg-white dark:bg-slate-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md dark:shadow-slate-900/30">
+                          <Calendar className="w-10 h-10 text-gray-400 dark:text-slate-300" />
                         </div>
-                        <p className="text-lg font-medium text-gray-700">No expenses found</p>
-                        <p className="text-sm text-gray-500 mt-2">Try adjusting your filters or add your first expense</p>
+                        <p className="text-lg font-medium text-gray-700 dark:text-slate-300">No expenses found</p>
+                        <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Try adjusting your filters or add your first expense</p>
                       </div>
                     ) : (
                       <>
                         {allExpenses.map((exp, index) => (
                           <div
                             key={exp._id}
-                            className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200"
+                            className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 dark:from-slate-800 dark:to-slate-700/50 rounded-xl border-2 border-gray-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-lg dark:hover:shadow-slate-900/30 transition-all duration-200"
                             style={{
                               animation: `slideIn 0.3s ease-out ${index * 0.05}s both`
                             }}
                           >
                             <div className="flex items-center space-x-3 flex-1">
-                              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center text-2xl shadow-sm">
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-xl flex items-center justify-center text-2xl shadow-sm dark:shadow-slate-900/30">
                                 {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.icon || '💰' : '💰'}
                               </div>
                               <div className="flex-1">
-                                <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
                                   {exp.description}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mt-1">
+                                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full font-medium">
                                     {Array.isArray(categories) ? categories.find(c => c.value === exp.category)?.label || 'Other' : 'Other'}
                                   </span>
                                   <span>•</span>
@@ -765,10 +765,10 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                             </div>
                             <div className="flex items-center space-x-4">
                               <div className="text-right">
-                                <div className="font-bold text-lg text-gray-900">
+                                <div className="font-bold text-lg text-gray-900 dark:text-white">
                                   {formatCurrency(exp.amount)}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-slate-400">
                                   {exp.currency || 'INR'}
                                 </div>
                               </div>
@@ -788,17 +788,17 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
 
                   {/* Summary Footer */}
                   {allExpenses.length > 0 && (
-                    <div className="sticky bottom-0 pt-4 border-t-2 border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 shadow-md">
+                    <div className="sticky bottom-0 pt-4 border-t-2 border-gray-200 dark:border-slate-600 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 shadow-md dark:shadow-slate-900/30">
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="text-sm text-gray-600 font-medium">Total Expenses</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{allExpenses.length} transactions</div>
+                          <div className="text-sm text-gray-600 dark:text-slate-400 font-medium">Total Expenses</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-500 mt-0.5">{allExpenses.length} transactions</div>
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                             {formatCurrency(allExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
                           </div>
-                          <div className="text-xs text-gray-500 mt-0.5">
+                          <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                             Avg: {formatCurrency(allExpenses.reduce((sum, exp) => sum + exp.amount, 0) / allExpenses.length)}
                           </div>
                         </div>
@@ -838,13 +838,13 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
           {/* Templates Tab */}
           {activeTab === 'templates' && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-300">
                 <p className="font-medium mb-1">💡 Tip: Save Templates</p>
                 <p>Add an expense in the "Add" tab, then save it as a template for quick re-use!</p>
               </div>
 
               {templates.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-slate-400">
                   <Star className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p className="font-medium">No templates saved yet</p>
                   <p className="text-sm mt-1">Create recurring expenses faster with templates</p>
@@ -854,7 +854,7 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                   {templates.map((template) => (
                     <div
                       key={template._id}
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 hover:shadow-md transition-shadow"
+                      className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700 hover:shadow-md dark:hover:shadow-slate-900/30 transition-shadow"
                     >
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
@@ -862,8 +862,8 @@ const QuickExpenseEntry = ({ onExpenseAdded }) => {
                             {Array.isArray(categories) ? categories.find(c => c.value === template.category)?.icon || '💰' : '💰'}
                           </span>
                           <div>
-                            <div className="font-medium text-gray-900">{template.description}</div>
-                            <div className="text-xs text-gray-600 mt-1">
+                            <div className="font-medium text-gray-900 dark:text-white">{template.description}</div>
+                            <div className="text-xs text-gray-600 dark:text-slate-400 mt-1">
                               {Array.isArray(categories) ? categories.find(c => c.value === template.category)?.label || 'Other' : 'Other'}
                             </div>
                           </div>

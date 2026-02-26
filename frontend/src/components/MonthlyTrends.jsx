@@ -80,9 +80,9 @@ const MonthlyTrends = ({ trendsData }) => {
 
   if (!trendsData) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
-        <p className="text-gray-500">Loading trend data...</p>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Monthly Trends</h3>
+        <p className="text-gray-500 dark:text-slate-400">Loading trend data...</p>
       </div>
     );
   }
@@ -90,9 +90,9 @@ const MonthlyTrends = ({ trendsData }) => {
   // If trendsData.trends doesn't exist or is empty, show empty state but allow adding data
   if (!trendsData.trends || !Array.isArray(trendsData.trends) || trendsData.trends.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
-        <p className="text-gray-500">No transaction data available yet. Add expenses or income to see your financial trends over time.</p>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Monthly Trends</h3>
+        <p className="text-gray-500 dark:text-slate-400">No transaction data available yet. Add expenses or income to see your financial trends over time.</p>
       </div>
     );
   }
@@ -649,23 +649,23 @@ const MonthlyTrends = ({ trendsData }) => {
   // These will appear in browser console when the component re-renders
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">Monthly Trends</h3>
-            <p className="text-sm text-gray-600 mt-1">Income and spending over time</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Monthly Trends</h3>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Income and spending over time</p>
           </div>
           <div className="flex items-center flex-wrap gap-3">
             {/* Enhanced Date Range Filters */}
-            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-700 p-3 rounded-lg border border-gray-200 dark:border-slate-600">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">Date Range:</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Date Range:</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex flex-col">
-                  <label htmlFor="start-date" className="text-xs text-gray-600 mb-1">Start</label>
+                  <label htmlFor="start-date" className="text-xs text-gray-600 dark:text-slate-400 mb-1">Start</label>
                   <input
                     id="start-date"
                     type="month"
@@ -673,13 +673,13 @@ const MonthlyTrends = ({ trendsData }) => {
                     onChange={(e) => setStartDate(e.target.value)}
                     min={minDate}
                     max={endDate || maxDate}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors"
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors dark:bg-slate-600 dark:text-white"
                     placeholder="Start Month"
                   />
                 </div>
                 <span className="text-gray-400 self-end mb-2">→</span>
                 <div className="flex flex-col">
-                  <label htmlFor="end-date" className="text-xs text-gray-600 mb-1">End</label>
+                  <label htmlFor="end-date" className="text-xs text-gray-600 dark:text-slate-400 mb-1">End</label>
                   <input
                     id="end-date"
                     type="month"
@@ -687,7 +687,7 @@ const MonthlyTrends = ({ trendsData }) => {
                     onChange={(e) => setEndDate(e.target.value)}
                     min={startDate || minDate}
                     max={maxDate}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors"
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 transition-colors dark:bg-slate-600 dark:text-white"
                     placeholder="End Month"
                   />
                 </div>
@@ -702,7 +702,7 @@ const MonthlyTrends = ({ trendsData }) => {
                     setStartDate(lastMonth.toISOString().substring(0, 7));
                     setEndDate(today.toISOString().substring(0, 7));
                   }}
-                  className="px-2 py-1 text-xs font-medium text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                  className="px-2 py-1 text-xs font-medium text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 rounded transition-colors"
                 >
                   Last 2 Months
                 </button>
@@ -714,7 +714,7 @@ const MonthlyTrends = ({ trendsData }) => {
                     setStartDate(sixMonthsAgo.toISOString().substring(0, 7));
                     setEndDate(today.toISOString().substring(0, 7));
                   }}
-                  className="px-2 py-1 text-xs font-medium text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 rounded transition-colors"
+                  className="px-2 py-1 text-xs font-medium text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50 rounded transition-colors"
                 >
                   Last 6 Months
                 </button>
@@ -726,7 +726,7 @@ const MonthlyTrends = ({ trendsData }) => {
                     setStartDate(yearAgo.toISOString().substring(0, 7));
                     setEndDate(today.toISOString().substring(0, 7));
                   }}
-                  className="px-2 py-1 text-xs font-medium text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 rounded transition-colors"
+                  className="px-2 py-1 text-xs font-medium text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 rounded transition-colors"
                 >
                   Last Year
                 </button>
@@ -738,7 +738,7 @@ const MonthlyTrends = ({ trendsData }) => {
                     setStartDate('');
                     setEndDate('');
                   }}
-                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                  className="px-2 py-1 text-xs text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
                 >
                   Clear
                 </button>
@@ -747,14 +747,14 @@ const MonthlyTrends = ({ trendsData }) => {
               <button
                 onClick={handleExportPNG}
                 title="Export chart as PNG"
-                className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                className="px-2 py-1 text-xs text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
               >
                 Export PNG
               </button>
               <button
                 onClick={handleExportCSV}
                 title="Export chart data as CSV"
-                className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                className="px-2 py-1 text-xs text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
               >
                 Export CSV
               </button>
@@ -767,7 +767,7 @@ const MonthlyTrends = ({ trendsData }) => {
                   onChange={(e) => setShowInvestments(e.target.checked)}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700">Show Investments</span>
+                <span className="text-sm text-gray-700 dark:text-slate-300">Show Investments</span>
               </label>
             )}
           </div>
@@ -776,11 +776,11 @@ const MonthlyTrends = ({ trendsData }) => {
       
       <div className="p-6">
         {/* Data Source Indicator */}
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-2">
           <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-sm text-blue-800">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
             <strong>Real Data:</strong> All values below are calculated from your actual bank statements and transaction history.
           </p>
         </div>
@@ -788,7 +788,7 @@ const MonthlyTrends = ({ trendsData }) => {
         {/* Enhanced Summary Stats with 4 cards - Data from Bank Statements */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div 
-            className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 cursor-help" 
+            className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-4 border border-green-200 dark:border-green-700 cursor-help" 
             title="Calculated from your bank statements and credit transactions"
           >
             <div className="flex items-center justify-between mb-2">
@@ -812,7 +812,7 @@ const MonthlyTrends = ({ trendsData }) => {
           </div>
 
           <div 
-            className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200 cursor-help"
+            className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg p-4 border border-red-200 dark:border-red-700 cursor-help"
             title="Calculated from your bank statements and debit transactions"
           >
             <div className="flex items-center justify-between mb-2">
@@ -836,7 +836,7 @@ const MonthlyTrends = ({ trendsData }) => {
           </div>
 
           <div 
-            className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200 cursor-help"
+            className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700 cursor-help"
             title="Total investment transactions from your bank statements"
           >
             <div className="flex items-center justify-between mb-2">
@@ -854,7 +854,7 @@ const MonthlyTrends = ({ trendsData }) => {
           </div>
 
           <div 
-            className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200 cursor-help"
+            className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700 cursor-help"
             title="Average savings calculated as Income - Spending from your transactions"
           >
             <div className="flex items-center justify-between mb-2">
@@ -880,11 +880,11 @@ const MonthlyTrends = ({ trendsData }) => {
 
         {/* Month over Month Comparison */}
         {previousMonth && latestMonth && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-700">Month-over-Month Change</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-slate-300">Month-over-Month Change</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                   Comparing {parseMonthToDate(latestMonth.month).toLocaleDateString('en-US', { month: 'long' })} vs {parseMonthToDate(previousMonth.month).toLocaleDateString('en-US', { month: 'long' })}
                 </p>
               </div>
@@ -893,13 +893,13 @@ const MonthlyTrends = ({ trendsData }) => {
                   <p className={`text-lg font-bold ${monthOverMonthChange > 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {monthOverMonthChange > 0 ? '+' : ''}{monthOverMonthChange.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-gray-600">Spending Change</p>
+                  <p className="text-xs text-gray-600 dark:text-slate-400">Spending Change</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
                     ₹{Math.abs(latestMonth.totalSpending - previousMonth.totalSpending).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                   </p>
-                  <p className="text-xs text-gray-600">Difference</p>
+                  <p className="text-xs text-gray-600 dark:text-slate-400">Difference</p>
                 </div>
               </div>
             </div>
@@ -907,15 +907,15 @@ const MonthlyTrends = ({ trendsData }) => {
         )}
 
         {/* Interactive Chart - Always Line Chart */}
-        <div className="h-[500px] mt-6 bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 shadow-sm">
+        <div className="h-[500px] mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-slate-700 dark:to-slate-800 rounded-xl p-6 border border-gray-100 dark:border-slate-600 shadow-sm dark:shadow-slate-900/30">
           <Line ref={chartRef} data={chartData} options={chartOptions} />
         </div>
 
         {/* Insights Footer */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-sm text-gray-600">Best Month</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">Best Month</p>
               <p className="text-lg font-semibold text-green-600">
                 {(() => {
                   if (filteredTrends.length === 0) return 'N/A';
@@ -927,11 +927,11 @@ const MonthlyTrends = ({ trendsData }) => {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Period</p>
-              <p className="text-lg font-semibold text-gray-900">{filteredTrends.length} months</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">Total Period</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{filteredTrends.length} months</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Consistency Score</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">Consistency Score</p>
               <p className="text-lg font-semibold text-blue-600">
                 {(() => {
                   if (filteredTrends.length === 0 || !filteredSummary.averageSpending) return '0%';

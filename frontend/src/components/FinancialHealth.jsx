@@ -4,9 +4,9 @@ import { Heart, TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucid
 const FinancialHealth = ({ healthData }) => {
   if (!healthData) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Financial Health</h3>
-        <p className="text-gray-500">No health data available yet.</p>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Financial Health</h3>
+        <p className="text-gray-500 dark:text-slate-400">No health data available yet.</p>
       </div>
     );
   }
@@ -22,12 +22,12 @@ const FinancialHealth = ({ healthData }) => {
 
   const getGradeColor = (grade) => {
     switch (grade) {
-      case 'A': return 'bg-green-100 text-green-800 border-green-200';
-      case 'B': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'C': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'D': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'F': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'A': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700';
+      case 'B': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700';
+      case 'C': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700';
+      case 'D': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700';
+      case 'F': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700';
+      default: return 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-600';
     }
   };
 
@@ -46,10 +46,10 @@ const FinancialHealth = ({ healthData }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Financial Health Score</h3>
-        <p className="text-sm text-gray-600 mt-1">Overall assessment of your financial wellbeing</p>
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Financial Health Score</h3>
+        <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Overall assessment of your financial wellbeing</p>
       </div>
       
       <div className="p-6">
@@ -87,7 +87,7 @@ const FinancialHealth = ({ healthData }) => {
               <p className={`text-3xl font-bold ${getScoreColor(score)}`}>
                 {score}
               </p>
-              <p className="text-sm text-gray-500">/ 100</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">/ 100</p>
             </div>
           </div>
           
@@ -100,7 +100,7 @@ const FinancialHealth = ({ healthData }) => {
 
         {/* Health Factors */}
         <div className="space-y-4 mb-6">
-          <h4 className="text-sm font-medium text-gray-900">Health Factors</h4>
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Health Factors</h4>
           
           {factors && Array.isArray(factors) && factors.map((factor, index) => {
             if (!factor) return null;
@@ -113,14 +113,14 @@ const FinancialHealth = ({ healthData }) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <FactorIcon className={`w-4 h-4 mr-2 ${getFactorColor(factor.score || 0)}`} />
-                    <span className="text-sm font-medium text-gray-900">{factor.factor || 'Unknown'}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{factor.factor || 'Unknown'}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-medium">{factor.score || 0}/25</span>
                   </div>
                 </div>
                 
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
                       (factor.score || 0) >= 20 ? 'bg-green-500' :
@@ -132,7 +132,7 @@ const FinancialHealth = ({ healthData }) => {
                 </div>
                 
                 {factor.description && (
-                  <p className="text-xs text-gray-600">{factor.description}</p>
+                  <p className="text-xs text-gray-600 dark:text-slate-400">{factor.description}</p>
                 )}
               </div>
             );
@@ -141,13 +141,13 @@ const FinancialHealth = ({ healthData }) => {
 
         {/* Recommendations */}
         {recommendations && recommendations.length > 0 && (
-          <div className="border-t border-gray-200 pt-6">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Improvement Recommendations</h4>
+          <div className="border-t border-gray-200 dark:border-slate-700 pt-6">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Improvement Recommendations</h4>
             <div className="space-y-2">
               {recommendations.map((rec, index) => (
-                <div key={index} className="flex items-start p-3 bg-blue-50 rounded-lg">
+                <div key={index} className="flex items-start p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 mr-3 flex-shrink-0"></div>
-                  <p className="text-sm text-blue-900">{rec}</p>
+                  <p className="text-sm text-blue-900 dark:text-blue-300">{rec}</p>
                 </div>
               ))}
             </div>
@@ -155,8 +155,8 @@ const FinancialHealth = ({ healthData }) => {
         )}
 
         {/* Health Status Message (FIXED: mutually exclusive conditions) */}
-        <div className="mt-6 p-4 rounded-lg border-l-4 border-l-blue-500 bg-blue-50">
-          <p className="text-sm text-blue-900 font-medium">
+        <div className="mt-6 p-4 rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-900/20">
+          <p className="text-sm text-blue-900 dark:text-blue-300 font-medium">
             {score >= 80
               ? "Excellent! Your financial health is strong."
               : score >= 60

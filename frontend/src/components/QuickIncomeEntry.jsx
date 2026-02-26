@@ -153,7 +153,7 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
 
   return (
     <>
-    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-2xl z-50 border border-gray-200">
+    <div className="fixed bottom-6 right-6 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-2xl dark:shadow-slate-900/30 z-50 border border-gray-200 dark:border-slate-700">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 rounded-t-lg flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -169,13 +169,13 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-slate-700">
         <button
           onClick={() => setActiveTab('add')}
           className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
             activeTab === 'add'
-              ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              ? 'text-green-600 border-b-2 border-green-600 bg-green-50 dark:bg-green-900/20'
+              : 'text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'
           }`}
         >
           <Plus className="w-4 h-4 inline mr-2" />
@@ -188,8 +188,8 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
           }}
           className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
             activeTab === 'history'
-              ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              ? 'text-green-600 border-b-2 border-green-600 bg-green-50 dark:bg-green-900/20'
+              : 'text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'
           }`}
         >
           <Clock className="w-4 h-4 inline mr-2" />
@@ -202,7 +202,7 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
         {activeTab === 'add' ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Description
               </label>
               <input
@@ -210,24 +210,24 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
                 value={income.description}
                 onChange={(e) => setIncome({ ...income, description: e.target.value })}
                 placeholder="e.g., Monthly salary, Freelance project"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                 disabled={saving}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Amount (₹)
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
                 <input
                   type="number"
                   step="0.01"
                   value={income.amount}
                   onChange={(e) => setIncome({ ...income, amount: e.target.value })}
                   placeholder="0.00"
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                   disabled={saving}
                 />
               </div>
@@ -235,13 +235,13 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Source
                 </label>
                 <select
                   value={income.source}
                   onChange={(e) => setIncome({ ...income, source: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                   disabled={saving}
                 >
                   {sources.map(source => (
@@ -253,13 +253,13 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Category
                 </label>
                 <select
                   value={income.category}
                   onChange={(e) => setIncome({ ...income, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                   disabled={saving}
                 >
                   {categories.map(cat => (
@@ -272,16 +272,16 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Date
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
                 <input
                   type="date"
                   value={income.date}
                   onChange={(e) => setIncome({ ...income, date: e.target.value })}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                   disabled={saving}
                 />
               </div>
@@ -297,9 +297,9 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
           </form>
         ) : (
           <div className="space-y-3">
-            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Today's Total</span>
+                <span className="text-sm text-gray-600 dark:text-slate-400">Today's Total</span>
                 <span className="text-xl font-bold text-green-600">
                   ₹{todayTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
@@ -307,17 +307,17 @@ const QuickIncomeEntry = ({ onIncomeAdded }) => {
             </div>
 
             {todayIncomes.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">No incomes added today</p>
+              <p className="text-center text-gray-500 dark:text-slate-400 py-4">No incomes added today</p>
             ) : (
               todayIncomes.map((inc) => (
                 <div
                   key={inc.id}
-                  className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-green-300 transition-colors"
+                  className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 border border-gray-200 dark:border-slate-600 hover:border-green-300 dark:hover:border-green-700 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{inc.description}</p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="font-medium text-gray-900 dark:text-white">{inc.description}</p>
+                      <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                         {categories.find(c => c.value === inc.category)?.icon || '💵'}{' '}
                         {categories.find(c => c.value === inc.category)?.label || inc.category}
                       </p>

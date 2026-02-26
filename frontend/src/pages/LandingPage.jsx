@@ -135,10 +135,10 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
       <header className={`fixed w-full top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white shadow-lg' : 'bg-transparent'
+        scrolled ? 'bg-white shadow-lg dark:bg-slate-800 dark:shadow-slate-900/30' : 'bg-transparent'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -153,9 +153,9 @@ const LandingPage = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
-              <a href="#testimonials" className="text-gray-700 hover:text-blue-600 transition">Reviews</a>
+              <a href="#features" className="text-gray-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition">Features</a>
+              <a href="#pricing" className="text-gray-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition">Pricing</a>
+              <a href="#testimonials" className="text-gray-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition">Reviews</a>
               <button 
                 onClick={() => navigate('/login')}
                 className="text-blue-600 hover:text-blue-700 font-medium transition"
@@ -182,11 +182,11 @@ const LandingPage = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t">
+          <div className="md:hidden bg-white dark:bg-slate-800 border-t dark:border-slate-700">
             <div className="px-4 py-4 space-y-3">
-              <a href="#features" className="block text-gray-700 hover:text-blue-600">Features</a>
-              <a href="#pricing" className="block text-gray-700 hover:text-blue-600">Pricing</a>
-              <a href="#testimonials" className="block text-gray-700 hover:text-blue-600">Reviews</a>
+              <a href="#features" className="block text-gray-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">Features</a>
+              <a href="#pricing" className="block text-gray-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">Pricing</a>
+              <a href="#testimonials" className="block text-gray-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">Reviews</a>
               <button 
                 onClick={() => navigate('/login')}
                 className="block w-full text-left text-blue-600 font-medium"
@@ -209,17 +209,17 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium">
+              <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-4 py-2 rounded-full text-sm font-medium">
                 <Star className="w-4 h-4" />
                 <span>Trusted by 50,000+ users</span>
               </div>
               
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
                 Take Control of Your
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Financial Future</span>
               </h1>
               
-              <p className="text-xl text-gray-600 leading-relaxed">
+              <p className="text-xl text-gray-600 dark:text-slate-400 leading-relaxed">
                 All-in-one platform to track expenses, manage budgets, plan investments, and achieve financial goals with AI-powered insights.
               </p>
 
@@ -232,7 +232,7 @@ const LandingPage = () => {
                   <ArrowRight className="w-5 h-5" />
                 </button>
                 
-                <button className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 transition flex items-center justify-center space-x-2 text-lg font-semibold">
+                <button className="px-8 py-4 bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-xl hover:border-blue-600 hover:text-blue-600 transition flex items-center justify-center space-x-2 text-lg font-semibold">
                   <PlayCircle className="w-5 h-5" />
                   <span>Watch Demo</span>
                 </button>
@@ -241,18 +241,18 @@ const LandingPage = () => {
               <div className="flex items-center space-x-8 pt-4">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-gray-600">No credit card required</span>
+                  <span className="text-gray-600 dark:text-slate-400">No credit card required</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-gray-600">Free for 30 days</span>
+                  <span className="text-gray-600 dark:text-slate-400">Free for 30 days</span>
                 </div>
               </div>
             </div>
 
             {/* Animated Feature Card */}
             <div className="relative">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 transform hover:scale-105 transition duration-500">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl dark:shadow-slate-900/30 p-8 transform hover:scale-105 transition duration-500">
                 {features.map((feature, index) => {
                   const Icon = feature.icon;
                   return (
@@ -265,8 +265,8 @@ const LandingPage = () => {
                       <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6`}>
                         <Icon className="w-8 h-8 text-white" />
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                      <p className="text-gray-600 mb-4">{feature.description}</p>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
+                      <p className="text-gray-600 dark:text-slate-400 mb-4">{feature.description}</p>
                       <div className="flex items-center space-x-2 text-sm font-semibold">
                         <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${feature.color} text-white`}>
                           {feature.stats}
@@ -283,7 +283,7 @@ const LandingPage = () => {
                       key={index}
                       onClick={() => setActiveFeature(index)}
                       className={`w-2 h-2 rounded-full transition ${
-                        activeFeature === index ? 'bg-blue-600 w-8' : 'bg-gray-300'
+                        activeFeature === index ? 'bg-blue-600 w-8' : 'bg-gray-300 dark:bg-slate-600'
                       }`}
                     />
                   ))}
@@ -313,7 +313,7 @@ const LandingPage = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white dark:bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
@@ -321,7 +321,7 @@ const LandingPage = () => {
                 <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                   {stat.value}
                 </div>
-                <div className="text-gray-600">{stat.label}</div>
+                <div className="text-gray-600 dark:text-slate-400">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -332,10 +332,10 @@ const LandingPage = () => {
       <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Everything You Need to Manage Money
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-slate-400">
               Powerful features designed for individuals, families, and businesses
             </p>
           </div>
@@ -346,13 +346,13 @@ const LandingPage = () => {
               return (
                 <div 
                   key={index}
-                  className="bg-white rounded-xl p-6 hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer border border-gray-100"
+                  className="bg-white dark:bg-slate-800 rounded-xl p-6 hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer border border-gray-100 dark:border-slate-700"
                 >
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mb-4">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.desc}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{feature.title}</h3>
+                  <p className="text-gray-600 dark:text-slate-400 text-sm">{feature.desc}</p>
                 </div>
               );
             })}
@@ -361,31 +361,31 @@ const LandingPage = () => {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 px-4 sm:px-6 lg:px-8">
+      <section id="testimonials" className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-slate-900 dark:to-slate-900 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Loved by Thousands of Users
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-slate-400">
               See what our customers have to say
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-lg">
+              <div key={index} className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg dark:shadow-slate-900/30">
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 italic">"{testimonial.text}"</p>
+                <p className="text-gray-700 dark:text-slate-300 mb-6 italic">"{testimonial.text}"</p>
                 <div className="flex items-center space-x-3">
                   <div className="text-3xl">{testimonial.image}</div>
                   <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-sm text-gray-600">{testimonial.role}</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
+                    <div className="text-sm text-gray-600 dark:text-slate-400">{testimonial.role}</div>
                   </div>
                 </div>
               </div>
@@ -398,20 +398,20 @@ const LandingPage = () => {
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-slate-400">
               Choose the plan that's right for you
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Free Plan */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-600 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-6">
-                ₹0<span className="text-lg text-gray-600">/month</span>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border-2 border-gray-200 dark:border-slate-700 hover:border-blue-600 transition">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Free</h3>
+              <div className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+                ₹0<span className="text-lg text-gray-600 dark:text-slate-400">/month</span>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center space-x-3">
@@ -429,7 +429,7 @@ const LandingPage = () => {
               </ul>
               <button 
                 onClick={() => navigate('/register')}
-                className="w-full py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold"
+                className="w-full py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition font-semibold"
               >
                 Get Started
               </button>
@@ -475,9 +475,9 @@ const LandingPage = () => {
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-purple-600 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border-2 border-gray-200 dark:border-slate-700 hover:border-purple-600 transition">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h3>
+              <div className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
                 Custom
               </div>
               <ul className="space-y-4 mb-8">
@@ -498,7 +498,7 @@ const LandingPage = () => {
                   <span>Dedicated support</span>
                 </li>
               </ul>
-              <button className="w-full py-3 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
+              <button className="w-full py-3 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition font-semibold">
                 Contact Sales
               </button>
             </div>

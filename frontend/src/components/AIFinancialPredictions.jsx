@@ -121,7 +121,7 @@ const AIFinancialPredictions = () => {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-lg p-8">
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-8">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
         </div>
@@ -134,23 +134,23 @@ const AIFinancialPredictions = () => {
   }
 
   const SpendingPredictionCard = () => (
-    <div className="bg-white rounded-xl shadow-md p-6 border border-purple-100">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md dark:shadow-slate-900/30 p-6 border border-purple-100 dark:border-purple-800">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-purple-100 rounded-lg">
-            <Brain className="w-6 h-6 text-purple-600" />
+          <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+            <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Next Month Prediction</h3>
-            <p className="text-sm text-gray-500">AI-powered spending forecast</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Next Month Prediction</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400">AI-powered spending forecast</p>
           </div>
         </div>
         <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${
           predictions?.spending?.nextMonth?.trend === 'increasing' 
-            ? 'bg-orange-100 text-orange-700' 
+            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' 
             : predictions?.spending?.nextMonth?.trend === 'decreasing'
-            ? 'bg-green-100 text-green-700'
-            : 'bg-blue-100 text-blue-700'
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
         }`}>
           {predictions?.spending?.nextMonth?.trend === 'increasing' ? (
             <TrendingUp className="w-4 h-4" />
@@ -168,43 +168,43 @@ const AIFinancialPredictions = () => {
 
       <div className="mb-6">
         <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-4xl font-bold text-gray-900">
+          <span className="text-4xl font-bold text-gray-900 dark:text-white">
             ₹{(predictions?.spending?.nextMonth?.predicted || 0).toLocaleString('en-IN')}
           </span>
-          <span className="text-sm text-gray-500">predicted spending</span>
+          <span className="text-sm text-gray-500 dark:text-slate-400">predicted spending</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 bg-gray-200 rounded-full h-2">
+          <div className="flex-1 bg-gray-200 dark:bg-slate-700 rounded-full h-2">
             <div 
               className="bg-purple-600 h-2 rounded-full" 
               style={{ width: `${predictions?.spending?.nextMonth?.confidence || 0}%` }}
             ></div>
           </div>
-          <span className="text-sm font-semibold text-purple-600">
+          <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
             {predictions?.spending?.nextMonth?.confidence || 0}% confidence
           </span>
         </div>
       </div>
 
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">Category Breakdown</h4>
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Category Breakdown</h4>
         {predictions?.spending?.categories?.map((category, index) => (
-          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-900">{category.name}</span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{category.name}</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
                   ₹{category.predicted.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                <div className="flex-1 bg-gray-200 dark:bg-slate-700 rounded-full h-1.5">
                   <div 
                     className="bg-purple-500 h-1.5 rounded-full" 
                     style={{ width: `${category.confidence}%` }}
                   ></div>
                 </div>
-                <span className="text-xs text-gray-500">{category.confidence}%</span>
+                <span className="text-xs text-gray-500 dark:text-slate-400">{category.confidence}%</span>
               </div>
             </div>
           </div>
@@ -253,14 +253,14 @@ const AIFinancialPredictions = () => {
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-md p-6 border border-blue-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md dark:shadow-slate-900/30 p-6 border border-blue-100 dark:border-blue-800">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <Target className="w-6 h-6 text-blue-600" />
+          <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <Target className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Savings Projection</h3>
-            <p className="text-sm text-gray-500">Goal achievement timeline</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Savings Projection</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Goal achievement timeline</p>
           </div>
         </div>
 
@@ -269,11 +269,11 @@ const AIFinancialPredictions = () => {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Goal Progress</h4>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Goal Progress</h4>
           {Object.entries(predictions?.savings?.goalAchievement || {}).map(([goal, data], index) => (
-            <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+            <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-900 capitalize">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
                   {goal.replace(/([A-Z])/g, ' $1').trim()}
                 </span>
                 <div className="flex items-center gap-2">
@@ -282,17 +282,17 @@ const AIFinancialPredictions = () => {
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-orange-500" />
                   )}
-                  <span className="text-xs font-medium text-gray-600">ETA: {data.eta}</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-slate-400">ETA: {data.eta}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div className="flex-1 bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full ${data.onTrack ? 'bg-green-500' : 'bg-orange-500'}`}
                     style={{ width: `${data.progress}%` }}
                   ></div>
                 </div>
-                <span className="text-sm font-bold text-gray-900">{data.progress}%</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{data.progress}%</span>
               </div>
             </div>
           ))}
@@ -302,14 +302,14 @@ const AIFinancialPredictions = () => {
   };
 
   const InsightsCard = () => (
-    <div className="bg-white rounded-xl shadow-md p-6 border border-green-100">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md dark:shadow-slate-900/30 p-6 border border-green-100 dark:border-green-800">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-green-100 rounded-lg">
-          <Sparkles className="w-6 h-6 text-green-600" />
+        <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+          <Sparkles className="w-6 h-6 text-green-600 dark:text-green-400" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-gray-900">AI Insights</h3>
-          <p className="text-sm text-gray-500">Personalized recommendations</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">AI Insights</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Personalized recommendations</p>
         </div>
       </div>
 
@@ -319,10 +319,10 @@ const AIFinancialPredictions = () => {
             key={index} 
             className={`p-4 rounded-lg border-l-4 ${
               insight.type === 'warning' 
-                ? 'bg-orange-50 border-orange-500' 
+                ? 'bg-orange-50 border-orange-500 dark:bg-orange-900/20' 
                 : insight.type === 'success'
-                ? 'bg-green-50 border-green-500'
-                : 'bg-blue-50 border-blue-500'
+                ? 'bg-green-50 border-green-500 dark:bg-green-900/20'
+                : 'bg-blue-50 border-blue-500 dark:bg-blue-900/20'
             }`}
           >
             <div className="flex items-start gap-3">
@@ -337,18 +337,18 @@ const AIFinancialPredictions = () => {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-sm font-bold text-gray-900">{insight.title}</h4>
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">{insight.title}</h4>
                   <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
                     insight.priority === 'high' 
-                      ? 'bg-red-100 text-red-700' 
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
                       : insight.priority === 'medium'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
                   }`}>
                     {insight.priority}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{insight.message}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">{insight.message}</p>
                 <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                   {insight.action}
                   <ArrowUpRight className="w-3 h-3" />
@@ -361,22 +361,22 @@ const AIFinancialPredictions = () => {
 
       {predictions.anomalies && predictions.anomalies.length > 0 && (
         <>
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 flex items-center gap-2">
               <Zap className="w-4 h-4 text-yellow-500" />
               Detected Anomalies
             </h4>
             {predictions.anomalies.map((anomaly, index) => (
-              <div key={index} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div key={index} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-semibold text-gray-900 capitalize">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
                       {anomaly.type.replace(/_/g, ' ')}
                     </span>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
                       {anomaly.category}: <span className="font-bold">₹{anomaly.amount.toLocaleString('en-IN')}</span>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                       Normal range: ₹{anomaly.normalRange} • {anomaly.detected}
                     </p>
                   </div>
@@ -390,34 +390,34 @@ const AIFinancialPredictions = () => {
   );
 
   const OptimizationCard = () => (
-    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-md p-6 border border-indigo-200">
+    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl shadow-md dark:shadow-slate-900/30 p-6 border border-indigo-200 dark:border-indigo-800">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-indigo-100 rounded-lg">
-          <Award className="w-6 h-6 text-indigo-600" />
+        <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+          <Award className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-gray-900">Optimization Tips</h3>
-          <p className="text-sm text-gray-500">Maximize your financial potential</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Optimization Tips</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Maximize your financial potential</p>
         </div>
       </div>
 
       <div className="space-y-4">
-        <div className="bg-white rounded-lg p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm dark:shadow-slate-900/30">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-gray-900">💰 Savings Optimization</h4>
-            <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white">💰 Savings Optimization</h4>
+            <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
               +₹{(predictions?.recommendations?.savingsOptimization?.potentialSavings || 0).toLocaleString('en-IN')}/year
             </span>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Current Monthly Saving:</span>
-              <span className="font-semibold text-gray-900">
+              <span className="text-gray-600 dark:text-slate-400">Current Monthly Saving:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
                 ₹{(predictions?.recommendations?.savingsOptimization?.current || 0).toLocaleString('en-IN')}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Recommended:</span>
+              <span className="text-gray-600 dark:text-slate-400">Recommended:</span>
               <span className="font-bold text-green-600">
                 ₹{(predictions?.recommendations?.savingsOptimization?.recommended || 0).toLocaleString('en-IN')}
               </span>
@@ -428,28 +428,28 @@ const AIFinancialPredictions = () => {
           </button>
         </div>
 
-        <div className="bg-white rounded-lg p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm dark:shadow-slate-900/30">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-gray-900">🎯 Debt Payoff Strategy</h4>
-            <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white">🎯 Debt Payoff Strategy</h4>
+            <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
               Save {predictions?.recommendations?.debtPayoff?.timeReduction || 'N/A'}
             </span>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Current Strategy:</span>
-              <span className="font-semibold text-gray-900 capitalize">
+              <span className="text-gray-600 dark:text-slate-400">Current Strategy:</span>
+              <span className="font-semibold text-gray-900 dark:text-white capitalize">
                 {predictions?.recommendations?.debtPayoff?.current || 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Recommended:</span>
+              <span className="text-gray-600 dark:text-slate-400">Recommended:</span>
               <span className="font-bold text-blue-600 capitalize">
                 {predictions?.recommendations?.debtPayoff?.recommended || 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Interest Savings:</span>
+              <span className="text-gray-600 dark:text-slate-400">Interest Savings:</span>
               <span className="font-bold text-green-600">
                 ₹{(predictions?.recommendations?.debtPayoff?.potentialSavings || 0).toLocaleString('en-IN')}
               </span>

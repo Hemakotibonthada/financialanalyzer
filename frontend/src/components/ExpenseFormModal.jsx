@@ -214,15 +214,15 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {expense ? 'Edit Expense' : 'Add New Expense'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
           >
             <X className="w-6 h-6" />
           </button>
@@ -233,10 +233,10 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Expense Date *
                   </label>
                   <input
@@ -245,12 +245,12 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.expenseDate}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Category *
                   </label>
                   <select
@@ -258,7 +258,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.category}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   >
                     <option value="">Select Category</option>
                     <option value="Office Supplies">Office Supplies</option>
@@ -285,7 +285,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Description *
                   </label>
                   <input
@@ -295,7 +295,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     onChange={handleChange}
                     required
                     placeholder="Brief description of the expense"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
 
@@ -322,10 +322,10 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
             {/* Payment Details */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Payment Method *
                   </label>
                   <select
@@ -333,7 +333,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.paymentMethod}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   >
                     <option value="Cash">Cash</option>
                     <option value="Credit Card">Credit Card</option>
@@ -350,7 +350,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Payment Status *
                   </label>
                   <select
@@ -358,7 +358,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.paymentStatus}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   >
                     <option value="Paid">Paid</option>
                     <option value="Pending">Pending</option>
@@ -370,7 +370,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Invoice Number
                   </label>
                   <input
@@ -379,12 +379,12 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.invoiceNumber}
                     onChange={handleChange}
                     placeholder="INV-12345"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Reference Number
                   </label>
                   <input
@@ -393,7 +393,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.referenceNumber}
                     onChange={handleChange}
                     placeholder="REF-12345"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -401,10 +401,10 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
             {/* Vendor Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendor Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Vendor Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Vendor Name
                   </label>
                   <input
@@ -413,12 +413,12 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.vendorName}
                     onChange={handleChange}
                     placeholder="ABC Company"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Vendor Email
                   </label>
                   <input
@@ -427,12 +427,12 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.vendorEmail}
                     onChange={handleChange}
                     placeholder="vendor@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Vendor Phone
                   </label>
                   <input
@@ -441,7 +441,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.vendorPhone}
                     onChange={handleChange}
                     placeholder="+1 234 567 8900"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -449,17 +449,17 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
             {/* Organization Details */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Organization Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Department
                   </label>
                   <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   >
                     <option value="General">General</option>
                     <option value="Sales">Sales</option>
@@ -477,7 +477,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Project
                   </label>
                   <input
@@ -486,7 +486,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.project}
                     onChange={handleChange}
                     placeholder="Project Alpha"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -494,7 +494,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
             {/* Tax & Additional Options */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Options</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Options</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center">
@@ -503,16 +503,16 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                       name="taxDeductible"
                       checked={formData.taxDeductible}
                       onChange={handleChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 rounded"
                     />
-                    <label className="ml-2 block text-sm text-gray-700">
+                    <label className="ml-2 block text-sm text-gray-700 dark:text-slate-300">
                       Tax Deductible
                     </label>
                   </div>
 
                   {formData.taxDeductible && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                         Tax Percentage
                       </label>
                       <input
@@ -523,7 +523,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                         min="0"
                         max="100"
                         step="0.01"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                       />
                     </div>
                   )}
@@ -534,9 +534,9 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                       name="isBillable"
                       checked={formData.isBillable}
                       onChange={handleChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 rounded"
                     />
-                    <label className="ml-2 block text-sm text-gray-700">
+                    <label className="ml-2 block text-sm text-gray-700 dark:text-slate-300">
                       Billable to Client
                     </label>
                   </div>
@@ -547,9 +547,9 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                       name="reimbursable"
                       checked={formData.reimbursable}
                       onChange={handleChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 rounded"
                     />
-                    <label className="ml-2 block text-sm text-gray-700">
+                    <label className="ml-2 block text-sm text-gray-700 dark:text-slate-300">
                       Reimbursable
                     </label>
                   </div>
@@ -560,23 +560,23 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                       name="isRecurring"
                       checked={formData.isRecurring}
                       onChange={handleChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 rounded"
                     />
-                    <label className="ml-2 block text-sm text-gray-700">
+                    <label className="ml-2 block text-sm text-gray-700 dark:text-slate-300">
                       Recurring Expense
                     </label>
                   </div>
 
                   {formData.isRecurring && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                         Frequency
                       </label>
                       <select
                         name="recurringFrequency"
                         value={formData.recurringFrequency}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                       >
                         <option value="Daily">Daily</option>
                         <option value="Weekly">Weekly</option>
@@ -589,7 +589,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Tags (comma separated)
                   </label>
                   <input
@@ -598,12 +598,12 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     value={formData.tags}
                     onChange={handleChange}
                     placeholder="urgent, office, hardware"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Notes
                   </label>
                   <textarea
@@ -612,7 +612,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                     onChange={handleChange}
                     rows="3"
                     placeholder="Additional notes about this expense..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -620,19 +620,19 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
 
             {/* File Upload */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Attachments</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Attachments</h3>
               
               {/* Existing Attachments */}
               {existingAttachments.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Current Attachments:</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Current Attachments:</p>
                   <div className="space-y-2">
                     {existingAttachments.map((attachment) => (
-                      <div key={attachment._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={attachment._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg">
                         <div className="flex items-center space-x-2">
-                          <Paperclip className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">{attachment.originalName}</span>
-                          <span className="text-xs text-gray-500">
+                          <Paperclip className="w-4 h-4 text-gray-400 dark:text-slate-500" />
+                          <span className="text-sm text-gray-700 dark:text-slate-300">{attachment.originalName}</span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400">
                             ({(attachment.size / 1024).toFixed(1)} KB)
                           </span>
                         </div>
@@ -656,14 +656,14 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-8 text-center ${
-                  dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300'
+                  dragActive ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-slate-600'
                 }`}
               >
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-600 mb-2">
+                <Upload className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+                <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">
                   Drag and drop files here, or click to select
                 </p>
-                <p className="text-xs text-gray-500 mb-4">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">
                   Supported: Images, PDFs, Documents (Max 10MB each)
                 </p>
                 <input
@@ -685,13 +685,13 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
               {/* New Files List */}
               {files.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  <p className="text-sm font-medium text-gray-700">New Attachments:</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-slate-300">New Attachments:</p>
                   {files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <Paperclip className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-700">{file.name}</span>
-                        <span className="text-xs text-gray-500">
+                        <Paperclip className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <span className="text-sm text-gray-700 dark:text-slate-300">{file.name}</span>
+                        <span className="text-xs text-gray-500 dark:text-slate-400">
                           ({(file.size / 1024).toFixed(1)} KB)
                         </span>
                       </div>
@@ -711,12 +711,12 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSuccess }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end space-x-3">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-end space-x-3">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            className="px-4 py-2 text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
           >
             Cancel
           </button>

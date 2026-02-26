@@ -335,17 +335,17 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your profile...</p>
+          <p className="text-gray-600 dark:text-slate-400 font-medium">Loading your profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Enhanced Header */}
         <div className="mb-6 sm:mb-8">
@@ -391,9 +391,9 @@ const Profile = () => {
 
         {message.text && (
           <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl shadow-lg flex items-start gap-2 sm:gap-3 animate-fade-in text-sm sm:text-base ${
-            message.type === 'success' ? 'bg-green-50 text-green-700 border-2 border-green-200' :
-            message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' :
-            'bg-blue-50 text-blue-700 border-2 border-blue-200'
+            message.type === 'success' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-200 dark:border-green-800' :
+            message.type === 'error' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-2 border-red-200 dark:border-red-800' :
+            'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-800'
           }`}>
             {message.type === 'success' && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />}
             {message.type === 'error' && <AlertCircle className="w-6 h-6 flex-shrink-0" />}
@@ -402,8 +402,8 @@ const Profile = () => {
         )}
 
         {/* Enhanced Tab Navigation */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-sm dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 mb-6 overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-slate-700">
             <nav className="flex overflow-x-auto scrollbar-hide profile-tabs-wrapper">
               {[
                 { key: 'personal', label: 'Personal Info', icon: User },
@@ -420,8 +420,8 @@ const Profile = () => {
                     onClick={() => setActiveTab(tab.key)}
                     className={`profile-tab-button group flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base whitespace-nowrap transition-all flex-shrink-0 touch-target border-b-2 ${
                       isActive
-                        ? 'text-blue-600 border-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-transparent'
+                        ? 'text-blue-600 border-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700/50 border-transparent'
                     }`}
                   >
                     <Icon className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
@@ -442,14 +442,14 @@ const Profile = () => {
                     <User className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
-                    <p className="text-gray-500 text-sm">Update your personal details and identity information</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Personal Information</h2>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm">Update your personal details and identity information</p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="group">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
                       <User className="w-4 h-4 text-blue-600" />
                       Full Name *
                     </label>
@@ -457,14 +457,14 @@ const Profile = () => {
                       type="text"
                       value={profile.fullName}
                       onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 font-medium"
+                      className="w-full p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium bg-white dark:bg-slate-900 dark:text-white"
                       placeholder="Enter your full name as per PAN"
                       required
                     />
                   </div>
 
                   <div className="group">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
                       <Calendar className="w-4 h-4 text-blue-600" />
                       Date of Birth
                     </label>
@@ -472,12 +472,12 @@ const Profile = () => {
                       type="date"
                       value={profile.dateOfBirth}
                       onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 font-medium"
+                      className="w-full p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium bg-white dark:bg-slate-900 dark:text-white"
                     />
                   </div>
 
                   <div className="group">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
                       <CreditCard className="w-4 h-4 text-blue-600" />
                       PAN Number
                     </label>
@@ -485,10 +485,10 @@ const Profile = () => {
                       type="text"
                       value={profile.panNumber}
                       onChange={(e) => handleInputChange('panNumber', e.target.value.toUpperCase())}
-                      className={`w-full p-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300 font-medium uppercase ${
+                      className={`w-full p-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium uppercase bg-white dark:bg-slate-900 dark:text-white ${
                         profile.panNumber && !validatePAN(profile.panNumber) 
-                          ? 'border-red-500 focus:border-red-500 bg-red-50' 
-                          : 'border-gray-200 focus:border-blue-500'
+                          ? 'border-red-500 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 
+                          : 'border-gray-200 dark:border-slate-700 focus:border-blue-500'
                       }`}
                       placeholder="ABCDE1234F"
                       maxLength="10"
@@ -502,7 +502,7 @@ const Profile = () => {
                   </div>
 
                   <div className="group">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
                       <Phone className="w-4 h-4 text-blue-600" />
                       Phone Number *
                     </label>
@@ -510,7 +510,7 @@ const Profile = () => {
                       type="tel"
                       value={profile.phoneNumber || ''}
                       onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 font-medium"
+                      className="w-full p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium bg-white dark:bg-slate-900 dark:text-white"
                       placeholder="10-digit mobile number"
                       maxLength="10"
                       pattern="[0-9]{10}"
@@ -521,14 +521,14 @@ const Profile = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Email
                     </label>
                     <input
                       type="email"
                       value={user?.email || ''}
                       disabled
-                      className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-400"
                     />
                   </div>
                 </div>
@@ -543,14 +543,14 @@ const Profile = () => {
                     <DollarSign className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Financial Details</h2>
-                    <p className="text-gray-500 text-sm">Manage your income and currency preferences</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Financial Details</h2>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm">Manage your income and currency preferences</p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="group">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
                       <DollarSign className="w-4 h-4 text-green-600" />
                       Monthly Income *
                     </label>
@@ -558,7 +558,7 @@ const Profile = () => {
                       type="number"
                       value={profile.monthlyIncome}
                       onChange={(e) => handleInputChange('monthlyIncome', e.target.value)}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 hover:border-gray-300 font-medium"
+                      className="w-full p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium bg-white dark:bg-slate-900 dark:text-white"
                       placeholder="Enter your monthly income"
                       min="0"
                       step="0.01"
@@ -598,14 +598,14 @@ const Profile = () => {
                   </div>
 
                   <div className="group">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
                       <DollarSign className="w-4 h-4 text-green-600" />
                       Currency
                     </label>
                     <select
                       value={profile.currency}
                       onChange={(e) => handleInputChange('currency', e.target.value)}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 hover:border-gray-300 font-medium bg-white cursor-pointer"
+                      className="w-full p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium bg-white dark:bg-slate-900 dark:text-white cursor-pointer"
                     >
                       {currencies.map(curr => (
                         <option key={curr.code} value={curr.code}>
@@ -626,28 +626,28 @@ const Profile = () => {
                     <Target className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Budget Limits & Savings Goals</h2>
-                    <p className="text-gray-500 text-sm">Set spending limits and define your financial goals</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Budget Limits & Savings Goals</h2>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm">Set spending limits and define your financial goals</p>
                   </div>
                 </div>
                 
                 {/* Budget Limits */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-purple-600" />
                     Monthly Budget Limits
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {categories.map(category => (
                       <div key={category} className="group">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                           {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </label>
                         <input
                           type="number"
                           value={profile.budgetLimits[category] || ''}
                           onChange={(e) => handleBudgetLimitChange(category, e.target.value)}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 hover:border-gray-300 font-medium"
+                          className="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 font-medium bg-white dark:bg-slate-900 dark:text-white"
                           placeholder="0"
                           min="0"
                           step="0.01"
@@ -658,18 +658,18 @@ const Profile = () => {
                 </div>
 
                 {/* Custom Expense Categories */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-100">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border-2 border-purple-100 dark:border-purple-800">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <Target className="w-5 h-5 text-purple-600" />
                     Custom Expense Categories
                   </h3>
                   
-                  <div className="bg-white/80 backdrop-blur-sm border-2 border-purple-200 rounded-xl p-4 mb-6">
+                  <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-xl p-4 mb-6">
                     <div className="flex items-start gap-3">
                       <AlertCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-semibold text-gray-900">Add your custom expense types</h4>
-                        <p className="text-gray-600 text-sm mt-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">Add your custom expense types</h4>
+                        <p className="text-gray-600 dark:text-slate-400 text-sm mt-1">
                           Create custom categories to better track your specific spending patterns (e.g., Bills, Rent, Loans, Pet Care)
                         </p>
                       </div>
@@ -677,43 +677,43 @@ const Profile = () => {
                   </div>
 
                   {/* Add New Category Form */}
-                  <div className="bg-white rounded-xl p-6 border-2 border-purple-200 mb-6 shadow-sm">
-                    <h4 className="font-semibold text-gray-900 mb-4">Add New Category</h4>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-purple-200 dark:border-purple-700 mb-6 shadow-sm dark:shadow-slate-900/30">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Add New Category</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                           Category Name
                         </label>
                         <input
                           type="text"
                           value={newCategory.name}
                           onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300"
+                          className="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-slate-900 dark:text-white"
                           placeholder="e.g., Rent, Bills, Loans"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                           Icon (Emoji)
                         </label>
                         <input
                           type="text"
                           value={newCategory.icon}
                           onChange={(e) => setNewCategory({...newCategory, icon: e.target.value})}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 text-center text-2xl"
+                          className="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 text-center text-2xl bg-white dark:bg-slate-900"
                           placeholder="🏠 💡 💳"
                           maxLength="2"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                           Keywords (comma-separated)
                         </label>
                         <input
                           type="text"
                           value={newCategory.keywords}
                           onChange={(e) => setNewCategory({...newCategory, keywords: e.target.value})}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300"
+                          className="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-slate-900 dark:text-white"
                           placeholder="rent, lease, apartment"
                         />
                       </div>
@@ -730,16 +730,16 @@ const Profile = () => {
                   {/* Existing Custom Categories */}
                   {profile.customCategories && profile.customCategories.length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-4">Your Custom Categories</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Your Custom Categories</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {profile.customCategories.map((category, index) => (
-                          <div key={index} className="bg-white border-2 border-purple-200 rounded-xl p-4 flex items-center justify-between hover:shadow-lg transition-all duration-300 hover:scale-105 animate-scale-in">
+                          <div key={index} className="bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700 rounded-xl p-4 flex items-center justify-between hover:shadow-lg dark:hover:shadow-slate-900/30 transition-all duration-300 hover:scale-105 animate-scale-in">
                             <div className="flex items-center gap-3">
                               <span className="text-3xl">{category.icon}</span>
                               <div>
-                                <p className="font-semibold text-gray-900">{category.name}</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{category.name}</p>
                                 {category.keywords && category.keywords.length > 0 && (
-                                  <p className="text-xs text-gray-500">{category.keywords.join(', ')}</p>
+                                  <p className="text-xs text-gray-500 dark:text-slate-400">{category.keywords.join(', ')}</p>
                                 )}
                               </div>
                             </div>
@@ -760,21 +760,21 @@ const Profile = () => {
                 </div>
 
                 {/* Savings Goal */}
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border-2 border-green-200 dark:border-green-800">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <Target className="w-5 h-5 text-green-600" />
                     Savings Goal
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                         Target Amount
                       </label>
                       <input
                         type="number"
                         value={profile.savingsGoal.amount}
                         onChange={(e) => handleInputChange('savingsGoal.amount', e.target.value)}
-                        className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
+                        className="w-full p-3 border-2 border-green-200 dark:border-green-700 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
                         placeholder="Enter target amount"
                         min="0"
                         step="0.01"
@@ -782,26 +782,26 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                         Target Date
                       </label>
                       <input
                         type="date"
                         value={profile.savingsGoal.deadline}
                         onChange={(e) => handleInputChange('savingsGoal.deadline', e.target.value)}
-                        className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
+                        className="w-full p-3 border-2 border-green-200 dark:border-green-700 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                         Description
                       </label>
                       <input
                         type="text"
                         value={profile.savingsGoal.description}
                         onChange={(e) => handleInputChange('savingsGoal.description', e.target.value)}
-                        className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
+                        className="w-full p-3 border-2 border-green-200 dark:border-green-700 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium"
                         placeholder="e.g., Emergency fund, Vacation"
                       />
                     </div>
@@ -818,12 +818,12 @@ const Profile = () => {
                     <Mail className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Gmail Integration</h2>
-                    <p className="text-gray-500 text-sm">Automatically sync financial documents from your email</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Gmail Integration</h2>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm">Automatically sync financial documents from your email</p>
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-6 mb-6">
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-6 mb-6">
                   <div className="flex items-start gap-4">
                     <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                     <div>
@@ -836,19 +836,19 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 border-2 border-gray-200 dark:border-slate-700 p-8">
                   {gmailStatus.isConnected ? (
                     <div>
-                      <div className="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-100">
+                      <div className="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-100 dark:border-slate-700">
                         <div className="flex items-center gap-4">
                           <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-4 rounded-2xl">
                             <CheckCircle className="w-8 h-8 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900">Connected</h3>
-                            <p className="text-gray-600 mt-1">{gmailStatus.email}</p>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Connected</h3>
+                            <p className="text-gray-600 dark:text-slate-400 mt-1">{gmailStatus.email}</p>
                             {gmailStatus.lastSync && (
-                              <p className="text-sm text-gray-500 mt-1">
+                              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                                 Last synced: {new Date(gmailStatus.lastSync).toLocaleString()}
                               </p>
                             )}
@@ -889,14 +889,14 @@ const Profile = () => {
                           </div>
                         )}
                         {gmailStatus.grantedScopes && gmailStatus.grantedScopes.length > 0 && (
-                          <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-200">
-                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <div className="bg-gray-50 dark:bg-slate-900 rounded-xl p-5 border-2 border-gray-200 dark:border-slate-700">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                               <CheckCircle className="w-5 h-5 text-green-600" />
                               Granted Permissions
                             </h4>
                             <ul className="space-y-2">
                               {gmailStatus.grantedScopes.map(scope => (
-                                <li key={scope} className="text-sm text-gray-600 flex items-center gap-2">
+                                <li key={scope} className="text-sm text-gray-600 dark:text-slate-400 flex items-center gap-2">
                                   <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                                   {scope}
                                 </li>
@@ -908,11 +908,11 @@ const Profile = () => {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Mail className="w-12 h-12 text-gray-400" />
+                      <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Mail className="w-12 h-12 text-gray-400 dark:text-slate-500" />
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3">Connect Gmail Account</h3>
-                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Connect Gmail Account</h3>
+                      <p className="text-gray-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
                         Automatically fetch financial documents from your Gmail account including bank statements, credit card bills, and receipts
                       </p>
                       <button
@@ -936,20 +936,20 @@ const Profile = () => {
                     <Settings className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
-                    <p className="text-gray-500 text-sm">Customize your experience and notification settings</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Preferences</h2>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm">Customize your experience and notification settings</p>
                   </div>
                 </div>
                 
                 <div className="space-y-6">
                   {/* AI Provider */}
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border-2 border-indigo-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-800">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <Settings className="w-5 h-5 text-indigo-600" />
                       AI Analysis Provider
                     </h3>
                     <div className="space-y-3">
-                      <label className="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 transition-all duration-300 cursor-pointer bg-white">
+                      <label className="flex items-center p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-800">
                         <input
                           type="radio"
                           name="aiProvider"
@@ -959,12 +959,12 @@ const Profile = () => {
                           className="w-5 h-5 text-indigo-600 mr-4"
                         />
                         <div>
-                          <span className="font-semibold text-gray-900">Ollama (Local AI)</span>
-                          <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">Free</span>
-                          <p className="text-sm text-gray-600 mt-1">Run AI analysis locally on your machine</p>
+                          <span className="font-semibold text-gray-900 dark:text-white">Ollama (Local AI)</span>
+                          <span className="ml-2 text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-medium">Free</span>
+                          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Run AI analysis locally on your machine</p>
                         </div>
                       </label>
-                      <label className="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 transition-all duration-300 cursor-pointer bg-white">
+                      <label className="flex items-center p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-800">
                         <input
                           type="radio"
                           name="aiProvider"
@@ -974,26 +974,26 @@ const Profile = () => {
                           className="w-5 h-5 text-indigo-600 mr-4"
                         />
                         <div>
-                          <span className="font-semibold text-gray-900">OpenAI</span>
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">API Key Required</span>
-                          <p className="text-sm text-gray-600 mt-1">Use OpenAI's powerful cloud-based AI</p>
+                          <span className="font-semibold text-gray-900 dark:text-white">OpenAI</span>
+                          <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full font-medium">API Key Required</span>
+                          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Use OpenAI's powerful cloud-based AI</p>
                         </div>
                       </label>
                     </div>
                     
                     {profile.preferences.aiProvider === 'openai' && (
                       <div className="mt-4 animate-scale-in">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                           OpenAI API Key
                         </label>
                         <input
                           type="password"
                           value={profile.preferences.openAIKey}
                           onChange={(e) => handleInputChange('preferences.openAIKey', e.target.value)}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-300 font-medium"
+                          className="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-300 font-medium bg-white dark:bg-slate-900 dark:text-white"
                           placeholder="sk-..."
                         />
-                        <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+                        <p className="text-sm text-gray-500 dark:text-slate-400 mt-2 flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-600" />
                           Your API key is encrypted and stored securely
                         </p>
@@ -1002,16 +1002,16 @@ const Profile = () => {
                   </div>
 
                   {/* Notifications */}
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <Mail className="w-5 h-5 text-blue-600" />
                       Notifications
                     </h3>
                     <div className="space-y-4">
-                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 transition-all duration-300 cursor-pointer bg-white">
+                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl hover:border-blue-300 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-800">
                         <div>
-                          <span className="font-semibold text-gray-900">Email Notifications</span>
-                          <p className="text-sm text-gray-600 mt-1">Get notified when analysis is complete</p>
+                          <span className="font-semibold text-gray-900 dark:text-white">Email Notifications</span>
+                          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Get notified when analysis is complete</p>
                         </div>
                         <input
                           type="checkbox"
@@ -1020,10 +1020,10 @@ const Profile = () => {
                           className="w-6 h-6 text-blue-600 rounded focus:ring-4 focus:ring-blue-100"
                         />
                       </label>
-                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 transition-all duration-300 cursor-pointer bg-white">
+                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl hover:border-blue-300 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-800">
                         <div>
-                          <span className="font-semibold text-gray-900">Budget Limit Alerts</span>
-                          <p className="text-sm text-gray-600 mt-1">Get alerts when you exceed budget limits</p>
+                          <span className="font-semibold text-gray-900 dark:text-white">Budget Limit Alerts</span>
+                          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Get alerts when you exceed budget limits</p>
                         </div>
                         <input
                           type="checkbox"
@@ -1036,16 +1036,16 @@ const Profile = () => {
                   </div>
 
                   {/* Auto-fetch settings */}
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border-2 border-green-200 dark:border-green-800">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <RefreshCw className="w-5 h-5 text-green-600" />
                       Auto-fetch Settings
                     </h3>
                     <div className="space-y-4">
-                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-green-300 transition-all duration-300 cursor-pointer bg-white">
+                      <label className="flex items-center justify-between p-4 border-2 border-gray-200 dark:border-slate-700 rounded-xl hover:border-green-300 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-800">
                         <div>
-                          <span className="font-semibold text-gray-900">Automatic Gmail Sync</span>
-                          <p className="text-sm text-gray-600 mt-1">Automatically fetch documents from Gmail</p>
+                          <span className="font-semibold text-gray-900 dark:text-white">Automatic Gmail Sync</span>
+                          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Automatically fetch documents from Gmail</p>
                         </div>
                         <input
                           type="checkbox"
@@ -1057,13 +1057,13 @@ const Profile = () => {
                       
                       {profile.preferences.autoFetchDocuments && (
                         <div className="animate-scale-in">
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                             Sync Frequency
                           </label>
                           <select
                             value={profile.preferences.fetchFrequency}
                             onChange={(e) => handleInputChange('preferences.fetchFrequency', e.target.value)}
-                            className="w-full p-3 border-2 border-green-200 bg-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium cursor-pointer"
+                            className="w-full p-3 border-2 border-green-200 dark:border-green-700 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium cursor-pointer"
                           >
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>

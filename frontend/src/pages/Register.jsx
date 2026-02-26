@@ -81,28 +81,28 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4 py-8 transition-colors duration-300">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <div className="bg-white dark:bg-slate-800/80 dark:backdrop-blur-xl rounded-2xl shadow-xl dark:shadow-black/30 border border-white/50 dark:border-slate-700/50 p-6 sm:p-8">
           <div className="flex justify-center mb-4 sm:mb-6">
-            <div className="bg-primary-600 rounded-full p-2.5 sm:p-3">
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-2.5 sm:p-3 shadow-lg shadow-blue-500/25">
               <DollarSign className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 dark:text-white mb-2">
             Create Account
           </h2>
-          <p className="text-center text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">
+          <p className="text-center text-slate-500 dark:text-slate-400 text-sm sm:text-base mb-6 sm:mb-8">
             Start managing your finances smartly
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
             <div>
-              <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Full Name</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 sm:mb-2">Full Name</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
-                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 dark:text-slate-500" />
                 </div>
                 <input
                   id="reg-name"
@@ -110,17 +110,17 @@ const Register = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                  className="block w-full pl-9 sm:pl-10 pr-3 py-2.5 bg-white dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base"
                   placeholder="John Doe"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Email</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 sm:mb-2">Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 dark:text-slate-500" />
                 </div>
                 <input
                   id="reg-email"
@@ -128,17 +128,17 @@ const Register = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                  className="block w-full pl-9 sm:pl-10 pr-3 py-2.5 bg-white dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Password</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 sm:mb-2">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 dark:text-slate-500" />
                 </div>
                 <input
                   id="reg-password"
@@ -146,13 +146,13 @@ const Register = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                  className="block w-full pl-9 sm:pl-10 pr-10 py-2.5 bg-white dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -162,13 +162,13 @@ const Register = () => {
               {password.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600">Password strength:</span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Password strength:</span>
                     <span className={`text-xs font-bold ${
-                      passwordStrength.score <= 2 ? 'text-red-600' : 
-                      passwordStrength.score === 3 ? 'text-yellow-600' : 'text-green-600'
+                      passwordStrength.score <= 2 ? 'text-red-500' : 
+                      passwordStrength.score === 3 ? 'text-yellow-500' : 'text-green-500'
                     }`}>{passwordStrength.label}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
                     <div className={`h-1.5 rounded-full transition-all duration-300 ${passwordStrength.color}`} 
                          style={{ width: `${passwordStrength.percentage}%` }} />
                   </div>
@@ -183,8 +183,8 @@ const Register = () => {
                       <div key={key} className="flex items-center gap-1">
                         {passwordStrength.checks[key] 
                           ? <Check className="w-3 h-3 text-green-500" /> 
-                          : <X className="w-3 h-3 text-gray-300" />}
-                        <span className={`text-xs ${passwordStrength.checks[key] ? 'text-green-700' : 'text-gray-400'}`}>{label}</span>
+                          : <X className="w-3 h-3 text-slate-300 dark:text-slate-600" />}
+                        <span className={`text-xs ${passwordStrength.checks[key] ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'}`}>{label}</span>
                       </div>
                     ))}
                   </div>
@@ -193,10 +193,10 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Confirm Password</label>
+              <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 sm:mb-2">Confirm Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 dark:text-slate-500" />
                 </div>
                 <input
                   id="reg-confirm-password"
@@ -204,38 +204,38 @@ const Register = () => {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`block w-full pl-9 sm:pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base ${
-                    confirmPassword && confirmPassword !== password ? 'border-red-300' : 'border-gray-300'
+                  className={`block w-full pl-9 sm:pl-10 pr-10 py-2.5 bg-white dark:bg-slate-700/50 border rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base ${
+                    confirmPassword && confirmPassword !== password ? 'border-red-400 dark:border-red-500' : 'border-slate-300 dark:border-slate-600'
                   }`}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {confirmPassword && confirmPassword !== password && (
-                <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+                <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-600 text-white py-2.5 sm:py-2 px-4 rounded-lg font-medium text-sm sm:text-base hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 sm:py-3 px-4 rounded-xl font-semibold text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 disabled:opacity-50 transition-all duration-200"
             >
               {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </form>
 
           <div className="mt-5 sm:mt-6 text-center">
-            <p className="text-xs sm:text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                 Sign in
               </Link>
             </p>

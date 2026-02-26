@@ -114,10 +114,10 @@ const Reports = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading report...</p>
+          <p className="mt-4 text-gray-600 dark:text-slate-400">Loading report...</p>
         </div>
       </div>
     );
@@ -176,13 +176,13 @@ const Reports = () => {
   } : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Monthly Trends Report</h1>
-            <p className="text-gray-600 mt-1">Comprehensive analysis of your income and expenses</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Monthly Trends Report</h1>
+            <p className="text-gray-600 dark:text-slate-400 mt-1">Comprehensive analysis of your income and expenses</p>
           </div>
           <Link to="/" className="text-primary-600 hover:text-primary-700 font-medium">
             Back to Dashboard
@@ -190,15 +190,15 @@ const Reports = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Date Range Filter</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4 dark:text-white">Date Range Filter</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Quick Select
               </label>
               <select
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:text-slate-200"
                 value={dateRange.months}
                 onChange={(e) => {
                   setDateRange({ months: e.target.value, startDate: '', endDate: '' });
@@ -211,23 +211,23 @@ const Reports = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Start Date
               </label>
               <input
                 type="date"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:text-slate-200"
                 value={dateRange.startDate}
                 onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 End Date
               </label>
               <input
                 type="date"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:text-slate-200"
                 value={dateRange.endDate}
                 onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
               />
@@ -244,8 +244,8 @@ const Reports = () => {
         </div>
 
         {/* Export Buttons */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Export Report</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4 dark:text-white">Export Report</h2>
           <div className="flex gap-4">
             <button
               onClick={() => handleExport('pdf')}
@@ -284,26 +284,26 @@ const Reports = () => {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm text-gray-600 mb-1">Total Income</p>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Total Income</p>
                 <p className="text-2xl font-bold text-green-600">
                   ₹{reportData.summary.totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm text-gray-600 mb-1">Total Expenses</p>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Total Expenses</p>
                 <p className="text-2xl font-bold text-red-600">
                   ₹{reportData.summary.totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm text-gray-600 mb-1">Total Net</p>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Total Net</p>
                 <p className={`text-2xl font-bold ${reportData.summary.totalNet >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   ₹{reportData.summary.totalNet.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm text-gray-600 mb-1">Avg Savings Rate</p>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Avg Savings Rate</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {reportData.summary.avgSavingsRate.toFixed(2)}%
                 </p>
@@ -312,8 +312,8 @@ const Reports = () => {
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Income vs Expenses Trend</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Income vs Expenses Trend</h3>
                 <Line 
                   data={incomeExpenseChartData} 
                   options={{
@@ -325,8 +325,8 @@ const Reports = () => {
                   }}
                 />
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Monthly Savings Rate</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Monthly Savings Rate</h3>
                 <Bar 
                   data={savingsRateChartData}
                   options={{
@@ -344,8 +344,8 @@ const Reports = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Top Expense Categories</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Top Expense Categories</h3>
                 <Doughnut 
                   data={categoryChartData}
                   options={{
@@ -359,29 +359,29 @@ const Reports = () => {
               </div>
               
               {/* Trend Analysis */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Trend Analysis</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Trend Analysis</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-700">Income Growth</span>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded">
+                    <span className="text-gray-700 dark:text-slate-300">Income Growth</span>
                     <span className={`font-semibold ${reportData.trendAnalysis.incomeGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {reportData.trendAnalysis.incomeGrowth >= 0 ? '+' : ''}{reportData.trendAnalysis.incomeGrowth.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-700">Expense Growth</span>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded">
+                    <span className="text-gray-700 dark:text-slate-300">Expense Growth</span>
                     <span className={`font-semibold ${reportData.trendAnalysis.expenseGrowth <= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {reportData.trendAnalysis.expenseGrowth >= 0 ? '+' : ''}{reportData.trendAnalysis.expenseGrowth.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-700">Savings Trend</span>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded">
+                    <span className="text-gray-700 dark:text-slate-300">Savings Trend</span>
                     <span className={`font-semibold ${reportData.trendAnalysis.savingsTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {reportData.trendAnalysis.savingsTrend >= 0 ? '+' : ''}{reportData.trendAnalysis.savingsTrend.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="text-gray-700">Months Analyzed</span>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded">
+                    <span className="text-gray-700 dark:text-slate-300">Months Analyzed</span>
                     <span className="font-semibold text-blue-600">
                       {reportData.summary.monthsAnalyzed}
                     </span>
@@ -391,24 +391,24 @@ const Reports = () => {
             </div>
 
             {/* Monthly Breakdown Table */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Monthly Breakdown</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+              <h3 className="text-lg font-semibold mb-4 dark:text-white">Monthly Breakdown</h3>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                  <thead className="bg-gray-50 dark:bg-slate-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Savings Rate</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Month</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Income</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Expenses</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Net</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Savings Rate</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Transactions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                     {reportData.monthlyTrends.map((trend, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{trend.month}</td>
+                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{trend.month}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
                           ₹{trend.income.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </td>
@@ -421,7 +421,7 @@ const Reports = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                           {trend.savingsRate}%
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                           {trend.transactionCount}
                         </td>
                       </tr>

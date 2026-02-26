@@ -15,9 +15,9 @@ const CategoryBreakdown = ({ categoryData }) => {
   // Early return with safe checks
   if (!categoryData || !categoryData.chartData || !Array.isArray(categoryData.chartData) || categoryData.chartData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Category Breakdown</h3>
-        <p className="text-gray-500">No category data available yet.</p>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Category Breakdown</h3>
+        <p className="text-gray-500 dark:text-slate-400">No category data available yet.</p>
       </div>
     );
   }
@@ -76,10 +76,10 @@ const CategoryBreakdown = ({ categoryData }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Category Breakdown</h3>
-        <p className="text-sm text-gray-600 mt-1">Spending by category (last 6 months)</p>
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Category Breakdown</h3>
+        <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Spending by category (last 6 months)</p>
       </div>
       
       <div className="p-6">
@@ -89,12 +89,12 @@ const CategoryBreakdown = ({ categoryData }) => {
             <Doughnut data={interactiveChartData} options={chartOptions} />
             {/* Center content overlay */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <PieChart className="w-8 h-8 text-gray-400 mb-1" />
+              <PieChart className="w-8 h-8 text-gray-400 dark:text-slate-500 mb-1" />
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
                   ₹{summary?.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 0 }) || '0'}
                 </p>
-                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Total</p>
               </div>
             </div>
           </div>
@@ -111,46 +111,46 @@ const CategoryBreakdown = ({ categoryData }) => {
                     className="w-3 h-3 rounded-full mr-3"
                     style={{ backgroundColor: category.color || '#CCCCCC' }}
                   ></div>
-                  <span className="text-sm font-medium text-gray-900 truncate">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {category.category || 'Unknown'}
                   </span>
                 </div>
                 <div className="text-right ml-2">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
                     ₹{(category.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-xs text-gray-500">{(category.percentage || 0).toFixed(1)}%</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{(category.percentage || 0).toFixed(1)}%</p>
                 </div>
               </div>
             );
           })}
           
           {chartData && chartData.length > 8 && (
-            <div className="text-xs text-gray-500 text-center pt-2">
+            <div className="text-xs text-gray-500 dark:text-slate-400 text-center pt-2">
               +{chartData.length - 8} more categories
             </div>
           )}
         </div>
         
         {/* Summary Stats */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
-              <p className="text-lg font-bold text-gray-900">{summary?.totalCategories || 0}</p>
-              <p className="text-xs text-gray-500">Categories</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{summary?.totalCategories || 0}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Categories</p>
             </div>
             <div>
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
                 {summary?.diversificationIndex?.toFixed(2) || '0.00'}
               </p>
-              <p className="text-xs text-gray-500">Diversity Index</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Diversity Index</p>
             </div>
           </div>
         </div>
         
         {summary?.topCategory && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm font-medium text-blue-900">
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-300">
               Top Category: {summary.topCategory}
             </p>
           </div>

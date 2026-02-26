@@ -159,9 +159,9 @@ const CreditScoreCard = () => {
   };
 
   const getScoreBgColor = (score) => {
-    if (score >= 750) return 'bg-green-100';
-    if (score >= 650) return 'bg-yellow-100';
-    return 'bg-red-100';
+    if (score >= 750) return 'bg-green-100 dark:bg-green-900/30';
+    if (score >= 650) return 'bg-yellow-100 dark:bg-yellow-900/30';
+    return 'bg-red-100 dark:bg-red-900/30';
   };
 
   const getGradeIcon = (grade) => {
@@ -171,11 +171,11 @@ const CreditScoreCard = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <CreditCard className="w-6 h-6 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Credit Score</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Credit Score</h3>
         </div>
         
         <div className="flex space-x-2">
@@ -196,7 +196,7 @@ const CreditScoreCard = () => {
           {/* Force reload button for debugging */}
           <button
             onClick={checkProfileAndLoadCreditScore}
-            className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+            className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded hover:bg-yellow-200 dark:hover:bg-yellow-800"
             title="Force reload data"
           >
             Debug
@@ -205,14 +205,14 @@ const CreditScoreCard = () => {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 rounded">
           {error}
         </div>
       )}
 
       {!creditData ? (
         <div className="text-center py-8">
-          <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <CreditCard className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
           {error ? (
             <div className="text-center">
               <p className="text-red-600 mb-4">{error}</p>
@@ -225,7 +225,7 @@ const CreditScoreCard = () => {
             </div>
           ) : (
             <div>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-slate-400 mb-4">
                 Get your CIBIL credit score to understand your financial health
               </p>
               <button
@@ -234,12 +234,12 @@ const CreditScoreCard = () => {
                 className={`px-6 py-2 rounded-md font-medium ${
                   canFetchThisMonth 
                     ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-300 dark:bg-slate-600 text-gray-500 dark:text-slate-400 cursor-not-allowed'
                 }`}
               >
                 {loading ? 'Fetching...' : canFetchThisMonth ? 'Fetch Credit Score' : 'Already Fetched This Month'}
               </button>
-              <p className="text-xs text-gray-500 mt-2 text-center">
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-2 text-center">
                 {canFetchThisMonth 
                   ? "We'll use your profile details to fetch your credit score" 
                   : lastFetchDate 
@@ -265,13 +265,13 @@ const CreditScoreCard = () => {
                     <span className="font-medium">{creditData.grade}</span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
                   Last updated: {new Date(creditData.lastUpdated).toLocaleDateString()}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-500">Range: 300-850</div>
-                <div className="text-xs text-gray-400">
+                <div className="text-sm text-gray-500 dark:text-slate-400">Range: 300-850</div>
+                <div className="text-xs text-gray-400 dark:text-slate-500">
                   {creditData.percentile && `${creditData.percentile}th percentile`}
                 </div>
               </div>
@@ -281,10 +281,10 @@ const CreditScoreCard = () => {
           {/* Credit Factors */}
           {creditData.factors && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Key Factors</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Key Factors</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {creditData.factors.map((factor, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded">
                     <div className="flex items-center space-x-2">
                       {factor.impact === 'positive' ? (
                         <TrendingUp className="w-4 h-4 text-green-500" />
@@ -294,7 +294,7 @@ const CreditScoreCard = () => {
                       <span className="text-sm font-medium">{factor.factor}</span>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded ${
-                      factor.impact === 'positive' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      factor.impact === 'positive' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                     }`}>
                       {factor.impact}
                     </span>
@@ -307,10 +307,10 @@ const CreditScoreCard = () => {
           {/* Recommendations */}
           {creditData.recommendations && creditData.recommendations.length > 0 && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Recommendations</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Recommendations</h4>
               <div className="space-y-2">
                 {creditData.recommendations.slice(0, 3).map((rec, index) => (
-                  <div key={index} className="flex items-start space-x-2 p-3 bg-blue-50 rounded">
+                  <div key={index} className="flex items-start space-x-2 p-3 bg-blue-50 dark:bg-blue-900/30 rounded">
                     <Info className="w-4 h-4 text-blue-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-blue-900">{rec.title}</p>
@@ -325,31 +325,31 @@ const CreditScoreCard = () => {
           {/* Account Summary */}
           {creditData.accounts && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Account Summary</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Account Summary</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="p-3 bg-gray-50 rounded">
-                  <div className="text-lg font-semibold text-gray-900">
+                <div className="p-3 bg-gray-50 dark:bg-slate-700 rounded">
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
                     {creditData.accounts.total || 0}
                   </div>
-                  <div className="text-xs text-gray-500">Total Accounts</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">Total Accounts</div>
                 </div>
-                <div className="p-3 bg-green-50 rounded">
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded">
                   <div className="text-lg font-semibold text-green-700">
                     {creditData.accounts.open || 0}
                   </div>
-                  <div className="text-xs text-gray-500">Active</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">Active</div>
                 </div>
-                <div className="p-3 bg-yellow-50 rounded">
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded">
                   <div className="text-lg font-semibold text-yellow-700">
                     ₹{creditData.totalCreditLimit ? (creditData.totalCreditLimit / 100000).toFixed(1) : '0.0'}L
                   </div>
-                  <div className="text-xs text-gray-500">Credit Limit</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">Credit Limit</div>
                 </div>
-                <div className="p-3 bg-blue-50 rounded">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded">
                   <div className="text-lg font-semibold text-blue-700">
                     {creditData.creditUtilization ? Math.round(creditData.creditUtilization) : '0'}%
                   </div>
-                  <div className="text-xs text-gray-500">Utilization</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">Utilization</div>
                 </div>
               </div>
             </div>
@@ -371,7 +371,7 @@ const CreditScoreCard = () => {
               className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all ${
                 canFetchThisMonth 
                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-300 dark:bg-slate-600 text-gray-500 dark:text-slate-400 cursor-not-allowed'
               }`}
             >
               <RefreshCw className="w-4 h-4" />
@@ -380,7 +380,7 @@ const CreditScoreCard = () => {
           </div>
           {!canFetchThisMonth && lastFetchDate && (
             <div className="text-center mt-2">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-slate-400">
                 Next update available: {new Date(lastFetchDate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
               </p>
             </div>

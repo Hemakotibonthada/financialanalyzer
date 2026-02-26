@@ -85,7 +85,7 @@ const NotificationCenter = () => {
       case 'warning':
         return <Clock className="w-5 h-5 text-orange-500" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+        return <Bell className="w-5 h-5 text-gray-500 dark:text-slate-400" />;
     }
   };
 
@@ -120,7 +120,7 @@ const NotificationCenter = () => {
           {unreadCount > 0 && (
             <button 
               onClick={markAllAsRead}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2"
+              className="px-4 py-2 border dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2"
             >
               <Check className="w-4 h-4" />
               Mark all read
@@ -192,7 +192,7 @@ const NotificationCenter = () => {
                     ...preferences,
                     digestFrequency: e.target.value
                   })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border dark:border-slate-700 rounded-lg dark:bg-slate-800 dark:text-slate-200"
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -214,7 +214,7 @@ const NotificationCenter = () => {
             className={`px-3 py-1 rounded-lg capitalize ${
               filter === f 
                 ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
             {f}
@@ -226,7 +226,7 @@ const NotificationCenter = () => {
       <div className="space-y-3">
         {filteredNotifications.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center text-gray-500">
+            <CardContent className="p-8 text-center text-gray-500 dark:text-slate-400">
               <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>No notifications</p>
             </CardContent>
@@ -235,7 +235,7 @@ const NotificationCenter = () => {
           filteredNotifications.map(notification => (
             <Card 
               key={notification._id}
-              className={`${!notification.read ? 'border-blue-200 bg-blue-50' : ''}`}
+              className={`${!notification.read ? 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30' : ''}`}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -250,14 +250,14 @@ const NotificationCenter = () => {
                           <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">{notification.message}</p>
+                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400">
                         <span>{new Date(notification.createdAt).toLocaleString()}</span>
                         {notification.priority && (
                           <span className={`px-2 py-0.5 rounded ${
-                            notification.priority === 'high' ? 'bg-red-100 text-red-800' :
-                            notification.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
-                            'bg-gray-100 text-gray-800'
+                            notification.priority === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+                            notification.priority === 'medium' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300' :
+                            'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200'
                           }`}>
                             {notification.priority} priority
                           </span>
@@ -269,18 +269,18 @@ const NotificationCenter = () => {
                     {!notification.read && (
                       <button
                         onClick={() => markAsRead(notification._id)}
-                        className="p-1 hover:bg-gray-100 rounded"
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
                         title="Mark as read"
                       >
-                        <Check className="w-4 h-4 text-gray-600" />
+                        <Check className="w-4 h-4 text-gray-600 dark:text-slate-400" />
                       </button>
                     )}
                     <button
                       onClick={() => deleteNotification(notification._id)}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
                       title="Delete"
                     >
-                      <X className="w-4 h-4 text-gray-600" />
+                      <X className="w-4 h-4 text-gray-600 dark:text-slate-400" />
                     </button>
                   </div>
                 </div>

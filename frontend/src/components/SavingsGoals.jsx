@@ -4,13 +4,13 @@ import { Target, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 const SavingsGoals = ({ savingsData }) => {
   if (!savingsData || !savingsData.hasGoals) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Savings Goals</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Savings Goals</h3>
         <div className="text-center py-8">
-          <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">No savings goals set</p>
+          <Target className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-slate-400 mb-4">No savings goals set</p>
           {savingsData?.recommendation && (
-            <p className="text-sm text-gray-400">{savingsData.recommendation}</p>
+            <p className="text-sm text-gray-400 dark:text-slate-500">{savingsData.recommendation}</p>
           )}
         </div>
       </div>
@@ -20,24 +20,24 @@ const SavingsGoals = ({ savingsData }) => {
   const { goals, totalTargetAmount, totalCurrentAmount, avgMonthlySavings, recommendations } = savingsData;
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Savings Goals</h3>
-        <p className="text-sm text-gray-600 mt-1">Track your financial objectives</p>
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Savings Goals</h3>
+        <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Track your financial objectives</p>
       </div>
       
       <div className="p-6">
         {/* Overall Progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Overall Progress</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">
               ₹{totalCurrentAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'} / 
               ₹{totalTargetAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
             </span>
           </div>
           
-          <div className="w-full bg-gray-200 rounded-full h-3">
+          <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
             <div 
               className="bg-blue-500 h-3 rounded-full transition-all duration-500"
               style={{ 
@@ -46,7 +46,7 @@ const SavingsGoals = ({ savingsData }) => {
             ></div>
           </div>
           
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400 mt-1">
             <span>0%</span>
             <span>
               {totalTargetAmount > 0 ? Math.round((totalCurrentAmount / totalTargetAmount) * 100) : 0}%
@@ -60,7 +60,7 @@ const SavingsGoals = ({ savingsData }) => {
           {goals && Array.isArray(goals) && goals.slice(0, 4).map((goal, index) => {
             if (!goal) return null;
             return (
-            <div key={index} className="border rounded-lg p-4">
+            <div key={index} className="border dark:border-slate-700 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
                   {(goal.progressPercentage || 0) >= 100 ? (
@@ -70,19 +70,19 @@ const SavingsGoals = ({ savingsData }) => {
                   ) : (
                     <Target className="w-4 h-4 text-blue-500 mr-2" />
                   )}
-                  <span className="text-sm font-medium text-gray-900">{goal.name || 'Savings Goal'}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{goal.name || 'Savings Goal'}</span>
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-medium">
                     ₹{(goal.currentAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">
+                  <span className="text-xs text-gray-500 dark:text-slate-400 ml-1">
                     / ₹{(goal.targetAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
               </div>
               
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-500 ${
                     (goal.progressPercentage || 0) >= 100 ? 'bg-green-500' :
@@ -92,7 +92,7 @@ const SavingsGoals = ({ savingsData }) => {
                 ></div>
               </div>
               
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400">
                 <span>{goal.progressPercentage || 0}% complete</span>
                 {goal.monthsRemaining !== null && goal.monthsRemaining !== undefined && (
                   <span>
@@ -112,7 +112,7 @@ const SavingsGoals = ({ savingsData }) => {
                     Need: ${goal.requiredMonthlySavings.toFixed(2)}/month
                   </span>
                   {avgMonthlySavings && (
-                    <span className="text-gray-500 ml-2">
+                    <span className="text-gray-500 dark:text-slate-400 ml-2">
                       (Current: ${avgMonthlySavings.toFixed(2)}/month)
                     </span>
                   )}
@@ -120,7 +120,7 @@ const SavingsGoals = ({ savingsData }) => {
               )}
               
               {goal.projectedCompletionDate && (
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                   Projected completion: {new Date(goal.projectedCompletionDate).toLocaleDateString()}
                 </div>
               )}
@@ -138,23 +138,23 @@ const SavingsGoals = ({ savingsData }) => {
                 ${avgMonthlySavings?.toFixed(2) || '0.00'}
               </p>
             </div>
-            <p className="text-xs text-gray-500">Avg Monthly Savings</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Avg Monthly Savings</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
               {goals?.filter(g => g.onTrack !== false).length || 0}
             </p>
-            <p className="text-xs text-gray-500">Goals on Track</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Goals on Track</p>
           </div>
         </div>
 
         {/* Recommendations */}
         {recommendations && recommendations.length > 0 && (
-          <div className="border-t border-gray-200 pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Recommendations</h4>
+          <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Recommendations</h4>
             <div className="space-y-2">
               {recommendations.map((rec, index) => (
-                <div key={index} className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                <div key={index} className="text-xs text-gray-600 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
                   {rec}
                 </div>
               ))}

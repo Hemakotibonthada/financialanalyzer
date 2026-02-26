@@ -7,7 +7,7 @@ import { Home, ArrowLeft, Search } from 'lucide-react';
  */
 const NotFound = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 px-4">
       <div className="max-w-lg w-full text-center">
         {/* Animated 404 Number */}
         <div className="mb-8">
@@ -19,10 +19,10 @@ const NotFound = () => {
           </h1>
         </div>
 
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
           Page Not Found
         </h2>
-        <p className="text-gray-600 mb-8 text-lg">
+        <p className="text-gray-600 dark:text-slate-400 mb-8 text-lg">
           The page you're looking for doesn't exist or has been moved. 
           Let's get you back on track.
         </p>
@@ -37,14 +37,14 @@ const NotFound = () => {
           </Link>
           <button
             onClick={() => window.history.back()}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             Go Back
           </button>
           <Link
             to="/advanced-search"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             <Search className="w-5 h-5" aria-hidden="true" />
             Search
@@ -52,8 +52,8 @@ const NotFound = () => {
         </div>
 
         {/* Helpful Links */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500 mb-4">Popular pages:</p>
+        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-slate-700">
+          <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">Popular pages:</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             {[
               { to: '/dashboard', label: 'Dashboard' },

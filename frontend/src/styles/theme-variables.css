@@ -195,6 +195,30 @@
   --color-border-focus: var(--color-primary-400);
 
   --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-card-hover: 0 10px 20px -5px rgb(0 0 0 / 0.3);
+}
+
+/* Black (OLED) Mode Variables */
+[data-theme="black"] {
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-bg-tertiary: #171717;
+  --color-bg-card: #0a0a0a;
+  --color-bg-card-hover: #141414;
+  --color-bg-input: #0a0a0a;
+  --color-bg-overlay: rgba(0, 0, 0, 0.85);
+
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-inverse: #000000;
+
+  --color-border-primary: #1a1a1a;
+  --color-border-secondary: #262626;
+  --color-border-focus: var(--color-primary-400);
+
+  --shadow-card: 0 2px 4px -1px rgb(0 0 0 / 0.5);
+  --shadow-card-hover: 0 8px 16px -4px rgb(0 0 0 / 0.5);
 }
 
 /* Light Mode Variables (default) */

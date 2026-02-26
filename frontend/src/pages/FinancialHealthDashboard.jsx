@@ -85,21 +85,21 @@ const FinancialHealthDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-700">No Data Available</h2>
-          <p className="text-gray-500 mt-2">Add some transactions to see your financial health</p>
+          <AlertCircle className="w-16 h-16 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-700 dark:text-slate-300">No Data Available</h2>
+          <p className="text-gray-500 dark:text-slate-400 mt-2">Add some transactions to see your financial health</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Financial Health Dashboard</h1>
-          <p className="text-gray-600">Comprehensive analysis of your financial wellness</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Financial Health Dashboard</h1>
+          <p className="text-gray-600 dark:text-slate-400">Comprehensive analysis of your financial wellness</p>
         </div>
 
         {/* Overall Score Card */}
@@ -134,8 +134,8 @@ const FinancialHealthDashboard = () => {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="flex border-b overflow-x-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 mb-6">
+          <div className="flex border-b dark:border-slate-700 overflow-x-auto">
             {['overview', 'scores', 'spending', 'recommendations'].map(tab => (
               <button
                 key={tab}
@@ -143,7 +143,7 @@ const FinancialHealthDashboard = () => {
                 className={`px-6 py-4 font-medium capitalize whitespace-nowrap ${
                   activeTab === tab
                     ? 'border-b-2 border-indigo-600 text-indigo-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 {tab}
@@ -194,16 +194,16 @@ const FinancialHealthDashboard = () => {
             {/* Strengths and Weaknesses */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Strengths */}
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
                 <div className="flex items-center mb-4">
                   <CheckCircle className="w-6 h-6 text-green-500 mr-2" />
-                  <h3 className="text-xl font-bold text-gray-900">Your Strengths</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Your Strengths</h3>
                 </div>
                 {healthData.strengths.length > 0 ? (
                   <div className="space-y-3">
                     {healthData.strengths.map((strength, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="font-medium text-gray-700 capitalize">
+                      <div key={index} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <span className="font-medium text-gray-700 dark:text-slate-300 capitalize">
                           {strength.category.replace(/([A-Z])/g, ' $1').trim()}
                         </span>
                         <div className="flex items-center">
@@ -214,46 +214,46 @@ const FinancialHealthDashboard = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">Keep working on your financial health to build strengths</p>
+                  <p className="text-gray-500 dark:text-slate-400">Keep working on your financial health to build strengths</p>
                 )}
               </div>
 
               {/* Weaknesses */}
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
                 <div className="flex items-center mb-4">
                   <AlertCircle className="w-6 h-6 text-orange-500 mr-2" />
-                  <h3 className="text-xl font-bold text-gray-900">Areas for Improvement</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Areas for Improvement</h3>
                 </div>
                 {healthData.weaknesses.length > 0 ? (
                   <div className="space-y-3">
                     {healthData.weaknesses.map((weakness, index) => (
-                      <div key={index} className="p-3 bg-orange-50 rounded-lg">
+                      <div key={index} className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-gray-700 capitalize">
+                          <span className="font-medium text-gray-700 dark:text-slate-300 capitalize">
                             {weakness.category.replace(/([A-Z])/g, ' $1').trim()}
                           </span>
                           <span className="text-orange-600 font-bold">{weakness.score}/100</span>
                         </div>
-                        <p className="text-sm text-gray-600">{weakness.recommendation}</p>
+                        <p className="text-sm text-gray-600 dark:text-slate-400">{weakness.recommendation}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">Great! No major weaknesses identified</p>
+                  <p className="text-gray-500 dark:text-slate-400">Great! No major weaknesses identified</p>
                 )}
               </div>
             </div>
 
             {/* Spending Insights */}
             {spendingData && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Spending Insights</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Spending Insights</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {spendingData.insights.slice(0, 3).map((insight, index) => (
-                    <div key={index} className="p-4 bg-indigo-50 rounded-lg">
+                    <div key={index} className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
                       <div className="text-3xl mb-2">{insight.icon}</div>
-                      <h4 className="font-semibold text-gray-900 mb-1">{insight.title}</h4>
-                      <p className="text-sm text-gray-600">{insight.message}</p>
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{insight.title}</h4>
+                      <p className="text-sm text-gray-600 dark:text-slate-400">{insight.message}</p>
                     </div>
                   ))}
                 </div>
@@ -266,8 +266,8 @@ const FinancialHealthDashboard = () => {
         {activeTab === 'scores' && (
           <div className="space-y-6">
             {/* Score Radar Chart */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Health Score Breakdown</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Health Score Breakdown</h3>
               <div className="h-96">
                 <Radar
                   data={{
@@ -323,36 +323,36 @@ const FinancialHealthDashboard = () => {
           <div className="space-y-6">
             {/* Spending Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">Total Expenses</h4>
-                <p className="text-3xl font-bold text-gray-900">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+                <h4 className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Total Expenses</h4>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">
                   ₹{spendingData.summary.totalExpense.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500 mt-2">Last 6 months</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Last 6 months</p>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">Total Income</h4>
-                <p className="text-3xl font-bold text-gray-900">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+                <h4 className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Total Income</h4>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">
                   ₹{spendingData.summary.totalIncome.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500 mt-2">Last 6 months</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Last 6 months</p>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">Net Savings</h4>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+                <h4 className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Net Savings</h4>
                 <p className={`text-3xl font-bold ${
                   spendingData.summary.netSavings >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
                   ₹{spendingData.summary.netSavings.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">
                   Savings Rate: {spendingData.summary.savingsRate}%
                 </p>
               </div>
             </div>
 
             {/* Category Spending */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Spending by Category</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Spending by Category</h3>
               <div className="h-80">
                 <Pie
                   data={{
@@ -382,12 +382,12 @@ const FinancialHealthDashboard = () => {
             </div>
 
             {/* Spending Patterns */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Spending Patterns</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Spending Patterns</h3>
               <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Recurring Transactions</h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Recurring Transactions</h4>
+                  <p className="text-sm text-gray-600 dark:text-slate-400 mb-3">
                     {spendingData.patterns.recurring.length} recurring payments detected
                   </p>
                   <div className="space-y-2">
@@ -396,16 +396,16 @@ const FinancialHealthDashboard = () => {
                         <span className="text-sm font-medium">{transaction.merchant}</span>
                         <div className="text-right">
                           <span className="text-sm font-bold">₹{transaction.amount}</span>
-                          <span className="text-xs text-gray-500 ml-2">{transaction.frequency}</span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400 ml-2">{transaction.frequency}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Impulse Purchases</h4>
-                  <p className="text-sm text-gray-600">
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Impulse Purchases</h4>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
                     {spendingData.patterns.impulse.count} impulse purchases totaling ₹
                     {spendingData.patterns.impulse.totalAmount.toLocaleString()}
                   </p>
@@ -418,8 +418,8 @@ const FinancialHealthDashboard = () => {
         {/* Recommendations Tab */}
         {activeTab === 'recommendations' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Personalized Recommendations</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Personalized Recommendations</h3>
               <div className="space-y-4">
                 {healthData.recommendations.map((rec, index) => (
                   <RecommendationCard key={index} recommendation={rec} />
@@ -431,8 +431,8 @@ const FinancialHealthDashboard = () => {
             </div>
 
             {/* Projections */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Financial Health Projections</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Financial Health Projections</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <ProjectionCard
                   period="3 Months"
@@ -450,9 +450,9 @@ const FinancialHealthDashboard = () => {
                   currentScore={healthData.overallScore}
                 />
               </div>
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Assumptions:</h4>
-                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+              <div className="mt-6 p-4 bg-gray-50 dark:bg-slate-900 rounded-lg">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Assumptions:</h4>
+                <ul className="list-disc list-inside text-sm text-gray-600 dark:text-slate-400 space-y-1">
                   {healthData.projections.assumptions.map((assumption, index) => (
                     <li key={index}>{assumption}</li>
                   ))}
@@ -469,14 +469,14 @@ const FinancialHealthDashboard = () => {
 // Stat Card Component
 const StatCard = ({ icon: Icon, title, value, change, positive, color }) => {
   const colors = {
-    green: 'bg-green-100 text-green-600',
-    blue: 'bg-blue-100 text-blue-600',
-    purple: 'bg-purple-100 text-purple-600',
-    indigo: 'bg-indigo-100 text-indigo-600'
+    green: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+    purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    indigo: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${colors[color]}`}>
           <Icon className="w-6 h-6" />
@@ -488,8 +488,8 @@ const StatCard = ({ icon: Icon, title, value, change, positive, color }) => {
           {change}
         </div>
       </div>
-      <h3 className="text-sm font-medium text-gray-600 mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <h3 className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 };
@@ -498,28 +498,28 @@ const StatCard = ({ icon: Icon, title, value, change, positive, color }) => {
 const ScoreCard = ({ title, score, status, message, details }) => {
   const getStatusColor = (status) => {
     switch(status) {
-      case 'excellent': return 'bg-green-100 text-green-800 border-green-200';
-      case 'good': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'fair': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'poor': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'excellent': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-700';
+      case 'good': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-700';
+      case 'fair': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-700';
+      case 'poor': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-700';
+      case 'critical': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-700';
+      default: return 'bg-gray-100 dark:bg-slate-800/50 text-gray-800 dark:text-slate-300 border-gray-200 dark:border-slate-700';
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6 border-l-4 border-indigo-500">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-lg font-bold text-gray-900 capitalize">{title}</h4>
+        <h4 className="text-lg font-bold text-gray-900 dark:text-white capitalize">{title}</h4>
         <div className="text-3xl font-bold text-indigo-600">{score}</div>
       </div>
       <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(status)} mb-3`}>
         {status.toUpperCase()}
       </div>
-      <p className="text-sm text-gray-600 mb-3">{message}</p>
+      <p className="text-sm text-gray-600 dark:text-slate-400 mb-3">{message}</p>
       
       {/* Progress bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
         <div 
           className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
           style={{ width: `${score}%` }}
@@ -534,28 +534,28 @@ const RecommendationCard = ({ recommendation }) => {
   const getPriorityBadge = (priority) => {
     switch(priority) {
       case 'high':
-        return <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">HIGH</span>;
+        return <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 text-xs font-semibold rounded">HIGH</span>;
       case 'medium':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">MEDIUM</span>;
+        return <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-xs font-semibold rounded">MEDIUM</span>;
       default:
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">LOW</span>;
+        return <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-xs font-semibold rounded">LOW</span>;
     }
   };
 
   return (
-    <div className="p-6 border-l-4 border-indigo-500 bg-indigo-50 rounded-lg">
+    <div className="p-6 border-l-4 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center">
           <Zap className="w-5 h-5 text-indigo-600 mr-2" />
-          <h4 className="font-bold text-gray-900">{recommendation.title}</h4>
+          <h4 className="font-bold text-gray-900 dark:text-white">{recommendation.title}</h4>
         </div>
         {getPriorityBadge(recommendation.priority)}
       </div>
-      <p className="text-sm text-gray-700 mb-3">{recommendation.message}</p>
+      <p className="text-sm text-gray-700 dark:text-slate-300 mb-3">{recommendation.message}</p>
       {recommendation.action && (
-        <div className="flex items-start mt-3 p-3 bg-white rounded">
+        <div className="flex items-start mt-3 p-3 bg-white dark:bg-slate-800 rounded">
           <Info className="w-4 h-4 text-indigo-600 mr-2 mt-0.5 flex-shrink-0" />
-          <span className="text-sm text-gray-600">{recommendation.action}</span>
+          <span className="text-sm text-gray-600 dark:text-slate-400">{recommendation.action}</span>
         </div>
       )}
       {recommendation.potentialSavings && (

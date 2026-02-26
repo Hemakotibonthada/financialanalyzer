@@ -42,10 +42,10 @@ const CreditScoreDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading detailed credit report...</p>
+          <p className="mt-4 text-gray-600 dark:text-slate-400 font-medium">Loading detailed credit report...</p>
         </div>
       </div>
     );
@@ -53,9 +53,9 @@ const CreditScoreDetail = () => {
 
   if (!creditData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-xl text-gray-600">No credit data available</p>
+          <p className="text-xl text-gray-600 dark:text-slate-400">No credit data available</p>
           <button onClick={() => navigate('/dashboard')} className="mt-4 text-indigo-600 hover:text-indigo-800">
             Return to Dashboard
           </button>
@@ -108,7 +108,7 @@ const CreditScoreDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -121,11 +121,11 @@ const CreditScoreDetail = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Detailed Credit Report</h1>
-              <p className="text-gray-600 mt-2">Comprehensive analysis of your credit profile</p>
+              <p className="text-gray-600 dark:text-slate-400 mt-2">Comprehensive analysis of your credit profile</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">Last Updated</p>
-              <p className="text-lg font-semibold text-gray-700">
+              <p className="text-sm text-gray-500 dark:text-slate-400">Last Updated</p>
+              <p className="text-lg font-semibold text-gray-700 dark:text-slate-300">
                 {creditData.lastUpdated ? new Date(creditData.lastUpdated).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
               </p>
             </div>
@@ -171,11 +171,11 @@ const CreditScoreDetail = () => {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
-          <div className="flex border-b">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-slate-900/30 mb-8 overflow-hidden">
+          <div className="flex border-b dark:border-slate-700">
             {['overview', 'creditCards', 'loans', 'history', 'insights'].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === tab ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+                className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === tab ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1).replace(/([A-Z])/g, ' $1')}
               </button>
             ))}
@@ -185,17 +185,17 @@ const CreditScoreDetail = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Credit Score Trend</h2>
-                <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Credit Score Trend</h2>
+                <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-slate-200">
                   <option value="6months">Last 6 Months</option>
                   <option value="12months">Last 12 Months</option>
                   <option value="24months">Last 24 Months</option>
                 </select>
               </div>
               {historicalData.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-slate-400">
                   <p className="text-lg font-medium">No historical data available yet.</p>
                   <p className="text-sm mt-1">Score history will appear here as data is collected.</p>
                 </div>
@@ -219,10 +219,10 @@ const CreditScoreDetail = () => {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Credit Utilization by Card</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Credit Utilization by Card</h3>
                 {utilizationData.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No card data available.</p>
+                  <p className="text-gray-500 dark:text-slate-400 text-center py-8">No card data available.</p>
                 ) : (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={utilizationData}>
@@ -235,8 +235,8 @@ const CreditScoreDetail = () => {
                   </ResponsiveContainer>
                 )}
               </div>
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Payment History Distribution</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Payment History Distribution</h3>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie data={paymentStatusData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}%`} outerRadius={80} fill="#8884d8" dataKey="value">
@@ -249,8 +249,8 @@ const CreditScoreDetail = () => {
             </div>
 
             {creditMixData.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Credit Account Mix</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Credit Account Mix</h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie data={creditMixData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={80} fill="#8884d8" dataKey="value">
@@ -268,44 +268,44 @@ const CreditScoreDetail = () => {
         {/* Credit Cards Tab */}
         {activeTab === 'creditCards' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Credit Cards</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">Your Credit Cards</h2>
               {creditData.creditCards && creditData.creditCards.length > 0 ? (
                 <div className="space-y-4">
                   {creditData.creditCards.map((card, index) => (
-                    <div key={card.id || index} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                    <div key={card.id || index} className="border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-slate-900/30 transition-shadow">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h3 className="text-xl font-bold text-gray-800">{card.cardName}</h3>
-                          <p className="text-gray-600">{card.provider || card.bank}</p>
-                          <p className="text-sm text-gray-500 mt-1">{card.cardNumber}</p>
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">{card.cardName}</h3>
+                          <p className="text-gray-600 dark:text-slate-400">{card.provider || card.bank}</p>
+                          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{card.cardNumber}</p>
                         </div>
-                        <span className={`px-4 py-2 rounded-full text-sm font-semibold ${card.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{card.status}</span>
+                        <span className={`px-4 py-2 rounded-full text-sm font-semibold ${card.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300'}`}>{card.status}</span>
                       </div>
                       <div className="grid md:grid-cols-4 gap-4 mb-4">
-                        <div className="bg-indigo-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Credit Limit</p><p className="text-lg font-bold text-indigo-600">₹{(card.creditLimit / 100000).toFixed(2)}L</p></div>
-                        <div className="bg-purple-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Available</p><p className="text-lg font-bold text-purple-600">₹{(card.availableLimit / 100000).toFixed(2)}L</p></div>
-                        <div className="bg-pink-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Current Balance</p><p className="text-lg font-bold text-pink-600">₹{(card.currentBalance / 1000).toFixed(0)}K</p></div>
-                        <div className="bg-orange-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Utilization</p><p className="text-lg font-bold text-orange-600">{card.utilizationPercent}%</p></div>
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Credit Limit</p><p className="text-lg font-bold text-indigo-600">₹{(card.creditLimit / 100000).toFixed(2)}L</p></div>
+                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Available</p><p className="text-lg font-bold text-purple-600">₹{(card.availableLimit / 100000).toFixed(2)}L</p></div>
+                        <div className="bg-pink-50 dark:bg-pink-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Current Balance</p><p className="text-lg font-bold text-pink-600">₹{(card.currentBalance / 1000).toFixed(0)}K</p></div>
+                        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Utilization</p><p className="text-lg font-bold text-orange-600">{card.utilizationPercent}%</p></div>
                       </div>
                       <div className="mb-4">
-                        <div className="flex justify-between text-sm mb-2"><span className="text-gray-600">Utilization</span><span className="font-semibold">{card.utilizationPercent}%</span></div>
-                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="flex justify-between text-sm mb-2"><span className="text-gray-600 dark:text-slate-400">Utilization</span><span className="font-semibold dark:text-slate-200">{card.utilizationPercent}%</span></div>
+                        <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                           <div className={`h-full transition-all duration-500 ${parseFloat(card.utilizationPercent) > 70 ? 'bg-red-500' : parseFloat(card.utilizationPercent) > 30 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${Math.min(parseFloat(card.utilizationPercent), 100)}%` }}></div>
                         </div>
                       </div>
                       <div className="grid md:grid-cols-3 gap-4 text-sm">
-                        <div><p className="text-gray-600">Interest Rate</p><p className="font-semibold text-gray-800">{card.interestRate}% APR</p></div>
-                        <div><p className="text-gray-600">Reward Points</p><p className="font-semibold text-gray-800">{card.rewardPoints?.toLocaleString() || 0}</p></div>
-                        <div><p className="text-gray-600">Min Amount Due</p><p className="font-semibold text-gray-800">₹{(card.minAmountDue || 0).toLocaleString()}</p></div>
+                        <div><p className="text-gray-600 dark:text-slate-400">Interest Rate</p><p className="font-semibold text-gray-800 dark:text-slate-100">{card.interestRate}% APR</p></div>
+                        <div><p className="text-gray-600 dark:text-slate-400">Reward Points</p><p className="font-semibold text-gray-800 dark:text-slate-100">{card.rewardPoints?.toLocaleString() || 0}</p></div>
+                        <div><p className="text-gray-600 dark:text-slate-400">Min Amount Due</p><p className="font-semibold text-gray-800 dark:text-slate-100">₹{(card.minAmountDue || 0).toLocaleString()}</p></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <svg className="w-24 h-24 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                  <p className="text-gray-600 text-lg">No credit cards on record</p>
+                  <svg className="w-24 h-24 mx-auto text-gray-400 dark:text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                  <p className="text-gray-600 dark:text-slate-400 text-lg">No credit cards on record</p>
                 </div>
               )}
             </div>
@@ -322,30 +322,30 @@ const CreditScoreDetail = () => {
 
         {/* Loans Tab */}
         {activeTab === 'loans' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Active Loans</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">Active Loans</h2>
             {creditData.loans && creditData.loans.length > 0 ? (
               <div className="space-y-6">
                 {creditData.loans.map((loan) => (
-                  <div key={loan.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                  <div key={loan.id} className="border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-slate-900/30 transition-shadow">
                     <div className="flex items-start justify-between mb-4">
-                      <div><h3 className="text-xl font-bold text-gray-800">{loan.type}</h3><p className="text-gray-600">{loan.provider}</p><p className="text-sm text-gray-500 mt-1">Loan ID: {loan.id}</p></div>
-                      <span className={`px-4 py-2 rounded-full text-sm font-semibold ${loan.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{loan.status}</span>
+                      <div><h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">{loan.type}</h3><p className="text-gray-600 dark:text-slate-400">{loan.provider}</p><p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Loan ID: {loan.id}</p></div>
+                      <span className={`px-4 py-2 rounded-full text-sm font-semibold ${loan.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300'}`}>{loan.status}</span>
                     </div>
                     <div className="grid md:grid-cols-4 gap-4 mb-4">
-                      <div className="bg-indigo-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Principal Amount</p><p className="text-lg font-bold text-indigo-600">₹{(loan.principalAmount / 100000).toFixed(1)}L</p></div>
-                      <div className="bg-purple-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Outstanding</p><p className="text-lg font-bold text-purple-600">₹{(loan.outstandingAmount / 100000).toFixed(1)}L</p></div>
-                      <div className="bg-pink-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Monthly EMI</p><p className="text-lg font-bold text-pink-600">₹{loan.emi.toLocaleString()}</p></div>
-                      <div className="bg-orange-50 rounded-lg p-4"><p className="text-sm text-gray-600 mb-1">Interest Rate</p><p className="text-lg font-bold text-orange-600">{loan.interestRate}%</p></div>
+                      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Principal Amount</p><p className="text-lg font-bold text-indigo-600">₹{(loan.principalAmount / 100000).toFixed(1)}L</p></div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Outstanding</p><p className="text-lg font-bold text-purple-600">₹{(loan.outstandingAmount / 100000).toFixed(1)}L</p></div>
+                      <div className="bg-pink-50 dark:bg-pink-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Monthly EMI</p><p className="text-lg font-bold text-pink-600">₹{loan.emi.toLocaleString()}</p></div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4"><p className="text-sm text-gray-600 dark:text-slate-400 mb-1">Interest Rate</p><p className="text-lg font-bold text-orange-600">{loan.interestRate}%</p></div>
                     </div>
                     <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-2"><span className="text-gray-600">Repayment Progress</span><span className="font-semibold">{Math.round(((loan.tenure - loan.remainingTenure) / loan.tenure) * 100)}% Complete</span></div>
-                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500" style={{ width: `${((loan.tenure - loan.remainingTenure) / loan.tenure) * 100}%` }}></div></div>
+                      <div className="flex justify-between text-sm mb-2"><span className="text-gray-600 dark:text-slate-400">Repayment Progress</span><span className="font-semibold dark:text-slate-200">{Math.round(((loan.tenure - loan.remainingTenure) / loan.tenure) * 100)}% Complete</span></div>
+                      <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500" style={{ width: `${((loan.tenure - loan.remainingTenure) / loan.tenure) * 100}%` }}></div></div>
                     </div>
                     <div className="grid md:grid-cols-3 gap-4 text-sm">
-                      <div><p className="text-gray-600">Disbursement Date</p><p className="font-semibold text-gray-800">{new Date(loan.disbursementDate).toLocaleDateString('en-IN')}</p></div>
-                      <div><p className="text-gray-600">Last Payment</p><p className="font-semibold text-gray-800">{new Date(loan.lastPaymentDate).toLocaleDateString('en-IN')}</p></div>
-                      <div><p className="text-gray-600">Next Due Date</p><p className="font-semibold text-gray-800">{new Date(loan.nextDueDate).toLocaleDateString('en-IN')}</p></div>
+                      <div><p className="text-gray-600 dark:text-slate-400">Disbursement Date</p><p className="font-semibold text-gray-800 dark:text-slate-100">{new Date(loan.disbursementDate).toLocaleDateString('en-IN')}</p></div>
+                      <div><p className="text-gray-600 dark:text-slate-400">Last Payment</p><p className="font-semibold text-gray-800 dark:text-slate-100">{new Date(loan.lastPaymentDate).toLocaleDateString('en-IN')}</p></div>
+                      <div><p className="text-gray-600 dark:text-slate-400">Next Due Date</p><p className="font-semibold text-gray-800 dark:text-slate-100">{new Date(loan.nextDueDate).toLocaleDateString('en-IN')}</p></div>
                     </div>
                   </div>
                 ))}
@@ -360,8 +360,8 @@ const CreditScoreDetail = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <svg className="w-24 h-24 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <p className="text-gray-600 text-lg">No active loans found</p>
+                <svg className="w-24 h-24 mx-auto text-gray-400 dark:text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p className="text-gray-600 dark:text-slate-400 text-lg">No active loans found</p>
               </div>
             )}
           </div>
@@ -370,10 +370,10 @@ const CreditScoreDetail = () => {
         {/* History Tab */}
         {activeTab === 'history' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Credit Inquiries</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">Credit Inquiries</h2>
               {historicalData.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No inquiry history available yet.</p>
+                <p className="text-gray-500 dark:text-slate-400 text-center py-8">No inquiry history available yet.</p>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={historicalData}>
@@ -392,40 +392,40 @@ const CreditScoreDetail = () => {
         {/* Insights Tab */}
         {activeTab === 'insights' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">AI-Powered Insights</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">AI-Powered Insights</h2>
               {creditData.recommendations && creditData.recommendations.length > 0 ? (
                 <div className="space-y-4">
                   {creditData.recommendations.map((rec, index) => (
-                    <div key={index} className="border-l-4 border-indigo-500 bg-indigo-50 p-6 rounded-lg">
+                    <div key={index} className="border-l-4 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-lg">
                       <div className="flex items-start">
                         <svg className="w-6 h-6 text-indigo-600 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <div>
-                          <h3 className="font-bold text-gray-800 mb-2">{rec.category}</h3>
-                          <p className="text-gray-700">{rec.action}</p>
-                          <span className={`inline-block mt-2 text-xs px-3 py-1 rounded-full ${rec.priority === 'High' ? 'bg-red-100 text-red-700' : rec.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{rec.priority} Priority</span>
+                          <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-2">{rec.category}</h3>
+                          <p className="text-gray-700 dark:text-slate-300">{rec.action}</p>
+                          <span className={`inline-block mt-2 text-xs px-3 py-1 rounded-full ${rec.priority === 'High' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : rec.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>{rec.priority} Priority</span>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">No insights available at this time.</p>
+                <p className="text-gray-500 dark:text-slate-400 text-center py-8">No insights available at this time.</p>
               )}
             </div>
 
             {creditData.creditCardRecommendations && creditData.creditCardRecommendations.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Recommended Credit Cards</h2>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/30 p-6">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-6">Recommended Credit Cards</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {creditData.creditCardRecommendations.map((card, index) => (
-                    <div key={index} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">{card.cardName}</h3>
-                      <p className="text-gray-600 mb-4">{card.provider}</p>
-                      <p className="text-gray-700 mb-4">{card.reason}</p>
+                    <div key={index} className="border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-slate-900/30 transition-shadow">
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-2">{card.cardName}</h3>
+                      <p className="text-gray-600 dark:text-slate-400 mb-4">{card.provider}</p>
+                      <p className="text-gray-700 dark:text-slate-300 mb-4">{card.reason}</p>
                       <div className="space-y-2">
-                        <p className="font-semibold text-gray-800">Benefits:</p>
-                        <ul className="list-disc list-inside space-y-1 text-gray-600">
+                        <p className="font-semibold text-gray-800 dark:text-slate-100">Benefits:</p>
+                        <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-slate-400">
                           {card.benefits?.map((benefit, i) => <li key={i}>{benefit}</li>)}
                         </ul>
                       </div>

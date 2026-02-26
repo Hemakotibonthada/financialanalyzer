@@ -106,16 +106,16 @@ const AdvancedAnalytics = () => {
   };
 
   const getHealthScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 65) return 'text-blue-600 bg-blue-100';
-    if (score >= 50) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+    if (score >= 80) return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
+    if (score >= 65) return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
+    if (score >= 50) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400';
+    return 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400';
   };
 
   const getSeverityColor = (severity) => {
-    if (severity === 'high') return 'text-red-600 bg-red-50 border-red-200';
-    if (severity === 'medium') return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (severity === 'high') return 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
+    if (severity === 'medium') return 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800';
+    return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
   };
 
   const getPriorityIcon = (priority) => {
@@ -127,15 +127,15 @@ const AdvancedAnalytics = () => {
   const getConfidenceColor = (confidence) => {
     if (confidence === 'high') return 'text-green-600';
     if (confidence === 'medium') return 'text-yellow-600';
-    return 'text-gray-600';
+    return 'text-gray-600 dark:text-slate-400';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading advanced analytics...</p>
+          <p className="text-gray-600 dark:text-slate-400">Loading advanced analytics...</p>
         </div>
       </div>
     );
@@ -143,11 +143,11 @@ const AdvancedAnalytics = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 flex items-center justify-center">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
           <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-red-900 text-center mb-2">Error Loading Analytics</h3>
-          <p className="text-red-700 text-center">{error}</p>
+          <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 text-center mb-2">Error Loading Analytics</h3>
+          <p className="text-red-700 dark:text-red-400 text-center">{error}</p>
           <button
             onClick={fetchAllAnalytics}
             className="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
@@ -172,12 +172,12 @@ const AdvancedAnalytics = () => {
   const scrollableClass = 'max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Advanced Analytics Dashboard</h1>
-          <p className="text-gray-600">AI-powered insights into your financial patterns</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Advanced Analytics Dashboard</h1>
+          <p className="text-gray-600 dark:text-slate-400">AI-powered insights into your financial patterns</p>
         </div>
 
 
@@ -233,23 +233,23 @@ const AdvancedAnalytics = () => {
         {/* EMI Analytics Section - Advanced */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* EMI Summary Card */}
-          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col h-full">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><CreditCard className="w-5 h-5" /> EMI Analytics</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6 flex flex-col h-full">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><CreditCard className="w-5 h-5" /> EMI Analytics</h2>
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <div className="text-sm text-gray-600 mb-1">Active EMIs</div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Active EMIs</div>
                 <div className="text-2xl font-bold text-blue-600">{emiSummary.totalActiveEMIs || 0}</div>
               </div>
-              <div className="bg-green-50 rounded-lg p-4 text-center">
-                <div className="text-sm text-gray-600 mb-1">Completed EMIs</div>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Completed EMIs</div>
                 <div className="text-2xl font-bold text-green-600">{emiSummary.totalCompletedEMIs || 0}</div>
               </div>
-              <div className="bg-yellow-50 rounded-lg p-4 text-center">
-                <div className="text-sm text-gray-600 mb-1">Total Paid</div>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Total Paid</div>
                 <div className="text-2xl font-bold text-yellow-600">{emiSummary.totalAmountPaid ? formatCurrency(emiSummary.totalAmountPaid) : '₹0'}</div>
               </div>
-              <div className="bg-purple-50 rounded-lg p-4 text-center">
-                <div className="text-sm text-gray-600 mb-1">Outstanding</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center">
+                <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Outstanding</div>
                 <div className="text-2xl font-bold text-purple-600">{emiSummary.totalOutstanding ? formatCurrency(emiSummary.totalOutstanding) : '₹0'}</div>
               </div>
             </div>
@@ -266,11 +266,11 @@ const AdvancedAnalytics = () => {
             </div>
             {/* On-Request Loans */}
             {onRequestEMIs.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <div className="font-semibold text-blue-700 mb-1">On-Request Loans (Personal)</div>
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">On-Request Loans (Personal)</div>
                 <div className={scrollableClass} style={{ maxHeight: 120 }}>
                   {onRequestEMIs.map(emi => (
-                    <div key={emi.id} className="flex items-center justify-between py-1 border-b border-blue-100 last:border-0">
+                    <div key={emi.id} className="flex items-center justify-between py-1 border-b border-blue-100 dark:border-blue-800 last:border-0">
                       <span className="font-medium">{emi.merchantName || emi.cardProvider}</span>
                       <span className="text-blue-700">{formatCurrency(emi.principalAmount)}</span>
                     </div>
@@ -281,8 +281,8 @@ const AdvancedAnalytics = () => {
             )}
           </div>
           {/* EMI Progress/Charts */}
-          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col h-full">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> EMI Progress & Charts</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6 flex flex-col h-full">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> EMI Progress & Charts</h2>
             {/* Example: Pie chart for EMI distribution by provider */}
             {emiData && emiData.activeEMIs && emiData.activeEMIs.length > 0 && (
               <ResponsiveContainer width="100%" height={220}>
@@ -306,9 +306,9 @@ const AdvancedAnalytics = () => {
             {/* Scrollable Active EMI List */}
             <div className={scrollableClass + ' mt-4'} style={{ maxHeight: 160 }}>
               {monthlyEMIs.map(emi => (
-                <div key={emi.id} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                <div key={emi.id} className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-slate-700 last:border-0">
                   <span className="font-medium">{emi.merchantName || emi.cardProvider}</span>
-                  <span className="text-gray-700">{formatCurrency(emi.emiAmount)} x {emi.totalTenure} months</span>
+                  <span className="text-gray-700 dark:text-slate-300">{formatCurrency(emi.emiAmount)} x {emi.totalTenure} months</span>
                 </div>
               ))}
             </div>
@@ -316,7 +316,7 @@ const AdvancedAnalytics = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 p-2">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 mb-6 p-2">
           <div className="flex space-x-2 overflow-x-auto">
             {[
               { id: 'forecast', label: 'Spending Forecast', icon: TrendingUp },
@@ -331,7 +331,7 @@ const AdvancedAnalytics = () => {
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -347,9 +347,9 @@ const AdvancedAnalytics = () => {
           {activeTab === 'forecast' && forecast && (
             <div className="space-y-6">
               {/* Summary Card */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">30-Day Spending Forecast</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">30-Day Spending Forecast</h2>
                   {forecast.confidence && (
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getConfidenceColor(forecast.confidence)}`}>
                       {forecast.confidence.toUpperCase()} Confidence
@@ -359,21 +359,21 @@ const AdvancedAnalytics = () => {
                 
                 {forecast.summary && (
                   <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 mb-1">Avg Daily Spending</div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Avg Daily Spending</div>
                       <div className="text-2xl font-bold text-blue-600">
                         {formatCurrency(forecast.summary.avgDailySpending)}
                       </div>
                     </div>
-                    <div className="bg-purple-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 mb-1">Expected Monthly</div>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Expected Monthly</div>
                       <div className="text-2xl font-bold text-purple-600">
                         {formatCurrency(forecast.summary.expectedMonthlySpending)}
                       </div>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600 mb-1">Volatility</div>
-                      <div className="text-2xl font-bold text-gray-700">
+                    <div className="bg-gray-50 dark:bg-slate-900 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">Volatility</div>
+                      <div className="text-2xl font-bold text-gray-700 dark:text-slate-300">
                         {forecast.summary.volatility}
                       </div>
                     </div>
@@ -382,28 +382,28 @@ const AdvancedAnalytics = () => {
 
                 {/* Forecast Timeline */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Daily Predictions</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Daily Predictions</h3>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {forecast.forecast && Array.isArray(forecast.forecast) && forecast.forecast.slice(0, 14).map((day, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
                         <div className="flex items-center space-x-3">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500" />
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-gray-900 dark:text-white">
                               {new Date(day.date).toLocaleDateString('en-IN', { 
                                 month: 'short', 
                                 day: 'numeric',
                                 weekday: 'short'
                               })}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 dark:text-slate-400">
                               Range: {formatCurrency(day.confidenceRange.lower)} - {formatCurrency(day.confidenceRange.upper)}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-gray-900">{formatCurrency(day.predicted)}</div>
-                          <div className="text-xs text-gray-500">{day.dayOfWeek}</div>
+                          <div className="font-bold text-gray-900 dark:text-white">{formatCurrency(day.predicted)}</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">{day.dayOfWeek}</div>
                         </div>
                       </div>
                     ))}
@@ -413,23 +413,23 @@ const AdvancedAnalytics = () => {
 
               {/* Category Patterns */}
               {forecast.categoryPatterns && Object.keys(forecast.categoryPatterns).length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Category Spending Patterns</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Category Spending Patterns</h3>
                   <div className="grid grid-cols-2 gap-4">
                     {Object.entries(forecast.categoryPatterns).map(([category, data]) => (
-                      <div key={category} className="border border-gray-200 rounded-lg p-4">
-                        <div className="font-medium text-gray-900 mb-2 capitalize">{category}</div>
+                      <div key={category} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                        <div className="font-medium text-gray-900 dark:text-white mb-2 capitalize">{category}</div>
                         <div className="space-y-1 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Average Amount:</span>
+                            <span className="text-gray-600 dark:text-slate-400">Average Amount:</span>
                             <span className="font-semibold">{formatCurrency(data.avgAmount)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Frequency:</span>
+                            <span className="text-gray-600 dark:text-slate-400">Frequency:</span>
                             <span className="font-semibold">{(data.frequency * 30).toFixed(1)} times/month</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Total Transactions:</span>
+                            <span className="text-gray-600 dark:text-slate-400">Total Transactions:</span>
                             <span className="font-semibold">{data.count}</span>
                           </div>
                         </div>
@@ -445,21 +445,21 @@ const AdvancedAnalytics = () => {
           {activeTab === 'anomalies' && anomalies && (
             <div className="space-y-6">
               {/* Summary */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Unusual Transactions Detected</h2>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Unusual Transactions Detected</h2>
                 {anomalies.summary ? (
                   <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-3xl font-bold text-gray-900">{anomalies.summary.totalAnomalies || 0}</div>
-                      <div className="text-sm text-gray-600">Total Anomalies</div>
+                    <div className="bg-gray-50 dark:bg-slate-900 rounded-lg p-4 text-center">
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white">{anomalies.summary.totalAnomalies || 0}</div>
+                      <div className="text-sm text-gray-600 dark:text-slate-400">Total Anomalies</div>
                     </div>
-                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center">
                       <div className="text-3xl font-bold text-red-600">{anomalies.summary.highSeverity || 0}</div>
-                      <div className="text-sm text-gray-600">High Severity</div>
+                      <div className="text-sm text-gray-600 dark:text-slate-400">High Severity</div>
                     </div>
-                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center">
                       <div className="text-3xl font-bold text-yellow-600">{anomalies.summary.mediumSeverity || 0}</div>
-                      <div className="text-sm text-gray-600">Medium Severity</div>
+                      <div className="text-sm text-gray-600 dark:text-slate-400">Medium Severity</div>
                     </div>
                   </div>
                 ) : null}
@@ -468,7 +468,7 @@ const AdvancedAnalytics = () => {
                 {anomalies.detected.length === 0 ? (
                   <div className="text-center py-8">
                     <Check className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <p className="text-gray-600">No unusual transactions detected. Your spending is consistent!</p>
+                    <p className="text-gray-600 dark:text-slate-400">No unusual transactions detected. Your spending is consistent!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -483,35 +483,35 @@ const AdvancedAnalytics = () => {
                               <AlertTriangle className={`w-4 h-4 ${
                                 anomaly.severity === 'high' ? 'text-red-500' : 'text-yellow-500'
                               }`} />
-                              <span className="font-semibold text-gray-900">
+                              <span className="font-semibold text-gray-900 dark:text-white">
                                 {anomaly.transaction.description}
                               </span>
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                anomaly.severity === 'high' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'
+                                anomaly.severity === 'high' ? 'bg-red-200 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 'bg-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                               }`}>
                                 {anomaly.severity.toUpperCase()}
                               </span>
                             </div>
-                            <div className="text-sm text-gray-600 capitalize">
+                            <div className="text-sm text-gray-600 dark:text-slate-400 capitalize">
                               {anomaly.transaction.category} • {new Date(anomaly.transaction.date).toLocaleDateString('en-IN')}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xl font-bold text-gray-900">
+                            <div className="text-xl font-bold text-gray-900 dark:text-white">
                               {formatCurrency(anomaly.transaction.amount)}
                             </div>
-                            <div className="text-xs text-gray-600">
+                            <div className="text-xs text-gray-600 dark:text-slate-400">
                               {anomaly.anomalyType === 'unusually_high' ? '↑' : '↓'} {anomaly.context.percentageDifference}
                             </div>
                           </div>
                         </div>
-                        <div className="bg-white/50 rounded p-2 text-sm">
+                        <div className="bg-white/50 dark:bg-slate-700/50 rounded p-2 text-sm">
                           <div className="flex justify-between mb-1">
-                            <span className="text-gray-600">Category Average:</span>
+                            <span className="text-gray-600 dark:text-slate-400">Category Average:</span>
                             <span className="font-medium">{formatCurrency(anomaly.context.categoryAverage)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Deviation:</span>
+                            <span className="text-gray-600 dark:text-slate-400">Deviation:</span>
                             <span className="font-medium">{formatCurrency(Math.abs(anomaly.context.deviation))}</span>
                           </div>
                         </div>
@@ -526,23 +526,23 @@ const AdvancedAnalytics = () => {
           {/* Heatmap Tab */}
           {activeTab === 'heatmap' && heatmap && (
             <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Spending Heatmap</h2>
-                <p className="text-gray-600 mb-6">When do you spend the most? Darker colors indicate higher spending.</p>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Spending Heatmap</h2>
+                <p className="text-gray-600 dark:text-slate-400 mb-6">When do you spend the most? Darker colors indicate higher spending.</p>
 
                 {/* Peak Times */}
                 {heatmap.peakTimes && Array.isArray(heatmap.peakTimes) && heatmap.peakTimes.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Peak Spending Times</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Peak Spending Times</h3>
                     <div className="grid grid-cols-5 gap-3">
                       {heatmap.peakTimes.map((peak, index) => (
-                        <div key={index} className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                        <div key={index} className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
                           <div className="flex items-center space-x-2 mb-1">
                             <Flame className="w-4 h-4 text-orange-600" />
-                            <span className="text-xs font-medium text-gray-600">#{index + 1}</span>
+                            <span className="text-xs font-medium text-gray-600 dark:text-slate-400">#{index + 1}</span>
                           </div>
-                          <div className="text-sm font-semibold text-gray-900">{peak.time}</div>
-                          <div className="text-xs text-gray-600">{formatCurrency(peak.averageSpending)}</div>
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white">{peak.time}</div>
+                          <div className="text-xs text-gray-600 dark:text-slate-400">{formatCurrency(peak.averageSpending)}</div>
                         </div>
                       ))}
                     </div>
@@ -552,7 +552,7 @@ const AdvancedAnalytics = () => {
                 {/* Day Totals */}
                 {heatmap.dayTotals && Array.isArray(heatmap.dayTotals) && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Spending by Day of Week</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Spending by Day of Week</h3>
                     <div className="space-y-2">
                       {heatmap.dayTotals.map((day, index) => {
                         const maxTotal = Math.max(...heatmap.dayTotals.map(d => d.total));
@@ -561,16 +561,16 @@ const AdvancedAnalytics = () => {
                         return (
                           <div key={index}>
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm font-medium text-gray-700">{day.day}</span>
-                              <span className="text-sm font-bold text-gray-900">{formatCurrency(day.total)}</span>
+                              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{day.day}</span>
+                              <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(day.total)}</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                               <div 
                                 className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all"
                                 style={{ width: `${percentage}%` }}
                               ></div>
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                               Avg per transaction: {formatCurrency(day.avgPerTransaction)}
                             </div>
                           </div>
@@ -586,27 +586,27 @@ const AdvancedAnalytics = () => {
           {/* Health Factors Tab */}
           {activeTab === 'health' && healthScore && (
             <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Financial Health Breakdown</h2>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Financial Health Breakdown</h2>
                 
                 <div className="space-y-4">
                   {healthScore.factors && Array.isArray(healthScore.factors) && healthScore.factors.map((factor, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                    <div key={index} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
                             <Activity className="w-5 h-5 text-blue-600" />
-                            <h3 className="font-semibold text-gray-900">{factor.name}</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">{factor.name}</h3>
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              factor.status === 'excellent' ? 'bg-green-100 text-green-800' :
-                              factor.status === 'good' ? 'bg-blue-100 text-blue-800' :
-                              factor.status === 'fair' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
+                              factor.status === 'excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                              factor.status === 'good' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                              factor.status === 'fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
                               {factor.status.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600">{factor.detail}</p>
+                          <p className="text-sm text-gray-600 dark:text-slate-400">{factor.detail}</p>
                         </div>
                         <div className="text-right ml-4">
                           <div className={`text-2xl font-bold ${
@@ -614,7 +614,7 @@ const AdvancedAnalytics = () => {
                           }`}>
                             {factor.impact > 0 ? '+' : ''}{factor.impact}
                           </div>
-                          <div className="text-xs text-gray-500">points</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">points</div>
                         </div>
                       </div>
                     </div>
@@ -624,30 +624,30 @@ const AdvancedAnalytics = () => {
 
               {/* Recommendations */}
               {healthScore.recommendations && Array.isArray(healthScore.recommendations) && healthScore.recommendations.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Personalized Recommendations</h2>
+                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Personalized Recommendations</h2>
                   <div className="space-y-4">
                     {healthScore.recommendations.map((rec, index) => (
-                      <div key={index} className="border-l-4 border-blue-600 bg-blue-50 p-4 rounded-r-lg">
+                      <div key={index} className="border-l-4 border-blue-600 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-r-lg">
                         <div className="flex items-start space-x-3">
                           {getPriorityIcon(rec.priority)}
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="font-semibold text-gray-900">{rec.title}</h3>
+                              <h3 className="font-semibold text-gray-900 dark:text-white">{rec.title}</h3>
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                rec.priority === 'critical' || rec.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-blue-100 text-blue-800'
+                                rec.priority === 'critical' || rec.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                                rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
                               }`}>
                                 {rec.priority.toUpperCase()}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-700 mb-3">{rec.description}</p>
-                            <div className="bg-white rounded p-3">
-                              <div className="text-xs font-semibold text-gray-600 mb-2">ACTION STEPS:</div>
+                            <p className="text-sm text-gray-700 dark:text-slate-300 mb-3">{rec.description}</p>
+                            <div className="bg-white dark:bg-slate-800 rounded p-3">
+                              <div className="text-xs font-semibold text-gray-600 dark:text-slate-400 mb-2">ACTION STEPS:</div>
                               <ul className="space-y-1">
                                 {rec.actionSteps && Array.isArray(rec.actionSteps) && rec.actionSteps.map((step, idx) => (
-                                  <li key={idx} className="text-sm text-gray-700 flex items-start">
+                                  <li key={idx} className="text-sm text-gray-700 dark:text-slate-300 flex items-start">
                                     <span className="text-blue-600 mr-2">•</span>
                                     <span>{step}</span>
                                   </li>
@@ -667,27 +667,27 @@ const AdvancedAnalytics = () => {
           {/* Savings Opportunities Tab */}
           {activeTab === 'savings' && savingsOpportunities && (
             <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Savings Opportunities</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Savings Opportunities</h2>
                   <div className="text-right">
-                    <div className="text-sm text-gray-600">Total Potential Savings</div>
+                    <div className="text-sm text-gray-600 dark:text-slate-400">Total Potential Savings</div>
                     <div className="text-3xl font-bold text-green-600">
                       {formatCurrency(savingsOpportunities.totalPotentialSavings)}
                     </div>
-                    <div className="text-xs text-gray-500">per month</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">per month</div>
                   </div>
                 </div>
 
                 {savingsOpportunities.opportunities && Array.isArray(savingsOpportunities.opportunities) && savingsOpportunities.opportunities.length === 0 ? (
                   <div className="text-center py-8">
-                    <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Great job! No major savings opportunities identified.</p>
+                    <Target className="w-16 h-16 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-slate-400">Great job! No major savings opportunities identified.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {savingsOpportunities.opportunities && Array.isArray(savingsOpportunities.opportunities) && savingsOpportunities.opportunities.map((opp, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
+                      <div key={index} className="border border-gray-200 dark:border-slate-700 rounded-lg p-5 hover:shadow-md dark:hover:shadow-slate-900/30 transition-shadow">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
@@ -696,36 +696,36 @@ const AdvancedAnalytics = () => {
                               ) : (
                                 <Zap className="w-5 h-5 text-purple-600" />
                               )}
-                              <h3 className="font-semibold text-gray-900 capitalize">
+                              <h3 className="font-semibold text-gray-900 dark:text-white capitalize">
                                 {opp.type === 'high_spending_category' ? 
                                   `${opp.category} - High Spending Category` : 
                                   `Recurring: ${opp.description}`
                                 }
                               </h3>
                             </div>
-                            <p className="text-sm text-gray-600 mb-3">{opp.suggestion}</p>
+                            <p className="text-sm text-gray-600 dark:text-slate-400 mb-3">{opp.suggestion}</p>
                             
                             <div className="grid grid-cols-3 gap-4">
                               {opp.currentSpending && (
-                                <div className="bg-gray-50 rounded p-2">
-                                  <div className="text-xs text-gray-600">Current Spending</div>
-                                  <div className="text-lg font-semibold text-gray-900">
+                                <div className="bg-gray-50 dark:bg-slate-900 rounded p-2">
+                                  <div className="text-xs text-gray-600 dark:text-slate-400">Current Spending</div>
+                                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
                                     {formatCurrency(opp.currentSpending || opp.totalSpent)}
                                   </div>
                                 </div>
                               )}
                               {opp.frequency && (
-                                <div className="bg-blue-50 rounded p-2">
-                                  <div className="text-xs text-gray-600">Frequency</div>
-                                  <div className="text-lg font-semibold text-blue-700">
+                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded p-2">
+                                  <div className="text-xs text-gray-600 dark:text-slate-400">Frequency</div>
+                                  <div className="text-lg font-semibold text-blue-700 dark:text-blue-400">
                                     {opp.frequency} times
                                   </div>
                                 </div>
                               )}
                               {opp.transactionCount && (
-                                <div className="bg-purple-50 rounded p-2">
-                                  <div className="text-xs text-gray-600">Transactions</div>
-                                  <div className="text-lg font-semibold text-purple-700">
+                                <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
+                                  <div className="text-xs text-gray-600 dark:text-slate-400">Transactions</div>
+                                  <div className="text-lg font-semibold text-purple-700 dark:text-purple-400">
                                     {opp.transactionCount}
                                   </div>
                                 </div>
@@ -734,11 +734,11 @@ const AdvancedAnalytics = () => {
                           </div>
                           
                           <div className="ml-4 text-right">
-                            <div className="text-xs text-gray-600 mb-1">Potential Savings</div>
+                            <div className="text-xs text-gray-600 dark:text-slate-400 mb-1">Potential Savings</div>
                             <div className="text-2xl font-bold text-green-600">
                               {formatCurrency(opp.potentialSavings || opp.potentialMonthlySavings)}
                             </div>
-                            <div className="text-xs text-gray-500">/month</div>
+                            <div className="text-xs text-gray-500 dark:text-slate-400">/month</div>
                           </div>
                         </div>
                       </div>

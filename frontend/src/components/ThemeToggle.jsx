@@ -1,56 +1,40 @@
 import React, { useEffect } from 'react';
-import { IconButton, Tooltip } from '@mui/material';
-import { Brightness4, Brightness7, Brightness2 } from '@mui/icons-material';
+import { Sun, Moon, Sparkles } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const ThemeToggle = ({ sx = {} }) => {
+const ThemeToggle = () => {
   const { mode, toggleTheme } = useTheme();
 
   // Listen for keyboard shortcut event
   useEffect(() => {
-    const handleToggleTheme = () => {
-      toggleTheme();
-    };
-
-    window.addEventListener('toggleTheme', handleToggleTheme);
-    return () => window.removeEventListener('toggleTheme', handleToggleTheme);
+    const handler = () => toggleTheme();
+    window.addEventListener('toggleTheme', handler);
+    return () => window.removeEventListener('toggleTheme', handler);
   }, [toggleTheme]);
 
-  const getThemeIcon = () => {
-    if (mode === 'light') return <Brightness7 />;
-    if (mode === 'dark') return <Brightness4 />;
-    return <Brightness2 />; // Moon icon for black theme
+  const getIcon = () => {
+    if (mode === 'light') return <Sun size={18} />;
+    if (mode === 'dark') return <Moon size={18} />;
+    return <Sparkles size={18} />;
   };
 
-  const getThemeLabel = () => {
-    if (mode === 'light') return 'Light';
-    if (mode === 'dark') return 'Dark';
-    return 'Black';
-  };
-
-  const getNextTheme = () => {
+  const getNext = () => {
     if (mode === 'light') return 'Dark';
     if (mode === 'dark') return 'Black';
     return 'Light';
   };
 
   return (
-    <Tooltip title={`Current: ${getThemeLabel()} → Switch to ${getNextTheme()} (Ctrl+Shift+L)`}>
-      <IconButton
-        onClick={toggleTheme}
-        color="inherit"
-        sx={{
-          ...sx,
-          transition: 'all 0.3s ease',
-          '&:hover': {
-            transform: 'scale(1.1)',
-          },
-        }}
-        aria-label="toggle theme"
-      >
-        {getThemeIcon()}
-      </IconButton>
-    </Tooltip>
+    <button
+      onClick={toggleTheme}
+      className="p-2 rounded-xl transition-all duration-200
+        hover:bg-slate-100 dark:hover:bg-slate-800
+        text-slate-600 dark:text-slate-300 hover:scale-105 active:scale-95"
+      title={`Switch to ${getNext()} (Ctrl+Shift+L)`}
+      aria-label="Toggle theme"
+    >
+      {getIcon()}
+    </button>
   );
 };
 

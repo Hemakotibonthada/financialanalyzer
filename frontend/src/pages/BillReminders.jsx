@@ -88,32 +88,32 @@ const BillReminders = () => {
     const statuses = {
       pending: { 
         icon: <Clock className="w-4 h-4" />, 
-        color: 'bg-blue-100 text-blue-700',
+        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
         text: 'Pending'
       },
       awaiting_approval: { 
         icon: <AlertCircle className="w-4 h-4" />, 
-        color: 'bg-amber-100 text-amber-700',
+        color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
         text: 'Needs Approval'
       },
       approved: { 
         icon: <CheckCircle className="w-4 h-4" />, 
-        color: 'bg-green-100 text-green-700',
+        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
         text: 'Approved'
       },
       paid: { 
         icon: <Check className="w-4 h-4" />, 
-        color: 'bg-emerald-100 text-emerald-700',
+        color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
         text: 'Paid'
       },
       overdue: { 
         icon: <AlertTriangle className="w-4 h-4" />, 
-        color: 'bg-red-100 text-red-700',
+        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
         text: 'Overdue'
       },
       rejected: { 
         icon: <XCircle className="w-4 h-4" />, 
-        color: 'bg-gray-100 text-gray-700',
+        color: 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300',
         text: 'Rejected'
       }
     };
@@ -298,7 +298,7 @@ const BillReminders = () => {
     <div className="flex gap-3">
       <button
         onClick={() => setShowExportModal(true)}
-        className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:shadow-md transition-all duration-200 flex items-center gap-2"
+        className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:shadow-md transition-all duration-200 flex items-center gap-2 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:shadow-slate-900/30"
       >
         <Download className="w-5 h-5" />
         Export
@@ -323,7 +323,7 @@ const BillReminders = () => {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <RefreshCw className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Loading bill reminders...</p>
+            <p className="text-gray-600 dark:text-slate-400">Loading bill reminders...</p>
           </div>
         </div>
       </MainLayout>
@@ -376,7 +376,7 @@ const BillReminders = () => {
         )}
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6 dark:bg-slate-800 dark:shadow-slate-900/30">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="flex items-center gap-2 flex-wrap">
@@ -387,7 +387,7 @@ const BillReminders = () => {
                     className={`px-4 py-2 rounded-lg font-medium transition-all ${
                       filter === f
                         ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                     }`}
                   >
                     {f.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
@@ -396,23 +396,23 @@ const BillReminders = () => {
               </div>
               
               <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="Search bills..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
                 />
               </div>
             </div>
 
             {/* Bulk Actions Bar */}
             {selectedBills.length > 0 && (
-              <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+              <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border-2 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700">
                 <div className="flex items-center gap-3">
                   <CheckSquare className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 dark:text-slate-300">
                     {selectedBills.length} bill{selectedBills.length > 1 ? 's' : ''} selected
                   </span>
                 </div>
@@ -433,7 +433,7 @@ const BillReminders = () => {
                   </button>
                   <button
                     onClick={() => setSelectedBills([])}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all dark:bg-slate-600 dark:hover:bg-slate-500"
                   >
                     Clear
                   </button>
@@ -449,10 +449,10 @@ const BillReminders = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
           </div>
         ) : filteredBills.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <Bell className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No bills found</h3>
-            <p className="text-gray-500 mb-6">Start by adding your first bill reminder</p>
+          <div className="bg-white rounded-xl shadow-lg p-12 text-center dark:bg-slate-800 dark:shadow-slate-900/30">
+            <Bell className="w-16 h-16 mx-auto text-gray-300 mb-4 dark:text-slate-600" />
+            <h3 className="text-xl font-semibold text-gray-700 mb-2 dark:text-slate-300">No bills found</h3>
+            <p className="text-gray-500 mb-6 dark:text-slate-400">Start by adding your first bill reminder</p>
             <button
               onClick={() => setShowAddModal(true)}
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg"
@@ -573,7 +573,7 @@ const BillReminders = () => {
 const StatCard = ({ title, value, amount, icon, gradient, onClick, pulse }) => (
   <div
     onClick={onClick}
-    className={`bg-white rounded-xl shadow-lg p-6 cursor-pointer transform hover:scale-105 transition-all duration-200 ${
+    className={`bg-white rounded-xl shadow-lg p-6 cursor-pointer transform hover:scale-105 transition-all duration-200 dark:bg-slate-800 dark:shadow-slate-900/30 ${
       pulse ? 'animate-pulse' : ''
     }`}
   >
@@ -581,10 +581,10 @@ const StatCard = ({ title, value, amount, icon, gradient, onClick, pulse }) => (
       <div className={`p-3 rounded-lg bg-gradient-to-r ${gradient} text-white`}>
         {icon}
       </div>
-      <span className="text-3xl font-bold text-gray-800">{value}</span>
+      <span className="text-3xl font-bold text-gray-800 dark:text-slate-100">{value}</span>
     </div>
-    <h3 className="text-gray-600 font-medium mb-1">{title}</h3>
-    <p className="text-sm text-gray-500">{amount}</p>
+    <h3 className="text-gray-600 font-medium mb-1 dark:text-slate-400">{title}</h3>
+    <p className="text-sm text-gray-500 dark:text-slate-400">{amount}</p>
   </div>
 );
 
@@ -599,24 +599,24 @@ const SnoozeModal = ({ bill, onClose, onSnooze }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full dark:bg-slate-800 dark:shadow-slate-900/30">
         <div className="p-6">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center dark:bg-orange-900/30">
               <Pause className="w-8 h-8 text-orange-600" />
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2 dark:text-slate-100">
             Snooze Bill Reminder
           </h2>
           
-          <p className="text-gray-600 text-center mb-4">
+          <p className="text-gray-600 text-center mb-4 dark:text-slate-400">
             {bill.title} - ₹{bill.amount.toLocaleString()}
           </p>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
               Snooze for (days)
             </label>
             <input
@@ -625,10 +625,10 @@ const SnoozeModal = ({ bill, onClose, onSnooze }) => {
               max="30"
               value={days}
               onChange={(e) => setDays(parseInt(e.target.value) || 1)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               placeholder="Number of days"
             />
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
               New due date: {new Date(new Date(bill.dueDate).getTime() + days * 24 * 60 * 60 * 1000).toLocaleDateString()}
             </p>
           </div>
@@ -636,7 +636,7 @@ const SnoozeModal = ({ bill, onClose, onSnooze }) => {
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             >
               Cancel
             </button>
@@ -694,31 +694,31 @@ const ExportModal = ({ bills, onClose, onExport }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full dark:bg-slate-800 dark:shadow-slate-900/30">
         <div className="p-6">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900/30">
               <Download className="w-8 h-8 text-blue-600" />
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2 dark:text-slate-100">
             Export Bills
           </h2>
           
-          <p className="text-gray-600 text-center mb-6">
+          <p className="text-gray-600 text-center mb-6 dark:text-slate-400">
             Export your bill reminders data
           </p>
 
           <div className="space-y-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Export Format
               </label>
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               >
                 <option value="csv">CSV (Excel)</option>
                 <option value="json">JSON (Data)</option>
@@ -726,13 +726,13 @@ const ExportModal = ({ bills, onClose, onExport }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Date Range
               </label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               >
                 <option value="all">All Bills</option>
                 <option value="week">Last 7 Days</option>
@@ -746,7 +746,7 @@ const ExportModal = ({ bills, onClose, onExport }) => {
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             >
               Cancel
             </button>
@@ -774,17 +774,17 @@ const BillCard = ({
   const isDueSoon = daysUntilDue >= 0 && daysUntilDue <= 3;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-200 hover:shadow-xl relative">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-200 hover:shadow-xl relative dark:bg-slate-800 dark:shadow-slate-900/30 dark:hover:shadow-slate-900/50">
       {/* Selection Checkbox */}
       <div className="absolute top-4 left-4 z-10">
         <button
           onClick={() => onSelect(bill._id)}
-          className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-md hover:shadow-lg transition-all"
+          className="w-6 h-6 flex items-center justify-center bg-white rounded shadow-md hover:shadow-lg transition-all dark:bg-slate-700 dark:shadow-slate-900/30"
         >
           {isSelected ? (
             <CheckSquare className="w-5 h-5 text-purple-600" />
           ) : (
-            <Square className="w-5 h-5 text-gray-400" />
+            <Square className="w-5 h-5 text-gray-400 dark:text-slate-500" />
           )}
         </button>
       </div>
@@ -807,15 +807,15 @@ const BillCard = ({
 
       {/* Content */}
       <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">{bill.title}</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-2 dark:text-slate-100">{bill.title}</h3>
         
         <div className="flex items-baseline justify-between mb-4">
-          <span className="text-3xl font-bold text-gray-900">₹{bill.amount.toLocaleString()}</span>
+          <span className="text-3xl font-bold text-gray-900 dark:text-white">₹{bill.amount.toLocaleString()}</span>
           {getStatusBadge(bill)}
         </div>
 
         <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
             <Calendar className="w-4 h-4" />
             <span>Due: {new Date(bill.dueDate).toLocaleDateString()}</span>
           </div>
@@ -833,7 +833,7 @@ const BillCard = ({
           )}
 
           {bill.frequency !== 'once' && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
               <TrendingUp className="w-4 h-4" />
               <span className="capitalize">{bill.frequency} recurring</span>
             </div>
@@ -871,7 +871,7 @@ const BillCard = ({
           
           <button
             onClick={onView}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             title="View Details"
           >
             <Eye className="w-4 h-4" />
@@ -879,7 +879,7 @@ const BillCard = ({
           
           <button
             onClick={onEdit}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             title="Edit"
           >
             <Edit className="w-4 h-4" />
@@ -887,7 +887,7 @@ const BillCard = ({
           
           <button
             onClick={onDelete}
-            className="px-4 py-2 bg-gray-100 text-red-600 rounded-lg hover:bg-red-50 transition-all"
+            className="px-4 py-2 bg-gray-100 text-red-600 rounded-lg hover:bg-red-50 transition-all dark:bg-slate-700 dark:hover:bg-red-900/20"
             title="Delete"
           >
             <Trash2 className="w-4 h-4" />
@@ -902,26 +902,26 @@ const BillCard = ({
 const DeleteConfirmationModal = ({ onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full dark:bg-slate-800 dark:shadow-slate-900/30">
         <div className="p-6">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center dark:bg-red-900/30">
               <AlertTriangle className="w-8 h-8 text-red-600" />
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2 dark:text-slate-100">
             Delete Bill Reminder
           </h2>
           
-          <p className="text-gray-600 text-center mb-6">
+          <p className="text-gray-600 text-center mb-6 dark:text-slate-400">
             Are you sure you want to delete this bill? This action cannot be undone.
           </p>
 
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             >
               Cancel
             </button>
@@ -953,23 +953,23 @@ const ApprovalModal = ({ bill, onClose, onApprove, onReject }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto dark:bg-slate-800 dark:shadow-slate-900/30">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">Payment Approval</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Payment Approval</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">
               <X className="w-6 h-6" />
             </button>
           </div>
         </div>
 
         <div className="p-6">
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">{bill.title}</h3>
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6 dark:from-purple-900/20 dark:to-blue-900/20">
+            <h3 className="text-xl font-bold text-gray-800 mb-2 dark:text-slate-100">{bill.title}</h3>
             <div className="text-4xl font-bold text-purple-600 mb-4">
               ₹{bill.amount.toLocaleString()}
             </div>
-            <div className="space-y-2 text-sm text-gray-600">
+            <div className="space-y-2 text-sm text-gray-600 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 <span>Due: {new Date(bill.dueDate).toLocaleDateString()}</span>
@@ -988,14 +988,14 @@ const ApprovalModal = ({ bill, onClose, onApprove, onReject }) => {
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
               Add Note (Optional)
             </label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               placeholder="Add any additional notes..."
             />
           </div>
@@ -1061,13 +1061,13 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto dark:bg-slate-800 dark:shadow-slate-900/30">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100">
               {bill ? 'Edit Bill' : 'Add New Bill'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -1076,7 +1076,7 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Bill Title *
               </label>
               <input
@@ -1084,20 +1084,20 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
                 placeholder="e.g., Monthly Electricity Bill"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Category *
               </label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               >
                 <option value="electricity">Electricity</option>
                 <option value="water">Water</option>
@@ -1114,7 +1114,7 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Amount (₹) *
               </label>
               <input
@@ -1124,13 +1124,13 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
                 placeholder="0.00"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Due Date *
               </label>
               <input
@@ -1138,18 +1138,18 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
                 required
                 value={formData.dueDate ? new Date(formData.dueDate).toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Frequency
               </label>
               <select
                 value={formData.frequency}
                 onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               >
                 <option value="once">One-time</option>
                 <option value="weekly">Weekly</option>
@@ -1160,7 +1160,7 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Remind Me (days before)
               </label>
               <input
@@ -1169,25 +1169,25 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
                 max="30"
                 value={formData.reminderDays}
                 onChange={(e) => setFormData({ ...formData, reminderDays: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">
                 Description
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
                 placeholder="Additional details about this bill..."
               />
             </div>
 
             <div className="md:col-span-2 space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
+              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg dark:bg-purple-900/20">
                 <input
                   type="checkbox"
                   id="autoPayEnabled"
@@ -1196,16 +1196,16 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
                   className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
                 />
                 <label htmlFor="autoPayEnabled" className="flex-1 cursor-pointer">
-                  <div className="font-medium text-gray-800 flex items-center gap-2">
+                  <div className="font-medium text-gray-800 flex items-center gap-2 dark:text-slate-100">
                     <Zap className="w-5 h-5 text-purple-600" />
                     Enable Auto-Payment
                   </div>
-                  <p className="text-sm text-gray-600">Automatically process payment when due</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">Automatically process payment when due</p>
                 </label>
               </div>
 
               {formData.autoPayEnabled && (
-                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg dark:bg-amber-900/20">
                   <input
                     type="checkbox"
                     id="requiresApproval"
@@ -1214,22 +1214,22 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
                     className="w-5 h-5 text-amber-600 rounded focus:ring-2 focus:ring-amber-500"
                   />
                   <label htmlFor="requiresApproval" className="flex-1 cursor-pointer">
-                    <div className="font-medium text-gray-800 flex items-center gap-2">
+                    <div className="font-medium text-gray-800 flex items-center gap-2 dark:text-slate-100">
                       <Shield className="w-5 h-5 text-amber-600" />
                       Require Approval Before Payment
                     </div>
-                    <p className="text-sm text-gray-600">You'll need to approve each payment before it's processed</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">You'll need to approve each payment before it's processed</p>
                   </label>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex gap-3 pt-6 border-t border-gray-200">
+          <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             >
               Cancel
             </button>
@@ -1249,11 +1249,11 @@ const AddBillModal = ({ bill, onClose, onSuccess }) => {
 // Bill Details Modal Component
 const BillDetailsModal = ({ bill, onClose, getCategoryIcon, getCategoryColor, getStatusBadge }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-6 border-b border-gray-200">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto dark:bg-slate-800 dark:shadow-slate-900/30">
+      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-800">Bill Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Bill Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -1278,43 +1278,43 @@ const BillDetailsModal = ({ bill, onClose, getCategoryIcon, getCategoryColor, ge
         {/* Details Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-gray-500">Due Date</label>
-            <p className="text-gray-800 font-medium">{new Date(bill.dueDate).toLocaleDateString()}</p>
+            <label className="text-sm text-gray-500 dark:text-slate-400">Due Date</label>
+            <p className="text-gray-800 font-medium dark:text-slate-100">{new Date(bill.dueDate).toLocaleDateString()}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-500">Frequency</label>
-            <p className="text-gray-800 font-medium capitalize">{bill.frequency}</p>
+            <label className="text-sm text-gray-500 dark:text-slate-400">Frequency</label>
+            <p className="text-gray-800 font-medium capitalize dark:text-slate-100">{bill.frequency}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-500">Reminder Days</label>
-            <p className="text-gray-800 font-medium">{bill.reminderDays} days before</p>
+            <label className="text-sm text-gray-500 dark:text-slate-400">Reminder Days</label>
+            <p className="text-gray-800 font-medium dark:text-slate-100">{bill.reminderDays} days before</p>
           </div>
           <div>
-            <label className="text-sm text-gray-500">Auto-Payment</label>
-            <p className="text-gray-800 font-medium">{bill.autoPayEnabled ? '✅ Enabled' : '❌ Disabled'}</p>
+            <label className="text-sm text-gray-500 dark:text-slate-400">Auto-Payment</label>
+            <p className="text-gray-800 font-medium dark:text-slate-100">{bill.autoPayEnabled ? '✅ Enabled' : '❌ Disabled'}</p>
           </div>
         </div>
 
         {/* Description */}
         {bill.description && (
           <div>
-            <label className="text-sm text-gray-500">Description</label>
-            <p className="text-gray-800">{bill.description}</p>
+            <label className="text-sm text-gray-500 dark:text-slate-400">Description</label>
+            <p className="text-gray-800 dark:text-slate-100">{bill.description}</p>
           </div>
         )}
 
         {/* Payment History */}
         {bill.paymentHistory && bill.paymentHistory.length > 0 && (
           <div>
-            <h4 className="font-semibold text-gray-800 mb-3">Payment History</h4>
+            <h4 className="font-semibold text-gray-800 mb-3 dark:text-slate-100">Payment History</h4>
             <div className="space-y-2">
               {bill.paymentHistory.map((payment, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg dark:bg-slate-900">
                   <div>
-                    <p className="font-medium text-gray-800">₹{payment.amount.toLocaleString()}</p>
-                    <p className="text-sm text-gray-500">{new Date(payment.paidDate).toLocaleDateString()}</p>
+                    <p className="font-medium text-gray-800 dark:text-slate-100">₹{payment.amount.toLocaleString()}</p>
+                    <p className="text-sm text-gray-500 dark:text-slate-400">{new Date(payment.paidDate).toLocaleDateString()}</p>
                   </div>
-                  <span className="text-sm text-gray-600 capitalize">{payment.paymentMethod}</span>
+                  <span className="text-sm text-gray-600 capitalize dark:text-slate-400">{payment.paymentMethod}</span>
                 </div>
               ))}
             </div>

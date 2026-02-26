@@ -124,12 +124,12 @@ const HelpCenter = () => {
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: 'bg-blue-100 text-blue-700',
-      green: 'bg-green-100 text-green-700',
-      yellow: 'bg-yellow-100 text-yellow-700',
-      purple: 'bg-purple-100 text-purple-700',
-      orange: 'bg-orange-100 text-orange-700',
-      red: 'bg-red-100 text-red-700'
+      blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+      green: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+      yellow: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+      purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+      orange: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+      red: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
     };
     return colors[color] || colors.blue;
   };
@@ -137,7 +137,7 @@ const HelpCenter = () => {
   return (
     <>
       <Sidebar />
-      <div className="lg:ml-72 min-h-screen bg-gray-50">
+      <div className="lg:ml-72 min-h-screen bg-gray-50 dark:bg-slate-950">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -151,13 +151,13 @@ const HelpCenter = () => {
               {/* Search Bar */}
               <div className="max-w-2xl mx-auto">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-slate-500" />
                   <input
                     type="text"
                     placeholder="Search for help articles..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="w-full pl-12 pr-4 py-4 rounded-lg text-gray-900 dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-300"
                   />
                 </div>
               </div>
@@ -173,24 +173,24 @@ const HelpCenter = () => {
               <Link
                 key={index}
                 to={link.link}
-                className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-200"
+                className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm dark:shadow-slate-900/30 hover:shadow-md transition-all border border-gray-200 dark:border-slate-700"
               >
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${getColorClasses(link.color)}`}>
                   <link.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{link.title}</h3>
-                <p className="text-sm text-gray-600">{link.description}</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{link.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-slate-400">{link.description}</p>
               </Link>
             ))}
           </div>
 
           {/* Categories */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Browse by Category</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Browse by Category</h2>
             </div>
             
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 dark:divide-slate-700">
               {categories.map((category) => {
                 const Icon = category.icon;
                 const isExpanded = expandedCategory === category.id;
@@ -199,38 +199,38 @@ const HelpCenter = () => {
                   <div key={category.id}>
                     <button
                       onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center space-x-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getColorClasses(category.color)}`}>
                           <Icon className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <h3 className="font-semibold text-gray-900">{category.title}</h3>
-                          <p className="text-sm text-gray-500">{category.articles.length} articles</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{category.title}</h3>
+                          <p className="text-sm text-gray-500 dark:text-slate-400">{category.articles.length} articles</p>
                         </div>
                       </div>
                       {isExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                        <ChevronDown className="w-5 h-5 text-gray-400 dark:text-slate-500" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        <ChevronRight className="w-5 h-5 text-gray-400 dark:text-slate-500" />
                       )}
                     </button>
                     
                     {isExpanded && (
-                      <div className="px-6 py-4 bg-gray-50">
+                      <div className="px-6 py-4 bg-gray-50 dark:bg-slate-900">
                         <div className="space-y-2">
                           {category.articles.map((article, index) => (
                             <Link
                               key={index}
                               to={`/help/article/${category.id}/${index}`}
-                              className="flex items-center justify-between p-3 hover:bg-white rounded-lg transition-colors group"
+                              className="flex items-center justify-between p-3 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors group"
                             >
                               <div className="flex items-center space-x-3">
-                                <BookOpen className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
-                                <span className="text-gray-700 group-hover:text-blue-600">{article.title}</span>
+                                <BookOpen className="w-4 h-4 text-gray-400 dark:text-slate-500 group-hover:text-blue-600" />
+                                <span className="text-gray-700 dark:text-slate-300 group-hover:text-blue-600">{article.title}</span>
                               </div>
-                              <span className="text-xs text-gray-500">{article.views} views</span>
+                              <span className="text-xs text-gray-500 dark:text-slate-400">{article.views} views</span>
                             </Link>
                           ))}
                         </div>
@@ -268,7 +268,7 @@ const HelpCenter = () => {
           </div>
 
           {/* Footer */}
-          <div className="mt-12 text-center text-gray-600">
+          <div className="mt-12 text-center text-gray-600 dark:text-slate-400">
             <p className="mb-2">© 2025 Circuvent Technologies. All rights reserved.</p>
             <div className="flex items-center justify-center space-x-4 text-sm">
               <Link to="/terms" className="hover:text-blue-600">Terms of Service</Link>

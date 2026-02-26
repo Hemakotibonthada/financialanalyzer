@@ -564,17 +564,17 @@ const SpendingDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Enhanced Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="mb-4 lg:mb-0">
               <div className="flex items-center space-x-3 mb-2">
@@ -587,8 +587,8 @@ const SpendingDashboard = () => {
                 {/* Real-time connection indicator */}
                 <div className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                   isConnected 
-                    ? 'bg-green-100 text-green-700 border border-green-300' 
-                    : 'bg-red-100 text-red-700 border border-red-300'
+                    ? 'bg-green-100 text-green-700 border border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
+                    : 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
                 }`}>
                   {isConnected ? (
                     <>
@@ -603,16 +603,16 @@ const SpendingDashboard = () => {
                   )}
                 </div>
               </div>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 dark:text-slate-400 text-sm">
                 Advanced analytics, real-time insights, and intelligent spending patterns
-                {isConnected && <span className="text-green-600 ml-2">• Auto-sync enabled</span>}
+                {isConnected && <span className="text-green-600 dark:text-green-400 ml-2">• Auto-sync enabled</span>}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {/* Quick Actions */}
               <button
                 onClick={loadData}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg transition-colors"
                 title="Refresh data"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -623,7 +623,7 @@ const SpendingDashboard = () => {
               <select
                 value={activeTimeFrame}
                 onChange={(e) => setActiveTimeFrame(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm font-medium"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 dark:text-slate-100 text-sm font-medium"
               >
                 {Object.entries(timeFrames).map(([key, frame]) => (
                   <option key={key} value={key}>{frame.label}</option>
@@ -662,9 +662,9 @@ const SpendingDashboard = () => {
         {/* Messages */}
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' :
-            message.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
-            'bg-blue-100 text-blue-700 border border-blue-200'
+            message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' :
+            message.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' :
+            'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
           }`}>
             <div className="flex items-center">
               {message.type === 'success' ? (
@@ -680,40 +680,40 @@ const SpendingDashboard = () => {
         )}
 
         {/* Upload Area */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Upload Financial Documents</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 p-6 mb-8">
+          <h2 className="text-xl font-semibold dark:text-white mb-4">Upload Financial Documents</h2>
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+              isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 hover:border-gray-400 dark:border-slate-600 dark:hover:border-slate-500'
             }`}
           >
             <input {...getInputProps()} />
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-700 mb-2">
+            <Upload className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+            <p className="text-lg font-medium text-gray-700 dark:text-slate-300 mb-2">
               {isDragActive ? 'Drop files here...' : 'Upload Financial Documents'}
             </p>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-slate-400">
               Drag & drop PDF, Excel, CSV files or click to select
             </p>
-            <p className="text-sm text-gray-400 mt-2">
+            <p className="text-sm text-gray-400 dark:text-slate-500 mt-2">
               Supported: Bank statements, credit card statements, receipts, invoices
             </p>
           </div>
 
           {/* Password field for encrypted documents */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               Password (Optional - for password-protected PDFs)
             </label>
             <input
               type="password"
               value={uploadPassword}
               onChange={(e) => setUploadPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="Enter document password if required"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
               If your document is password-protected, enter the password here before uploading
             </p>
           </div>
@@ -723,7 +723,7 @@ const SpendingDashboard = () => {
         {transactions.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Total Expenses Card */}
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-lg border border-red-200 p-6 transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/30 rounded-xl shadow-lg dark:shadow-slate-900/30 border border-red-200 dark:border-red-800 p-6 transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-red-500 p-3 rounded-lg">
                   <TrendingDown className="w-6 h-6 text-white" />
@@ -742,7 +742,7 @@ const SpendingDashboard = () => {
             </div>
 
             {/* Total Income Card */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg border border-green-200 p-6 transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 rounded-xl shadow-lg dark:shadow-slate-900/30 border border-green-200 dark:border-green-800 p-6 transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-green-500 p-3 rounded-lg">
                   <TrendingUp className="w-6 h-6 text-white" />
@@ -761,7 +761,7 @@ const SpendingDashboard = () => {
             </div>
 
             {/* Net Savings Card */}
-            <div className={`bg-gradient-to-br ${insights.netSavings >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200'} rounded-xl shadow-lg border p-6 transform hover:scale-105 transition-transform`}>
+            <div className={`bg-gradient-to-br ${insights.netSavings >= 0 ? 'from-blue-50 to-blue-100 border-blue-200 dark:from-blue-900/20 dark:to-blue-900/30 dark:border-blue-800' : 'from-orange-50 to-orange-100 border-orange-200 dark:from-orange-900/20 dark:to-orange-900/30 dark:border-orange-800'} rounded-xl shadow-lg dark:shadow-slate-900/30 border p-6 transform hover:scale-105 transition-transform`}>
               <div className="flex items-center justify-between mb-4">
                 <div className={`${insights.netSavings >= 0 ? 'bg-blue-500' : 'bg-orange-500'} p-3 rounded-lg`}>
                   <DollarSign className="w-6 h-6 text-white" />
@@ -780,7 +780,7 @@ const SpendingDashboard = () => {
             </div>
 
             {/* Transactions Count Card */}
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg border border-purple-200 p-6 transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 rounded-xl shadow-lg dark:shadow-slate-900/30 border border-purple-200 dark:border-purple-800 p-6 transform hover:scale-105 transition-transform">
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-purple-500 p-3 rounded-lg">
                   <Receipt className="w-6 h-6 text-white" />
@@ -844,18 +844,18 @@ const SpendingDashboard = () => {
 
         {/* Advanced Filter & Search Bar */}
         {filteredTransactions.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 p-6 mb-8">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search Input */}
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 h-5 w-5" />
                   <input
                     type="text"
                     placeholder="Search transactions..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -864,7 +864,7 @@ const SpendingDashboard = () => {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
               >
                 <option value="all">All Types</option>
                 <option value="credit">Credit Only</option>
@@ -875,7 +875,7 @@ const SpendingDashboard = () => {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
               >
                 <option value="all">All Categories</option>
                 {Array.from(new Set(transactions.map(t => t.category).filter(Boolean))).map(cat => (
@@ -888,14 +888,14 @@ const SpendingDashboard = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                 >
                   <option value="date">Sort by Date</option>
                   <option value="amount">Sort by Amount</option>
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors dark:text-slate-100"
                   title={sortOrder === 'desc' ? 'Descending' : 'Ascending'}
                 >
                   {sortOrder === 'desc' ? '↓' : '↑'}
@@ -903,11 +903,11 @@ const SpendingDashboard = () => {
               </div>
 
               {/* View Mode Toggle */}
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+              <div className="flex gap-2 bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
                 <button
                   onClick={() => setViewMode('cards')}
                   className={`px-3 py-2 rounded transition-colors ${
-                    viewMode === 'cards' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                    viewMode === 'cards' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-slate-600'
                   }`}
                   title="Cards View"
                 >
@@ -916,7 +916,7 @@ const SpendingDashboard = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`px-3 py-2 rounded transition-colors ${
-                    viewMode === 'table' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                    viewMode === 'table' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-slate-600'
                   }`}
                   title="Table View"
                 >
@@ -925,7 +925,7 @@ const SpendingDashboard = () => {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`px-3 py-2 rounded transition-colors ${
-                    viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                    viewMode === 'grid' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-slate-600'
                   }`}
                   title="Grid View"
                 >
@@ -968,7 +968,7 @@ const SpendingDashboard = () => {
                     setFilterType('all');
                     setFilterCategory('all');
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors dark:text-slate-100"
                 >
                   Clear
                 </button>
@@ -976,7 +976,7 @@ const SpendingDashboard = () => {
             </div>
 
             {/* Results Count */}
-            <div className="mt-4 text-sm text-gray-600">
+            <div className="mt-4 text-sm text-gray-600 dark:text-slate-400">
               Showing {filteredTransactions.length} of {transactions.length} transactions
             </div>
           </div>
@@ -991,22 +991,22 @@ const SpendingDashboard = () => {
                 {filteredTransactions.map((transaction, index) => (
                   <div
                     key={transaction._id || index}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                    className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
                         {transaction.type === 'credit' ? (
-                          <div className="p-2 bg-green-100 rounded-lg">
-                            <TrendingUp className="h-5 w-5 text-green-600" />
+                          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                            <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
                           </div>
                         ) : (
-                          <div className="p-2 bg-red-100 rounded-lg">
-                            <TrendingDown className="h-5 w-5 text-red-600" />
+                          <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                            <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
                           </div>
                         )}
                         <div>
-                          <p className="font-medium text-gray-900">{transaction.description}</p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <p className="font-medium text-gray-900 dark:text-white">{transaction.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {new Date(transaction.date).toLocaleDateString()}
                           </p>
@@ -1020,7 +1020,7 @@ const SpendingDashboard = () => {
                         {transaction.type === 'credit' ? '+' : '-'} {formatCurrency(Math.abs(transaction.amount))}
                       </span>
                       {transaction.category && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs rounded-full">
                           {transaction.category}
                         </span>
                       )}
@@ -1032,47 +1032,47 @@ const SpendingDashboard = () => {
 
             {/* Table View */}
             {viewMode === 'table' && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                    <thead className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                           Date
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                           Description
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                           Type
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                           Category
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                           Amount
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                       {filteredTransactions.map((transaction, index) => (
-                        <tr key={transaction._id || index} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <tr key={transaction._id || index} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">
                             {new Date(transaction.date).toLocaleDateString()}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-slate-100">
                             {transaction.description}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               transaction.type === 'credit' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
                               {transaction.type}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-slate-400">
                             {transaction.category || 'Uncategorized'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
@@ -1096,8 +1096,8 @@ const SpendingDashboard = () => {
                     key={transaction._id || index}
                     className={`rounded-lg p-4 border-2 transition-all hover:scale-105 ${
                       transaction.type === 'credit'
-                        ? 'bg-green-50 border-green-200 hover:border-green-400'
-                        : 'bg-red-50 border-red-200 hover:border-red-400'
+                        ? 'bg-green-50 border-green-200 hover:border-green-400 dark:bg-green-900/20 dark:border-green-800 dark:hover:border-green-600'
+                        : 'bg-red-50 border-red-200 hover:border-red-400 dark:bg-red-900/20 dark:border-red-800 dark:hover:border-red-600'
                     }`}
                   >
                     <div className="text-center">
@@ -1106,10 +1106,10 @@ const SpendingDashboard = () => {
                       }`}>
                         {formatCurrency(Math.abs(transaction.amount))}
                       </div>
-                      <div className="text-xs text-gray-600 truncate mb-1">
+                      <div className="text-xs text-gray-600 dark:text-slate-400 truncate mb-1">
                         {transaction.description}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-slate-500">
                         {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
@@ -1129,17 +1129,17 @@ const SpendingDashboard = () => {
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Visual Analytics</h2>
-                <p className="text-gray-600">Interactive charts and insights</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Visual Analytics</h2>
+                <p className="text-gray-600 dark:text-slate-400">Interactive charts and insights</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Spending by Category */}
               {spendingByCategory && (
-                <div className="bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-lg border border-purple-100 p-6 hover:shadow-xl transition-shadow">
+                <div className="bg-gradient-to-br from-white to-purple-50 dark:from-slate-800 dark:to-purple-900/20 rounded-lg shadow-lg dark:shadow-slate-900/30 border border-purple-100 dark:border-purple-800 p-6 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Spending by Category</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spending by Category</h3>
                     <div className="flex items-center gap-2 text-sm text-purple-600">
                       <PieChart className="h-4 w-4" />
                       <span>Distribution</span>
@@ -1159,8 +1159,8 @@ const SpendingDashboard = () => {
                             className="w-3 h-3 rounded-full" 
                             style={{ backgroundColor: spendingByCategory.datasets[0].backgroundColor[idx] }}
                           />
-                          <span className="text-gray-700 truncate">{spendingByCategory.labels[idx]}</span>
-                          <span className="text-gray-500 ml-auto">{percentage}%</span>
+                          <span className="text-gray-700 dark:text-slate-300 truncate">{spendingByCategory.labels[idx]}</span>
+                          <span className="text-gray-500 dark:text-slate-400 ml-auto">{percentage}%</span>
                         </div>
                       );
                     })}
@@ -1170,9 +1170,9 @@ const SpendingDashboard = () => {
 
               {/* Spending Trends Card */}
               {insights && (
-                <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-lg border border-blue-100 p-6 hover:shadow-xl transition-shadow">
+                <div className="bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-900/20 rounded-lg shadow-lg dark:shadow-slate-900/30 border border-blue-100 dark:border-blue-800 p-6 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Spending Insights</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spending Insights</h3>
                     <div className="flex items-center gap-2 text-sm text-blue-600">
                       <Activity className="h-4 w-4" />
                       <span>Analytics</span>
@@ -1180,41 +1180,41 @@ const SpendingDashboard = () => {
                   </div>
                   <div className="space-y-4">
                     {/* Total Expenses Metric */}
-                    <div className="bg-white rounded-lg p-4 border border-blue-100">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Total Expenses</span>
+                        <span className="text-sm text-gray-600 dark:text-slate-400">Total Expenses</span>
                         <TrendingDown className="h-5 w-5 text-red-500" />
                       </div>
-                      <div className="text-2xl font-bold text-gray-900 mt-1">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                         {formatCurrency(insights.totalExpenses)}
                       </div>
                     </div>
 
                     {/* Total Income Metric */}
-                    <div className="bg-white rounded-lg p-4 border border-green-100">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-green-100 dark:border-green-800">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Total Income</span>
+                        <span className="text-sm text-gray-600 dark:text-slate-400">Total Income</span>
                         <TrendingUp className="h-5 w-5 text-green-500" />
                       </div>
-                      <div className="text-2xl font-bold text-gray-900 mt-1">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                         {formatCurrency(insights.totalIncome)}
                       </div>
                     </div>
 
                     {/* Savings Rate Progress */}
-                    <div className="bg-white rounded-lg p-4 border border-purple-100">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600">Savings Rate</span>
+                        <span className="text-sm text-gray-600 dark:text-slate-400">Savings Rate</span>
                         <Target className="h-5 w-5 text-purple-500" />
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                           <div 
                             className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${Math.min(insights.savingsRate, 100)}%` }}
                           />
                         </div>
-                        <span className="text-lg font-bold text-gray-900">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
                           {insights.savingsRate.toFixed(1)}%
                         </span>
                       </div>
@@ -1222,15 +1222,15 @@ const SpendingDashboard = () => {
 
                     {/* Top Expense */}
                     {insights.largestExpense && (
-                      <div className="bg-white rounded-lg p-4 border border-orange-100">
+                      <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-orange-100 dark:border-orange-800">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Largest Expense</span>
+                          <span className="text-sm text-gray-600 dark:text-slate-400">Largest Expense</span>
                           <AlertTriangle className="h-5 w-5 text-orange-500" />
                         </div>
-                        <div className="text-xl font-bold text-gray-900 mt-1">
+                        <div className="text-xl font-bold text-gray-900 dark:text-white mt-1">
                           {formatCurrency(insights.largestExpense.amount)}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 truncate">
+                        <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 truncate">
                           {insights.largestExpense.description}
                         </div>
                       </div>
@@ -1242,7 +1242,7 @@ const SpendingDashboard = () => {
 
             {/* Monthly Trends - Full Width */}
             {transformedMonthlyTrends && (
-              <div className="bg-gradient-to-br from-white to-indigo-50 rounded-lg shadow-lg border border-indigo-100 hover:shadow-xl transition-shadow">
+              <div className="bg-gradient-to-br from-white to-indigo-50 dark:from-slate-800 dark:to-indigo-900/20 rounded-lg shadow-lg dark:shadow-slate-900/30 border border-indigo-100 dark:border-indigo-800 hover:shadow-xl transition-shadow">
                 <MonthlyTrends trendsData={transformedMonthlyTrends} />
               </div>
             )}
@@ -1251,14 +1251,14 @@ const SpendingDashboard = () => {
 
         {/* AI Analysis Results */}
         {analysis && (
-          <div className="bg-gradient-to-br from-white via-purple-50 to-pink-50 rounded-xl shadow-xl border border-purple-200 p-8 mb-8">
+          <div className="bg-gradient-to-br from-white via-purple-50 to-pink-50 dark:from-slate-800 dark:via-purple-900/20 dark:to-pink-900/20 rounded-xl shadow-xl dark:shadow-slate-900/30 border border-purple-200 dark:border-purple-800 p-8 mb-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl">
                 <Award className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">AI Financial Intelligence</h3>
-                <p className="text-gray-600">Powered by advanced analytics</p>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">AI Financial Intelligence</h3>
+                <p className="text-gray-600 dark:text-slate-400">Powered by advanced analytics</p>
               </div>
             </div>
             
@@ -1293,13 +1293,13 @@ const SpendingDashboard = () => {
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Target className="h-5 w-5 text-purple-600" />
-                  <h4 className="font-bold text-lg text-gray-900">Key Insights</h4>
+                  <h4 className="font-bold text-lg text-gray-900 dark:text-white">Key Insights</h4>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {analysis.insights.slice(0, 6).map((insight, index) => (
                     <div 
                       key={index} 
-                      className="group bg-white rounded-lg p-5 border-l-4 hover:shadow-lg transition-all"
+                      className="group bg-white dark:bg-slate-800 rounded-lg p-5 border-l-4 hover:shadow-lg transition-all"
                       style={{
                         borderColor: insight.impact === 'high' ? '#ef4444' :
                                    insight.impact === 'medium' ? '#f59e0b' : '#10b981'
@@ -1307,8 +1307,8 @@ const SpendingDashboard = () => {
                     >
                       <div className="flex items-start gap-3">
                         <div className={`p-2 rounded-lg ${
-                          insight.impact === 'high' ? 'bg-red-100' :
-                          insight.impact === 'medium' ? 'bg-yellow-100' : 'bg-green-100'
+                          insight.impact === 'high' ? 'bg-red-100 dark:bg-red-900/30' :
+                          insight.impact === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-green-100 dark:bg-green-900/30'
                         }`}>
                           {insight.impact === 'high' ? (
                             <AlertTriangle className={`h-5 w-5 ${
@@ -1323,12 +1323,12 @@ const SpendingDashboard = () => {
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">{insight.title}</p>
-                          <p className="text-gray-600 text-sm">{insight.description}</p>
+                          <p className="font-semibold text-gray-900 dark:text-white mb-1">{insight.title}</p>
+                          <p className="text-gray-600 dark:text-slate-400 text-sm">{insight.description}</p>
                           <span className={`inline-block mt-2 px-2 py-1 text-xs font-medium rounded-full ${
-                            insight.impact === 'high' ? 'bg-red-100 text-red-700' :
-                            insight.impact === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
+                            insight.impact === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            insight.impact === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           }`}>
                             {insight.impact} impact
                           </span>
@@ -1345,38 +1345,38 @@ const SpendingDashboard = () => {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Award className="h-5 w-5 text-purple-600" />
-                  <h4 className="font-bold text-lg text-gray-900">Smart Recommendations</h4>
+                  <h4 className="font-bold text-lg text-gray-900 dark:text-white">Smart Recommendations</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {analysis.recommendations.slice(0, 4).map((rec, index) => (
                     <div 
                       key={index} 
-                      className="bg-white rounded-xl p-5 border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all"
+                      className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-gray-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-lg transition-all"
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div className={`p-2 rounded-lg ${
-                            rec.priority === 'high' ? 'bg-red-100' :
-                            rec.priority === 'medium' ? 'bg-yellow-100' : 'bg-green-100'
+                            rec.priority === 'high' ? 'bg-red-100 dark:bg-red-900/30' :
+                            rec.priority === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-green-100 dark:bg-green-900/30'
                           }`}>
                             <Target className={`h-4 w-4 ${
-                              rec.priority === 'high' ? 'text-red-600' :
-                              rec.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                              rec.priority === 'high' ? 'text-red-600 dark:text-red-400' :
+                              rec.priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'
                             }`} />
                           </div>
-                          <span className="font-bold text-gray-900">{rec.category}</span>
+                          <span className="font-bold text-gray-900 dark:text-white">{rec.category}</span>
                         </div>
                         <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                          rec.priority === 'high' ? 'bg-red-100 text-red-700' :
-                          rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
+                          rec.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         }`}>
                           {rec.priority}
                         </span>
                       </div>
-                      <p className="text-gray-600 text-sm mb-3 leading-relaxed">{rec.reasoning}</p>
+                      <p className="text-gray-600 dark:text-slate-400 text-sm mb-3 leading-relaxed">{rec.reasoning}</p>
                       {rec.potentialSavings > 0 && (
-                        <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-slate-700">
                           <DollarSign className="h-4 w-4 text-green-600" />
                           <p className="text-green-600 font-bold text-sm">
                             Save up to {formatCurrency(rec.potentialSavings)}
@@ -1393,19 +1393,19 @@ const SpendingDashboard = () => {
 
         {/* Recent Documents */}
         {documents.length > 0 && (
-          <div className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg border border-gray-200 p-6">
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-900 rounded-lg shadow-lg dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
                   <FileText className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Recent Documents</h3>
-                  <p className="text-sm text-gray-600">{documents.length} documents processed</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Documents</h3>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">{documents.length} documents processed</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Last 10</span>
+                <span className="text-sm text-gray-600 dark:text-slate-400">Last 10</span>
               </div>
             </div>
             
@@ -1413,16 +1413,16 @@ const SpendingDashboard = () => {
               {documents.slice(0, 10).map((doc, idx) => (
                 <div 
                   key={doc.id} 
-                  className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all hover:border-blue-300"
+                  className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-600"
                 >
                   <div className="flex items-center justify-between gap-4">
                     {/* Document Info */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`p-2 rounded-lg ${
-                        doc.processingStatus === 'completed' ? 'bg-green-100' :
-                        doc.processingStatus === 'processing' ? 'bg-blue-100' :
-                        doc.processingStatus === 'failed' ? 'bg-red-100' :
-                        'bg-yellow-100'
+                        doc.processingStatus === 'completed' ? 'bg-green-100 dark:bg-green-900/30' :
+                        doc.processingStatus === 'processing' ? 'bg-blue-100 dark:bg-blue-900/30' :
+                        doc.processingStatus === 'failed' ? 'bg-red-100 dark:bg-red-900/30' :
+                        'bg-yellow-100 dark:bg-yellow-900/30'
                       }`}>
                         {doc.processingStatus === 'completed' ? (
                           <FileText className="h-5 w-5 text-green-600" />
@@ -1437,8 +1437,8 @@ const SpendingDashboard = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900 truncate">{doc.originalName}</p>
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full whitespace-nowrap">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{doc.originalName}</p>
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs rounded-full whitespace-nowrap">
                             {doc.category?.replace(/_/g, ' ')}
                           </span>
                         </div>
@@ -1453,12 +1453,12 @@ const SpendingDashboard = () => {
                              doc.processingStatus === 'processing' ? '⏳ Processing...' :
                              doc.processingStatus === 'completed' ? '✓ Completed' : '✗ Failed'}
                           </span>
-                          <span className="text-xs text-gray-500">•</span>
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-500 dark:text-slate-500">•</span>
+                          <span className="text-xs text-gray-600 dark:text-slate-400">
                             {doc.transactionCount || 0} transactions
                           </span>
-                          <span className="text-xs text-gray-500">•</span>
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-500 dark:text-slate-500">•</span>
+                          <span className="text-xs text-gray-600 dark:text-slate-400">
                             {new Date(doc.createdAt).toLocaleDateString('en-US', { 
                               month: 'short', 
                               day: 'numeric',
@@ -1485,7 +1485,7 @@ const SpendingDashboard = () => {
                         </button>
                       )}
                       {doc.processingStatus === 'completed' && (
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors" title="View Details">
+                        <button className="p-2 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title="View Details">
                           <Eye className="h-5 w-5" />
                         </button>
                       )}
@@ -1499,13 +1499,13 @@ const SpendingDashboard = () => {
 
         {/* Empty State */}
         {transactions.length === 0 && documents.length === 0 && (
-          <div className="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-lg border-2 border-dashed border-blue-200 p-12 text-center">
+          <div className="bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-900/20 rounded-xl shadow-lg dark:shadow-slate-900/30 border-2 border-dashed border-blue-200 dark:border-blue-800 p-12 text-center">
             <div className="max-w-md mx-auto">
-              <div className="inline-flex p-4 bg-blue-100 rounded-full mb-6">
+              <div className="inline-flex p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-6">
                 <FileText className="w-16 h-16 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Financial Data Yet</h3>
-              <p className="text-gray-600 mb-8 leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No Financial Data Yet</h3>
+              <p className="text-gray-600 dark:text-slate-400 mb-8 leading-relaxed">
                 Get started by uploading your bank statements, credit card bills, or connect your Gmail 
                 to automatically fetch financial documents. We'll analyze your spending patterns and 
                 provide intelligent insights.
@@ -1520,13 +1520,13 @@ const SpendingDashboard = () => {
                   Connect Gmail
                 </button>
               </div>
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <p className="text-sm text-gray-500 mb-4">Supported formats:</p>
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-                  <span className="px-3 py-1 bg-white border border-gray-200 rounded-full">PDF</span>
-                  <span className="px-3 py-1 bg-white border border-gray-200 rounded-full">Excel</span>
-                  <span className="px-3 py-1 bg-white border border-gray-200 rounded-full">CSV</span>
-                  <span className="px-3 py-1 bg-white border border-gray-200 rounded-full">Images</span>
+              <div className="mt-8 pt-8 border-t border-gray-200 dark:border-slate-700">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">Supported formats:</p>
+                <div className="flex items-center justify-center gap-4 text-xs text-gray-600 dark:text-slate-400">
+                  <span className="px-3 py-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full">PDF</span>
+                  <span className="px-3 py-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full">Excel</span>
+                  <span className="px-3 py-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full">CSV</span>
+                  <span className="px-3 py-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full">Images</span>
                 </div>
               </div>
             </div>
@@ -1536,20 +1536,20 @@ const SpendingDashboard = () => {
         {/* Clear Data Modal */}
         {showClearModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl dark:shadow-slate-900/30 p-6 w-full max-w-md">
               <div className="flex items-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-red-500 mr-3" />
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Clear Data
                 </h3>
               </div>
               
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-slate-400 mb-6">
                 Choose what you want to clear. This action cannot be undone!
               </p>
               
               <div className="mb-6 space-y-3">
-                <label className="flex items-start p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <label className="flex items-start p-4 border border-gray-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                   <input
                     type="radio"
                     name="clearType"
@@ -1559,14 +1559,14 @@ const SpendingDashboard = () => {
                     className="mt-1 mr-3"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">Clear Documents Only</div>
-                    <div className="text-sm text-gray-600 mt-1">
+                    <div className="font-medium text-gray-900 dark:text-white">Clear Documents Only</div>
+                    <div className="text-sm text-gray-600 dark:text-slate-400 mt-1">
                       Delete all uploaded document files but keep extracted transaction data
                     </div>
                   </div>
                 </label>
 
-                <label className="flex items-start p-4 border border-red-300 rounded-lg cursor-pointer hover:bg-red-50 transition-colors">
+                <label className="flex items-start p-4 border border-red-300 dark:border-red-800 rounded-lg cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                   <input
                     type="radio"
                     name="clearType"
@@ -1576,8 +1576,8 @@ const SpendingDashboard = () => {
                     className="mt-1 mr-3"
                   />
                   <div>
-                    <div className="font-medium text-red-700">Clear All Data</div>
-                    <div className="text-sm text-red-600 mt-1">
+                    <div className="font-medium text-red-700 dark:text-red-400">Clear All Data</div>
+                    <div className="text-sm text-red-600 dark:text-red-400 mt-1">
                       Delete all documents AND all transaction data permanently
                     </div>
                   </div>
@@ -1590,7 +1590,7 @@ const SpendingDashboard = () => {
                     setShowClearModal(false);
                     setClearType('documents-only');
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>
@@ -1623,17 +1623,17 @@ const SpendingDashboard = () => {
         {/* Password Modal */}
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl dark:shadow-slate-900/30 p-6 w-full max-w-md">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Enter Document Password
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-slate-400 mb-4">
                 The document "{selectedDocument?.originalName}" is password-protected. 
                 Please enter the password to process it.
               </p>
               
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Password
                 </label>
                 <input
@@ -1641,7 +1641,7 @@ const SpendingDashboard = () => {
                   value={retryPassword}
                   onChange={(e) => setRetryPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && retryDocumentProcessing()}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-slate-100"
                   placeholder="Enter password"
                   autoFocus
                 />
@@ -1654,7 +1654,7 @@ const SpendingDashboard = () => {
                     setRetryPassword('');
                     setSelectedDocument(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>
@@ -1673,9 +1673,9 @@ const SpendingDashboard = () => {
         <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-40">
           {/* Quick Stats Bubble */}
           {transactions.length > 0 && (
-            <div className="bg-white rounded-full shadow-lg border border-gray-200 px-4 py-2 flex items-center gap-2 animate-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-full shadow-lg dark:shadow-slate-900/30 border border-gray-200 dark:border-slate-700 px-4 py-2 flex items-center gap-2 animate-fade-in">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-600">Today:</span>
+                <span className="text-gray-600 dark:text-slate-400">Today:</span>
                 <span className="font-bold text-green-600">
                   {formatCurrency(
                     transactions
@@ -1683,7 +1683,7 @@ const SpendingDashboard = () => {
                       .reduce((sum, t) => sum + t.amount, 0)
                   )}
                 </span>
-                <span className="text-gray-400">|</span>
+                <span className="text-gray-400 dark:text-slate-500">|</span>
                 <span className="font-bold text-red-600">
                   {formatCurrency(
                     Math.abs(transactions
@@ -1716,7 +1716,7 @@ const SpendingDashboard = () => {
             <div className="relative group">
               <button
                 onClick={() => window.location.reload()}
-                className="bg-white text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 border border-gray-200"
+                className="bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 p-3 rounded-full shadow-lg dark:shadow-slate-900/30 hover:shadow-xl transition-all hover:scale-110 border border-gray-200 dark:border-slate-700"
                 title="Refresh Data"
               >
                 <RefreshCw className="h-5 w-5" />

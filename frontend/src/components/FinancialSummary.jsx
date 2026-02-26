@@ -4,9 +4,9 @@ import { DollarSign, TrendingUp, TrendingDown, PiggyBank, CreditCard, TrendingUp
 const FinancialSummary = ({ summary }) => {
   if (!summary) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Financial Summary</h3>
-        <p className="text-gray-500">No financial data available yet.</p>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Financial Summary</h3>
+        <p className="text-gray-500 dark:text-slate-400">No financial data available yet.</p>
       </div>
     );
   }
@@ -60,10 +60,10 @@ const FinancialSummary = ({ summary }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Financial Summary</h3>
-        <p className="text-sm text-gray-600 mt-1">Current month overview</p>
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Financial Summary</h3>
+        <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Current month overview</p>
       </div>
       
       <div className="p-6">
@@ -77,7 +77,7 @@ const FinancialSummary = ({ summary }) => {
                     <Icon className={`w-6 h-6 ${card.color}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-1">{card.title}</p>
                     <p className={`text-xl font-bold ${card.color}`}>
                       {card.prefix && card.prefix}
                       {Math.abs(card.value).toLocaleString('en-IN', {
@@ -94,11 +94,11 @@ const FinancialSummary = ({ summary }) => {
         </div>
         
         {/* Financial Health Indicator */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900">Financial Health Score</p>
-              <p className="text-xs text-gray-600">Based on spending patterns and savings rate</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Financial Health Score</p>
+              <p className="text-xs text-gray-600 dark:text-slate-400">Based on spending patterns and savings rate</p>
             </div>
             <div className="text-right">
               <p className={`text-2xl font-bold ${
@@ -114,7 +114,7 @@ const FinancialSummary = ({ summary }) => {
           {/* Health Score Bar */}
           {summary.financialHealthScore && (
             <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-500 ${
                     summary.financialHealthScore >= 80 ? 'bg-green-600' :
@@ -123,7 +123,7 @@ const FinancialSummary = ({ summary }) => {
                   style={{ width: `${Math.min(summary.financialHealthScore, 100)}%` }}
                 ></div>
               </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400 mt-1">
                 <span>Poor</span>
                 <span>Fair</span>
                 <span>Good</span>
@@ -134,20 +134,20 @@ const FinancialSummary = ({ summary }) => {
         </div>
 
         {/* Quick Stats */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{summary.totalAnalyses || 0}</p>
-              <p className="text-sm text-gray-600">Total Analyses</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalAnalyses || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">Total Analyses</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {summary.lastSyncDate ? 
                   new Date(summary.lastSyncDate).toLocaleDateString() : 
                   'Never'
                 }
               </p>
-              <p className="text-sm text-gray-600">Last Sync</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">Last Sync</p>
             </div>
           </div>
         </div>
