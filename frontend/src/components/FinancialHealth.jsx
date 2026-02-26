@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Heart, TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react';
 
 const FinancialHealth = ({ healthData }) => {
@@ -57,7 +57,7 @@ const FinancialHealth = ({ healthData }) => {
         <div className="text-center mb-6">
           <div className="relative inline-block">
             {/* Circular progress */}
-            <svg className="w-32 h-32" viewBox="0 0 100 100">
+            <svg className="w-32 h-32" viewBox="0 0 100 100" role="img" aria-label={`Financial health score: ${score} out of 100`}>
               <circle
                 cx="50"
                 cy="50"
@@ -154,13 +154,16 @@ const FinancialHealth = ({ healthData }) => {
           </div>
         )}
 
-        {/* Health Status Message */}
+        {/* Health Status Message (FIXED: mutually exclusive conditions) */}
         <div className="mt-6 p-4 rounded-lg border-l-4 border-l-blue-500 bg-blue-50">
           <p className="text-sm text-blue-900 font-medium">
-            {score >= 80 && "Excellent! Your financial health is strong."}
-            {score >= 60 && score < 80 && "Good progress! A few improvements could boost your score."}
-            {score >= 40 && score < 60 && "Fair. Focus on the key areas highlighted above."}
-            {score < 40 && "Needs attention. Consider implementing the recommendations to improve your financial health."}
+            {score >= 80
+              ? "Excellent! Your financial health is strong."
+              : score >= 60
+              ? "Good progress! A few improvements could boost your score."
+              : score >= 40
+              ? "Fair. Focus on the key areas highlighted above."
+              : "Needs attention. Consider implementing the recommendations to improve your financial health."}
           </p>
         </div>
       </div>
@@ -168,4 +171,4 @@ const FinancialHealth = ({ healthData }) => {
   );
 };
 
-export default FinancialHealth;
+export default memo(FinancialHealth);

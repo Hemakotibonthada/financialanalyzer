@@ -2,9 +2,40 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
+// Simple in-memory user cache (TTL: 5 min) to avoid DB query on every request
+const userCache = new Map();
+const USER_CACHE_TTL = 5 * 60 * 1000;
+
+const getCachedUser = async (userId) => {
+  const cached = userCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < USER_CACHE_TTL) {
+    return cached.user;
+  }
+  const user = await User.findById(userId).select('-password');
+  if (user) {
+    userCache.set(userId, { user, timestamp: Date.now() });
+    // Prevent unbounded cache growth
+    if (userCache.size > 1000) {
+      const oldestKey = userCache.keys().next().value;
+      userCache.delete(oldestKey);
+    }
+  }
+  return user;
+};
+
+// Clear cached user (call after profile updates)
+const invalidateUserCache = (userId) => {
+  userCache.delete(userId);
+};
+
 const authenticate = async (req, res, next) => {
   try {
-    // Get token from header
+    // Validate JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      logger.error('JWT_SECRET environment variable is not configured');
+      return res.status(500).json({ success: false, message: 'Server configuration error' });
+    }
+
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -19,8 +50,8 @@ const authenticate = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get user from token
-    const user = await User.findById(decoded.id).select('-password');
+    // Get user from cache or DB
+    const user = await getCachedUser(decoded.id);
 
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -29,12 +60,9 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Attach user to request
     req.user = user;
     next();
   } catch (error) {
-    logger.error('Authentication error:', error);
-    
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
@@ -49,6 +77,7 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    logger.error('Authentication error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Authentication failed'
@@ -89,4 +118,4 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticate, optionalAuth, requireAdmin };
+module.exports = { authenticate, optionalAuth, requireAdmin, invalidateUserCache };

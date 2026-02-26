@@ -370,7 +370,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                       <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>Version 2.0.0</span>
-                          <span>© 2025 Circuvent Technologies</span>
+                          <span>&copy; {new Date().getFullYear()} Circuvent Technologies</span>
                         </div>
                       </div>
 

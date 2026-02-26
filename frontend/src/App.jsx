@@ -11,6 +11,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { KeyboardShortcutsProvider } from './context/KeyboardShortcutsContext';
 import { SidebarProvider } from './context/SidebarContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import { initializeStorage } from './services/storage';
 
@@ -55,8 +56,9 @@ const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboa
 const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
 const CompanyExpensesDashboard = lazy(() => import('./pages/CompanyExpensesDashboard'));
 const Documents = lazy(() => import('./pages/Documents'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
-// Loading component
+// Loading component with accessibility
 const LoadingFallback = () => (
   <Box
     sx={{
@@ -66,8 +68,11 @@ const LoadingFallback = () => (
       minHeight: '100vh',
       backgroundColor: '#f5f5f5'
     }}
+    role="status"
+    aria-label="Loading page content"
   >
-    <CircularProgress size={60} />
+    <CircularProgress size={60} aria-hidden="true" />
+    <span className="sr-only">Loading...</span>
   </Box>
 );
 
@@ -82,6 +87,7 @@ function App() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <ThemeProvider>
       <AuthProvider>
         <WebSocketProvider>
@@ -96,17 +102,12 @@ function App() {
                 <KeyboardShortcutsProvider>
                   <KeyboardShortcutsHelp />
                   <div className="min-h-screen bg-gray-50">
+                    <ErrorBoundary message="Failed to load page content. Please try again.">
                     <Suspense fallback={<LoadingFallback />}>
                     <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
               
               <Route path="/dashboard" element={
                 <ProtectedRoute>
@@ -205,7 +206,7 @@ function App() {
               } />
               
               <Route path="/admin" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
                 </ProtectedRoute>
               } />
@@ -318,9 +319,10 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </ErrorBoundary>
           
           <ToastContainer
             position="top-right"
@@ -341,6 +343,7 @@ function App() {
       </WebSocketProvider>
     </AuthProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

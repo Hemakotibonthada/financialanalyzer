@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: 6,
+    minlength: [8, 'Password must be at least 8 characters'],
     select: false
   },
   role: {
@@ -30,6 +30,14 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // Account lockout after failed attempts
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date
   },
   lastLogin: {
     type: Date
@@ -123,7 +131,45 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
+  // Remove 2FA backup codes from API responses
+  if (obj.twoFactorAuth) {
+    delete obj.twoFactorAuth.backupCodes;
+    delete obj.twoFactorAuth.secret;
+  }
   return obj;
+};
+
+// Account lockout methods
+userSchema.methods.isLocked = function() {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+userSchema.methods.incrementFailedAttempts = async function() {
+  const MAX_ATTEMPTS = 5;
+  const LOCK_TIME = 30 * 60 * 1000; // 30 minutes
+  
+  // If previous lock has expired, reset attempts
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    return this.updateOne({
+      $set: { failedLoginAttempts: 1 },
+      $unset: { lockUntil: 1 }
+    });
+  }
+  
+  const updates = { $inc: { failedLoginAttempts: 1 } };
+  
+  if (this.failedLoginAttempts + 1 >= MAX_ATTEMPTS) {
+    updates.$set = { lockUntil: Date.now() + LOCK_TIME };
+  }
+  
+  return this.updateOne(updates);
+};
+
+userSchema.methods.resetFailedAttempts = function() {
+  return this.updateOne({
+    $set: { failedLoginAttempts: 0 },
+    $unset: { lockUntil: 1 }
+  });
 };
 
 const User = mongoose.model('User', userSchema);

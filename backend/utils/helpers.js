@@ -50,10 +50,17 @@ const generateColor = () => {
 };
 
 /**
- * Sanitize filename
+ * Sanitize filename (enhanced with path traversal protection)
  */
 const sanitizeFilename = (filename) => {
-  return filename.replace(/[^a-z0-9.-]/gi, '_').toLowerCase();
+  // Remove path traversal attempts
+  const sanitized = filename
+    .replace(/\.\.[\\/]/g, '') // Remove ../ or ..\
+    .replace(/[\\/]/g, '_')    // Replace path separators
+    .replace(/[^a-z0-9._-]/gi, '_') // Allow alphanumeric, dots, hyphens, underscores
+    .toLowerCase()
+    .substring(0, 255); // Limit filename length
+  return sanitized || 'unnamed';
 };
 
 /**
@@ -64,32 +71,36 @@ const generateUniqueId = () => {
 };
 
 /**
- * Calculate date range
+ * Calculate date range (FIXED: don't mutate the original Date)
  */
 const getDateRange = (period) => {
-  const now = new Date();
+  const end = new Date();
   let startDate;
   
   switch(period) {
     case 'week':
-      startDate = new Date(now.setDate(now.getDate() - 7));
+      startDate = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
       break;
     case 'month':
-      startDate = new Date(now.setMonth(now.getMonth() - 1));
+      startDate = new Date(end);
+      startDate.setMonth(startDate.getMonth() - 1);
       break;
     case 'quarter':
-      startDate = new Date(now.setMonth(now.getMonth() - 3));
+      startDate = new Date(end);
+      startDate.setMonth(startDate.getMonth() - 3);
       break;
     case 'year':
-      startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+      startDate = new Date(end);
+      startDate.setFullYear(startDate.getFullYear() - 1);
       break;
     default:
-      startDate = new Date(now.setMonth(now.getMonth() - 1));
+      startDate = new Date(end);
+      startDate.setMonth(startDate.getMonth() - 1);
   }
   
   return {
     start: startDate,
-    end: new Date()
+    end
   };
 };
 
@@ -143,10 +154,10 @@ const isValidPAN = (pan) => {
 };
 
 /**
- * Validate email format
+ * Validate email format (strict)
  */
 const isValidEmail = (email) => {
-  const emailRegex = /^\S+@\S+\.\S+$/;
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   return emailRegex.test(email);
 };
 
@@ -194,31 +205,49 @@ const getRating = (score) => {
 };
 
 /**
- * Encrypt sensitive data
+ * Encrypt sensitive data (FIXED: require ENCRYPTION_KEY, no default fallback)
  */
 const encrypt = (text) => {
+  if (!process.env.ENCRYPTION_KEY) {
+    throw new Error('ENCRYPTION_KEY environment variable is required for encryption');
+  }
   const algorithm = 'aes-256-cbc';
-  const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'default-key', 'salt', 32);
+  const salt = crypto.randomBytes(16);
+  const key = crypto.scryptSync(process.env.ENCRYPTION_KEY, salt, 32);
   const iv = crypto.randomBytes(16);
   
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   
-  return iv.toString('hex') + ':' + encrypted;
+  return salt.toString('hex') + ':' + iv.toString('hex') + ':' + encrypted;
 };
 
 /**
- * Decrypt sensitive data
+ * Decrypt sensitive data (FIXED: require ENCRYPTION_KEY, support dynamic salt)
  */
 const decrypt = (text) => {
+  if (!process.env.ENCRYPTION_KEY) {
+    throw new Error('ENCRYPTION_KEY environment variable is required for decryption');
+  }
   const algorithm = 'aes-256-cbc';
-  const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'default-key', 'salt', 32);
   
   const parts = text.split(':');
-  const iv = Buffer.from(parts.shift(), 'hex');
-  const encrypted = parts.join(':');
   
+  // Support both old format (iv:encrypted) and new format (salt:iv:encrypted)
+  let salt, iv, encrypted;
+  if (parts.length === 3) {
+    salt = Buffer.from(parts[0], 'hex');
+    iv = Buffer.from(parts[1], 'hex');
+    encrypted = parts[2];
+  } else {
+    // Legacy format: iv:encrypted (with static salt)
+    salt = Buffer.from('salt');
+    iv = Buffer.from(parts[0], 'hex');
+    encrypted = parts.slice(1).join(':');
+  }
+  
+  const key = crypto.scryptSync(process.env.ENCRYPTION_KEY, salt, 32);
   const decipher = crypto.createDecipheriv(algorithm, key, iv);
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');

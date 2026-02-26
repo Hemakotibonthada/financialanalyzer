@@ -9,9 +9,10 @@ const authorize = (...roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
+      // SECURITY: Do not reveal the user's role in the error message
       return res.status(403).json({
         success: false,
-        message: `Access denied. Required role: ${roles.join(' or ')}. Your role: ${req.user.role}`
+        message: 'Access denied. You do not have permission to access this resource.'
       });
     }
 

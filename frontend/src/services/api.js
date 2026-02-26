@@ -49,6 +49,48 @@ const api = axios.create({
   timeout: 30000 // 30 seconds timeout
 });
 
+// Retry configuration for transient failures
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 1000,           // 1 second base delay
+  retryStatusCodes: [408, 429, 500, 502, 503, 504],
+};
+
+// Retry interceptor - automatically retry failed requests for transient errors
+api.interceptors.response.use(undefined, async (error) => {
+  const config = error.config;
+  
+  // Don't retry if explicitly disabled or if it's a mutation (POST/PUT/DELETE)
+  if (!config || config.__retryCount >= RETRY_CONFIG.maxRetries) {
+    return Promise.reject(error);
+  }
+  
+  // Only retry on specific status codes or network errors
+  const shouldRetry = 
+    !error.response || // Network error
+    RETRY_CONFIG.retryStatusCodes.includes(error.response.status);
+  
+  // Don't retry auth endpoints or mutations
+  const isSafe = config.method === 'get' || config.method === 'head';
+  
+  if (shouldRetry && isSafe) {
+    config.__retryCount = (config.__retryCount || 0) + 1;
+    
+    // Exponential backoff with jitter
+    const delay = RETRY_CONFIG.retryDelay * Math.pow(2, config.__retryCount - 1) 
+                  + Math.random() * 500;
+    
+    if (import.meta.env.DEV) {
+      console.debug(`[api] Retry ${config.__retryCount}/${RETRY_CONFIG.maxRetries} for ${config.url} in ${Math.round(delay)}ms`);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return api(config);
+  }
+  
+  return Promise.reject(error);
+});
+
 // Request interceptor - Add token to requests
 api.interceptors.request.use(
   (config) => {
@@ -143,13 +185,14 @@ api.interceptors.response.use(
 
     // Handle specific HTTP status codes
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login (remove from both storages)
+      // Unauthorized - clear token (avoid full-page reload race condition with React Router)
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('token_expiry');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
-      window.location.href = '/login';
+      // Dispatch a custom event so AuthContext can handle the redirect via React Router
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     } else if (error.response?.status === 503) {
       error.message = 'Service temporarily unavailable. Please try again later.';
     } else if (error.response?.status >= 500) {

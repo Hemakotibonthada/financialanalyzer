@@ -24,21 +24,26 @@ const connectDB = async () => {
     logger.info(`📊 Collections found: ${collections.map(c => c.name).join(', ')}`);
     
   } catch (error) {
-    logger.error('❌ MongoDB connection error:', error.message);
-    logger.error('� Full error:', error);
-    logger.error('🔧 MongoDB URI:', process.env.MONGODB_URI);
-    logger.error('�💡 Make sure MongoDB is running and the connection string is correct');
+    logger.error('MongoDB connection error:', error.message);
+    // SECURITY: Never log the full URI — it may contain credentials
+    const safeUri = (process.env.MONGODB_URI || '').replace(/\/\/([^:]+):([^@]+)@/, '//<credentials>@');
+    logger.error('MongoDB URI (sanitized):', safeUri);
+    logger.error('Make sure MongoDB is running and the connection string is correct');
     process.exit(1);
   }
 };
 
 // Handle connection events
 mongoose.connection.on('disconnected', () => {
-  logger.warn('⚠️  MongoDB disconnected');
+  logger.warn('MongoDB disconnected — attempting reconnection...');
 });
 
 mongoose.connection.on('reconnected', () => {
-  logger.info('✅ MongoDB reconnected');
+  logger.info('MongoDB reconnected successfully');
+});
+
+mongoose.connection.on('error', (err) => {
+  logger.error('MongoDB connection error:', err.message);
 });
 
 module.exports = connectDB;

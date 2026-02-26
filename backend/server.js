@@ -5,11 +5,13 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./utils/logger');
 const websocketService = require('./services/websocketService');
+const jwt = require('jsonwebtoken');
 
 // Load environment variables
 const envPath = path.join(__dirname, '.env');
@@ -64,57 +66,58 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Security: Rate limiting
+// Security: Rate limiting (FIXED: was 15*60*100000 = 25h, now correct 15min window)
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 100000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for development
-  message: 'Too many requests from this IP, please try again later.',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+  message: { success: false, message: 'Too many requests from this IP, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 100000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 5 : 50, // Higher limit for development
-  message: 'Too many authentication attempts, please try again later.',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 5 : 50,
+  message: { success: false, message: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful requests
+  skipSuccessfulRequests: true,
 });
 
 // Apply general rate limiter to all routes
 app.use(generalLimiter);
 
-// Middleware - CORS Configuration
+// Build allowed origins list once at startup (avoid rebuilding per-request)
+const buildAllowedOrigins = () => {
+  const origins = new Set([
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+  ]);
+  if (process.env.FRONTEND_URL) origins.add(process.env.FRONTEND_URL);
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        origins.add(`http://${iface.address}:3000`);
+        origins.add(`http://${iface.address}:3001`);
+      }
+    }
+  }
+  return origins;
+};
+const allowedOrigins = buildAllowedOrigins();
+
+// Middleware - CORS Configuration (FIXED: removed origin.includes('localhost') bypass)
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
-    // Allow localhost and network IPs
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      process.env.FRONTEND_URL
-    ];
-    
-    // Add network IPs dynamically
-    const os = require('os');
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          allowedOrigins.push(`http://${iface.address}:3000`);
-          allowedOrigins.push(`http://${iface.address}:3001`);
-        }
-      }
-    }
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    if (allowedOrigins.has(origin)) {
       callback(null, true);
     } else {
+      logger.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -122,14 +125,23 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 600 // Cache preflight for 10 minutes
+  maxAge: 600
 }));
 
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing with size limits to prevent DoS via large payloads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request timeout middleware
+app.use((req, res, next) => {
+  req.setTimeout(30000, () => {
+    res.status(408).json({ success: false, message: 'Request timeout' });
+  });
+  next();
+});
 
 // Activity logging middleware (after auth, before routes)
 const { activityLogger } = require('./middleware/activityLogger');
@@ -139,8 +151,9 @@ app.use(activityLogger({
   logRequestBody: false
 }));
 
-// Static files for uploads
-app.use('/uploads', express.static('uploads'));
+// Static files for uploads (protected with auth - financial docs should not be public)
+const { authenticate } = require('./middleware/auth');
+app.use('/uploads', authenticate, express.static('uploads'));
 
 // API Routes
 app.use('/api/auth', authLimiter, require('./routes/authRoutes')); // Apply stricter rate limit to auth
@@ -197,16 +210,13 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5001;
-const os = require('os');
 
-// Get network interfaces to display IP addresses
+// Get network IPs from pre-computed allowedOrigins
 function getNetworkIPs() {
   const interfaces = os.networkInterfaces();
   const ips = [];
-  
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
-      // Skip internal and non-IPv4 addresses
       if (iface.family === 'IPv4' && !iface.internal) {
         ips.push(iface.address);
       }
@@ -220,51 +230,44 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
-      
-      // Allow localhost and network IPs
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:3001', 
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001',
-        process.env.FRONTEND_URL
-      ];
-      
-      // Add network IPs dynamically
-      const os = require('os');
-      const interfaces = os.networkInterfaces();
-      for (const name of Object.keys(interfaces)) {
-        for (const iface of interfaces[name]) {
-          if (iface.family === 'IPv4' && !iface.internal) {
-            allowedOrigins.push(`http://${iface.address}:3000`);
-          }
-        }
-      }
-      
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.has(origin)) {
         callback(null, true);
+      } else if (process.env.NODE_ENV !== 'production') {
+        callback(null, true); // Allow all in development
       } else {
-        callback(null, true); // Allow all for development
+        callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ["GET", "POST"]
+    methods: ['GET', 'POST']
+  }
+});
+
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error('Authentication required for WebSocket'));
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.id;
+    next();
+  } catch (err) {
+    return next(new Error('Invalid WebSocket authentication token'));
   }
 });
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  logger.info(`🔌 Client connected: ${socket.id}`);
+  logger.info(`Client connected: ${socket.id} (user: ${socket.userId})`);
   
-  // Join user-specific room
-  socket.on('join-user-room', (userId) => {
-    socket.join(`user-${userId}`);
-    logger.info(`👤 User ${userId} joined room user-${userId}`);
-  });
+  // Auto-join user-specific room based on authenticated user
+  socket.join(`user-${socket.userId}`);
+  logger.info(`User ${socket.userId} joined room user-${socket.userId}`);
   
   socket.on('disconnect', () => {
-    logger.info(`🔌 Client disconnected: ${socket.id}`);
+    logger.info(`Client disconnected: ${socket.id}`);
   });
 });
 
@@ -287,6 +290,40 @@ server.listen(PORT, '0.0.0.0', () => {
   logger.info(`�📊 Environment: ${process.env.NODE_ENV}`);
   logger.info(`🤖 AI Provider: ${process.env.AI_PROVIDER || 'Not configured'}`);
   logger.info(`🔌 WebSocket: Enabled`);
+});
+
+// Graceful shutdown handler
+const gracefulShutdown = (signal) => {
+  logger.info(`${signal} received. Starting graceful shutdown...`);
+  
+  server.close(() => {
+    logger.info('HTTP server closed.');
+    
+    const mongoose = require('mongoose');
+    mongoose.connection.close(false, () => {
+      logger.info('MongoDB connection closed.');
+      process.exit(0);
+    });
+  });
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    logger.error('Graceful shutdown timed out, forcing exit.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception:', err);
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 module.exports = app;

@@ -1,17 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
-import { DollarSign, Mail, Lock, User } from 'lucide-react';
+import { DollarSign, Mail, Lock, User, Eye, EyeOff, Check, X } from 'lucide-react';
+
+// Password strength calculator
+const getPasswordStrength = (password) => {
+  let score = 0;
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+  };
+  score = Object.values(checks).filter(Boolean).length;
+  
+  let label, color;
+  if (score <= 1) { label = 'Very Weak'; color = 'bg-red-500'; }
+  else if (score === 2) { label = 'Weak'; color = 'bg-orange-500'; }
+  else if (score === 3) { label = 'Fair'; color = 'bg-yellow-500'; }
+  else if (score === 4) { label = 'Good'; color = 'bg-blue-500'; }
+  else { label = 'Strong'; color = 'bg-green-500'; }
+  
+  return { score, checks, label, color, percentage: (score / 5) * 100 };
+};
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -28,8 +54,13 @@ const Register = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    if (passwordStrength.score < 3) {
+      toast.error('Password is too weak. Please include uppercase, lowercase, numbers, and special characters.');
       return;
     }
 
@@ -68,12 +99,13 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Full Name</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Full Name</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
                   <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 </div>
                 <input
+                  id="reg-name"
                   type="text"
                   required
                   value={name}
@@ -85,12 +117,13 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Email</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
                   <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 </div>
                 <input
+                  id="reg-email"
                   type="email"
                   required
                   value={email}
@@ -102,37 +135,92 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Password</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
                   <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  id="reg-password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                  className="block w-full pl-9 sm:pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
+              {/* Password Strength Indicator */}
+              {password.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-gray-600">Password strength:</span>
+                    <span className={`text-xs font-bold ${
+                      passwordStrength.score <= 2 ? 'text-red-600' : 
+                      passwordStrength.score === 3 ? 'text-yellow-600' : 'text-green-600'
+                    }`}>{passwordStrength.label}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className={`h-1.5 rounded-full transition-all duration-300 ${passwordStrength.color}`} 
+                         style={{ width: `${passwordStrength.percentage}%` }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 mt-2">
+                    {[
+                      { key: 'length', label: '8+ characters' },
+                      { key: 'uppercase', label: 'Uppercase letter' },
+                      { key: 'lowercase', label: 'Lowercase letter' },
+                      { key: 'number', label: 'Number' },
+                      { key: 'special', label: 'Special character' },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center gap-1">
+                        {passwordStrength.checks[key] 
+                          ? <Check className="w-3 h-3 text-green-500" /> 
+                          : <X className="w-3 h-3 text-gray-300" />}
+                        <span className={`text-xs ${passwordStrength.checks[key] ? 'text-green-700' : 'text-gray-400'}`}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Confirm Password</label>
+              <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Confirm Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
                   <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  id="reg-confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                  className={`block w-full pl-9 sm:pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base ${
+                    confirmPassword && confirmPassword !== password ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
+              {confirmPassword && confirmPassword !== password && (
+                <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+              )}
             </div>
 
             <button

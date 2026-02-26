@@ -4,13 +4,15 @@ const RefreshToken = require('../models/RefreshToken');
 
 /**
  * Generate access token with configurable expiry
+ * ENHANCED: Shortened to industry-standard durations for a financial app
  * @param {string} userId - User ID
- * @param {boolean} rememberMe - If true, token lasts for 30 days, else 7 days (default active user token)
+ * @param {boolean} rememberMe - If true, token lasts for 24h, else 1h
  */
 const generateAccessToken = (userId, rememberMe = false) => {
-  // For active users, give them long-lived tokens so they don't get logged out
-  // rememberMe: 30 days, regular: 7 days (plenty for active session)
-  const expiresIn = rememberMe ? '30d' : '7d';
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  const expiresIn = rememberMe ? '24h' : '1h';
   
   return jwt.sign(
     { id: userId },

@@ -29,10 +29,10 @@ const cacheMiddleware = (ttl = 300, keyGenerator = null) => {
       
       if (cachedData) {
         logger.debug(`Cache hit: ${cacheKey}`);
+        // SECURITY: Don't expose internal cache key to clients
         return res.json({
           ...cachedData,
-          cached: true,
-          cacheKey
+          cached: true
         });
       }
 

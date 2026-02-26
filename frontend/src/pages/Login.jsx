@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { DollarSign, Mail, Lock } from 'lucide-react';
+import { DollarSign, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMonth, setRememberMonth] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
@@ -85,13 +86,21 @@ const Login = () => {
                 </div>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                  className="block w-full pl-9 sm:pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
+                </button>
               </div>
             </div>
 
@@ -117,7 +126,12 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="mt-5 sm:mt-6 text-center">
+          <div className="mt-5 sm:mt-6 text-center space-y-2">
+            <p className="text-xs sm:text-sm text-gray-600">
+              <Link to="/forgot-password" className="text-primary-600 hover:text-primary-700 font-medium">
+                Forgot your password?
+              </Link>
+            </p>
             <p className="text-xs sm:text-sm text-gray-600">
               Don't have an account?{' '}
               <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">

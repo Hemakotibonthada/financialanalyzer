@@ -14,10 +14,15 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Get initial theme from localStorage or default to light
+  // Get initial theme from localStorage, then OS preference, then default to light
   const [mode, setMode] = useState(() => {
     const savedMode = localStorage.getItem('themeMode');
-    return savedMode || 'light';
+    if (savedMode) return savedMode;
+    // Respect OS-level dark mode preference
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
   });
 
   // Update localStorage when theme changes
@@ -47,14 +52,14 @@ export const ThemeProvider = ({ children }) => {
     return lightTheme;
   }, [mode]);
 
-  const value = {
+  const value = useMemo(() => ({
     mode,
     toggleTheme,
     setMode,
-    isDark: mode === 'dark',
+    isDark: mode === 'dark' || mode === 'black',
     isLight: mode === 'light',
     isBlack: mode === 'black',
-  };
+  }), [mode]);
 
   return (
     <ThemeContext.Provider value={value}>

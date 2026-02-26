@@ -1,18 +1,34 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import NotificationToast from '../components/NotificationToast';
 
 const NotificationContext = createContext();
 
-let notificationId = 0;
+const MAX_NOTIFICATIONS = 10;
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const notificationIdRef = useRef(0);
 
   const addNotification = useCallback((notification) => {
-    const id = notificationId++;
+    const id = notificationIdRef.current++;
     const newNotification = { id, ...notification };
     
-    setNotifications(prev => [...prev, newNotification]);
+    setNotifications(prev => {
+      const updated = [...prev, newNotification];
+      // Cap notifications at MAX_NOTIFICATIONS, removing oldest first
+      if (updated.length > MAX_NOTIFICATIONS) {
+        return updated.slice(-MAX_NOTIFICATIONS);
+      }
+      return updated;
+    });
+    
+    // Auto-dismiss after 8 seconds if not explicitly set otherwise
+    const autoDismissMs = notification.duration || 8000;
+    if (autoDismissMs > 0) {
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+      }, autoDismissMs);
+    }
     
     return id;
   }, []);
@@ -96,8 +112,13 @@ export const NotificationProvider = ({ children }) => {
     <NotificationContext.Provider value={value}>
       {children}
       
-      {/* Notification Container */}
-      <div className="fixed top-4 right-4 z-50 pointer-events-auto">
+      {/* Notification Container with accessibility */}
+      <div
+        className="fixed top-4 right-4 z-50 pointer-events-auto"
+        role="log"
+        aria-live="polite"
+        aria-label="Notifications"
+      >
         {notifications.map(notification => (
           <NotificationToast
             key={notification.id}
