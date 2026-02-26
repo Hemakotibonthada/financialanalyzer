@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 const TaxOptimizationService = require('../services/taxOptimizationService');
 
 // POST /api/tax/calculate - Calculate tax under both regimes

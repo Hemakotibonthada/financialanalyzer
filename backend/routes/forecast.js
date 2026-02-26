@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 const FinancialForecastService = require('../services/financialForecastService');
 
 // GET /api/forecast - Generate financial forecast

@@ -7,7 +7,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { AnimatedCard, StatCard, ProgressRing, Badge, Timeline, Avatar, Tooltip } from './ComponentLibrary';
 import { Sparkline, GaugeChart, EnhancedDoughnutChart, EnhancedBarChart, EnhancedLineChart } from './ChartComponents';
 import { useAnimatedCounter, useScrollReveal, useLocalStorage } from '../../hooks/useCustomHooks';
-import { formatCurrency, formatPercentage, formatDate, calculateEMI, calculateSIPFutureValue } from '../../utils/helpers';
+import { formatCurrency, formatPercentage, formatDate, calculateEMI, calculateSIP } from '../../utils/helpers';
 
 // ======================== FINANCIAL HEALTH SCORE WIDGET ========================
 // Feature #68: Comprehensive Financial Health Score

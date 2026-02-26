@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 const AchievementService = require('../services/achievementService');
 
 // GET /api/achievements/profile - Get user gamification profile

@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 const RiskAssessmentService = require('../services/riskAssessmentService');
 
 // POST /api/risk-assessment/assess - Full risk assessment

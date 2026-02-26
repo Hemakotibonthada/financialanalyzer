@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate: auth } = require('../middleware/auth');
 const ReportGeneratorService = require('../services/reportGeneratorService');
 
 // GET /api/reports/templates - List report templates
