@@ -3,7 +3,7 @@ import {
   FileBarChart2, Download, FileText, Calendar, Clock, Star, StarOff, Plus,
   Filter, Search, Eye, Trash2, Mail, X, Check, ChevronDown, Settings,
   PieChart as PieChartIcon, BarChart3, TrendingUp, CreditCard, Receipt,
-  FileSpreadsheet, FilePdf, Printer, RefreshCw, ArrowRight, BookOpen, Shield
+  FileSpreadsheet, FileType as FilePdf, Printer, RefreshCw, ArrowRight, BookOpen, Shield
 } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis,

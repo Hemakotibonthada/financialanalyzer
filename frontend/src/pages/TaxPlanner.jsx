@@ -19,7 +19,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   Legend, PieChart, Pie, Cell, Tooltip as RechartsTooltip
 } from 'recharts';
-import '../../styles/animations.css';
+import '../styles/animations.css';
 
 // ============================================================
 // Feature #100: Tax Planning & Optimization Page

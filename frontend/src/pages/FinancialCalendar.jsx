@@ -4,10 +4,10 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs } from '../../components/ui/ComponentLibrary';
-import { formatCurrency, formatDate } from '../../utils/helpers';
-import api from '../../services/api';
-import '../../styles/animations.css';
+import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs } from '../components/ui/ComponentLibrary';
+import { formatCurrency, formatDate } from '../utils/helpers';
+import api from '../services/api';
+import '../styles/animations.css';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

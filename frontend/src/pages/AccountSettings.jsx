@@ -3,12 +3,12 @@
 // Feature #88: Comprehensive account settings & preferences
 // ============================================================
 
-import React, { useState, useEffect, useContext } from 'react';
-import { AnimatedCard, AnimatedTabs, Badge, Modal, Avatar } from '../../components/ui/ComponentLibrary';
-import { ThemeContext } from '../../context/ThemeContext';
-import { AuthContext } from '../../context/AuthContext';
-import { useLocalStorage } from '../../hooks/useCustomHooks';
-import '../../styles/animations.css';
+import React, { useState, useEffect } from 'react';
+import { AnimatedCard, AnimatedTabs, Badge, Modal, Avatar } from '../components/ui/ComponentLibrary';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useLocalStorage } from '../hooks/useCustomHooks';
+import '../styles/animations.css';
 
 const CURRENCIES = [
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
@@ -35,8 +35,8 @@ const FONT_SIZES = [
 ];
 
 export default function AccountSettings() {
-  const { darkMode, toggleTheme } = useContext(ThemeContext);
-  const { user } = useContext(AuthContext);
+  const { darkMode, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [showSuccess, setShowSuccess] = useState(false);
 

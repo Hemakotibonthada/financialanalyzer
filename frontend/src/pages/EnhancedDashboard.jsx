@@ -5,21 +5,21 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import api from '../../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 // UI Components
-import { AnimatedCard, StatCard, Badge, SearchInput, DateRangePicker, CommandPalette, AnimatedTabs, DropdownMenu, Modal } from '../../components/ui/ComponentLibrary';
-import { EnhancedLineChart, EnhancedBarChart, EnhancedDoughnutChart, Sparkline, GaugeChart } from '../../components/ui/ChartComponents';
-import { FinancialHealthWidget, ExpenseBreakdownWidget, IncomeExpenseWidget, GoalTrackerWidget, BillReminderWidget, InvestmentOverviewWidget, QuickActionsWidget, RecentTransactionsWidget, SubscriptionTrackerWidget, NetWorthWidget, EMICalculatorWidget, CurrencyConverterWidget, ActivityFeedWidget } from '../../components/ui/DashboardWidgets';
+import { AnimatedCard, StatCard, Badge, SearchInput, DateRangePicker, CommandPalette, AnimatedTabs, DropdownMenu, Modal } from '../components/ui/ComponentLibrary';
+import { EnhancedLineChart, EnhancedBarChart, EnhancedDoughnutChart, Sparkline, GaugeChart } from '../components/ui/ChartComponents';
+import { FinancialHealthWidget, ExpenseBreakdownWidget, IncomeExpenseWidget, GoalTrackerWidget, BillReminderWidget, InvestmentOverviewWidget, QuickActionsWidget, RecentTransactionsWidget, SubscriptionTrackerWidget, NetWorthWidget, EMICalculatorWidget, CurrencyConverterWidget, ActivityFeedWidget } from '../components/ui/DashboardWidgets';
 
 // Hooks
-import { useFetch, useLocalStorage, useKeyboardShortcut, useBreakpoint } from '../../hooks/useCustomHooks';
-import { formatCurrency, getGreeting, getFinancialQuote } from '../../utils/helpers';
+import { useFetch, useLocalStorage, useKeyboardShortcut, useBreakpoint } from '../hooks/useCustomHooks';
+import { formatCurrency, getGreeting, getFinancialQuote } from '../utils/helpers';
 
 // Import animations
-import '../../styles/animations.css';
+import '../styles/animations.css';
 
 export default function EnhancedDashboard() {
   const { user } = useAuth();

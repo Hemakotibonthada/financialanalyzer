@@ -13,7 +13,7 @@ import {
   Group, Person, Psychology, School, Savings, CreditCard,
   AccountBalance, ShowChart, Receipt, Calculate
 } from '@mui/icons-material';
-import '../../styles/animations.css';
+import '../styles/animations.css';
 
 // ============================================================
 // Feature #102: Achievements & Gamification Page

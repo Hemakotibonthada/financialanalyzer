@@ -4,9 +4,9 @@
 // ============================================================
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, Stepper, ProgressRing } from '../../components/ui/ComponentLibrary';
-import { formatCurrency, formatDate } from '../../utils/helpers';
-import '../../styles/animations.css';
+import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, Stepper, ProgressRing } from '../components/ui/ComponentLibrary';
+import { formatCurrency, formatDate } from '../utils/helpers';
+import '../styles/animations.css';
 
 const EXPORT_FORMATS = [
   { id: 'pdf', label: 'PDF', icon: '📄', description: 'Print-ready reports', color: '#EF4444' },

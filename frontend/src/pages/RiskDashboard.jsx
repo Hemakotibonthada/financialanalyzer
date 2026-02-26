@@ -18,7 +18,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Legend, Tooltip as RechartsTooltip, LineChart, Line
 } from 'recharts';
-import '../../styles/animations.css';
+import '../styles/animations.css';
 
 // ============================================================
 // Feature #101: Risk Assessment Dashboard

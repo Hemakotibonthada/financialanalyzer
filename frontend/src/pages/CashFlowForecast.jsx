@@ -18,7 +18,7 @@ import {
   XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend,
   ComposedChart, Scatter, ReferenceLine, Brush
 } from 'recharts';
-import '../../styles/animations.css';
+import '../styles/animations.css';
 
 // ============================================================
 // Feature #99: Cash Flow Forecast & Projection Page

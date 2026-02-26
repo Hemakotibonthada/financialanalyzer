@@ -4,11 +4,11 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, ProgressRing, EmptyState, Stepper, Timeline } from '../../components/ui/ComponentLibrary';
-import { EnhancedLineChart, EnhancedBarChart, GaugeChart } from '../../components/ui/ChartComponents';
-import { useLocalStorage, useAnimatedCounter } from '../../hooks/useCustomHooks';
-import { formatCurrency, formatDate } from '../../utils/helpers';
-import '../../styles/animations.css';
+import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, ProgressRing, EmptyState, Stepper, Timeline } from '../components/ui/ComponentLibrary';
+import { EnhancedLineChart, EnhancedBarChart, GaugeChart } from '../components/ui/ChartComponents';
+import { useLocalStorage, useAnimatedCounter } from '../hooks/useCustomHooks';
+import { formatCurrency, formatDate } from '../utils/helpers';
+import '../styles/animations.css';
 
 const CHALLENGE_TEMPLATES = [
   {

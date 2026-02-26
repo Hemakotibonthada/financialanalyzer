@@ -4,12 +4,12 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AnimatedCard, StatCard, Badge, Modal, DataTable, AnimatedTabs, SearchInput, EmptyState, DropdownMenu, ProgressRing } from '../../components/ui/ComponentLibrary';
-import { EnhancedDoughnutChart, EnhancedBarChart, EnhancedLineChart, Sparkline } from '../../components/ui/ChartComponents';
-import { useLocalStorage, useForm } from '../../hooks/useCustomHooks';
-import { formatCurrency, formatDate } from '../../utils/helpers';
-import api from '../../services/api';
-import '../../styles/animations.css';
+import { AnimatedCard, StatCard, Badge, Modal, DataTable, AnimatedTabs, SearchInput, EmptyState, DropdownMenu, ProgressRing } from '../components/ui/ComponentLibrary';
+import { EnhancedDoughnutChart, EnhancedBarChart, EnhancedLineChart, Sparkline } from '../components/ui/ChartComponents';
+import { useLocalStorage, useForm } from '../hooks/useCustomHooks';
+import { formatCurrency, formatDate } from '../utils/helpers';
+import api from '../services/api';
+import '../styles/animations.css';
 
 const SUBSCRIPTION_CATEGORIES = [
   { id: 'streaming', label: 'Streaming', icon: '🎬', color: '#EF4444' },

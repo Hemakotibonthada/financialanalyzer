@@ -4,13 +4,13 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
-import { AnimatedCard, StatCard, Badge, Modal, ProgressRing, Stepper, AnimatedTabs, SearchInput, DropdownMenu, Accordion, EmptyState } from '../../components/ui/ComponentLibrary';
-import { EnhancedBarChart, EnhancedDoughnutChart, EnhancedLineChart, GaugeChart, Sparkline } from '../../components/ui/ChartComponents';
-import { useScrollReveal, useAnimatedCounter, useLocalStorage, useForm } from '../../hooks/useCustomHooks';
-import { formatCurrency, formatPercentage, getCategoryIcon } from '../../utils/helpers';
-import '../../styles/animations.css';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import { AnimatedCard, StatCard, Badge, Modal, ProgressRing, Stepper, AnimatedTabs, SearchInput, DropdownMenu, Accordion, EmptyState } from '../components/ui/ComponentLibrary';
+import { EnhancedBarChart, EnhancedDoughnutChart, EnhancedLineChart, GaugeChart, Sparkline } from '../components/ui/ChartComponents';
+import { useScrollReveal, useAnimatedCounter, useLocalStorage, useForm } from '../hooks/useCustomHooks';
+import { formatCurrency, formatPercentage, getCategoryIcon } from '../utils/helpers';
+import '../styles/animations.css';
 
 const BUDGET_CATEGORIES = [
   { id: 'housing', name: 'Housing/Rent', icon: '🏠', recommended: 30, color: '#667eea' },

@@ -4,11 +4,11 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AnimatedCard, StatCard, AnimatedTabs, SearchInput, Modal, Badge, DropdownMenu } from '../../components/ui/ComponentLibrary';
-import { EnhancedLineChart, EnhancedBarChart, EnhancedDoughnutChart, FinancialRadarChart, ScatterPlot, HeatmapChart, WaterfallChart, TreemapChart, GaugeChart, ComparisonChart } from '../../components/ui/ChartComponents';
-import { formatCurrency, formatDate } from '../../utils/helpers';
-import { useLocalStorage } from '../../hooks/useCustomHooks';
-import '../../styles/animations.css';
+import { AnimatedCard, StatCard, AnimatedTabs, SearchInput, Modal, Badge, DropdownMenu } from '../components/ui/ComponentLibrary';
+import { EnhancedLineChart, EnhancedBarChart, EnhancedDoughnutChart, FinancialRadarChart, ScatterPlot, HeatmapChart, WaterfallChart, TreemapChart, GaugeChart, ComparisonChart } from '../components/ui/ChartComponents';
+import { formatCurrency, formatDate } from '../utils/helpers';
+import { useLocalStorage } from '../hooks/useCustomHooks';
+import '../styles/animations.css';
 
 const CHART_TYPES = [
   { id: 'line', label: 'Line Chart', icon: '📈', description: 'Trends over time' },

@@ -13,7 +13,7 @@ import {
   LocalAtm, Assessment, NavigateBefore, NavigateNext, Lightbulb,
   MenuBook, Quiz, VideoLibrary, Article
 } from '@mui/icons-material';
-import '../../styles/animations.css';
+import '../styles/animations.css';
 
 // ============================================================
 // Feature #98: Financial Education & Tips Page
