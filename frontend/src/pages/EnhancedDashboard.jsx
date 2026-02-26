@@ -70,10 +70,10 @@ export default function EnhancedDashboard() {
           goalsRes,
           billsRes,
         ] = await Promise.allSettled([
-          api.get('/api/financial/summary'),
-          api.get('/api/transactions?limit=10&sort=-date'),
-          api.get('/api/goals'),
-          api.get('/api/bill-reminders'),
+          api.get('/financial/summary'),
+          api.get('/transactions?limit=10&sort=-date'),
+          api.get('/goals'),
+          api.get('/bill-reminders'),
         ]);
 
         setDashboardData(prev => ({
@@ -365,7 +365,7 @@ function AddTransactionForm({ onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post('/api/transactions', {
+      await api.post('/transactions', {
         ...formData,
         amount: Number(formData.amount),
       });

@@ -54,7 +54,7 @@ export default function ReceiptScanner() {
   const fetchReceipts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/documents/scan');
+      const res = await api.get('/documents/scan');
       setReceipts(res.data?.receipts || MOCK_RECEIPTS);
     } catch {
       setReceipts(MOCK_RECEIPTS);

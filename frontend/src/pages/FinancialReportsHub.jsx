@@ -85,7 +85,7 @@ export default function FinancialReportsHub() {
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/reports');
+      const res = await api.get('/reports');
       if (res.data?.reports) setSavedReports(res.data.reports);
     } catch { /* use mock */ }
     finally { setLoading(false); }
@@ -111,7 +111,7 @@ export default function FinancialReportsHub() {
   const handleExport = useCallback(async (format) => {
     setExporting(true);
     try {
-      await api.post('/api/reports/export', { template: selectedTemplate?.id, format, dateRange });
+      await api.post('/reports/export', { template: selectedTemplate?.id, format, dateRange });
     } catch { /* simulate download */ }
     setTimeout(() => {
       setExporting(false);

@@ -71,7 +71,7 @@ export default function CurrencyConverter() {
   const fetchRates = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/currency/rates');
+      const res = await api.get('/currency/rates');
       setRates(res.data?.rates || {});
     } catch {
       const mockRates = {};

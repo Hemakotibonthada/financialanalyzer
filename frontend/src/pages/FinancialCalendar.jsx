@@ -43,9 +43,9 @@ export default function FinancialCalendar() {
       setLoading(true);
       try {
         const [transRes, billRes, emiRes] = await Promise.allSettled([
-          api.get('/api/transactions', { params: { month: month + 1, year } }),
-          api.get('/api/bill-reminders'),
-          api.get('/api/emi'),
+          api.get('/transactions', { params: { month: month + 1, year } }),
+          api.get('/bill-reminders'),
+          api.get('/emi'),
         ]);
         
         const combinedEvents = [];

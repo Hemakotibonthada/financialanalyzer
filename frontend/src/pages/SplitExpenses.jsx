@@ -65,7 +65,7 @@ export default function SplitExpenses() {
   const fetchGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/financial/splits');
+      const res = await api.get('/financial/splits');
       setGroups(res.data?.groups || MOCK_GROUPS);
     } catch {
       setGroups(MOCK_GROUPS);

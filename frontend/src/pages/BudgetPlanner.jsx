@@ -64,8 +64,8 @@ export default function BudgetPlanner() {
       setLoading(true);
       try {
         const [budgetRes, transRes] = await Promise.allSettled([
-          api.get('/api/budgets'),
-          api.get('/api/transactions/summary'),
+          api.get('/budgets'),
+          api.get('/transactions/summary'),
         ]);
         
         // Process and merge data

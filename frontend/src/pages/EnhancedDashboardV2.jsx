@@ -175,9 +175,9 @@ const EnhancedDashboardV2 = () => {
     try {
       setRefreshing(true);
       const [summaryRes, transRes, budgetRes] = await Promise.allSettled([
-        api.get('/api/financial/summary'),
-        api.get('/api/financial/transactions', { params: { limit: 10, sort: '-date' } }),
-        api.get('/api/budgets')
+        api.get('/financial/summary'),
+        api.get('/financial/transactions', { params: { limit: 10, sort: '-date' } }),
+        api.get('/budgets')
       ]);
 
       setDashboardData({

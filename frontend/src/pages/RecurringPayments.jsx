@@ -63,7 +63,7 @@ export default function RecurringPayments() {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/recurring');
+      const res = await api.get('/recurring');
       setPayments(res.data?.payments || MOCK_PAYMENTS);
     } catch {
       setPayments(MOCK_PAYMENTS);

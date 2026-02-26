@@ -76,7 +76,7 @@ export function CurrencyProvider({ children, defaultCurrency = 'INR' }) {
     setRatesLoading(true);
     try {
       // Using a free exchange-rate API (can be swapped for any provider)
-      const res = await fetch(`https://api.exchangerate-data.com/v1/latest?base=${base}`);
+      const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
       if (!res.ok) throw new Error('Failed to fetch exchange rates');
       const json = await res.json();
       const fetched = json.rates ?? json.conversion_rates ?? {};

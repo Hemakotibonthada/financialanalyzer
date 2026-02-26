@@ -48,7 +48,7 @@ export default function SubscriptionManager() {
     const fetchSubscriptions = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/api/subscriptions');
+        const res = await api.get('/subscriptions');
         const subs = res.data?.subscriptions || res.data || [];
         setSubscriptions(subs.length > 0 ? subs : generateMockSubscriptions());
       } catch {

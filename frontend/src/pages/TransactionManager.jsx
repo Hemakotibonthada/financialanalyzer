@@ -54,7 +54,7 @@ const TransactionManager = () => {
       if (amountRange.min) params.minAmount = amountRange.min;
       if (amountRange.max) params.maxAmount = amountRange.max;
 
-      const res = await api.get('/api/financial/transactions', { params });
+      const res = await api.get('/financial/transactions', { params });
       const data = res.data?.data || res.data;
       setTransactions(data?.transactions || data || []);
       setTotalPages(data?.totalPages || Math.ceil((data?.total || 0) / 20) || 1);
@@ -90,7 +90,7 @@ const TransactionManager = () => {
       if (editingTxn) {
         await api.put(`/api/financial/transactions/${editingTxn._id}`, payload);
       } else {
-        await api.post('/api/financial/transactions', payload);
+        await api.post('/financial/transactions', payload);
       }
       setShowAddModal(false);
       setEditingTxn(null);

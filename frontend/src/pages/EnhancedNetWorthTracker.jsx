@@ -105,9 +105,9 @@ const EnhancedNetWorthTracker = () => {
     try {
       setLoading(true);
       const [assetsRes, liabilitiesRes, historyRes] = await Promise.allSettled([
-        api.get('/api/networth/assets'),
-        api.get('/api/networth/liabilities'),
-        api.get('/api/networth/history'),
+        api.get('/networth/assets'),
+        api.get('/networth/liabilities'),
+        api.get('/networth/history'),
       ]);
       if (assetsRes.status === 'fulfilled') setAssets(assetsRes.value?.data?.data || assetsRes.value?.data || []);
       if (liabilitiesRes.status === 'fulfilled') setLiabilities(liabilitiesRes.value?.data?.data || liabilitiesRes.value?.data || []);
@@ -163,9 +163,9 @@ const EnhancedNetWorthTracker = () => {
     try {
       const payload = { ...newItem, value: parseFloat(newItem.value) };
       if (addType === 'asset') {
-        await api.post('/api/networth/assets', payload);
+        await api.post('/networth/assets', payload);
       } else {
-        await api.post('/api/networth/liabilities', payload);
+        await api.post('/networth/liabilities', payload);
       }
       setShowAddModal(false);
       setNewItem({ name: '', value: '', category: '', notes: '' });

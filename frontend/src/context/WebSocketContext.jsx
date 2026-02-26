@@ -15,7 +15,7 @@ export const useWebSocket = () => {
 };
 
 export const WebSocketProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [documentUpdates, setDocumentUpdates] = useState({});
@@ -50,6 +50,7 @@ export const WebSocketProvider = ({ children }) => {
 
       // Initialize socket connection
       const socketInstance = io(wsUrl, {
+        auth: { token },
         autoConnect: true,
         reconnection: true,
         reconnectionAttempts: 10,
