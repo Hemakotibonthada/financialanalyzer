@@ -205,10 +205,12 @@ const EnhancedDashboardV2 = () => {
         api.get('/budgets')
       ]);
 
+      const rawTx = transRes.status === 'fulfilled' ? (transRes.value?.data?.data?.transactions || transRes.value?.data?.transactions || transRes.value?.data?.data || []) : [];
+      const rawBudgets = budgetRes.status === 'fulfilled' ? (budgetRes.value?.data?.data?.budgets || budgetRes.value?.data?.budgets || budgetRes.value?.data?.data || []) : [];
       setDashboardData({
         summary: summaryRes.status === 'fulfilled' ? summaryRes.value?.data?.data || summaryRes.value?.data : null,
-        transactions: transRes.status === 'fulfilled' ? (transRes.value?.data?.data?.transactions || transRes.value?.data?.transactions || []) : [],
-        budgets: budgetRes.status === 'fulfilled' ? (budgetRes.value?.data?.data || budgetRes.value?.data?.budgets || []) : [],
+        transactions: Array.isArray(rawTx) ? rawTx : [],
+        budgets: Array.isArray(rawBudgets) ? rawBudgets : [],
       });
     } catch (err) {
       console.error('Dashboard fetch error:', err);
@@ -556,7 +558,7 @@ const EnhancedDashboardV2 = () => {
             </button>
           </div>
           <div className="space-y-1">
-            {(dashboardData?.transactions || []).slice(0, 6).map((t, i) => (
+            {(Array.isArray(dashboardData?.transactions) ? dashboardData.transactions : []).slice(0, 6).map((t, i) => (
               <TransactionRow key={t._id || i} transaction={t} index={i} />
             ))}
             {(!dashboardData?.transactions?.length) && (
@@ -578,7 +580,7 @@ const EnhancedDashboardV2 = () => {
             </button>
           </div>
           <div className="space-y-2">
-            {(dashboardData?.budgets || []).slice(0, 5).map((b, i) => (
+            {(Array.isArray(dashboardData?.budgets) ? dashboardData.budgets : []).slice(0, 5).map((b, i) => (
               <BudgetRing key={i} spent={b.spent || 0} budget={b.amount || b.limit || 10000} category={b.category || 'General'} color={COLORS[i % COLORS.length]} />
             ))}
             {(!dashboardData?.budgets?.length) && (
