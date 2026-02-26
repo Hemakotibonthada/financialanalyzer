@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Button, Chip, IconButton,
   TextField, InputAdornment, Select, MenuItem, FormControl, InputLabel,
   Tabs, Tab, Switch, FormControlLabel, LinearProgress, Tooltip,
   Dialog, DialogTitle, DialogContent, DialogActions, Divider,
-  ToggleButton, ToggleButtonGroup, Alert, Slider, Avatar, Paper
+  ToggleButton, ToggleButtonGroup, Alert, Slider, Avatar, Paper,
+  CircularProgress
 } from '@mui/material';
 import {
   TrendingUp, TrendingDown, Timeline, AccountBalance, Assessment,
@@ -18,65 +19,12 @@ import {
   XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend,
   ComposedChart, Scatter, ReferenceLine, Brush
 } from 'recharts';
+import api from '../services/api';
 import '../styles/animations.css';
 
 // ============================================================
 // Feature #99: Cash Flow Forecast & Projection Page
 // ============================================================
-
-// Generate mock forecast data
-const generateForecastData = (months = 12) => {
-  const data = [];
-  let balance = 250000;
-  const now = new Date();
-  
-  for (let i = 0; i < months; i++) {
-    const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const month = date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
-    
-    const baseIncome = 85000 + Math.random() * 15000;
-    const seasonalFactor = 1 + 0.1 * Math.sin((date.getMonth() / 12) * 2 * Math.PI);
-    const income = Math.round(baseIncome * seasonalFactor);
-    
-    const baseExpense = 45000 + Math.random() * 15000;
-    const expenseVariance = 1 + 0.05 * Math.cos((date.getMonth() / 12) * 2 * Math.PI);
-    const expenses = Math.round(baseExpense * expenseVariance);
-    
-    const savings = income - expenses;
-    balance += savings;
-    
-    data.push({
-      month,
-      date: date.toISOString(),
-      income,
-      expenses,
-      savings,
-      balance: Math.round(balance),
-      incomeProjected: Math.round(income * (1 + 0.05 * Math.random())),
-      expenseProjected: Math.round(expenses * (1 + 0.03 * Math.random())),
-      confidence: Math.max(60, 95 - i * 3),
-      investmentReturns: Math.round(balance * 0.01 * (0.5 + Math.random())),
-      emiPayments: 15000,
-      insurancePremiums: i % 3 === 0 ? 5000 : 0,
-      sipInvestments: 10000,
-    });
-  }
-  return data;
-};
-
-// Category-wise expense projections
-const EXPENSE_CATEGORIES = [
-  { name: 'Housing', current: 20000, projected: 21000, trend: 'up', color: '#2196F3', percentage: 28 },
-  { name: 'Food & Groceries', current: 12000, projected: 12500, trend: 'up', color: '#4CAF50', percentage: 17 },
-  { name: 'Transportation', current: 5000, projected: 4800, trend: 'down', color: '#FF9800', percentage: 7 },
-  { name: 'Utilities', current: 4000, projected: 4200, trend: 'up', color: '#9C27B0', percentage: 6 },
-  { name: 'Healthcare', current: 3000, projected: 3200, trend: 'up', color: '#F44336', percentage: 4 },
-  { name: 'Entertainment', current: 5000, projected: 4500, trend: 'down', color: '#E91E63', percentage: 7 },
-  { name: 'Shopping', current: 8000, projected: 7500, trend: 'down', color: '#00BCD4', percentage: 11 },
-  { name: 'Education', current: 3000, projected: 3000, trend: 'stable', color: '#795548', percentage: 4 },
-  { name: 'Insurance', current: 5000, projected: 5000, trend: 'stable', color: '#607060', percentage: 7 },
-  { name: 'Miscellaneous', current: 6500, projected: 6800, trend: 'up', color: '#9E9E9E', percentage: 9 },
-];
 
 // Scenario templates
 const SCENARIOS = [
@@ -86,13 +34,10 @@ const SCENARIOS = [
   { id: 'pessimistic', name: 'Pessimistic', incomeGrowth: 2, expenseGrowth: 12, color: '#F44336', icon: '⚠️' },
 ];
 
-// Financial milestones
-const MILESTONES = [
-  { label: 'Emergency Fund (6 months)', target: 420000, current: 380000, date: 'Feb 2025', status: 'on-track' },
-  { label: 'Down Payment for House', target: 1500000, current: 850000, date: 'Dec 2025', status: 'on-track' },
-  { label: 'Car Purchase Fund', target: 800000, current: 320000, date: 'Jun 2026', status: 'at-risk' },
-  { label: 'Retirement Corpus (1 Cr)', target: 10000000, current: 2500000, date: 'Mar 2045', status: 'on-track' },
-  { label: 'Education Fund', target: 2000000, current: 150000, date: 'Jul 2035', status: 'behind' },
+const CATEGORY_COLORS = [
+  '#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336',
+  '#E91E63', '#00BCD4', '#795548', '#607060', '#9E9E9E',
+  '#3F51B5', '#009688', '#CDDC39', '#FF5722',
 ];
 
 const CashFlowForecast = () => {
@@ -107,17 +52,121 @@ const CashFlowForecast = () => {
   const [scenarioDialogOpen, setScenarioDialogOpen] = useState(false);
   const [customScenario, setCustomScenario] = useState({ name: '', incomeGrowth: 10, expenseGrowth: 6 });
 
-  const forecastData = useMemo(() => generateForecastData(forecastMonths), [forecastMonths]);
+  const [forecastData, setForecastData] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [milestones, setMilestones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [cashflowRes, expensesRes] = await Promise.all([
+          api.get(`/forecast/cashflow?months=${forecastMonths}`),
+          api.get(`/forecast/expenses?months=${forecastMonths}`),
+        ]);
+
+        // Map cashflow projection to chart-friendly format
+        if (cashflowRes.data?.success && cashflowRes.data.cashFlowProjection) {
+          const projection = cashflowRes.data.cashFlowProjection;
+          let runningBalance = 0;
+          const mapped = projection.map((item) => {
+            runningBalance += item.savings;
+            const conf = item.confidence != null ? item.confidence : 0.8;
+            return {
+              month: item.monthName,
+              date: item.month,
+              income: item.income,
+              expenses: item.expense,
+              savings: item.savings,
+              balance: item.runningBalance ?? runningBalance,
+              incomeProjected: Math.round(item.income * (1 + (1 - conf) * 0.5)),
+              expenseProjected: Math.round(item.expense * (1 + (1 - conf) * 0.3)),
+              confidence: Math.round(conf * 100),
+              investmentReturns: 0,
+              emiPayments: 0,
+              insurancePremiums: 0,
+              sipInvestments: 0,
+            };
+          });
+          setForecastData(mapped);
+        } else {
+          setForecastData([]);
+        }
+
+        // Map milestones from API
+        if (cashflowRes.data?.milestones && cashflowRes.data.milestones.length > 0) {
+          const totalSavings = cashflowRes.data.summary?.totalProjectedSavings || 0;
+          setMilestones(cashflowRes.data.milestones.map((m) => ({
+            label: `Savings Target: ${m.label}`,
+            target: m.target,
+            current: Math.min(totalSavings, m.target),
+            date: m.date,
+            status: totalSavings >= m.target ? 'on-track' : totalSavings >= m.target * 0.5 ? 'at-risk' : 'behind',
+          })));
+        } else {
+          setMilestones([]);
+        }
+
+        // Map expense categories from API
+        if (expensesRes.data?.success && expensesRes.data.categoryForecasts) {
+          const forecasts = expensesRes.data.categoryForecasts;
+          const totalExp = expensesRes.data.totalProjectedExpense || 1;
+          setExpenseCategories(
+            Object.entries(forecasts).map(([name, data], idx) => {
+              const current = data.average || 0;
+              const projected = data.forecast?.length > 0
+                ? data.forecast[data.forecast.length - 1].amount
+                : current;
+              return {
+                name,
+                current,
+                projected,
+                trend: data.trend || 'stable',
+                color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+                percentage: Math.round((data.projectedTotal / totalExp) * 100),
+              };
+            })
+          );
+        } else {
+          setExpenseCategories([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch forecast data:', err);
+        setForecastData([]);
+        setExpenseCategories([]);
+        setMilestones([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [forecastMonths, refreshKey]);
 
   const totals = useMemo(() => {
+    if (forecastData.length === 0) {
+      return { totalIncome: 0, totalExpenses: 0, totalSavings: 0, avgSavingsRate: '0', endBalance: 0, startBalance: 0, growthRate: '0' };
+    }
     const totalIncome = forecastData.reduce((s, d) => s + d.income, 0);
     const totalExpenses = forecastData.reduce((s, d) => s + d.expenses, 0);
     const totalSavings = forecastData.reduce((s, d) => s + d.savings, 0);
-    const avgSavingsRate = ((totalSavings / totalIncome) * 100).toFixed(1);
+    const avgSavingsRate = totalIncome > 0 ? ((totalSavings / totalIncome) * 100).toFixed(1) : '0';
     const endBalance = forecastData[forecastData.length - 1]?.balance || 0;
-    const startBalance = forecastData[0]?.balance - forecastData[0].savings || 250000;
-    const growthRate = (((endBalance - startBalance) / startBalance) * 100).toFixed(1);
+    const startBalance = (forecastData[0]?.balance || 0) - (forecastData[0]?.savings || 0);
+    const growthRate = startBalance > 0 ? (((endBalance - startBalance) / startBalance) * 100).toFixed(1) : '0';
     return { totalIncome, totalExpenses, totalSavings, avgSavingsRate, endBalance, startBalance, growthRate };
+  }, [forecastData]);
+
+  const avgMonthlyIncome = useMemo(() => {
+    if (forecastData.length === 0) return 0;
+    return Math.round(forecastData.reduce((s, d) => s + d.income, 0) / forecastData.length);
+  }, [forecastData]);
+
+  const avgMonthlyExpense = useMemo(() => {
+    if (forecastData.length === 0) return 0;
+    return Math.round(forecastData.reduce((s, d) => s + d.expenses, 0) / forecastData.length);
   }, [forecastData]);
 
   const formatCurrency = (val) => {
@@ -163,9 +212,21 @@ const CashFlowForecast = () => {
             </Select>
           </FormControl>
           <Button variant="outlined" startIcon={<Download />}>Export</Button>
-          <Button variant="outlined" startIcon={<Refresh />}>Refresh</Button>
+          <Button variant="outlined" startIcon={<Refresh />} onClick={() => setRefreshKey(k => k + 1)}>Refresh</Button>
         </Box>
       </Box>
+
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <CircularProgress size={48} />
+          <Typography sx={{ ml: 2 }} color="text.secondary">Loading forecast data...</Typography>
+        </Box>
+      )}
+
+      {!loading && forecastData.length === 0 && (
+        <Alert severity="info" sx={{ mb: 3 }}>No forecast data available. Add transactions to generate projections.</Alert>
+      )}
 
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -393,8 +454,8 @@ const CashFlowForecast = () => {
                     { label: '3 Year Projection', months: 36 },
                     { label: '5 Year Projection', months: 60 },
                   ].map((period, idx) => {
-                    const monthlyIncome = 85000;
-                    const monthlyExpense = 55000;
+                    const monthlyIncome = avgMonthlyIncome;
+                    const monthlyExpense = avgMonthlyExpense;
                     const yearlyFactor = period.months / 12;
                     const projIncome = monthlyIncome * 12 * yearlyFactor * (1 + incomeGrowth / 200);
                     const projExpense = monthlyExpense * 12 * yearlyFactor * (1 + expenseGrowth / 200);
@@ -457,7 +518,7 @@ const CashFlowForecast = () => {
       {activeTab === 2 && (
         <Box>
           <Grid container spacing={2}>
-            {EXPENSE_CATEGORIES.map((cat, idx) => (
+            {expenseCategories.map((cat, idx) => (
               <Grid item xs={12} sm={6} md={4} key={idx}>
                 <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
                   <CardContent>
@@ -515,7 +576,7 @@ const CashFlowForecast = () => {
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Expense Category Summary</Typography>
               <ResponsiveContainer width="100%" height={350}>
-                <ComposedChart data={EXPENSE_CATEGORIES} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <ComposedChart data={expenseCategories} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} />
                   <YAxis tickFormatter={(v) => `₹${v / 1000}K`} />
@@ -534,7 +595,7 @@ const CashFlowForecast = () => {
       {activeTab === 3 && (
         <Box>
           <Grid container spacing={3}>
-            {MILESTONES.map((milestone, idx) => {
+            {milestones.map((milestone, idx) => {
               const progress = (milestone.current / milestone.target) * 100;
               return (
                 <Grid item xs={12} md={6} key={idx}>

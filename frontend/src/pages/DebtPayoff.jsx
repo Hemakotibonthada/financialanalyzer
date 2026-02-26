@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer, LineChart, Line
@@ -16,14 +16,8 @@ const fmt = (n) => {
   return `₹${n.toLocaleString('en-IN')}`;
 };
 
-const initialDebts = [
-  { id: 1, name: 'Home Loan', balance: 2500000, rate: 8.5, minPayment: 25000, type: 'Secured' },
-  { id: 2, name: 'Car Loan', balance: 450000, rate: 9.5, minPayment: 12000, type: 'Secured' },
-  { id: 3, name: 'Personal Loan', balance: 300000, rate: 14.0, minPayment: 10000, type: 'Unsecured' },
-  { id: 4, name: 'Credit Card 1', balance: 85000, rate: 36.0, minPayment: 4250, type: 'Revolving' },
-  { id: 5, name: 'Credit Card 2', balance: 42000, rate: 42.0, minPayment: 2100, type: 'Revolving' },
-  { id: 6, name: 'Education Loan', balance: 180000, rate: 7.5, minPayment: 5000, type: 'Unsecured' },
-];
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 function calcPayoff(debts, extraPayment, strategy) {
   let sorted = [...debts].map(d => ({ ...d, remaining: d.balance }));
@@ -61,11 +55,13 @@ function calcPayoff(debts, extraPayment, strategy) {
 }
 
 export default function DebtPayoff() {
-  const [debts, setDebts] = useState(initialDebts);
+  const [debts, setDebts] = useState(() => loadLocal('fa_debts'));
   const [extraPayment, setExtraPayment] = useState(5000);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDebt, setNewDebt] = useState({ name: '', balance: '', rate: '', minPayment: '', type: 'Unsecured' });
   const [selectedStrategy, setSelectedStrategy] = useState('avalanche');
+
+  useEffect(() => { saveLocal('fa_debts', debts); }, [debts]);
 
   const totalDebt = useMemo(() => debts.reduce((s, d) => s + d.balance, 0), [debts]);
   const totalMinPayment = useMemo(() => debts.reduce((s, d) => s + d.minPayment, 0), [debts]);
@@ -192,6 +188,9 @@ export default function DebtPayoff() {
               </tr>
             </thead>
             <tbody>
+              {debts.length === 0 && (
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">No debts added yet. Click &quot;Add Debt&quot; to get started.</td></tr>
+              )}
               {debts.sort((a, b) => b.rate - a.rate).map((d) => (
                 <tr key={d.id} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
                   <td className="py-3 px-4 text-slate-800 dark:text-white font-medium">{d.name}</td>

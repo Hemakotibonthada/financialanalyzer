@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend,
@@ -10,82 +10,71 @@ import {
   Zap, DollarSign, PiggyBank, Briefcase, Heart, Lock,
   Calendar, ExternalLink, Info
 } from 'lucide-react';
+import api from '../services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
-const categoryScores = [
-  { category: 'Savings', score: 82, maxScore: 100, icon: PiggyBank, color: '#3B82F6', trend: 5, tips: ['Increase emergency fund to 6 months', 'Set up auto-transfer to savings'] },
-  { category: 'Investments', score: 68, maxScore: 100, icon: TrendingUp, color: '#10B981', trend: 3, tips: ['Diversify into international funds', 'Start SIP in debt fund for stability'] },
-  { category: 'Debt', score: 75, maxScore: 100, icon: DollarSign, color: '#F59E0B', trend: -2, tips: ['Pay off credit card first (highest interest)', 'Consider balance transfer'] },
-  { category: 'Insurance', score: 55, maxScore: 100, icon: Shield, color: '#EF4444', trend: 0, tips: ['Get term life insurance ASAP', 'Increase health cover to ₹10L minimum'] },
-  { category: 'Tax', score: 88, maxScore: 100, icon: Briefcase, color: '#8B5CF6', trend: 8, tips: ['Claim HRA exemption if renting', 'Invest remaining ₹35K in ELSS'] },
-  { category: 'Budgeting', score: 72, maxScore: 100, icon: Target, color: '#EC4899', trend: 1, tips: ['Reduce dining-out expenses by 20%', 'Track subscriptions monthly'] },
-];
-
-const scoreTrend = [
-  { month: 'Sep', score: 62 }, { month: 'Oct', score: 65 }, { month: 'Nov', score: 68 },
-  { month: 'Dec', score: 70 }, { month: 'Jan', score: 72 }, { month: 'Feb', score: 75 },
-];
-
-const radarData = categoryScores.map(c => ({ subject: c.category, You: c.score, Peers: Math.min(c.score + Math.round((Math.random() - 0.5) * 20), 100) }));
-
-const peerComparison = [
-  { metric: 'Overall Score', you: 75, peerAvg: 68, percentile: 72 },
-  { metric: 'Savings Rate', you: 28, peerAvg: 22, percentile: 78 },
-  { metric: 'Debt-to-Income', you: 15, peerAvg: 25, percentile: 82 },
-  { metric: 'Investment Returns', you: 14, peerAvg: 12, percentile: 65 },
-  { metric: 'Insurance Score', you: 55, peerAvg: 50, percentile: 55 },
-  { metric: 'Tax Efficiency', you: 88, peerAvg: 72, percentile: 88 },
-];
-
-const badges = [
-  { name: 'Budget Master', desc: 'Stayed within budget for 3 months', icon: '🎯', earned: true, date: 'Jan 2026' },
-  { name: 'Savings Star', desc: 'Saved 25%+ of income', icon: '⭐', earned: true, date: 'Feb 2026' },
-  { name: 'Debt Slayer', desc: 'Paid off a loan early', icon: '⚔️', earned: true, date: 'Dec 2025' },
-  { name: 'Tax Genius', desc: 'Maximized all deductions', icon: '🧠', earned: false, progress: 85 },
-  { name: 'Investor Pro', desc: '10+ SIPs active', icon: '📈', earned: false, progress: 60 },
-  { name: 'Insured & Secure', desc: 'Complete insurance coverage', icon: '🛡️', earned: false, progress: 40 },
-  { name: 'Emergency Ready', desc: '6 months emergency fund', icon: '🏦', earned: false, progress: 70 },
-  { name: 'Net Worth ₹1Cr', desc: 'Reached ₹1 crore net worth', icon: '💎', earned: false, progress: 35 },
-];
-
-const monthlyHistory = [
-  { month: 'Sep 2025', overall: 62, savings: 70, investment: 55, debt: 65, insurance: 50, tax: 75 },
-  { month: 'Oct 2025', overall: 65, savings: 73, investment: 58, debt: 68, insurance: 50, tax: 78 },
-  { month: 'Nov 2025', overall: 68, savings: 76, investment: 62, debt: 70, insurance: 52, tax: 82 },
-  { month: 'Dec 2025', overall: 70, savings: 78, investment: 65, debt: 72, insurance: 53, tax: 85 },
-  { month: 'Jan 2026', overall: 72, savings: 80, investment: 66, debt: 74, insurance: 54, tax: 86 },
-  { month: 'Feb 2026', overall: 75, savings: 82, investment: 68, debt: 75, insurance: 55, tax: 88 },
-];
-
-const recommendations = [
-  { title: 'Get Term Life Insurance', impact: 15, priority: 'High', category: 'Insurance', desc: 'A ₹1Cr term plan costs just ₹800/mo at your age. This alone can boost your score by 15 points.' },
-  { title: 'Increase Health Cover', impact: 10, priority: 'High', category: 'Insurance', desc: 'Upgrade from ₹3L to ₹10L health insurance. Super top-up is affordable.' },
-  { title: 'Start International SIP', impact: 8, priority: 'Medium', category: 'Investments', desc: 'Allocate 10-15% to international equity for diversification.' },
-  { title: 'Emergency Fund Top-up', impact: 7, priority: 'Medium', category: 'Savings', desc: 'Add ₹50K more to reach 6-month expense coverage.' },
-  { title: 'Reduce Dining Expenses', impact: 5, priority: 'Low', category: 'Budgeting', desc: 'Cut dining out by 20% to save ₹3K/month more.' },
-  { title: 'Max Out 80C Limit', impact: 4, priority: 'Low', category: 'Tax', desc: 'Invest remaining ₹35K in ELSS before March.' },
-];
-
-const tips = [
-  'Automate your investments — set SIPs on salary day',
-  'Review insurance annually — life changes need coverage updates',
-  'Keep debt-to-income ratio under 30%',
-  'Build 6 months of expenses in emergency fund',
-  'Diversify across at least 3 asset classes',
-  'File taxes early to avoid last-minute mistakes',
-];
+const CATEGORY_ICONS = {
+  Savings: PiggyBank, Investments: TrendingUp, Debt: DollarSign,
+  Insurance: Shield, Tax: Briefcase, Budgeting: Target,
+};
 
 export default function FinancialScorecard() {
+  const [loading, setLoading] = useState(true);
+  const [scoreData, setScoreData] = useState({
+    categoryScores: [],
+    scoreTrend: [],
+    peerComparison: [],
+    badges: [],
+    monthlyHistory: [],
+    recommendations: [],
+    tips: ['Loading financial tips...'],
+  });
   const [animatedScore, setAnimatedScore] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [expandedRec, setExpandedRec] = useState(null);
   const [tipIndex, setTipIndex] = useState(0);
 
-  const overallScore = useMemo(() => Math.round(categoryScores.reduce((s, c) => s + c.score, 0) / categoryScores.length), []);
-  const totalImpact = useMemo(() => recommendations.reduce((s, r) => s + r.impact, 0), []);
-  const earnedBadges = useMemo(() => badges.filter(b => b.earned).length, []);
+  const { categoryScores, scoreTrend, peerComparison, badges, monthlyHistory, recommendations, tips } = scoreData;
+
+  const radarData = useMemo(() =>
+    categoryScores.map(c => ({ subject: c.category, You: c.score, Peers: c.peerScore ?? c.score })),
+    [categoryScores]
+  );
+
+  // Attach icons to categoryScores for rendering
+  const categoryScoresWithIcons = useMemo(() =>
+    categoryScores.map(c => ({ ...c, icon: CATEGORY_ICONS[c.category] || Target })),
+    [categoryScores]
+  );
+
+  const fetchScoreData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/analytics/health-score');
+      const data = res.data || {};
+      setScoreData({
+        categoryScores: data.categoryScores || [],
+        scoreTrend: data.scoreTrend || [],
+        peerComparison: data.peerComparison || [],
+        badges: data.badges || [],
+        monthlyHistory: data.monthlyHistory || [],
+        recommendations: data.recommendations || [],
+        tips: data.tips?.length ? data.tips : ['No tips available yet'],
+      });
+    } catch (err) {
+      console.error('Failed to load scorecard:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchScoreData(); }, [fetchScoreData]);
+
+  const overallScore = useMemo(() => categoryScores.length ? Math.round(categoryScores.reduce((s, c) => s + c.score, 0) / categoryScores.length) : 0, [categoryScores]);
+  const totalImpact = useMemo(() => recommendations.reduce((s, r) => s + r.impact, 0), [recommendations]);
+  const earnedBadges = useMemo(() => badges.filter(b => b.earned).length, [badges]);
 
   useEffect(() => {
     let frame;
@@ -117,6 +106,17 @@ export default function FinancialScorecard() {
 
   const gaugeAngle = (animatedScore / 100) * 270;
   const gaugeColor = animatedScore >= 80 ? '#10B981' : animatedScore >= 60 ? '#F59E0B' : '#EF4444';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">Loading financial scorecard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const describeArc = (x, y, r, startAngle, endAngle) => {
     const rad = (a) => ((a - 135) * Math.PI) / 180;
@@ -175,12 +175,14 @@ export default function FinancialScorecard() {
         </div>
 
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {categoryScores.map((c, i) => (
+          {categoryScoresWithIcons.map((c, i) => {
+            const IconComp = c.icon;
+            return (
             <button key={i} onClick={() => setSelectedCategory(selectedCategory === i ? null : i)}
               className={`bg-white dark:bg-slate-800 rounded-2xl p-4 border shadow-sm text-left transition-all ${selectedCategory === i ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-900' : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'}`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: c.color + '20' }}>
-                  <c.icon className="w-4 h-4" style={{ color: c.color }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: (c.color || '#64748b') + '20' }}>
+                  <IconComp className="w-4 h-4" style={{ color: c.color || '#64748b' }} />
                 </div>
                 <span className="text-sm font-medium text-slate-800 dark:text-white">{c.category}</span>
               </div>
@@ -196,7 +198,7 @@ export default function FinancialScorecard() {
               </div>
               {selectedCategory === i && (
                 <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 space-y-1">
-                  {c.tips.map((tip, j) => (
+                  {(c.tips || []).map((tip, j) => (
                     <p key={j} className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1">
                       <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" /> {tip}
                     </p>
@@ -204,7 +206,8 @@ export default function FinancialScorecard() {
                 </div>
               )}
             </button>
-          ))}
+          );
+          })}
         </div>
       </div>
 

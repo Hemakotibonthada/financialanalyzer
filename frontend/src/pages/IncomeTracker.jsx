@@ -33,25 +33,6 @@ const SOURCE_COLORS = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const MOCK_INCOME = [
-  { id: 1, source: 'salary', name: 'TechCorp Salary', amount: 120000, date: '2026-02-01', recurring: true, frequency: 'Monthly' },
-  { id: 2, source: 'freelance', name: 'Web Development Project', amount: 35000, date: '2026-02-10', recurring: false },
-  { id: 3, source: 'investment', name: 'Mutual Fund Returns', amount: 8500, date: '2026-02-15', recurring: true, frequency: 'Monthly' },
-  { id: 4, source: 'rental', name: 'Apartment Rental', amount: 22000, date: '2026-02-01', recurring: true, frequency: 'Monthly' },
-  { id: 5, source: 'dividend', name: 'Stock Dividends', amount: 4200, date: '2026-01-25', recurring: false },
-  { id: 6, source: 'freelance', name: 'UI Design Work', amount: 18000, date: '2026-01-18', recurring: false },
-  { id: 7, source: 'salary', name: 'TechCorp Salary', amount: 120000, date: '2026-01-01', recurring: true, frequency: 'Monthly' },
-  { id: 8, source: 'bonus', name: 'Q4 Performance Bonus', amount: 50000, date: '2026-01-15', recurring: false },
-  { id: 9, source: 'investment', name: 'FD Interest', amount: 12000, date: '2026-01-20', recurring: true, frequency: 'Quarterly' },
-  { id: 10, source: 'business', name: 'Consulting Revenue', amount: 45000, date: '2026-02-05', recurring: false },
-];
-
-const MONTHLY_TREND = MONTHS.map((m, i) => ({
-  month: m,
-  income: 150000 + Math.floor(Math.random() * 60000),
-  lastYear: 130000 + Math.floor(Math.random() * 40000),
-}));
-
 const TAX_SLABS = [
   { min: 0, max: 300000, rate: 0 },
   { min: 300000, max: 700000, rate: 5 },
@@ -75,9 +56,9 @@ export default function IncomeTracker() {
     setLoading(true);
     try {
       const res = await api.get('/financial/income');
-      setIncomes(res.data?.incomes || MOCK_INCOME);
+      setIncomes(res.data?.incomes || res.data || []);
     } catch {
-      setIncomes(MOCK_INCOME);
+      setIncomes([]);
     } finally {
       setLoading(false);
     }
@@ -114,6 +95,20 @@ export default function IncomeTracker() {
       color: SOURCE_COLORS[source] || '#64748b',
     }));
   }, [incomes]);
+
+  const monthlyTrend = useMemo(() => {
+    return MONTHS.map((m, i) => {
+      const thisYear = incomes.filter(inc => {
+        const d = new Date(inc.date);
+        return d.getMonth() === i && d.getFullYear() === selectedYear;
+      }).reduce((s, inc) => s + inc.amount, 0);
+      const lastYear = incomes.filter(inc => {
+        const d = new Date(inc.date);
+        return d.getMonth() === i && d.getFullYear() === selectedYear - 1;
+      }).reduce((s, inc) => s + inc.amount, 0);
+      return { month: m, income: thisYear, lastYear };
+    });
+  }, [incomes, selectedYear]);
 
   const filteredIncomes = useMemo(() => {
     return incomes.filter(i => filterSource === 'all' || i.source === filterSource)
@@ -231,7 +226,7 @@ export default function IncomeTracker() {
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={MONTHLY_TREND}>
+              <BarChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                 <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} />
@@ -280,7 +275,7 @@ export default function IncomeTracker() {
         </h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={MONTHLY_TREND}>
+            <LineChart data={monthlyTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} />
               <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} />

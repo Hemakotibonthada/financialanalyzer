@@ -1,103 +1,147 @@
-// ============================================================
-// Financial Analyzer - Financial Calendar Page
-// Feature #84: Interactive Financial Calendar with events
-// ============================================================
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs } from '../components/ui/ComponentLibrary';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import {
+  ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, DollarSign,
+  CreditCard, TrendingUp, Bell, Check, Clock, Tag, Edit2, Trash2, Repeat,
+  AlertTriangle
+} from 'lucide-react';
 import api from '../services/api';
-import '../styles/animations.css';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const EVENT_TYPES = [
+  { id: 'income', label: 'Income', color: '#10b981', icon: TrendingUp },
+  { id: 'expense', label: 'Expense', color: '#ef4444', icon: DollarSign },
+  { id: 'bill', label: 'Bill Due', color: '#f59e0b', icon: Bell },
+  { id: 'emi', label: 'EMI', color: '#6366f1', icon: CreditCard },
+  { id: 'subscription', label: 'Subscription', color: '#8b5cf6', icon: Repeat },
+  { id: 'reminder', label: 'Reminder', color: '#06b6d4', icon: Clock },
+];
 
-const EVENT_TYPES = {
-  income: { label: 'Income', color: '#10B981', icon: '💰', bg: 'bg-green-100 dark:bg-green-900/30' },
-  expense: { label: 'Expense', color: '#EF4444', icon: '💸', bg: 'bg-red-100 dark:bg-red-900/30' },
-  bill: { label: 'Bill Due', color: '#F59E0B', icon: '📋', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
-  emi: { label: 'EMI', color: '#8B5CF6', icon: '🏦', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-  investment: { label: 'Investment', color: '#3B82F6', icon: '📈', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  subscription: { label: 'Subscription', color: '#EC4899', icon: '🔄', bg: 'bg-pink-100 dark:bg-pink-900/30' },
-  goal: { label: 'Goal Deadline', color: '#14B8A6', icon: '🎯', bg: 'bg-teal-100 dark:bg-teal-900/30' },
-  reminder: { label: 'Reminder', color: '#6366F1', icon: '⏰', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
-  salary: { label: 'Salary', color: '#059669', icon: '💵', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
-  tax: { label: 'Tax', color: '#DC2626', icon: '🏛️', bg: 'bg-red-100 dark:bg-red-900/30' },
+const EventForm = ({ event, onSave, onCancel }) => {
+  const [form, setForm] = useState(event || {
+    title: '', type: 'expense', amount: '', date: new Date().toISOString().split('T')[0],
+    recurring: false, recurrence: 'monthly', notes: '',
+  });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({ ...form, amount: parseFloat(form.amount) || 0 });
+  };
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
+        <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required
+          className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
+          <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm">
+            {EVENT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount (₹)</label>
+          <input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date</label>
+          <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div className="flex items-end">
+          <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+            <input type="checkbox" checked={form.recurring} onChange={e => setForm({ ...form, recurring: e.target.checked })} className="rounded" />
+            Recurring
+          </label>
+        </div>
+      </div>
+      {form.recurring && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Recurrence</label>
+          <select value={form.recurrence} onChange={e => setForm({ ...form, recurrence: e.target.value })}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+      )}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
+        <textarea value={form.notes || ''} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2}
+          className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-sm resize-none outline-none" />
+      </div>
+      <div className="flex gap-3 justify-end pt-2">
+        <button type="button" onClick={onCancel} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium">Cancel</button>
+        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Save</button>
+      </div>
+    </form>
+  );
 };
 
 export default function FinancialCalendar() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [events, setEvents] = useState([]);
-  const [viewMode, setViewMode] = useState('month');
-  const [filterType, setFilterType] = useState('all');
-  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Load events
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [transRes, billRes, emiRes] = await Promise.allSettled([
-          api.get('/transactions', { params: { month: month + 1, year } }),
-          api.get('/bill-reminders'),
-          api.get('/emi'),
+        const startDate = new Date(year, month, 1).toISOString();
+        const endDate = new Date(year, month + 1, 0).toISOString();
+        const [txRes, billRes, emiRes] = await Promise.all([
+          api.get('/transactions', { params: { startDate, endDate, limit: 500 } }).catch(() => ({ data: [] })),
+          api.get('/bill-reminders').catch(() => ({ data: [] })),
+          api.get('/emi').catch(() => ({ data: [] })),
         ]);
-        
-        const combinedEvents = [];
-        
-        // Transform transactions to events
-        if (transRes.status === 'fulfilled') {
-          const transactions = transRes.value.data?.transactions || transRes.value.data || [];
-          transactions.forEach(t => {
-            combinedEvents.push({
-              id: t._id || t.id,
-              title: t.description || t.category,
-              date: t.date,
-              amount: t.amount,
-              type: t.type === 'income' ? 'income' : 'expense',
-              category: t.category,
-            });
-          });
-        }
-        
-        // Transform bills to events
-        if (billRes.status === 'fulfilled') {
-          const bills = billRes.value.data?.bills || billRes.value.data || [];
-          bills.forEach(b => {
-            combinedEvents.push({
-              id: b._id || b.id,
-              title: b.name || b.title,
-              date: b.dueDate || b.nextDueDate,
-              amount: b.amount,
-              type: 'bill',
-              category: b.category,
-            });
-          });
-        }
 
-        // Transform EMIs to events
-        if (emiRes.status === 'fulfilled') {
-          const emis = emiRes.value.data?.emis || emiRes.value.data || [];
-          emis.forEach(e => {
-            combinedEvents.push({
-              id: e._id || e.id,
-              title: e.name || e.loanName,
-              date: e.nextPaymentDate || e.dueDate,
-              amount: e.monthlyEMI || e.amount,
-              type: 'emi',
-              category: 'EMI',
-            });
-          });
-        }
+        const txns = (txRes.data?.transactions || txRes.data || []).map(t => ({
+          id: t._id || t.id,
+          title: t.description || t.name || 'Transaction',
+          amount: t.amount || 0,
+          date: t.date,
+          type: t.type === 'income' ? 'income' : 'expense',
+          source: 'transaction',
+        }));
 
-        setEvents(combinedEvents.length > 0 ? combinedEvents : generateMockEvents(year, month));
-      } catch {
-        setEvents(generateMockEvents(year, month));
+        const bills = (billRes.data?.reminders || billRes.data || []).map(b => ({
+          id: b._id || b.id,
+          title: b.name || b.title || 'Bill',
+          amount: b.amount || 0,
+          date: b.dueDate || b.date,
+          type: 'bill',
+          recurring: b.recurring || false,
+          source: 'bill',
+        }));
+
+        const emis = (emiRes.data?.emis || emiRes.data || []).map(e => ({
+          id: e._id || e.id,
+          title: e.name || e.loanName || 'EMI',
+          amount: e.emiAmount || e.amount || 0,
+          date: e.nextDueDate || e.dueDate || e.date,
+          type: 'emi',
+          source: 'emi',
+        }));
+
+        setEvents([...txns, ...bills, ...emis]);
+      } catch (err) {
+        console.error('Error fetching calendar events:', err);
+        setError('Failed to load calendar events.');
+        setEvents([]);
       } finally {
         setLoading(false);
       }
@@ -105,592 +149,269 @@ export default function FinancialCalendar() {
     fetchEvents();
   }, [year, month]);
 
-  // Calendar grid data
-  const calendarData = useMemo(() => {
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startOffset = firstDay.getDay();
-    const daysInMonth = lastDay.getDate();
-    const prevMonthDays = new Date(year, month, 0).getDate();
-
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
     const days = [];
 
-    // Previous month days
-    for (let i = startOffset - 1; i >= 0; i--) {
-      days.push({
-        date: new Date(year, month - 1, prevMonthDays - i),
-        day: prevMonthDays - i,
-        isCurrentMonth: false,
-        isPast: true,
-      });
+    for (let i = firstDay - 1; i >= 0; i--) {
+      days.push({ day: daysInPrevMonth - i, isCurrentMonth: false, date: null });
     }
-
-    // Current month days
-    const today = new Date();
-    for (let i = 1; i <= daysInMonth; i++) {
-      const date = new Date(year, month, i);
-      days.push({
-        date,
-        day: i,
-        isCurrentMonth: true,
-        isToday: date.toDateString() === today.toDateString(),
-        isPast: date < today && date.toDateString() !== today.toDateString(),
-        isFuture: date > today,
-      });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      days.push({ day: d, isCurrentMonth: true, date: dateStr });
     }
-
-    // Next month days
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
-      days.push({
-        date: new Date(year, month + 1, i),
-        day: i,
-        isCurrentMonth: false,
-        isFuture: true,
-      });
+      days.push({ day: i, isCurrentMonth: false, date: null });
     }
-
     return days;
   }, [year, month]);
 
-  // Events for each day
   const eventsByDate = useMemo(() => {
     const map = {};
-    events.forEach(event => {
-      if (!event.date) return;
-      const dateStr = new Date(event.date).toDateString();
-      if (!map[dateStr]) map[dateStr] = [];
-      if (filterType === 'all' || event.type === filterType) {
-        map[dateStr].push(event);
-      }
+    events.forEach(evt => {
+      if (!evt.date) return;
+      const d = new Date(evt.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!map[key]) map[key] = [];
+      map[key].push(evt);
     });
     return map;
-  }, [events, filterType]);
+  }, [events]);
 
-  // Monthly summary
-  const monthlySummary = useMemo(() => {
-    const monthEvents = events.filter(e => {
-      if (!e.date) return false;
-      const d = new Date(e.date);
-      return d.getMonth() === month && d.getFullYear() === year;
-    });
-
-    const income = monthEvents.filter(e => e.type === 'income' || e.type === 'salary').reduce((s, e) => s + (e.amount || 0), 0);
-    const expenses = monthEvents.filter(e => e.type === 'expense').reduce((s, e) => s + (e.amount || 0), 0);
-    const bills = monthEvents.filter(e => e.type === 'bill').reduce((s, e) => s + (e.amount || 0), 0);
-    const emis = monthEvents.filter(e => e.type === 'emi').reduce((s, e) => s + (e.amount || 0), 0);
-
-    return { income, expenses, bills, emis, total: income - expenses - bills - emis, eventCount: monthEvents.length };
-  }, [events, month, year]);
-
-  // Selected day events
-  const selectedDayEvents = useMemo(() => {
+  const selectedDateEvents = useMemo(() => {
     if (!selectedDate) return [];
-    return eventsByDate[selectedDate.toDateString()] || [];
+    return eventsByDate[selectedDate] || [];
   }, [selectedDate, eventsByDate]);
 
-  // Navigation
-  const navigate = (direction) => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (viewMode === 'month') newDate.setMonth(newDate.getMonth() + direction);
-      else if (viewMode === 'week') newDate.setDate(newDate.getDate() + (7 * direction));
-      else newDate.setFullYear(newDate.getFullYear() + direction);
-      return newDate;
-    });
-  };
+  const monthSummary = useMemo(() => {
+    const income = events.filter(e => e.type === 'income').reduce((s, e) => s + (e.amount || 0), 0);
+    const expense = events.filter(e => e.type === 'expense').reduce((s, e) => s + (e.amount || 0), 0);
+    const bills = events.filter(e => e.type === 'bill').reduce((s, e) => s + (e.amount || 0), 0);
+    const emis = events.filter(e => e.type === 'emi').reduce((s, e) => s + (e.amount || 0), 0);
+    return { income, expense, bills, emis, total: events.length };
+  }, [events]);
 
-  const goToToday = () => setCurrentDate(new Date());
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter(e => e.date && new Date(e.date) >= now)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 8);
+  }, [events]);
 
-  const addEvent = (eventData) => {
-    setEvents(prev => [...prev, { ...eventData, id: Date.now().toString() }]);
-    setShowEventModal(false);
-  };
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const goToday = () => { setCurrentDate(new Date()); setSelectedDate(new Date().toISOString().split('T')[0]); };
+
+  const isToday = (dateStr) => dateStr === new Date().toISOString().split('T')[0];
+
+  const handleSaveEvent = useCallback((data) => {
+    if (editingEvent) {
+      setEvents(prev => prev.map(e => (e.id === editingEvent.id) ? { ...e, ...data } : e));
+    } else {
+      setEvents(prev => [...prev, { ...data, id: `custom-${Date.now()}`, source: 'custom' }]);
+    }
+    setShowAddModal(false);
+    setEditingEvent(null);
+  }, [editingEvent]);
+
+  const handleDeleteEvent = useCallback((id) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
+  }, []);
+
+  const getEventColor = (type) => EVENT_TYPES.find(t => t.id === type)?.color || '#64748b';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 text-lg">Loading calendar...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Calendar</h1>
-            <p className="text-gray-500 mt-1">Track bills, EMIs, income, and financial events</p>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
+      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>}
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <CalendarIcon className="w-7 h-7 text-blue-600" /> Financial Calendar
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track bills, EMIs, and financial events</p>
+        </div>
+        <button onClick={() => { setEditingEvent(null); setShowAddModal(true); }}
+          className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2.5 flex items-center gap-2 w-fit shadow-lg shadow-blue-600/30">
+          <Plus className="w-4 h-4" /> Add Event
+        </button>
+      </div>
+
+      {/* Monthly Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: 'Income', value: monthSummary.income, color: 'text-green-600', bgColor: 'bg-green-50 dark:bg-green-900/20' },
+          { label: 'Expenses', value: monthSummary.expense, color: 'text-red-600', bgColor: 'bg-red-50 dark:bg-red-900/20' },
+          { label: 'Bills', value: monthSummary.bills, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-900/20' },
+          { label: 'EMIs', value: monthSummary.emis, color: 'text-indigo-600', bgColor: 'bg-indigo-50 dark:bg-indigo-900/20' },
+          { label: 'Events', value: monthSummary.total, color: 'text-slate-600', bgColor: 'bg-slate-50 dark:bg-slate-800' },
+        ].map((s, i) => (
+          <div key={i} className={`${s.bgColor} rounded-2xl p-4 border border-slate-200 dark:border-slate-700`}>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{s.label}</p>
+            <p className={`text-xl font-bold ${s.color}`}>
+              {s.label === 'Events' ? s.value : `₹${(s.value || 0).toLocaleString()}`}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              {['month', 'week', 'year'].map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-4 py-2 text-sm font-medium capitalize transition-all ${
-                    viewMode === mode
-                      ? 'bg-blue-600 text-white rounded-xl'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Calendar Grid */}
+        <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" /></button>
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">{MONTHS[month]} {year}</h2>
+              <button onClick={goToday} className="text-xs text-blue-600 hover:underline mt-0.5">Today</button>
             </div>
-            <button
-              onClick={() => setShowEventModal(true)}
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              ➕ Add Event
-            </button>
+            <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" /></button>
+          </div>
+
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {WEEKDAYS.map(d => (
+              <div key={d} className="text-center text-xs font-medium text-slate-500 dark:text-slate-400 py-2">{d}</div>
+            ))}
+          </div>
+
+          {/* Day Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((cell, i) => {
+              const dayEvents = cell.date ? (eventsByDate[cell.date] || []) : [];
+              const selected = cell.date === selectedDate;
+              const today = cell.date && isToday(cell.date);
+              return (
+                <div key={i} onClick={() => cell.isCurrentMonth && setSelectedDate(cell.date)}
+                  className={`min-h-[80px] p-1.5 rounded-xl border transition-all cursor-pointer ${!cell.isCurrentMonth ? 'opacity-30 cursor-default' : selected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700/30'} ${today ? 'ring-2 ring-blue-400' : ''}`}>
+                  <div className={`text-xs font-medium mb-1 ${today ? 'text-blue-600 font-bold' : 'text-slate-600 dark:text-slate-400'}`}>
+                    {cell.day}
+                  </div>
+                  <div className="space-y-0.5">
+                    {dayEvents.slice(0, 3).map((evt, j) => (
+                      <div key={j} className="text-[10px] px-1 py-0.5 rounded truncate" style={{ backgroundColor: getEventColor(evt.type) + '20', color: getEventColor(evt.type) }}>
+                        {evt.title}
+                      </div>
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <div className="text-[10px] text-slate-400 text-center">+{dayEvents.length - 3} more</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Event Type Legend */}
+          <div className="flex gap-3 mt-4 flex-wrap">
+            {EVENT_TYPES.map(t => (
+              <div key={t.id} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                {t.label}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCard title="Income" value={monthlySummary.income} format="currency" color="#10B981" icon="💰" delay={0} />
-          <StatCard title="Expenses" value={monthlySummary.expenses} format="currency" color="#EF4444" icon="💸" delay={50} />
-          <StatCard title="Bills Due" value={monthlySummary.bills} format="currency" color="#F59E0B" icon="📋" delay={100} />
-          <StatCard title="EMIs" value={monthlySummary.emis} format="currency" color="#8B5CF6" icon="🏦" delay={150} />
-          <StatCard title="Net Flow" value={monthlySummary.total} format="currency" color={monthlySummary.total >= 0 ? '#10B981' : '#EF4444'} icon={monthlySummary.total >= 0 ? '📈' : '📉'} delay={200} />
-        </div>
-
-        {/* Main Calendar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
-            <AnimatedCard>
-              {/* Calendar Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">◀</button>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {MONTHS[month]} {year}
-                  </h2>
-                  <button onClick={() => navigate(1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">▶</button>
-                  <button onClick={goToToday} className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
-                    Today
-                  </button>
-                </div>
-
-                {/* Type Filter */}
-                <div className="flex gap-1 overflow-x-auto">
-                  <button
-                    onClick={() => setFilterType('all')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                      filterType === 'all' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {Object.entries(EVENT_TYPES).slice(0, 6).map(([key, val]) => (
-                    <button
-                      key={key}
-                      onClick={() => setFilterType(key)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                        filterType === key ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600'
-                      }`}
-                      style={filterType === key ? { backgroundColor: val.color } : {}}
-                    >
-                      {val.icon} {val.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Weekday Headers */}
-              <div className="grid grid-cols-7 mb-2">
-                {WEEKDAYS.map(day => (
-                  <div key={day} className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase py-2">
-                    {day}
+        {/* Sidebar - Day Detail & Upcoming */}
+        <div className="space-y-6">
+          {/* Selected Date Events */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-800 dark:text-white mb-3">
+              {selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Select a date'}
+            </h3>
+            {selectedDateEvents.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400 py-4 text-center">
+                {selectedDate ? 'No events on this date.' : 'Click a date to see events.'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {selectedDateEvents.map(evt => (
+                  <div key={evt.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                    <div className="w-2 h-8 rounded-full" style={{ backgroundColor: getEventColor(evt.type) }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{evt.title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {EVENT_TYPES.find(t => t.id === evt.type)?.label} {evt.amount ? `• ₹${evt.amount.toLocaleString()}` : ''}
+                      </p>
+                    </div>
+                    {evt.source === 'custom' && (
+                      <div className="flex gap-1">
+                        <button onClick={() => { setEditingEvent(evt); setShowAddModal(true); }} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600"><Edit2 className="w-3.5 h-3.5 text-blue-500" /></button>
+                        <button onClick={() => handleDeleteEvent(evt.id)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
+            )}
+          </div>
 
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                {calendarData.map((dayItem, index) => {
-                  const dayEvents = eventsByDate[dayItem.date.toDateString()] || [];
-                  const isSelected = selectedDate?.toDateString() === dayItem.date.toDateString();
-                  const totalIncome = dayEvents.filter(e => e.type === 'income' || e.type === 'salary').reduce((s, e) => s + (e.amount || 0), 0);
-                  const totalExpense = dayEvents.filter(e => e.type !== 'income' && e.type !== 'salary').reduce((s, e) => s + (e.amount || 0), 0);
-
+          {/* Upcoming Events */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500" /> Upcoming
+            </h3>
+            {upcomingEvents.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400 py-4 text-center">No upcoming events.</p>
+            ) : (
+              <div className="space-y-2">
+                {upcomingEvents.map(evt => {
+                  const d = new Date(evt.date);
+                  const daysAway = Math.ceil((d - Date.now()) / 86400000);
                   return (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedDate(dayItem.date)}
-                      className={`min-h-[100px] p-1.5 cursor-pointer transition-all ${
-                        dayItem.isCurrentMonth
-                          ? 'bg-white dark:bg-gray-800'
-                          : 'bg-gray-50 dark:bg-gray-900/50'
-                      } ${isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''} hover:bg-blue-50 dark:hover:bg-gray-700/50`}
-                    >
-                      {/* Day Number */}
-                      <div className="flex items-center justify-between mb-1">
-                        <span
-                          className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${
-                            dayItem.isToday
-                              ? 'bg-blue-600 text-white'
-                              : dayItem.isCurrentMonth
-                                ? 'text-gray-900 dark:text-white'
-                                : 'text-gray-400 dark:text-gray-600'
-                          }`}
-                        >
-                          {dayItem.day}
-                        </span>
-                        {dayEvents.length > 0 && (
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                            {dayEvents.length}
-                          </span>
-                        )}
+                    <div key={evt.id} onClick={() => setSelectedDate(evt.date?.split('T')[0] || '')}
+                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors">
+                      <div className="w-2 h-6 rounded-full" style={{ backgroundColor: getEventColor(evt.type) }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{evt.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          <span className="ml-1 text-blue-600">({daysAway <= 0 ? 'Today' : `${daysAway}d`})</span>
+                        </p>
                       </div>
-
-                      {/* Event Indicators */}
-                      <div className="space-y-0.5">
-                        {dayEvents.slice(0, 3).map((event, i) => {
-                          const typeInfo = EVENT_TYPES[event.type] || EVENT_TYPES.reminder;
-                          return (
-                            <div
-                              key={i}
-                              className="text-[10px] leading-tight px-1 py-0.5 rounded truncate"
-                              style={{ backgroundColor: typeInfo.color + '20', color: typeInfo.color }}
-                              title={`${event.title}: ${formatCurrency(event.amount)}`}
-                            >
-                              {typeInfo.icon} {event.title}
-                            </div>
-                          );
-                        })}
-                        {dayEvents.length > 3 && (
-                          <div className="text-[10px] text-gray-400 pl-1">+{dayEvents.length - 3} more</div>
-                        )}
-                      </div>
-
-                      {/* Day Totals */}
-                      {dayEvents.length > 0 && dayItem.isCurrentMonth && (
-                        <div className="mt-auto pt-1 space-y-0 border-t border-gray-100 dark:border-gray-700 mt-1">
-                          {totalIncome > 0 && (
-                            <div className="text-[10px] text-green-600 font-medium">+{formatCurrency(totalIncome, 'INR', { compact: true })}</div>
-                          )}
-                          {totalExpense > 0 && (
-                            <div className="text-[10px] text-red-500 font-medium">-{formatCurrency(totalExpense, 'INR', { compact: true })}</div>
-                          )}
-                        </div>
-                      )}
+                      {evt.amount > 0 && <span className="text-xs font-bold text-slate-800 dark:text-white">₹{evt.amount.toLocaleString()}</span>}
                     </div>
                   );
                 })}
               </div>
-            </AnimatedCard>
-          </div>
-
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            {/* Selected Day Details */}
-            <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                {selectedDate ? formatDate(selectedDate, 'longDate') : 'Select a day'}
-              </h3>
-              {selectedDate ? (
-                <div className="space-y-2">
-                  {selectedDayEvents.length === 0 ? (
-                    <p className="text-sm text-gray-500 py-4 text-center">No events on this day</p>
-                  ) : (
-                    selectedDayEvents.map((event, i) => {
-                      const typeInfo = EVENT_TYPES[event.type] || EVENT_TYPES.reminder;
-                      return (
-                        <div
-                          key={i}
-                          className={`p-3 rounded-lg ${typeInfo.bg} transition-all hover:scale-[1.02]`}
-                          style={{ animationDelay: `${i * 50}ms` }}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <span>{typeInfo.icon}</span>
-                              <div>
-                                <span className="text-sm font-medium text-gray-900 dark:text-white block">{event.title}</span>
-                                <span className="text-xs text-gray-500">{typeInfo.label}</span>
-                                {event.category && <span className="text-xs text-gray-400 ml-1">• {event.category}</span>}
-                              </div>
-                            </div>
-                            <span
-                              className={`text-sm font-bold ${
-                                event.type === 'income' || event.type === 'salary' ? 'text-green-600' : 'text-red-500'
-                              }`}
-                            >
-                              {event.type === 'income' || event.type === 'salary' ? '+' : '-'}{formatCurrency(event.amount)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                  {selectedDayEvents.length > 0 && (
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Day Total</span>
-                        <span className="font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(
-                            selectedDayEvents.reduce((s, e) => {
-                              const isIncome = e.type === 'income' || e.type === 'salary';
-                              return s + (isIncome ? e.amount : -e.amount);
-                            }, 0)
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 py-8 text-center">Click on a date to see events</p>
-              )}
-            </AnimatedCard>
-
-            {/* Upcoming Events */}
-            <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Upcoming Events</h3>
-              <div className="space-y-2">
-                {events
-                  .filter(e => e.date && new Date(e.date) >= new Date())
-                  .sort((a, b) => new Date(a.date) - new Date(b.date))
-                  .slice(0, 8)
-                  .map((event, i) => {
-                    const typeInfo = EVENT_TYPES[event.type] || EVENT_TYPES.reminder;
-                    const daysUntil = Math.ceil((new Date(event.date) - new Date()) / 86400000);
-                    return (
-                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                        <span className="text-sm">{typeInfo.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{event.title}</div>
-                          <div className="text-[10px] text-gray-400">
-                            {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
-                          </div>
-                        </div>
-                        <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(event.amount)}</span>
-                      </div>
-                    );
-                  })
-                }
-              </div>
-            </AnimatedCard>
-
-            {/* Legend */}
-            <AnimatedCard>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Event Types</h3>
-              <div className="grid grid-cols-2 gap-1.5">
-                {Object.entries(EVENT_TYPES).map(([key, val]) => (
-                  <div key={key} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: val.color }} />
-                    {val.label}
-                  </div>
-                ))}
-              </div>
-            </AnimatedCard>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Add Event Modal */}
-      <Modal isOpen={showEventModal} onClose={() => setShowEventModal(false)} title="Add Financial Event" size="sm">
-        <EventForm onSubmit={addEvent} onCancel={() => setShowEventModal(false)} />
-      </Modal>
+      {/* Add/Edit Event Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { setShowAddModal(false); setEditingEvent(null); }}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg border border-slate-200 dark:border-slate-700 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{editingEvent ? 'Edit' : 'Add'} Event</h3>
+              <button onClick={() => { setShowAddModal(false); setEditingEvent(null); }} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+            <EventForm
+              event={editingEvent || (selectedDate ? { date: selectedDate } : undefined)}
+              onSave={handleSaveEvent}
+              onCancel={() => { setShowAddModal(false); setEditingEvent(null); }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
-}
-
-// ======================== EVENT FORM ========================
-function EventForm({ onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    type: 'expense',
-    date: new Date().toISOString().split('T')[0],
-    category: '',
-    recurring: false,
-    notes: '',
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ ...formData, amount: Number(formData.amount) });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Title</label>
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-          placeholder="e.g., Electricity Bill"
-          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
-          <input
-            type="number"
-            value={formData.amount}
-            onChange={(e) => setFormData(p => ({ ...p, amount: e.target.value }))}
-            placeholder="0"
-            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-          <input
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))}
-            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
-        <div className="grid grid-cols-5 gap-1.5">
-          {Object.entries(EVENT_TYPES).slice(0, 5).map(([key, val]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFormData(p => ({ ...p, type: key }))}
-              className={`p-2 rounded-lg text-center text-xs transition-all ${
-                formData.type === key ? 'ring-2 ring-offset-1' : 'bg-gray-50 dark:bg-gray-700'
-              }`}
-              style={formData.type === key ? { backgroundColor: val.color + '20', color: val.color, '--tw-ring-color': val.color } : {}}
-            >
-              <div className="text-base mb-0.5">{val.icon}</div>
-              {val.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
-          Cancel
-        </button>
-        <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
-          Add Event
-        </button>
-      </div>
-    </form>
-  );
-}
-
-// ======================== MOCK DATA ========================
-function generateMockEvents(year, month) {
-  const events = [];
-  const types = ['income', 'expense', 'bill', 'emi', 'subscription', 'salary'];
-
-  // Monthly salary
-  events.push({
-    id: 'sal1',
-    title: 'Monthly Salary',
-    date: new Date(year, month, 1),
-    amount: 85000,
-    type: 'salary',
-    category: 'Salary',
-  });
-
-  // EMIs
-  events.push({
-    id: 'emi1',
-    title: 'Home Loan EMI',
-    date: new Date(year, month, 5),
-    amount: 32000,
-    type: 'emi',
-    category: 'Home Loan',
-  });
-
-  events.push({
-    id: 'emi2',
-    title: 'Car Loan EMI',
-    date: new Date(year, month, 10),
-    amount: 15000,
-    type: 'emi',
-    category: 'Car Loan',
-  });
-
-  // Bills
-  events.push({
-    id: 'bill1',
-    title: 'Electricity Bill',
-    date: new Date(year, month, 7),
-    amount: 2500,
-    type: 'bill',
-    category: 'Utilities',
-  });
-
-  events.push({
-    id: 'bill2',
-    title: 'Internet Bill',
-    date: new Date(year, month, 15),
-    amount: 999,
-    type: 'bill',
-    category: 'Utilities',
-  });
-
-  events.push({
-    id: 'bill3',
-    title: 'Mobile Recharge',
-    date: new Date(year, month, 20),
-    amount: 599,
-    type: 'bill',
-    category: 'Phone',
-  });
-
-  // Subscriptions
-  events.push({
-    id: 'sub1',
-    title: 'Netflix',
-    date: new Date(year, month, 12),
-    amount: 649,
-    type: 'subscription',
-    category: 'Entertainment',
-  });
-
-  events.push({
-    id: 'sub2',
-    title: 'Spotify',
-    date: new Date(year, month, 18),
-    amount: 119,
-    type: 'subscription',
-    category: 'Music',
-  });
-
-  // Random expenses
-  const expenseNames = ['Grocery Shopping', 'Restaurant Dinner', 'Fuel', 'Medical Checkup', 'Shopping', 'Electronics', 'Gym Membership', 'Book Purchase'];
-  const expenseAmounts = [3500, 2200, 4000, 1500, 5500, 8000, 2000, 800];
-
-  for (let i = 0; i < 8; i++) {
-    events.push({
-      id: `exp${i}`,
-      title: expenseNames[i],
-      date: new Date(year, month, 3 + i * 3),
-      amount: expenseAmounts[i],
-      type: 'expense',
-      category: ['Groceries', 'Food', 'Transport', 'Health', 'Shopping', 'Electronics', 'Fitness', 'Education'][i],
-    });
-  }
-
-  // Investment
-  events.push({
-    id: 'inv1',
-    title: 'SIP - Mutual Fund',
-    date: new Date(year, month, 5),
-    amount: 10000,
-    type: 'investment',
-    category: 'Mutual Fund',
-  });
-
-  events.push({
-    id: 'inv2',
-    title: 'PPF Contribution',
-    date: new Date(year, month, 15),
-    amount: 5000,
-    type: 'investment',
-    category: 'PPF',
-  });
-
-  return events;
 }

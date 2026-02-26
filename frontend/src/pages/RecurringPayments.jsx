@@ -32,19 +32,6 @@ const CATEGORY_COLORS = {
 
 const FREQUENCIES = ['Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'];
 
-const MOCK_PAYMENTS = [
-  { id: 1, name: 'Netflix', amount: 649, category: 'subscription', frequency: 'Monthly', status: 'active', nextDate: '2026-03-01', icon: 'entertainment' },
-  { id: 2, name: 'Electricity Bill', amount: 2500, category: 'bills', frequency: 'Monthly', status: 'active', nextDate: '2026-03-05', icon: 'bills' },
-  { id: 3, name: 'Car EMI', amount: 15000, category: 'emi', frequency: 'Monthly', status: 'active', nextDate: '2026-03-10', icon: 'transport' },
-  { id: 4, name: 'House Rent', amount: 25000, category: 'rent', frequency: 'Monthly', status: 'active', nextDate: '2026-03-01', icon: 'rent' },
-  { id: 5, name: 'Health Insurance', amount: 12000, category: 'insurance', frequency: 'Quarterly', status: 'active', nextDate: '2026-04-15', icon: 'health' },
-  { id: 6, name: 'Spotify', amount: 119, category: 'subscription', frequency: 'Monthly', status: 'paused', nextDate: '2026-03-15', icon: 'entertainment' },
-  { id: 7, name: 'iCloud Storage', amount: 75, category: 'subscription', frequency: 'Monthly', status: 'active', nextDate: '2026-03-08', icon: 'cloud' },
-  { id: 8, name: 'Gym Membership', amount: 2000, category: 'health', frequency: 'Monthly', status: 'active', nextDate: '2026-03-01', icon: 'health' },
-  { id: 9, name: 'Home Loan EMI', amount: 35000, category: 'emi', frequency: 'Monthly', status: 'active', nextDate: '2026-03-05', icon: 'emi' },
-  { id: 10, name: 'Term Insurance', amount: 8500, category: 'insurance', frequency: 'Yearly', status: 'active', nextDate: '2026-06-01', icon: 'insurance' },
-];
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function RecurringPayments() {
@@ -63,10 +50,10 @@ export default function RecurringPayments() {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/recurring');
-      setPayments(res.data?.payments || MOCK_PAYMENTS);
+      const res = await api.get('/analytics/recurring');
+      setPayments(res.data?.payments || res.data || []);
     } catch {
-      setPayments(MOCK_PAYMENTS);
+      setPayments([]);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -6,8 +6,10 @@ import {
   Receipt, Calendar, Bell, Plus, X, Edit2, Trash2, Search,
   CreditCard, Home, Wifi, Shield, Car, Zap, AlertTriangle,
   CheckCircle, Clock, ChevronLeft, ChevronRight, ToggleLeft,
-  ToggleRight, Repeat, DollarSign, Users, TrendingUp, Filter
+  ToggleRight, Repeat, DollarSign, Users, TrendingUp, Filter,
+  Loader2
 } from 'lucide-react';
+import api from '../services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -16,46 +18,79 @@ const fmt = (n) => `₹${n.toLocaleString('en-IN')}`;
 const categoryIcons = { Utilities: Zap, Subscriptions: Wifi, Insurance: Shield, Rent: Home, EMI: CreditCard, Transport: Car };
 const categoryColors = { Utilities: '#F59E0B', Subscriptions: '#8B5CF6', Insurance: '#3B82F6', Rent: '#10B981', EMI: '#EF4444', Transport: '#06B6D4' };
 
-const initialBills = [
-  { id: 1, name: 'House Rent', amount: 25000, category: 'Rent', dueDate: 1, autoPay: true, paid: true, provider: 'Landlord' },
-  { id: 2, name: 'Electricity', amount: 2500, category: 'Utilities', dueDate: 7, autoPay: true, paid: true, provider: 'BESCOM' },
-  { id: 3, name: 'Water Bill', amount: 800, category: 'Utilities', dueDate: 10, autoPay: false, paid: true, provider: 'BWSSB' },
-  { id: 4, name: 'Home Loan EMI', amount: 25000, category: 'EMI', dueDate: 5, autoPay: true, paid: true, provider: 'HDFC Bank' },
-  { id: 5, name: 'Car Loan EMI', amount: 12000, category: 'EMI', dueDate: 10, autoPay: true, paid: true, provider: 'SBI' },
-  { id: 6, name: 'Netflix', amount: 649, category: 'Subscriptions', dueDate: 15, autoPay: true, paid: false, provider: 'Netflix' },
-  { id: 7, name: 'Spotify', amount: 119, category: 'Subscriptions', dueDate: 20, autoPay: true, paid: false, provider: 'Spotify' },
-  { id: 8, name: 'Internet', amount: 999, category: 'Utilities', dueDate: 12, autoPay: false, paid: false, provider: 'Airtel' },
-  { id: 9, name: 'Mobile Recharge', amount: 599, category: 'Utilities', dueDate: 22, autoPay: false, paid: false, provider: 'Jio' },
-  { id: 10, name: 'Health Insurance', amount: 1500, category: 'Insurance', dueDate: 1, autoPay: true, paid: true, provider: 'Star Health' },
-  { id: 11, name: 'Car Insurance', amount: 708, category: 'Insurance', dueDate: 15, autoPay: false, paid: false, provider: 'ICICI Lombard' },
-  { id: 12, name: 'Gym Membership', amount: 2000, category: 'Subscriptions', dueDate: 1, autoPay: false, paid: true, provider: 'Cult.fit' },
-  { id: 13, name: 'Gas Cylinder', amount: 950, category: 'Utilities', dueDate: 25, autoPay: false, paid: false, provider: 'HP Gas' },
-  { id: 14, name: 'Metro Pass', amount: 1500, category: 'Transport', dueDate: 28, autoPay: false, paid: false, provider: 'Namma Metro' },
-];
+// Map backend category to frontend display category
+const mapCategory = (cat) => {
+  const map = {
+    electricity: 'Utilities', water: 'Utilities', gas: 'Utilities',
+    internet: 'Utilities', mobile: 'Utilities', milk: 'Utilities',
+    rent: 'Rent', subscription: 'Subscriptions', insurance: 'Insurance',
+    loan: 'EMI', other: 'Utilities',
+  };
+  return map[cat] || cat || 'Utilities';
+};
 
-const paymentHistory = [
-  { month: 'Sep 25', total: 68000, onTime: 65000, late: 3000 },
-  { month: 'Oct 25', total: 70000, onTime: 70000, late: 0 },
-  { month: 'Nov 25', total: 69000, onTime: 66000, late: 3000 },
-  { month: 'Dec 25', total: 72000, onTime: 72000, late: 0 },
-  { month: 'Jan 26', total: 71000, onTime: 69000, late: 2000 },
-  { month: 'Feb 26', total: 71325, onTime: 68000, late: 3325 },
-];
+// Map frontend display category back to backend category
+const reverseMapCategory = (cat) => {
+  const map = {
+    Utilities: 'other', Subscriptions: 'subscription', Insurance: 'insurance',
+    Rent: 'rent', EMI: 'loan', Transport: 'other',
+  };
+  return map[cat] || 'other';
+};
+
+// Normalize backend bill to frontend shape
+const normalizeBill = (b) => ({
+  id: b._id || b.id,
+  name: b.title || b.name || '',
+  amount: b.amount || 0,
+  category: mapCategory(b.category),
+  dueDate: b.dueDate ? new Date(b.dueDate).getDate() : 1,
+  autoPay: b.autoPayEnabled ?? b.autoPay ?? false,
+  paid: b.isPaid || b.status === 'paid',
+  provider: b.vendor?.name || b.provider || '',
+});
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function BillTracker() {
-  const [bills, setBills] = useState(initialBills);
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
-  const [calMonth, setCalMonth] = useState(1); // Feb = 1 (0-indexed)
-  const [calYear, setCalYear] = useState(2026);
+  const now = new Date();
+  const [calMonth, setCalMonth] = useState(now.getMonth());
+  const [calYear, setCalYear] = useState(now.getFullYear());
   const [formData, setFormData] = useState({ name: '', amount: '', category: 'Utilities', dueDate: '', autoPay: false, provider: '' });
   const [reminderDays, setReminderDays] = useState(3);
 
-  const today = 26; // current day for mock
+  const today = new Date().getDate();
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  // Fetch bills from API on mount
+  useEffect(() => {
+    fetchBills();
+  }, []);
+
+  const fetchBills = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get('/bill-reminders');
+      const data = res.data?.data || res.data || [];
+      const normalized = (Array.isArray(data) ? data : []).map(normalizeBill);
+      setBills(normalized);
+    } catch (err) {
+      console.error('Failed to fetch bills:', err);
+      setError('Failed to load bills');
+      setBills([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = useMemo(() => ['All', ...new Set(bills.map(b => b.category))], [bills]);
 
@@ -82,20 +117,51 @@ export default function BillTracker() {
   }, [bills]);
 
   const annualForecast = useMemo(() => {
-    return monthNames.map(m => {
-      const total = bills.reduce((s, b) => s + b.amount, 0);
-      return { month: m, amount: total + Math.round((Math.random() - 0.5) * 2000) };
-    });
+    const total = bills.reduce((s, b) => s + b.amount, 0);
+    return monthNames.map(m => ({ month: m, amount: total }));
   }, [bills]);
+
+  const paymentHistory = [];
 
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(calYear, calMonth, 1).getDay();
   const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const billDays = new Set(bills.map(b => b.dueDate));
 
-  const toggleAutoPay = (id) => setBills(bills.map(b => b.id === id ? { ...b, autoPay: !b.autoPay } : b));
-  const markPaid = (id) => setBills(bills.map(b => b.id === id ? { ...b, paid: true } : b));
-  const deleteBill = (id) => setBills(bills.filter(b => b.id !== id));
+  const toggleAutoPay = async (id) => {
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
+    const prev = bills;
+    setBills(bills.map(b => b.id === id ? { ...b, autoPay: !b.autoPay } : b));
+    try {
+      await api.put(`/bill-reminders/${id}`, { autoPayEnabled: !bill.autoPay });
+    } catch (err) {
+      console.error('Failed to toggle auto-pay:', err);
+      setBills(prev);
+    }
+  };
+
+  const markPaid = async (id) => {
+    const prev = bills;
+    setBills(bills.map(b => b.id === id ? { ...b, paid: true } : b));
+    try {
+      await api.post(`/bill-reminders/${id}/mark-paid`);
+    } catch (err) {
+      console.error('Failed to mark paid:', err);
+      setBills(prev);
+    }
+  };
+
+  const deleteBill = async (id) => {
+    const prev = bills;
+    setBills(bills.filter(b => b.id !== id));
+    try {
+      await api.delete(`/bill-reminders/${id}`);
+    } catch (err) {
+      console.error('Failed to delete bill:', err);
+      setBills(prev);
+    }
+  };
 
   const openAdd = () => {
     setEditBill(null);
@@ -109,19 +175,55 @@ export default function BillTracker() {
     setShowModal(true);
   };
 
-  const saveBill = () => {
+  const saveBill = async () => {
     if (!formData.name || !formData.amount) return;
-    const data = { ...formData, amount: Number(formData.amount), dueDate: Number(formData.dueDate), paid: false };
-    if (editBill) {
-      setBills(bills.map(b => b.id === editBill ? { ...b, ...data } : b));
-    } else {
-      setBills([...bills, { ...data, id: Date.now() }]);
+    const dueDay = Number(formData.dueDate);
+    const dueDateObj = new Date(calYear, calMonth, dueDay);
+    const payload = {
+      title: formData.name,
+      amount: Number(formData.amount),
+      category: reverseMapCategory(formData.category),
+      dueDate: dueDateObj.toISOString(),
+      autoPayEnabled: formData.autoPay,
+      vendor: { name: formData.provider },
+    };
+
+    try {
+      if (editBill) {
+        const res = await api.put(`/bill-reminders/${editBill}`, payload);
+        const updated = normalizeBill(res.data?.data || res.data);
+        setBills(bills.map(b => b.id === editBill ? updated : b));
+      } else {
+        const res = await api.post('/bill-reminders', payload);
+        const created = normalizeBill(res.data?.data || res.data);
+        setBills([...bills, created]);
+      }
+    } catch (err) {
+      console.error('Failed to save bill:', err);
+      // Fallback: update locally so UI stays responsive
+      const data = { ...formData, amount: Number(formData.amount), dueDate: dueDay, paid: false };
+      if (editBill) {
+        setBills(bills.map(b => b.id === editBill ? { ...b, ...data } : b));
+      } else {
+        setBills([...bills, { ...data, id: Date.now().toString() }]);
+      }
     }
     setShowModal(false);
   };
 
   const prevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); } else setCalMonth(calMonth - 1); };
   const nextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1); } else setCalMonth(calMonth + 1); };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">Loading bills...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
@@ -137,6 +239,15 @@ export default function BillTracker() {
           <Plus className="w-4 h-4" /> Add Bill
         </button>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-200 flex-1">{error}</p>
+          <button onClick={fetchBills} className="bg-amber-600 text-white rounded-xl text-xs font-medium px-3 py-1.5">Retry</button>
+        </div>
+      )}
 
       {/* Overdue Alert */}
       {overdueBills.length > 0 && (
@@ -187,7 +298,7 @@ export default function BillTracker() {
             {Array.from({ length: firstDayOfWeek }).map((_, i) => <div key={`e${i}`} />)}
             {calendarDays.map(day => {
               const hasBill = billDays.has(day);
-              const isToday = day === today && calMonth === 1 && calYear === 2026;
+              const isToday = day === today && calMonth === currentMonth && calYear === currentYear;
               return (
                 <div key={day} className={`py-2 rounded-lg text-sm relative cursor-pointer ${isToday ? 'bg-blue-600 text-white font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
                   {day}

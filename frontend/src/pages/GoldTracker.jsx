@@ -8,9 +8,11 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line
 } from 'recharts';
-import api from '../services/api';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#ec4899'];
+
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const HOLDING_TYPES = [
   { value: 'physical', label: 'Physical Gold', icon: <Coins className="w-4 h-4" /> },
@@ -21,23 +23,6 @@ const HOLDING_TYPES = [
 
 const TIME_RANGES = ['1M', '6M', '1Y', '5Y'];
 
-const generatePriceTrend = (range) => {
-  const points = range === '1M' ? 30 : range === '6M' ? 26 : range === '1Y' ? 12 : 60;
-  const base = 6200;
-  return Array.from({ length: points }, (_, i) => ({
-    date: range === '1M' ? `Day ${i + 1}` : range === '6M' ? `W${i + 1}` : range === '1Y' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i] : `${2021 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`,
-    price: base + Math.sin(i * 0.3) * 400 + i * (range === '5Y' ? 15 : 8) + Math.random() * 100,
-  }));
-};
-
-const initialHoldings = [
-  { id: 1, type: 'physical', name: 'Gold Necklace', weight: 25, unit: 'grams', purchasePrice: 5200, purchaseDate: '2022-11-15', purity: '22K' },
-  { id: 2, type: 'digital', name: 'Paytm Gold', weight: 10, unit: 'grams', purchasePrice: 5800, purchaseDate: '2024-03-10', purity: '24K' },
-  { id: 3, type: 'etf', name: 'Nippon Gold ETF', weight: 5, unit: 'units', purchasePrice: 4800, purchaseDate: '2023-06-20', purity: 'N/A', nav: 52.5 },
-  { id: 4, type: 'sgb', name: 'SGB 2028-29 Series', weight: 8, unit: 'grams', purchasePrice: 5400, purchaseDate: '2023-10-01', purity: '24K', coupon: 2.5 },
-];
-
-const currentPrice = { perGram: 6850, per10g: 68500, perOunce: 193200, change24h: 1.2 };
 
 const comparisonData = [
   { asset: 'Gold', '1Y': 14.2, '3Y': 38.5, '5Y': 72.1 },
@@ -50,23 +35,29 @@ const comparisonData = [
 const emptyForm = { type: 'physical', name: '', weight: '', unit: 'grams', purchasePrice: '', purchaseDate: '', purity: '24K' };
 
 export default function GoldTracker() {
-  const [holdings, setHoldings] = useState(initialHoldings);
+  const [holdings, setHoldings] = useState(() => loadLocal('fa_gold_holdings'));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [timeRange, setTimeRange] = useState('1Y');
-  const [priceTrend, setPriceTrend] = useState(() => generatePriceTrend('1Y'));
-  const [alerts, setAlerts] = useState([{ id: 1, type: 'above', price: 7000, active: true }, { id: 2, type: 'below', price: 6000, active: true }]);
+  const [priceTrend, setPriceTrend] = useState([]);
+  const [alerts, setAlerts] = useState(() => loadLocal('fa_gold_alerts'));
   const [alertForm, setAlertForm] = useState({ type: 'above', price: '' });
   const [showAlerts, setShowAlerts] = useState(false);
+  const [goldPrice, setGoldPrice] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fa_gold_price')) || { perGram: 0, per10g: 0, perOunce: 0, change24h: 0 }; } catch { return { perGram: 0, per10g: 0, perOunce: 0, change24h: 0 }; }
+  });
 
-  useEffect(() => { setPriceTrend(generatePriceTrend(timeRange)); }, [timeRange]);
+  useEffect(() => { saveLocal('fa_gold_holdings', holdings); }, [holdings]);
+  useEffect(() => { saveLocal('fa_gold_alerts', alerts); }, [alerts]);
+  useEffect(() => { localStorage.setItem('fa_gold_price', JSON.stringify(goldPrice)); }, [goldPrice]);
+
 
   const totalWeight = useMemo(() => holdings.reduce((s, h) => s + (h.unit === 'grams' ? h.weight : 0), 0), [holdings]);
   const totalInvested = useMemo(() => holdings.reduce((s, h) => s + h.purchasePrice * h.weight, 0), [holdings]);
   const totalCurrentValue = useMemo(() => holdings.reduce((s, h) => {
-    if (h.unit === 'grams') return s + h.weight * currentPrice.perGram * (h.purity === '22K' ? 0.916 : 1);
-    return s + h.weight * (h.nav || currentPrice.perGram);
-  }, 0), [holdings]);
+    if (h.unit === 'grams') return s + h.weight * goldPrice.perGram * (h.purity === '22K' ? 0.916 : 1);
+    return s + h.weight * (h.nav || goldPrice.perGram);
+  }, 0), [holdings, goldPrice]);
   const totalGain = totalCurrentValue - totalInvested;
   const gainPercent = totalInvested > 0 ? ((totalGain / totalInvested) * 100).toFixed(2) : 0;
 
@@ -74,7 +65,7 @@ export default function GoldTracker() {
     const map = {};
     holdings.forEach(h => {
       const label = HOLDING_TYPES.find(t => t.value === h.type)?.label || h.type;
-      const val = h.unit === 'grams' ? h.weight * currentPrice.perGram * (h.purity === '22K' ? 0.916 : 1) : h.weight * (h.nav || currentPrice.perGram);
+      const val = h.unit === 'grams' ? h.weight * goldPrice.perGram * (h.purity === '22K' ? 0.916 : 1) : h.weight * (h.nav || goldPrice.perGram);
       map[label] = (map[label] || 0) + val;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value: Math.round(value) }));
@@ -123,16 +114,16 @@ export default function GoldTracker() {
           <div>
             <p className="text-yellow-100 text-sm mb-1">Current Gold Price (24K)</p>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold">₹{currentPrice.perGram.toLocaleString()}/g</span>
-              <span className={`flex items-center text-sm px-2 py-1 rounded-full ${currentPrice.change24h >= 0 ? 'bg-green-500/30' : 'bg-red-500/30'}`}>
-                {currentPrice.change24h >= 0 ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
-                {currentPrice.change24h}%
+              <span className="text-3xl font-bold">₹{goldPrice.perGram.toLocaleString()}/g</span>
+              <span className={`flex items-center text-sm px-2 py-1 rounded-full ${goldPrice.change24h >= 0 ? 'bg-green-500/30' : 'bg-red-500/30'}`}>
+                {goldPrice.change24h >= 0 ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
+                {goldPrice.change24h}%
               </span>
             </div>
           </div>
           <div className="flex gap-6">
-            <div><p className="text-yellow-100 text-xs">Per 10g</p><p className="text-xl font-bold">₹{currentPrice.per10g.toLocaleString()}</p></div>
-            <div><p className="text-yellow-100 text-xs">Per Ounce</p><p className="text-xl font-bold">₹{currentPrice.perOunce.toLocaleString()}</p></div>
+            <div><p className="text-yellow-100 text-xs">Per 10g</p><p className="text-xl font-bold">₹{goldPrice.per10g.toLocaleString()}</p></div>
+            <div><p className="text-yellow-100 text-xs">Per Ounce</p><p className="text-xl font-bold">₹{goldPrice.perOunce.toLocaleString()}</p></div>
           </div>
         </div>
       </div>
@@ -189,7 +180,7 @@ export default function GoldTracker() {
               <thead><tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"><th className="pb-2 pr-3">Type</th><th className="pb-2 pr-3">Name</th><th className="pb-2 pr-3">Weight</th><th className="pb-2 pr-3">Purity</th><th className="pb-2 pr-3">Buy Price</th><th className="pb-2 pr-3">Current</th><th className="pb-2 pr-3">Gain</th><th className="pb-2"></th></tr></thead>
               <tbody>
                 {holdings.map(h => {
-                  const curVal = h.unit === 'grams' ? h.weight * currentPrice.perGram * (h.purity === '22K' ? 0.916 : 1) : h.weight * (h.nav || currentPrice.perGram);
+                  const curVal = h.unit === 'grams' ? h.weight * goldPrice.perGram * (h.purity === '22K' ? 0.916 : 1) : h.weight * (h.nav || goldPrice.perGram);
                   const invested = h.purchasePrice * h.weight;
                   const gain = curVal - invested;
                   return (

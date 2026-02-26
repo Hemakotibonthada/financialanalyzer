@@ -9,7 +9,6 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   CartesianGrid
 } from 'recharts';
-import api from '../services/api';
 
 const AnimatedValue = ({ value, duration = 800 }) => {
   const [display, setDisplay] = useState(0);
@@ -33,26 +32,6 @@ const PRODUCT_TYPES = [
   { id: 'investments', label: 'Investments', icon: TrendingUp },
 ];
 
-const SAMPLE_PRODUCTS = {
-  'credit-cards': [
-    { id: 1, name: 'Platinum Rewards', provider: 'BankA', annualFee: 499, cashback: 2, apr: 36, rewardRate: 4, securityScore: 9, customerService: 8, benefits: 7, flexibility: 6, features: ['Lounge Access', 'Travel Insurance', '2% Cashback'] },
-    { id: 2, name: 'Gold Elite', provider: 'BankB', annualFee: 999, cashback: 5, apr: 30, rewardRate: 8, securityScore: 8, customerService: 9, benefits: 9, flexibility: 7, features: ['5% Cashback', 'Priority Support', 'EMI Conversion'] },
-    { id: 3, name: 'Basic Saver', provider: 'BankC', annualFee: 0, cashback: 1, apr: 42, rewardRate: 2, securityScore: 7, customerService: 6, benefits: 4, flexibility: 9, features: ['No Annual Fee', 'Fuel Surcharge Waiver'] },
-  ],
-  loans: [
-    { id: 4, name: 'Home Plus', provider: 'LenderA', annualFee: 0, interestRate: 8.5, tenure: 30, rewardRate: 5, securityScore: 9, customerService: 8, benefits: 7, flexibility: 6, features: ['Low Interest', 'Flexible Tenure', 'No Prepayment Penalty'] },
-    { id: 5, name: 'Quick Personal', provider: 'LenderB', annualFee: 999, interestRate: 12, tenure: 5, rewardRate: 3, securityScore: 7, customerService: 7, benefits: 5, flexibility: 8, features: ['Instant Approval', 'Minimal Docs'] },
-  ],
-  insurance: [
-    { id: 6, name: 'LifeShield Pro', provider: 'InsureA', annualFee: 12000, coverage: 5000000, rewardRate: 7, securityScore: 9, customerService: 8, benefits: 8, flexibility: 5, features: ['Term Life', 'Critical Illness', 'Accidental Cover'] },
-    { id: 7, name: 'Health Guard', provider: 'InsureB', annualFee: 8000, coverage: 1000000, rewardRate: 6, securityScore: 8, customerService: 9, benefits: 7, flexibility: 7, features: ['Cashless Hospitals', 'No Claim Bonus', 'Day Care Cover'] },
-  ],
-  investments: [
-    { id: 8, name: 'Growth Fund', provider: 'AMC-A', annualFee: 150, returns3Y: 15, rewardRate: 8, securityScore: 6, customerService: 7, benefits: 8, flexibility: 7, features: ['High Returns', 'SIP Option', 'Tax Saving'] },
-    { id: 9, name: 'Balanced Fund', provider: 'AMC-B', annualFee: 100, returns3Y: 10, rewardRate: 6, securityScore: 8, customerService: 8, benefits: 6, flexibility: 8, features: ['Low Risk', 'Stable Returns', 'Dividend Option'] },
-  ],
-};
-
 const CRITERIA = [
   { key: 'rewardRate', label: 'Rewards' },
   { key: 'securityScore', label: 'Security' },
@@ -61,8 +40,19 @@ const CRITERIA = [
   { key: 'flexibility', label: 'Flexibility' },
 ];
 
+const EMPTY_PRODUCT = {
+  name: '',
+  provider: '',
+  annualFee: 0,
+  rewardRate: 5,
+  securityScore: 5,
+  customerService: 5,
+  benefits: 5,
+  flexibility: 5,
+  features: '',
+};
+
 export default function ComparisonTool() {
-  const [loading, setLoading] = useState(true);
   const [productType, setProductType] = useState('credit-cards');
   const [selected, setSelected] = useState([]);
   const [weights, setWeights] = useState({ rewardRate: 5, securityScore: 5, customerService: 5, benefits: 5, flexibility: 5 });
@@ -71,21 +61,67 @@ export default function ComparisonTool() {
   const [saveName, setSaveName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightDiff, setHighlightDiff] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({ ...EMPTY_PRODUCT });
 
+  // Load all products from localStorage
+  const [allProducts, setAllProducts] = useState(() => {
+    try {
+      const stored = localStorage.getItem('fa_comparisons');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persist products to localStorage whenever they change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSelected(SAMPLE_PRODUCTS[productType]?.slice(0, 2).map(p => p.id) || []);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    localStorage.setItem('fa_comparisons', JSON.stringify(allProducts));
+  }, [allProducts]);
+
+  // Clear selection when switching product types
+  useEffect(() => {
+    setSelected([]);
+    setSearchQuery('');
   }, [productType]);
 
-  const products = SAMPLE_PRODUCTS[productType] || [];
+  const products = allProducts[productType] || [];
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.provider.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const selectedProducts = products.filter(p => selected.includes(p.id));
+
+  const addProduct = () => {
+    if (!newProduct.name.trim() || !newProduct.provider.trim()) return;
+    const product = {
+      ...newProduct,
+      id: Date.now(),
+      annualFee: Number(newProduct.annualFee) || 0,
+      rewardRate: Number(newProduct.rewardRate) || 5,
+      securityScore: Number(newProduct.securityScore) || 5,
+      customerService: Number(newProduct.customerService) || 5,
+      benefits: Number(newProduct.benefits) || 5,
+      flexibility: Number(newProduct.flexibility) || 5,
+      features: newProduct.features
+        ? newProduct.features.split(',').map(f => f.trim()).filter(Boolean)
+        : [],
+    };
+    setAllProducts(prev => ({
+      ...prev,
+      [productType]: [...(prev[productType] || []), product],
+    }));
+    setNewProduct({ ...EMPTY_PRODUCT });
+    setShowAddModal(false);
+  };
+
+  const removeProduct = (productId) => {
+    setAllProducts(prev => ({
+      ...prev,
+      [productType]: (prev[productType] || []).filter(p => p.id !== productId),
+    }));
+    setSelected(prev => prev.filter(id => id !== productId));
+  };
 
   const computeScore = useCallback((product) => {
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -102,27 +138,24 @@ export default function ComparisonTool() {
   });
 
   const barData = selectedProducts.map(p => ({ name: p.name, score: computeScore(p) }));
-  const recommended = [...selectedProducts].sort((a, b) => computeScore(b) - computeScore(a))[0];
+  const recommended = selectedProducts.length >= 2
+    ? [...selectedProducts].sort((a, b) => computeScore(b) - computeScore(a))[0]
+    : null;
 
   const handleSave = () => {
     if (!saveName.trim()) return;
-    setSavedComparisons(prev => [...prev, { id: Date.now(), name: saveName, type: productType, products: selectedProducts.map(p => p.name), date: new Date().toLocaleDateString() }]);
+    setSavedComparisons(prev => [...prev, {
+      id: Date.now(),
+      name: saveName,
+      type: productType,
+      products: selectedProducts.map(p => p.name),
+      date: new Date().toLocaleDateString(),
+    }]);
     setSaveName('');
     setShowSaveModal(false);
   };
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Loading comparison data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
@@ -136,7 +169,10 @@ export default function ComparisonTool() {
             <p className="text-slate-500 dark:text-slate-400 mt-1">Compare financial products side by side</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setShowSaveModal(true)} className="flex items-center gap-2 bg-blue-600 text-white rounded-xl text-sm font-medium px-4 py-2 hover:bg-blue-700 transition-colors">
+            <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 bg-green-600 text-white rounded-xl text-sm font-medium px-4 py-2 hover:bg-green-700 transition-colors">
+              <Plus className="w-4 h-4" /> Add Product
+            </button>
+            <button onClick={() => setShowSaveModal(true)} disabled={selectedProducts.length < 2} className="flex items-center gap-2 bg-blue-600 text-white rounded-xl text-sm font-medium px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               <Save className="w-4 h-4" /> Save Comparison
             </button>
           </div>
@@ -147,10 +183,13 @@ export default function ComparisonTool() {
           {PRODUCT_TYPES.map(type => {
             const Icon = type.icon;
             return (
-              <button key={type.id} onClick={() => { setProductType(type.id); setSelected([]); setLoading(true); }}
+              <button key={type.id} onClick={() => setProductType(type.id)}
                 className={`p-4 rounded-2xl border transition-all text-left ${productType === type.id ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'}`}>
                 <Icon className="w-6 h-6 mb-2" />
                 <span className="font-medium text-sm">{type.label}</span>
+                <span className={`block text-xs mt-0.5 ${productType === type.id ? 'text-blue-100' : 'text-slate-400'}`}>
+                  {(allProducts[type.id] || []).length} products
+                </span>
               </button>
             );
           })}
@@ -160,33 +199,60 @@ export default function ComparisonTool() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Select Products to Compare</h2>
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." className="pl-9 pr-4 py-2 text-sm rounded-xl bg-slate-100 dark:bg-slate-700 border-0 focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" />
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..." className="pl-9 pr-4 py-2 text-sm rounded-xl bg-slate-100 dark:bg-slate-700 border-0 focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" />
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredProducts.map(product => {
-              const isSelected = selected.includes(product.id);
-              return (
-                <button key={product.id} onClick={() => setSelected(prev => isSelected ? prev.filter(id => id !== product.id) : prev.length < 4 ? [...prev, product.id] : prev)}
-                  className={`p-4 rounded-xl border text-left transition-all ${isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-white">{product.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{product.provider}</p>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Scale className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 dark:text-slate-400 mb-2">
+                {products.length === 0 ? 'No products added yet for this category' : 'No products match your search'}
+              </p>
+              {products.length === 0 && (
+                <>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mb-4">Click &quot;Add Product&quot; to start comparing</p>
+                  <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-2 bg-blue-600 text-white rounded-xl text-sm font-medium px-4 py-2 hover:bg-blue-700 transition-colors">
+                    <Plus className="w-4 h-4" /> Add Product
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredProducts.map(product => {
+                const isSelected = selected.includes(product.id);
+                return (
+                  <div key={product.id} className={`p-4 rounded-xl border text-left transition-all ${isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}>
+                    <div className="flex items-start justify-between">
+                      <button
+                        onClick={() => setSelected(prev => isSelected ? prev.filter(id => id !== product.id) : prev.length < 4 ? [...prev, product.id] : prev)}
+                        className="flex-1 text-left"
+                      >
+                        <p className="font-semibold text-slate-900 dark:text-white">{product.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{product.provider}</p>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {isSelected && <Check className="w-5 h-5 text-blue-500" />}
+                        <button onClick={() => removeProduct(product.id)} className="p-1 text-red-400 hover:text-red-600 transition-colors" title="Remove product">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    {isSelected && <Check className="w-5 h-5 text-blue-500" />}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(product.features || []).slice(0, 2).map((f, i) => (
+                        <span key={i} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{f}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {product.features.slice(0, 2).map((f, i) => (
-                      <span key={i} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{f}</span>
-                    ))}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {selectedProducts.length >= 2 && (
@@ -211,17 +277,18 @@ export default function ComparisonTool() {
                 </thead>
                 <tbody>
                   {['annualFee', 'rewardRate', 'securityScore', 'customerService', 'benefits', 'flexibility'].map(key => {
-                    const values = selectedProducts.map(p => p[key]);
+                    const values = selectedProducts.map(p => p[key] ?? 0);
                     const best = key === 'annualFee' ? Math.min(...values) : Math.max(...values);
                     const allSame = values.every(v => v === values[0]);
                     return (
                       <tr key={key} className="border-b border-slate-100 dark:border-slate-700/50">
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 capitalize">{key.replace(/([A-Z])/g, ' $1')}</td>
                         {selectedProducts.map(p => {
-                          const isBest = p[key] === best && !allSame;
+                          const val = p[key] ?? 0;
+                          const isBest = val === best && !allSame;
                           return (
                             <td key={p.id} className={`text-center py-3 px-4 font-medium ${highlightDiff && isBest ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : 'text-slate-900 dark:text-white'}`}>
-                              {key === 'annualFee' ? `₹${p[key]}` : `${p[key]}/10`}
+                              {key === 'annualFee' ? `₹${val}` : `${val}/10`}
                               {highlightDiff && isBest && <Award className="w-3 h-3 inline ml-1 text-green-500" />}
                             </td>
                           );
@@ -234,7 +301,7 @@ export default function ComparisonTool() {
                     {selectedProducts.map(p => (
                       <td key={p.id} className="py-3 px-4 text-center">
                         <div className="flex flex-wrap justify-center gap-1">
-                          {p.features.map((f, i) => (
+                          {(p.features || []).map((f, i) => (
                             <span key={i} className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{f}</span>
                           ))}
                         </div>
@@ -303,7 +370,7 @@ export default function ComparisonTool() {
                     <h3 className="text-xl font-bold mb-1">Recommended: {recommended.name}</h3>
                     <p className="text-blue-100 text-sm mb-3">Based on your weighted criteria, this product scores the highest at <span className="font-bold text-white">{computeScore(recommended)}/100</span>.</p>
                     <div className="flex flex-wrap gap-2">
-                      {recommended.features.map((f, i) => (
+                      {(recommended.features || []).map((f, i) => (
                         <span key={i} className="text-xs bg-white/20 px-3 py-1 rounded-full">{f}</span>
                       ))}
                     </div>
@@ -315,7 +382,7 @@ export default function ComparisonTool() {
           </>
         )}
 
-        {selectedProducts.length < 2 && (
+        {selectedProducts.length < 2 && products.length > 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 border border-slate-200 dark:border-slate-700 text-center">
             <Scale className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-slate-500 dark:text-slate-400">Select at least 2 products above to start comparing</p>
@@ -346,7 +413,7 @@ export default function ComparisonTool() {
       </div>
 
       {/* Quick Stats Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 mt-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Products Available', value: products.length, color: 'text-blue-600' },
@@ -361,6 +428,54 @@ export default function ComparisonTool() {
           ))}
         </div>
       </div>
+
+      {/* Add Product Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Add Product ({PRODUCT_TYPES.find(t => t.id === productType)?.label})
+              </h3>
+              <button onClick={() => { setShowAddModal(false); setNewProduct({ ...EMPTY_PRODUCT }); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Name *</label>
+                <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Platinum Rewards Card" className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Provider *</label>
+                <input value={newProduct.provider} onChange={e => setNewProduct(p => ({ ...p, provider: e.target.value }))} placeholder="e.g. HDFC Bank" className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Annual Fee (₹)</label>
+                <input type="number" value={newProduct.annualFee} onChange={e => setNewProduct(p => ({ ...p, annualFee: e.target.value }))} placeholder="0" className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Features (comma-separated)</label>
+                <input value={newProduct.features} onChange={e => setNewProduct(p => ({ ...p, features: e.target.value }))} placeholder="e.g. Lounge Access, 2% Cashback, Travel Insurance" className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Rate each criterion (0–10)</p>
+                {CRITERIA.map(c => (
+                  <div key={c.key} className="flex items-center gap-3 mb-2">
+                    <label className="text-sm text-slate-600 dark:text-slate-400 w-24">{c.label}</label>
+                    <input type="range" min="0" max="10" value={newProduct[c.key]} onChange={e => setNewProduct(p => ({ ...p, [c.key]: Number(e.target.value) }))} className="flex-1 accent-blue-600" />
+                    <span className="text-sm font-bold text-slate-900 dark:text-white w-8 text-right">{newProduct[c.key]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-4">
+              <button onClick={() => { setShowAddModal(false); setNewProduct({ ...EMPTY_PRODUCT }); }} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
+              <button onClick={addProduct} disabled={!newProduct.name.trim() || !newProduct.provider.trim()} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Add Product</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Save Modal */}
       {showSaveModal && (

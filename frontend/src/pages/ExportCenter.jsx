@@ -3,9 +3,10 @@
 // Feature #87: Comprehensive data export & report generation
 // ============================================================
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, Stepper, ProgressRing } from '../components/ui/ComponentLibrary';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, ProgressRing } from '../components/ui/ComponentLibrary';
 import { formatCurrency, formatDate } from '../utils/helpers';
+import api from '../services/api';
 import '../styles/animations.css';
 
 const EXPORT_FORMATS = [
@@ -120,22 +121,14 @@ const REPORT_TEMPLATES = [
 ];
 
 const DATA_CATEGORIES = [
-  { id: 'transactions', label: 'Transactions', icon: '💰', count: 1247 },
-  { id: 'budgets', label: 'Budgets', icon: '📋', count: 12 },
-  { id: 'investments', label: 'Investments', icon: '📈', count: 23 },
-  { id: 'bills', label: 'Bills & EMIs', icon: '🏦', count: 15 },
-  { id: 'goals', label: 'Goals', icon: '🎯', count: 8 },
-  { id: 'subscriptions', label: 'Subscriptions', icon: '🔄', count: 10 },
-  { id: 'debts', label: 'Debts', icon: '💳', count: 5 },
-  { id: 'documents', label: 'Documents', icon: '📎', count: 34 },
-];
-
-const EXPORT_HISTORY = [
-  { id: 1, name: 'Monthly Summary - Dec 2024', format: 'pdf', date: '2024-12-31', size: '2.4 MB', status: 'completed' },
-  { id: 2, name: 'Transaction Export', format: 'csv', date: '2024-12-28', size: '856 KB', status: 'completed' },
-  { id: 3, name: 'Tax Report FY 2024-25', format: 'pdf', date: '2024-12-25', size: '4.1 MB', status: 'completed' },
-  { id: 4, name: 'Investment Portfolio', format: 'excel', date: '2024-12-20', size: '1.8 MB', status: 'completed' },
-  { id: 5, name: 'Expense Analysis Q4', format: 'pdf', date: '2024-12-15', size: '3.2 MB', status: 'completed' },
+  { id: 'transactions', label: 'Transactions', icon: '💰' },
+  { id: 'budgets', label: 'Budgets', icon: '📋' },
+  { id: 'investments', label: 'Investments', icon: '📈' },
+  { id: 'bills', label: 'Bills & EMIs', icon: '🏦' },
+  { id: 'goals', label: 'Goals', icon: '🎯' },
+  { id: 'subscriptions', label: 'Subscriptions', icon: '🔄' },
+  { id: 'debts', label: 'Debts', icon: '💳' },
+  { id: 'documents', label: 'Documents', icon: '📎' },
 ];
 
 export default function ExportCenter() {
@@ -143,8 +136,23 @@ export default function ExportCenter() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [exportHistory, setExportHistory] = useState(EXPORT_HISTORY);
+  const [exportError, setExportError] = useState(null);
+  const [quickExporting, setQuickExporting] = useState(false);
+
+  // Load export history from localStorage
+  const [exportHistory, setExportHistory] = useState(() => {
+    try {
+      const stored = localStorage.getItem('fa_export_history');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist export history
+  useEffect(() => {
+    localStorage.setItem('fa_export_history', JSON.stringify(exportHistory));
+  }, [exportHistory]);
 
   // Quick Export state
   const [quickExportConfig, setQuickExportConfig] = useState({
@@ -154,53 +162,99 @@ export default function ExportCenter() {
     includeCharts: false,
   });
 
-  // Generate report
+  // Generate report via API
   const generateReport = async (template, format) => {
     setGenerating(true);
-    setGenerationProgress(0);
+    setExportError(null);
 
-    // Simulate generation progress
-    const interval = setInterval(() => {
-      setGenerationProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + Math.random() * 15;
+    try {
+      const response = await api.post('/reports/generate', {
+        templateId: template.id,
+        format,
       });
-    }, 300);
 
-    setTimeout(() => {
-      clearInterval(interval);
-      setGenerationProgress(100);
+      const result = response.data;
+      const newEntry = {
+        id: Date.now(),
+        name: template.name,
+        format,
+        date: new Date().toISOString().split('T')[0],
+        size: result.fileSize || result.size || 'Unknown',
+        status: 'completed',
+        downloadUrl: result.downloadUrl || null,
+      };
+
+      setExportHistory(prev => [newEntry, ...prev]);
+
+      if (result.downloadUrl) {
+        window.open(result.downloadUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Report generation failed:', error);
+      const errorMsg = error.response?.data?.error || error.message || 'Export failed';
+      setExportError(errorMsg);
+
       setExportHistory(prev => [{
         id: Date.now(),
         name: template.name,
         format,
         date: new Date().toISOString().split('T')[0],
-        size: `${(Math.random() * 5 + 1).toFixed(1)} MB`,
-        status: 'completed',
+        size: 'N/A',
+        status: 'failed',
       }, ...prev]);
-
-      setTimeout(() => {
-        setGenerating(false);
-        setShowGenerateModal(false);
-        setGenerationProgress(0);
-      }, 500);
-    }, 3000);
+    } finally {
+      setGenerating(false);
+      setShowGenerateModal(false);
+    }
   };
 
-  // Quick export
-  const handleQuickExport = () => {
-    const newEntry = {
-      id: Date.now(),
-      name: `Quick Export - ${quickExportConfig.dataCategories.join(', ')}`,
-      format: quickExportConfig.format,
-      date: new Date().toISOString().split('T')[0],
-      size: `${(Math.random() * 3 + 0.5).toFixed(1)} MB`,
-      status: 'completed',
-    };
-    setExportHistory(prev => [newEntry, ...prev]);
+  // Quick export via API
+  const handleQuickExport = async () => {
+    setQuickExporting(true);
+    setExportError(null);
+
+    try {
+      const response = await api.post('/reports/generate', {
+        templateId: 'quick-export',
+        format: quickExportConfig.format,
+        dateRange: quickExportConfig.dateRange,
+        filters: {
+          categories: quickExportConfig.dataCategories,
+          includeCharts: quickExportConfig.includeCharts,
+        },
+      });
+
+      const result = response.data;
+      const newEntry = {
+        id: Date.now(),
+        name: `Quick Export - ${quickExportConfig.dataCategories.join(', ')}`,
+        format: quickExportConfig.format,
+        date: new Date().toISOString().split('T')[0],
+        size: result.fileSize || result.size || 'Unknown',
+        status: 'completed',
+        downloadUrl: result.downloadUrl || null,
+      };
+
+      setExportHistory(prev => [newEntry, ...prev]);
+
+      if (result.downloadUrl) {
+        window.open(result.downloadUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Quick export failed:', error);
+      setExportError(error.response?.data?.error || error.message || 'Export failed');
+
+      setExportHistory(prev => [{
+        id: Date.now(),
+        name: `Quick Export - ${quickExportConfig.dataCategories.join(', ')}`,
+        format: quickExportConfig.format,
+        date: new Date().toISOString().split('T')[0],
+        size: 'N/A',
+        status: 'failed',
+      }, ...prev]);
+    } finally {
+      setQuickExporting(false);
+    }
   };
 
   const tabs = [
@@ -221,11 +275,19 @@ export default function ExportCenter() {
           </div>
         </div>
 
+        {/* Error Alert */}
+        {exportError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center justify-between">
+            <p className="text-sm text-red-700 dark:text-red-300">⚠️ {exportError}</p>
+            <button onClick={() => setExportError(null)} className="text-red-400 hover:text-red-600 text-sm">✕</button>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Exports" value={exportHistory.length} color="#3B82F6" icon="📊" delay={0} />
           <StatCard title="Reports Generated" value={exportHistory.filter(e => e.format === 'pdf').length} color="#EF4444" icon="📄" delay={100} />
-          <StatCard title="Data Points" value={1247} color="#10B981" icon="💰" delay={200} />
+          <StatCard title="Completed" value={exportHistory.filter(e => e.status === 'completed').length} color="#10B981" icon="✅" delay={200} />
           <StatCard title="Available Templates" value={REPORT_TEMPLATES.length} color="#8B5CF6" icon="📋" delay={300} />
         </div>
 
@@ -236,7 +298,7 @@ export default function ExportCenter() {
         {activeTab === 'reports' && (
           <ReportTemplatesView
             templates={REPORT_TEMPLATES}
-            onSelect={(template) => { setSelectedTemplate(template); setShowGenerateModal(true); }}
+            onSelect={(template) => { setSelectedTemplate(template); setShowGenerateModal(true); setExportError(null); }}
           />
         )}
 
@@ -245,6 +307,7 @@ export default function ExportCenter() {
             config={quickExportConfig}
             setConfig={setQuickExportConfig}
             onExport={handleQuickExport}
+            exporting={quickExporting}
           />
         )}
 
@@ -259,20 +322,16 @@ export default function ExportCenter() {
       {selectedTemplate && (
         <Modal
           isOpen={showGenerateModal}
-          onClose={() => { setShowGenerateModal(false); setSelectedTemplate(null); }}
+          onClose={() => { if (!generating) { setShowGenerateModal(false); setSelectedTemplate(null); } }}
           title="Generate Report"
           size="md"
         >
           {generating ? (
             <div className="text-center py-8">
-              <ProgressRing progress={Math.min(generationProgress, 100)} size={120} strokeWidth={6} color="#3B82F6">
-                <span className="text-sm font-bold text-blue-600">{Math.round(Math.min(generationProgress, 100))}%</span>
-              </ProgressRing>
+              <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
               <h3 className="font-semibold text-gray-900 dark:text-white mt-4">Generating Report...</h3>
               <p className="text-sm text-gray-500 mt-1">
-                {generationProgress < 30 ? 'Collecting data...' :
-                  generationProgress < 60 ? 'Analyzing patterns...' :
-                  generationProgress < 90 ? 'Creating visualizations...' : 'Finalizing report...'}
+                Preparing your {selectedTemplate.name}. This may take a moment.
               </p>
             </div>
           ) : (
@@ -397,7 +456,7 @@ function ReportTemplatesView({ templates, onSelect }) {
 }
 
 // ======================== QUICK EXPORT VIEW ========================
-function QuickExportView({ config, setConfig, onExport }) {
+function QuickExportView({ config, setConfig, onExport, exporting }) {
   const toggleCategory = (catId) => {
     setConfig(prev => ({
       ...prev,
@@ -426,7 +485,6 @@ function QuickExportView({ config, setConfig, onExport }) {
               >
                 <span className="text-2xl block mb-1">{cat.icon}</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white block">{cat.label}</span>
-                <span className="text-xs text-gray-400">{cat.count} items</span>
               </button>
             ))}
           </div>
@@ -490,14 +548,21 @@ function QuickExportView({ config, setConfig, onExport }) {
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">3️⃣ Export</h3>
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              {config.dataCategories.length} categories selected • {config.dateRange.replace('-', ' ')} • {config.format.toUpperCase()}
+              {config.dataCategories.length} categories selected • {config.dateRange.replace(/-/g, ' ')} • {config.format.toUpperCase()}
             </div>
             <button
               onClick={onExport}
-              disabled={config.dataCategories.length === 0}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={config.dataCategories.length === 0 || exporting}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              📥 Export Now
+              {exporting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                '📥 Export Now'
+              )}
             </button>
           </div>
         </AnimatedCard>
@@ -516,15 +581,15 @@ function QuickExportView({ config, setConfig, onExport }) {
                   <Badge key={catId} variant="info" size="xs">{cat.icon} {cat.label}</Badge>
                 ) : null;
               })}
+              {config.dataCategories.length === 0 && (
+                <span className="text-xs text-gray-400">No categories selected</span>
+              )}
             </div>
           </div>
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 mb-1">Estimated Records</div>
+            <div className="text-xs text-gray-400 mb-1">Categories</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {config.dataCategories.reduce((sum, catId) => {
-                const cat = DATA_CATEGORIES.find(c => c.id === catId);
-                return sum + (cat?.count || 0);
-              }, 0).toLocaleString()}
+              {config.dataCategories.length}
             </div>
           </div>
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -532,9 +597,9 @@ function QuickExportView({ config, setConfig, onExport }) {
             <div className="text-lg font-bold text-gray-900 dark:text-white uppercase">{config.format}</div>
           </div>
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 mb-1">Estimated File Size</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
-              ~{(config.dataCategories.length * 0.8).toFixed(1)} MB
+            <div className="text-xs text-gray-400 mb-1">Date Range</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+              {config.dateRange.replace(/-/g, ' ')}
             </div>
           </div>
         </div>
@@ -545,12 +610,25 @@ function QuickExportView({ config, setConfig, onExport }) {
 
 // ======================== SCHEDULED EXPORTS VIEW ========================
 function ScheduledExportsView() {
-  const scheduledExports = [
-    { id: 1, name: 'Monthly Financial Summary', frequency: 'Monthly', nextRun: '2025-02-01', format: 'pdf', enabled: true },
-    { id: 2, name: 'Weekly Transaction Backup', frequency: 'Weekly', nextRun: '2025-01-13', format: 'csv', enabled: true },
-    { id: 3, name: 'Quarterly Tax Report', frequency: 'Quarterly', nextRun: '2025-04-01', format: 'pdf', enabled: true },
-    { id: 4, name: 'Daily Budget Alert', frequency: 'Daily', nextRun: '2025-01-07', format: 'json', enabled: false },
-  ];
+  const [scheduledExports, setScheduledExports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchScheduled = async () => {
+      try {
+        const response = await api.get('/reports/scheduled');
+        if (response.data?.schedules) {
+          setScheduledExports(response.data.schedules);
+        }
+      } catch (error) {
+        // API may not support this endpoint yet; silently handle
+        console.debug('Scheduled exports not available:', error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchScheduled();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -561,21 +639,34 @@ function ScheduledExportsView() {
             ➕ New Schedule
           </button>
         </div>
-        <div className="space-y-3">
-          {scheduledExports.map(schedule => (
-            <div key={schedule.id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <div className={`w-3 h-3 rounded-full ${schedule.enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white">{schedule.name}</div>
-                <div className="text-xs text-gray-500">
-                  {schedule.frequency} • Next: {formatDate(schedule.nextRun)} • {schedule.format.toUpperCase()}
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Loading scheduled exports...</p>
+          </div>
+        ) : scheduledExports.length === 0 ? (
+          <div className="text-center py-12">
+            <span className="text-4xl block mb-3">📅</span>
+            <p className="text-gray-500 dark:text-gray-400 mb-1">No scheduled exports yet</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Create a schedule to automatically generate and deliver reports</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {scheduledExports.map(schedule => (
+              <div key={schedule.id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <div className={`w-3 h-3 rounded-full ${schedule.enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 dark:text-white">{schedule.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {schedule.frequency} • Next: {formatDate(schedule.nextRun)} • {(schedule.format || '').toUpperCase()}
+                  </div>
                 </div>
+                <Badge variant={schedule.enabled ? 'success' : 'default'}>{schedule.enabled ? 'Active' : 'Paused'}</Badge>
+                <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">⚙️</button>
               </div>
-              <Badge variant={schedule.enabled ? 'success' : 'default'}>{schedule.enabled ? 'Active' : 'Paused'}</Badge>
-              <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">⚙️</button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </AnimatedCard>
     </div>
   );
@@ -583,6 +674,18 @@ function ScheduledExportsView() {
 
 // ======================== EXPORT HISTORY VIEW ========================
 function ExportHistoryView({ history }) {
+  if (history.length === 0) {
+    return (
+      <AnimatedCard>
+        <div className="text-center py-12">
+          <span className="text-4xl block mb-3">📚</span>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">No exports yet</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Generated reports and exports will appear here</p>
+        </div>
+      </AnimatedCard>
+    );
+  }
+
   return (
     <AnimatedCard>
       <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Export History</h3>
@@ -598,11 +701,13 @@ function ExportHistoryView({ history }) {
               <span className="text-xl">{formatInfo.icon}</span>
               <div className="flex-1">
                 <div className="font-medium text-gray-900 dark:text-white text-sm">{entry.name}</div>
-                <div className="text-xs text-gray-400">{formatDate(entry.date)} • {entry.size}</div>
+                <div className="text-xs text-gray-400">{formatDate(entry.date)} • {entry.size || 'Unknown'}</div>
               </div>
               <Badge variant={entry.status === 'completed' ? 'success' : 'warning'} size="xs">{entry.status}</Badge>
               <div className="flex gap-1">
-                <button className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Download">📥</button>
+                {entry.downloadUrl && (
+                  <a href={entry.downloadUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Download">📥</a>
+                )}
                 <button className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Share">🔗</button>
                 <button className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Delete">🗑️</button>
               </div>

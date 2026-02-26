@@ -6,7 +6,8 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import api from '../services/api';
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const AnimatedValue = ({ end, prefix = '₹', decimals = 2 }) => {
   const [val, setVal] = useState(0);
@@ -39,15 +40,6 @@ const POPULAR_CURRENCIES = [
   { code: 'KRW', name: 'South Korean Won', symbol: '₩', flag: '🇰🇷' },
 ];
 
-const HISTORICAL_DATA = Array.from({ length: 30 }, (_, i) => {
-  const d = new Date(); d.setDate(d.getDate() - (29 - i));
-  return {
-    date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    rate: 83.2 + Math.sin(i * 0.3) * 1.5 + Math.random() * 0.5,
-    avg: 83.5,
-  };
-});
-
 export default function CurrencyConverter() {
   const [loading, setLoading] = useState(true);
   const [rates, setRates] = useState({});
@@ -56,13 +48,10 @@ export default function CurrencyConverter() {
   const [amount, setAmount] = useState(1);
   const [convertedAmount, setConvertedAmount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [favorites, setFavorites] = useState(['USD-INR', 'EUR-INR', 'GBP-INR']);
-  const [alerts, setAlerts] = useState([
-    { id: 1, pair: 'USD-INR', target: 82.0, direction: 'below', active: true },
-    { id: 2, pair: 'EUR-INR', target: 92.0, direction: 'above', active: true },
-  ]);
+  const [favorites, setFavorites] = useState(() => loadLocal('fa_currency_favorites', ['USD-INR', 'EUR-INR', 'GBP-INR']));
+  const [alerts, setAlerts] = useState(() => loadLocal('fa_currency_alerts'));
   const [showAlertModal, setShowAlertModal] = useState(false);
-  const [historicalData, setHistoricalData] = useState(HISTORICAL_DATA);
+  const [historicalData, setHistoricalData] = useState([]);
   const [chartPeriod, setChartPeriod] = useState('1M');
   const [newAlert, setNewAlert] = useState({ pair: 'USD-INR', target: '', direction: 'above' });
   const [fromDropdownOpen, setFromDropdownOpen] = useState(false);
@@ -71,24 +60,22 @@ export default function CurrencyConverter() {
   const fetchRates = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/currency/rates');
-      setRates(res.data?.rates || {});
+      const saved = loadLocal('fa_currency_rates', null);
+      if (saved && Object.keys(saved).length > 0) {
+        setRates(saved);
+      }
     } catch {
-      const mockRates = {};
-      POPULAR_CURRENCIES.forEach(c => {
-        mockRates[c.code] = c.code === 'INR' ? 1 : (80 + Math.random() * 10).toFixed(4);
-      });
-      mockRates['USD'] = 83.45; mockRates['EUR'] = 90.12; mockRates['GBP'] = 105.67;
-      mockRates['JPY'] = 0.56; mockRates['AUD'] = 54.32; mockRates['CAD'] = 61.78;
-      mockRates['CHF'] = 94.21; mockRates['CNY'] = 11.52; mockRates['SGD'] = 62.15;
-      mockRates['AED'] = 22.72; mockRates['KRW'] = 0.063;
-      setRates(mockRates);
+      // no saved rates
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { fetchRates(); }, [fetchRates]);
+
+  useEffect(() => { saveLocal('fa_currency_favorites', favorites); }, [favorites]);
+  useEffect(() => { saveLocal('fa_currency_alerts', alerts); }, [alerts]);
+  useEffect(() => { if (Object.keys(rates).length > 0) saveLocal('fa_currency_rates', rates); }, [rates]);
 
   useEffect(() => {
     if (rates[fromCurrency] && rates[toCurrency]) {
@@ -130,7 +117,6 @@ export default function CurrencyConverter() {
     return POPULAR_CURRENCIES.filter(c => c.code !== 'INR').map(c => ({
       ...c,
       rate: rates[c.code] || 0,
-      change: (Math.random() * 2 - 1).toFixed(2),
     }));
   }, [rates]);
 
@@ -158,7 +144,7 @@ export default function CurrencyConverter() {
             </div>
             Currency Converter
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Live exchange rates & conversions</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Enter exchange rates &amp; convert currencies</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowAlertModal(true)} className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors border border-amber-200 dark:border-amber-800">
@@ -269,7 +255,7 @@ export default function CurrencyConverter() {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-slate-900 dark:text-white">{parseFloat(rate).toFixed(2)}</div>
-                  <div className="text-xs text-green-600 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> +0.12%</div>
+                  <div className="text-xs text-slate-400">Rate vs INR</div>
                 </div>
                 <button onClick={() => toggleFavorite(pair)} className="p-1 text-amber-500 hover:text-amber-600">
                   <Star className="w-4 h-4 fill-current" />
@@ -334,7 +320,6 @@ export default function CurrencyConverter() {
               <tr className="border-b border-slate-200 dark:border-slate-700">
                 <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Currency</th>
                 <th className="text-right py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Rate (INR)</th>
-                <th className="text-right py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Change</th>
                 <th className="text-center py-3 px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Favorite</th>
               </tr>
             </thead>
@@ -350,12 +335,10 @@ export default function CurrencyConverter() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-right font-semibold text-slate-900 dark:text-white">₹{parseFloat(c.rate).toFixed(2)}</td>
                   <td className="py-3 px-4 text-right">
-                    <span className={`inline-flex items-center gap-1 text-sm font-medium ${parseFloat(c.change) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {parseFloat(c.change) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {c.change}%
-                    </span>
+                    <input type="number" step="0.01" value={c.rate || ''}
+                      onChange={e => setRates(prev => ({ ...prev, [c.code]: parseFloat(e.target.value) || 0 }))}
+                      className="w-24 text-right font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                   </td>
                   <td className="py-3 px-4 text-center">
                     <button onClick={() => toggleFavorite(`${c.code}-INR`)}

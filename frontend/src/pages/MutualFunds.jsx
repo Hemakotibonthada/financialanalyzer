@@ -8,9 +8,10 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import api from '../services/api';
-
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6', '#6366f1'];
+
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const CATEGORIES = [
   { key: 'all', label: 'All Funds' },
@@ -21,14 +22,7 @@ const CATEGORIES = [
   { key: 'elss', label: 'ELSS' },
 ];
 
-const initialFunds = [
-  { id: 1, name: 'Axis Bluechip Fund', category: 'equity', nav: 52.34, units: 245.5, invested: 100000, current: 128443, returns: 28.4, sipAmount: 5000, risk: 'High', rating: 5, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: 100000 + i * 2500 + Math.random() * 3000 })) },
-  { id: 2, name: 'HDFC Short Term Debt', category: 'debt', nav: 28.12, units: 890.2, invested: 200000, current: 225028, returns: 12.5, sipAmount: 10000, risk: 'Low', rating: 4, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: 200000 + i * 2000 + Math.random() * 1000 })) },
-  { id: 3, name: 'ICICI Balanced Advantage', category: 'hybrid', nav: 65.78, units: 152.3, invested: 80000, current: 100140, returns: 25.2, sipAmount: 3000, risk: 'Medium', rating: 4, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: 80000 + i * 1700 + Math.random() * 2000 })) },
-  { id: 4, name: 'UTI Nifty 50 Index Fund', category: 'index', nav: 142.55, units: 70.1, invested: 80000, current: 99928, returns: 24.9, sipAmount: 5000, risk: 'Medium', rating: 5, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: 80000 + i * 1650 + Math.random() * 2500 })) },
-  { id: 5, name: 'Mirae Asset Tax Saver', category: 'elss', nav: 38.90, units: 385.6, invested: 120000, current: 150038, returns: 25.0, sipAmount: 5000, risk: 'High', rating: 5, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: 120000 + i * 2500 + Math.random() * 2800 })) },
-  { id: 6, name: 'SBI Small Cap Fund', category: 'equity', nav: 145.23, units: 55.0, invested: 60000, current: 79877, returns: 33.1, sipAmount: 2000, risk: 'Very High', rating: 4, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: 60000 + i * 1650 + Math.random() * 3200 })) },
-];
+
 
 const topPerformingFunds = [
   { name: 'Quant Small Cap Fund', category: 'equity', returns1Y: 42.5, returns3Y: 38.2, rating: 5 },
@@ -41,7 +35,7 @@ const topPerformingFunds = [
 const emptyForm = { name: '', category: 'equity', amount: '', type: 'sip', units: '', nav: '' };
 
 export default function MutualFunds() {
-  const [funds, setFunds] = useState(initialFunds);
+  const [funds, setFunds] = useState(() => loadLocal('fa_mutual_funds'));
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState('sip');
@@ -53,6 +47,8 @@ export default function MutualFunds() {
   const [calcYears, setCalcYears] = useState(10);
   const [showCalc, setShowCalc] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => { saveLocal('fa_mutual_funds', funds); }, [funds]);
 
   const filteredFunds = useMemo(() => {
     let result = funds;
@@ -100,7 +96,7 @@ export default function MutualFunds() {
     const newFund = {
       id: Date.now(), name: form.name, category: form.category, nav, units: amt / nav,
       invested: amt, current: amt, returns: 0, sipAmount: form.type === 'sip' ? amt : 0,
-      risk: 'Medium', rating: 3, growth: Array.from({ length: 12 }, (_, i) => ({ month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i], value: amt + i * (amt * 0.01) }))
+      risk: 'Medium', rating: 3, growth: []
     };
     setFunds(prev => [...prev, newFund]);
     setForm(emptyForm);
@@ -176,6 +172,9 @@ export default function MutualFunds() {
           <table className="w-full text-sm">
             <thead><tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"><th className="pb-2 pr-3">Fund Name</th><th className="pb-2 pr-3">Category</th><th className="pb-2 pr-3">NAV</th><th className="pb-2 pr-3">Units</th><th className="pb-2 pr-3">Invested</th><th className="pb-2 pr-3">Current</th><th className="pb-2 pr-3">Returns</th><th className="pb-2 pr-3">Rating</th><th className="pb-2"></th></tr></thead>
             <tbody>
+              {filteredFunds.length === 0 && (
+                <tr><td colSpan={9} className="py-8 text-center text-gray-400 dark:text-gray-500">No mutual funds added yet. Click &quot;Add SIP&quot; or &quot;Lumpsum&quot; to get started.</td></tr>
+              )}
               {filteredFunds.map(f => (
                 <tr key={f.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer" onClick={() => setSelectedFund(f)}>
                   <td className="py-3 pr-3">

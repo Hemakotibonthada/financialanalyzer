@@ -39,15 +39,6 @@ const GOAL_COLORS = {
   other: { bg: 'bg-slate-100 dark:bg-slate-700', text: 'text-slate-600', ring: '#64748b' },
 };
 
-const mockGoals = [
-  { id: 1, name: 'Emergency Fund', category: 'emergency', target: 600000, current: 480000, deadline: '2026-06-30', monthlySaving: 20000, milestones: [{ at: 150000, label: '25%' }, { at: 300000, label: '50%' }, { at: 450000, label: '75%' }], createdAt: '2025-01-01' },
-  { id: 2, name: 'Dream House', category: 'house', target: 5000000, current: 1250000, deadline: '2030-12-31', monthlySaving: 45000, milestones: [{ at: 1250000, label: '25%' }, { at: 2500000, label: '50%' }], createdAt: '2024-06-01' },
-  { id: 3, name: 'New Car', category: 'car', target: 1200000, current: 600000, deadline: '2027-06-30', monthlySaving: 30000, milestones: [{ at: 300000, label: '25%' }, { at: 600000, label: '50%' }], createdAt: '2025-06-01' },
-  { id: 4, name: 'Child Education', category: 'education', target: 3000000, current: 450000, deadline: '2035-06-30', monthlySaving: 15000, milestones: [{ at: 750000, label: '25%' }], createdAt: '2025-01-01' },
-  { id: 5, name: 'Goa Vacation', category: 'vacation', target: 150000, current: 150000, deadline: '2026-04-30', monthlySaving: 0, milestones: [{ at: 75000, label: '50%' }, { at: 150000, label: '100%' }], createdAt: '2025-09-01' },
-  { id: 6, name: 'Retirement Corpus', category: 'retirement', target: 20000000, current: 2400000, deadline: '2050-12-31', monthlySaving: 25000, milestones: [{ at: 5000000, label: '25%' }], createdAt: '2023-01-01' },
-];
-
 const ProgressRing = ({ pct, color, size = 80 }) => {
   const circumference = 2 * Math.PI * 32;
   const offset = circumference - (Math.min(pct, 100) / 100) * circumference;
@@ -95,9 +86,9 @@ export default function GoalTimeline() {
     const load = async () => {
       try {
         const res = await api.get('/goals');
-        setGoals(res.data?.length ? res.data : mockGoals);
+        setGoals(res.data?.goals || res.data || []);
       } catch {
-        setGoals(mockGoals);
+        setGoals([]);
       } finally {
         setTimeout(() => setLoading(false), 500);
       }

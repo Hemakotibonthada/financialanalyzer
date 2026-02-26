@@ -8,9 +8,11 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
-import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6'];
+
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const PROPERTY_TYPES = [
   { value: 'owned', label: 'Owned', color: 'bg-blue-500' },
@@ -18,16 +20,11 @@ const PROPERTY_TYPES = [
   { value: 'invested', label: 'Invested', color: 'bg-purple-500' },
 ];
 
-const initialProperties = [
-  { id: 1, name: '3BHK Apartment', type: 'owned', value: 8500000, address: 'Whitefield, Bangalore', area: 1450, year: 2019, image: null, rentalIncome: 0, mortgage: { amount: 5000000, emi: 45000, remaining: 3200000, rate: 8.5 }, tax: 12000, maintenanceLog: [{ date: '2025-06-10', desc: 'Plumbing repair', cost: 4500 }, { date: '2025-09-15', desc: 'Painting', cost: 25000 }], appreciation: [{ year: 2019, value: 6500000 }, { year: 2020, value: 6800000 }, { year: 2021, value: 7200000 }, { year: 2022, value: 7700000 }, { year: 2023, value: 8000000 }, { year: 2024, value: 8300000 }, { year: 2025, value: 8500000 }] },
-  { id: 2, name: '2BHK Flat - HSR', type: 'rented', value: 6200000, address: 'HSR Layout, Bangalore', area: 1100, year: 2017, image: null, rentalIncome: 22000, mortgage: { amount: 0, emi: 0, remaining: 0, rate: 0 }, tax: 8500, maintenanceLog: [{ date: '2025-03-20', desc: 'AC Service', cost: 2000 }], appreciation: [{ year: 2017, value: 4200000 }, { year: 2018, value: 4500000 }, { year: 2019, value: 4900000 }, { year: 2020, value: 5100000 }, { year: 2021, value: 5500000 }, { year: 2022, value: 5800000 }, { year: 2023, value: 6000000 }, { year: 2024, value: 6100000 }, { year: 2025, value: 6200000 }] },
-  { id: 3, name: 'Commercial Plot', type: 'invested', value: 3500000, address: 'Electronic City, Bangalore', area: 2400, year: 2021, image: null, rentalIncome: 0, mortgage: { amount: 0, emi: 0, remaining: 0, rate: 0 }, tax: 5000, maintenanceLog: [], appreciation: [{ year: 2021, value: 2000000 }, { year: 2022, value: 2400000 }, { year: 2023, value: 2900000 }, { year: 2024, value: 3200000 }, { year: 2025, value: 3500000 }] },
-];
 
 const emptyForm = { name: '', type: 'owned', value: '', address: '', area: '', year: '' };
 
 export default function PropertyManager() {
-  const [properties, setProperties] = useState(initialProperties);
+  const [properties, setProperties] = useState(() => loadLocal('fa_properties'));
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
@@ -36,6 +33,8 @@ export default function PropertyManager() {
   const [maintenanceForm, setMaintenanceForm] = useState({ date: '', desc: '', cost: '' });
   const [showMaintenance, setShowMaintenance] = useState(null);
   const [compareIds, setCompareIds] = useState([]);
+
+  useEffect(() => { saveLocal('fa_properties', properties); }, [properties]);
 
   const totalValue = useMemo(() => properties.reduce((s, p) => s + p.value, 0), [properties]);
   const totalRental = useMemo(() => properties.reduce((s, p) => s + p.rentalIncome, 0), [properties]);

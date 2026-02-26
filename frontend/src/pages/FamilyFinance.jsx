@@ -8,7 +8,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, CartesianGrid, Legend, LineChart, Line
 } from 'recharts';
-import api from '../services/api';
+
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const AnimatedValue = ({ value, prefix = '', suffix = '', duration = 800 }) => {
   const [display, setDisplay] = useState(0);
@@ -28,45 +30,21 @@ const AnimatedValue = ({ value, prefix = '', suffix = '', duration = 800 }) => {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 const AVATARS = ['👨', '👩', '👦', '👧', '👴', '👶'];
 
-const INITIAL_MEMBERS = [
-  { id: 1, name: 'Rahul', role: 'Parent', avatar: '👨', color: '#3b82f6', budget: 30000, spent: 22500, allowance: null },
-  { id: 2, name: 'Priya', role: 'Parent', avatar: '👩', color: '#ec4899', budget: 25000, spent: 18200, allowance: null },
-  { id: 3, name: 'Aarav', role: 'Child', avatar: '👦', color: '#10b981', budget: 3000, spent: 2100, allowance: 3000 },
-  { id: 4, name: 'Meera', role: 'Child', avatar: '👧', color: '#f59e0b', budget: 2000, spent: 1400, allowance: 2000 },
-];
-
-const BILLS = [
-  { id: 1, name: 'Electricity', amount: 3500, assignedTo: 1, dueDate: '2026-03-05', status: 'pending' },
-  { id: 2, name: 'Internet', amount: 1200, assignedTo: 2, dueDate: '2026-03-10', status: 'paid' },
-  { id: 3, name: 'Rent', amount: 25000, assignedTo: 1, dueDate: '2026-03-01', status: 'paid' },
-  { id: 4, name: 'Groceries', amount: 8000, assignedTo: 2, dueDate: '2026-03-15', status: 'pending' },
-  { id: 5, name: 'School Fee', amount: 5000, assignedTo: 1, dueDate: '2026-03-20', status: 'upcoming' },
-];
-
-const FAMILY_GOALS = [
-  { id: 1, name: 'Family Vacation', target: 200000, saved: 145000, icon: '✈️', deadline: '2026-06-15' },
-  { id: 2, name: 'New Car', target: 800000, saved: 320000, icon: '🚗', deadline: '2027-01-01' },
-  { id: 3, name: 'Emergency Fund', target: 500000, saved: 380000, icon: '🏥', deadline: '2026-12-31' },
-];
-
-const MONTHLY_DATA = [
-  { month: 'Oct', Rahul: 28000, Priya: 22000, Aarav: 2500, Meera: 1800 },
-  { month: 'Nov', Rahul: 31000, Priya: 19500, Aarav: 2800, Meera: 1500 },
-  { month: 'Dec', Rahul: 35000, Priya: 27000, Aarav: 3200, Meera: 2100 },
-  { month: 'Jan', Rahul: 26000, Priya: 21000, Aarav: 2200, Meera: 1600 },
-  { month: 'Feb', Rahul: 22500, Priya: 18200, Aarav: 2100, Meera: 1400 },
-];
 
 export default function FamilyFinance() {
   const [loading, setLoading] = useState(true);
-  const [members, setMembers] = useState(INITIAL_MEMBERS);
-  const [bills, setBills] = useState(BILLS);
-  const [goals, setGoals] = useState(FAMILY_GOALS);
+  const [members, setMembers] = useState(() => loadLocal('fa_family_members'));
+  const [bills, setBills] = useState(() => loadLocal('fa_family_bills'));
+  const [goals, setGoals] = useState(() => loadLocal('fa_family_goals'));
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', role: 'Child', avatar: '👦', budget: 0, allowance: 0 });
   const [selectedMember, setSelectedMember] = useState(null);
   const [viewMode, setViewMode] = useState('family');
+
+  useEffect(() => { saveLocal('fa_family_members', members); }, [members]);
+  useEffect(() => { saveLocal('fa_family_bills', bills); }, [bills]);
+  useEffect(() => { saveLocal('fa_family_goals', goals); }, [goals]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
@@ -176,8 +154,11 @@ export default function FamilyFinance() {
             {/* Monthly Trend */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Monthly Spending Trend</h3>
+              {members.length === 0 ? (
+                <p className="text-center text-slate-400 dark:text-slate-500 py-12">Add family members to see spending trends</p>
+              ) : (
               <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={MONTHLY_DATA}>
+                <LineChart data={[]}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#64748b20" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -188,6 +169,7 @@ export default function FamilyFinance() {
                   ))}
                 </LineChart>
               </ResponsiveContainer>
+              )}
             </div>
 
             {/* Member Cards */}

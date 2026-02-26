@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Bell, BellOff, BellRing, Check, CheckCheck, X, ChevronDown,
   Settings, Filter, Trash2, AlertTriangle, Target, TrendingUp,
@@ -21,24 +21,52 @@ const NOTIFICATION_TYPES = {
   security: { icon: Shield, color: 'red', label: 'Security' },
 };
 
-const SAMPLE_NOTIFICATIONS = [
-  { id: 1, type: 'bill', title: 'Electricity Bill Due', message: 'Your electricity bill of ₹3,500 is due in 3 days.', time: '2026-02-26T10:30:00', read: false, actionLabel: 'Pay Now', group: 'Today' },
-  { id: 2, type: 'budget', title: 'Budget Warning: Dining', message: 'You have spent 85% of your dining budget this month.', time: '2026-02-26T09:15:00', read: false, actionLabel: 'View Budget', group: 'Today' },
-  { id: 3, type: 'goal', title: 'Vacation Goal: 75% Complete!', message: 'Congratulations! Your vacation savings reached ₹1,50,000.', time: '2026-02-26T08:00:00', read: true, actionLabel: 'View Goal', group: 'Today' },
-  { id: 4, type: 'security', title: 'New Login Detected', message: 'A new login was detected from Chrome on Windows.', time: '2026-02-25T22:00:00', read: true, actionLabel: 'Review', group: 'Yesterday' },
-  { id: 5, type: 'market', title: 'Nifty 50 Up 2.3%', message: 'Markets rallied today. Your portfolio value increased by ₹12,500.', time: '2026-02-25T16:30:00', read: false, actionLabel: 'View Portfolio', group: 'Yesterday' },
-  { id: 6, type: 'bill', title: 'Internet Bill Paid', message: 'Your internet bill of ₹1,200 was auto-paid successfully.', time: '2026-02-25T14:00:00', read: true, group: 'Yesterday' },
-  { id: 7, type: 'budget', title: 'Monthly Budget Reset', message: 'Your budgets have been reset for the new month.', time: '2026-02-24T00:00:00', read: true, group: 'This Week' },
-  { id: 8, type: 'goal', title: 'Emergency Fund Update', message: 'You are ₹1,20,000 away from your emergency fund target.', time: '2026-02-23T12:00:00', read: true, actionLabel: 'Contribute', group: 'This Week' },
-  { id: 9, type: 'security', title: 'Password Changed', message: 'Your account password was changed successfully.', time: '2026-02-22T18:45:00', read: true, group: 'This Week' },
-  { id: 10, type: 'market', title: 'Stock Alert: HDFC', message: 'HDFC Bank crossed your target price of ₹1,700.', time: '2026-02-21T10:00:00', read: true, actionLabel: 'View Stock', group: 'Earlier' },
-  { id: 11, type: 'bill', title: 'Rent Due Reminder', message: 'Monthly rent of ₹25,000 is due on March 1st.', time: '2026-02-20T09:00:00', read: true, actionLabel: 'Set Reminder', group: 'Earlier' },
-  { id: 12, type: 'budget', title: 'Spending Spike Detected', message: 'You spent ₹5,200 on shopping yesterday, which is above your daily average.', time: '2026-02-19T08:00:00', read: true, group: 'Earlier' },
-];
+// Map backend notification types to frontend UI types
+const BACKEND_TYPE_MAP = {
+  bill_reminder: 'bill',
+  emi_reminder: 'bill',
+  budget_alert: 'budget',
+  transaction_alert: 'security',
+  cibil_update: 'market',
+  info: 'goal',
+};
+
+function mapBackendType(backendType) {
+  return BACKEND_TYPE_MAP[backendType] || 'bill';
+}
+
+function computeGroup(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  if (date >= today) return 'Today';
+  if (date >= yesterday) return 'Yesterday';
+  if (date >= weekAgo) return 'This Week';
+  return 'Earlier';
+}
+
+function normalizeNotification(n) {
+  return {
+    id: n.id,
+    type: n.type && NOTIFICATION_TYPES[n.type] ? n.type : mapBackendType(n.type),
+    title: n.title,
+    message: n.message,
+    time: n.createdAt || n.time,
+    read: n.isRead !== undefined ? n.isRead : (n.read || false),
+    actionLabel: n.actionLabel || undefined,
+    group: n.group || computeGroup(n.createdAt || n.time || new Date().toISOString()),
+  };
+}
 
 export default function SmartNotifications() {
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState(SAMPLE_NOTIFICATIONS);
+  const [error, setError] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -55,10 +83,26 @@ export default function SmartNotifications() {
     quietHoursEnd: '07:00',
   });
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get('/notifications');
+      const raw = res.data?.data?.notifications || res.data?.notifications || res.data?.data || [];
+      const mapped = Array.isArray(raw) ? raw.map(normalizeNotification) : [];
+      setNotifications(mapped);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      setError('Failed to load notifications');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const filtered = useMemo(() => {
     if (filterType === 'all') return notifications;
@@ -83,17 +127,60 @@ export default function SmartNotifications() {
   const todayCount = notifications.filter(n => n.group === 'Today').length;
   const actionableCount = notifications.filter(n => n.actionLabel && !n.read).length;
 
-  const markRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  const dismiss = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
-  const toggleRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
-  const archiveNotification = (id) => {
+  const markRead = async (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    try {
+      await api.patch(`/notifications/${id}/read`);
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const markAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    try {
+      await api.patch('/notifications/read-all');
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
+  };
+
+  const dismiss = async (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      await api.delete(`/notifications/${id}`);
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
+
+  const toggleRead = async (id) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
+    const newRead = !notif.read;
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: newRead } : n));
+    if (newRead) {
+      try {
+        await api.patch(`/notifications/${id}/read`);
+      } catch (err) {
+        console.error('Failed to toggle read status:', err);
+      }
+    }
+  };
+
+  const archiveNotification = async (id) => {
     const notif = notifications.find(n => n.id === id);
     if (notif) {
       setArchivedNotifications(prev => [...prev, { ...notif, archivedAt: new Date().toISOString() }]);
       setNotifications(prev => prev.filter(n => n.id !== id));
+      try {
+        await api.delete(`/notifications/${id}`);
+      } catch (err) {
+        console.error('Failed to archive notification:', err);
+      }
     }
   };
+
   const restoreNotification = (id) => {
     const notif = archivedNotifications.find(n => n.id === id);
     if (notif) {
@@ -102,6 +189,7 @@ export default function SmartNotifications() {
       setArchivedNotifications(prev => prev.filter(n => n.id !== id));
     }
   };
+
   const clearAllArchived = () => setArchivedNotifications([]);
 
   const typeStats = Object.entries(NOTIFICATION_TYPES).map(([key, val]) => ({
@@ -120,6 +208,20 @@ export default function SmartNotifications() {
         <div className="text-center">
           <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && notifications.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+          <button onClick={fetchNotifications} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
         </div>
       </div>
     );
@@ -387,7 +489,14 @@ export default function SmartNotifications() {
 
             <div className="flex gap-3 justify-end mt-6">
               <button onClick={() => setShowSettings(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
-              <button onClick={() => setShowSettings(false)} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Save Preferences</button>
+              <button onClick={async () => {
+                try {
+                  await api.put('/notifications/preferences', preferences);
+                } catch (err) {
+                  console.error('Failed to save preferences:', err);
+                }
+                setShowSettings(false);
+              }} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Save Preferences</button>
             </div>
           </div>
         </div>

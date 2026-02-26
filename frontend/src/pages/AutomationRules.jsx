@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Zap, Plus, X, Check, Play, Pause, Trash2, Edit3, Copy,
   ChevronRight, ChevronDown, Clock, Tag, DollarSign, Bell,
@@ -30,14 +30,24 @@ const ACTION_TYPES = [
   { id: 'tag', label: 'Apply Tag', icon: Tag, desc: 'Tag the transaction for tracking' },
 ];
 
-const SAMPLE_RULES = [
-  { id: 1, name: 'Auto-categorize Swiggy', trigger: 'category', triggerValue: 'Swiggy/Zomato', action: 'categorize', actionValue: 'Food & Dining', enabled: true, priority: 1, executions: 45, lastRun: '2026-02-26T09:30:00', created: '2026-01-15' },
-  { id: 2, name: 'Large Transaction Alert', trigger: 'amount', triggerValue: '> ₹10,000', action: 'notify', actionValue: 'Push + Email', enabled: true, priority: 2, executions: 12, lastRun: '2026-02-25T14:20:00', created: '2026-01-20' },
-  { id: 3, name: 'Monthly SIP Save', trigger: 'date', triggerValue: '5th of month', action: 'save', actionValue: '₹5,000 to Investments', enabled: true, priority: 3, executions: 8, lastRun: '2026-02-05T08:00:00', created: '2026-02-01' },
-  { id: 4, name: 'Salary Credit Transfer', trigger: 'amount', triggerValue: 'Credit > ₹50,000', action: 'transfer', actionValue: '30% to Savings', enabled: false, priority: 4, executions: 3, lastRun: '2026-02-01T10:00:00', created: '2026-01-01' },
-  { id: 5, name: 'Subscription Tracker', trigger: 'recurring', triggerValue: 'Monthly repeats', action: 'tag', actionValue: '#subscription', enabled: true, priority: 5, executions: 22, lastRun: '2026-02-24T12:00:00', created: '2026-01-05' },
-  { id: 6, name: 'Low Balance Warning', trigger: 'balance', triggerValue: '< ₹5,000', action: 'notify', actionValue: 'Urgent Alert', enabled: true, priority: 6, executions: 5, lastRun: '2026-02-20T16:00:00', created: '2026-02-10' },
-];
+const TRIGGER_TO_BACKEND = { amount: 'amount_above', category: 'category_match', recurring: 'recurring_pattern', date: 'date_match', balance: 'amount_below' };
+const TRIGGER_FROM_BACKEND = { amount_above: 'amount', amount_below: 'balance', category_match: 'category', recurring_pattern: 'recurring', date_match: 'date', keyword_match: 'category' };
+const ACTION_TO_BACKEND = { categorize: 'auto_categorize', notify: 'send_notification', save: 'auto_save', transfer: 'auto_transfer', tag: 'auto_tag' };
+const ACTION_FROM_BACKEND = { auto_categorize: 'categorize', send_notification: 'notify', create_alert: 'notify', auto_save: 'save', auto_transfer: 'transfer', auto_tag: 'tag' };
+
+const normalizeRule = (rule) => ({
+  id: rule._id || rule.id,
+  name: rule.name || '',
+  trigger: TRIGGER_FROM_BACKEND[rule.trigger?.type] || rule.trigger?.type || '',
+  triggerValue: String(rule.trigger?.value ?? ''),
+  action: ACTION_FROM_BACKEND[rule.action?.type] || rule.action?.type || '',
+  actionValue: rule.action?.config?.label || '',
+  enabled: rule.isActive ?? true,
+  priority: rule.priority || 0,
+  executions: rule.executionCount || 0,
+  lastRun: rule.lastExecutedAt || null,
+  created: rule.createdAt ? rule.createdAt.split('T')[0] : '',
+});
 
 const RULE_TEMPLATES = [
   { name: 'Round-Up Savings', trigger: 'amount', action: 'save', desc: 'Round up transactions and save the difference' },
@@ -46,33 +56,93 @@ const RULE_TEMPLATES = [
   { name: 'Receipt Tagger', trigger: 'category', action: 'tag', desc: 'Auto-tag business expenses for tax' },
 ];
 
-const EXECUTION_HISTORY = [
-  { id: 1, rule: 'Auto-categorize Swiggy', time: '2026-02-26T09:30:00', status: 'success', detail: 'Categorized ₹450 as Food & Dining' },
-  { id: 2, rule: 'Large Transaction Alert', time: '2026-02-25T14:20:00', status: 'success', detail: 'Sent alert for ₹25,000 transfer' },
-  { id: 3, rule: 'Monthly SIP Save', time: '2026-02-05T08:00:00', status: 'success', detail: 'Saved ₹5,000 to Investments' },
-  { id: 4, rule: 'Low Balance Warning', time: '2026-02-20T16:00:00', status: 'warning', detail: 'Balance dropped to ₹3,200' },
-  { id: 5, rule: 'Subscription Tracker', time: '2026-02-24T12:00:00', status: 'success', detail: 'Tagged Netflix ₹649 as #subscription' },
-  { id: 6, rule: 'Auto-categorize Swiggy', time: '2026-02-25T20:15:00', status: 'error', detail: 'Failed: merchant not recognized' },
-];
-
 export default function AutomationRules() {
   const [loading, setLoading] = useState(true);
-  const [rules, setRules] = useState(SAMPLE_RULES);
+  const [rules, setRules] = useState([]);
   const [activeTab, setActiveTab] = useState('rules');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRule, setExpandedRule] = useState(null);
-  const [newRule, setNewRule] = useState({ name: '', trigger: '', triggerValue: '', action: '', actionValue: '', priority: rules.length + 1 });
+  const [newRule, setNewRule] = useState({ name: '', trigger: '', triggerValue: '', action: '', actionValue: '', priority: 1 });
   const [step, setStep] = useState(1);
+  const [executionHistory, setExecutionHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [statsData, setStatsData] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
+  const fetchRules = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/automation');
+      const data = res.data?.data || [];
+      setRules(data.map(normalizeRule));
+    } catch (err) {
+      console.error('Failed to fetch automation rules:', err);
+      setRules([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const toggleRule = (id) => setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
-  const deleteRule = (id) => setRules(prev => prev.filter(r => r.id !== id));
-  const duplicateRule = (rule) => setRules(prev => [...prev, { ...rule, id: Date.now(), name: `${rule.name} (Copy)`, executions: 0 }]);
+  useEffect(() => {
+    fetchRules();
+  }, [fetchRules]);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      setHistoryLoading(true);
+      api.get('/automation/history')
+        .then(res => setExecutionHistory(res.data?.data || []))
+        .catch(() => setExecutionHistory([]))
+        .finally(() => setHistoryLoading(false));
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'stats') {
+      setStatsLoading(true);
+      api.get('/automation/stats')
+        .then(res => setStatsData(res.data?.data || null))
+        .catch(() => setStatsData(null))
+        .finally(() => setStatsLoading(false));
+    }
+  }, [activeTab]);
+
+  const toggleRule = async (id) => {
+    setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
+    try {
+      await api.patch(`/automation/${id}/toggle`);
+    } catch (err) {
+      setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
+      console.error('Failed to toggle rule:', err);
+    }
+  };
+
+  const deleteRule = async (id) => {
+    const previous = rules;
+    setRules(prev => prev.filter(r => r.id !== id));
+    try {
+      await api.delete(`/automation/${id}`);
+    } catch (err) {
+      setRules(previous);
+      console.error('Failed to delete rule:', err);
+    }
+  };
+
+  const duplicateRule = async (rule) => {
+    try {
+      const payload = {
+        name: `${rule.name} (Copy)`,
+        trigger: { type: TRIGGER_TO_BACKEND[rule.trigger] || rule.trigger, value: rule.triggerValue },
+        action: { type: ACTION_TO_BACKEND[rule.action] || rule.action, config: { label: rule.actionValue } },
+        priority: rules.length + 1,
+      };
+      const res = await api.post('/automation', payload);
+      setRules(prev => [...prev, normalizeRule(res.data.data)]);
+    } catch (err) {
+      console.error('Failed to duplicate rule:', err);
+    }
+  };
 
   const moveRule = (id, direction) => {
     setRules(prev => {
@@ -86,24 +156,42 @@ export default function AutomationRules() {
 
   const filteredRules = rules.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleCreateRule = () => {
+  const handleCreateRule = async () => {
     if (!newRule.name || !newRule.trigger || !newRule.action) return;
-    setRules(prev => [...prev, { ...newRule, id: Date.now(), enabled: true, executions: 0, lastRun: null, created: new Date().toISOString().split('T')[0] }]);
-    setNewRule({ name: '', trigger: '', triggerValue: '', action: '', actionValue: '', priority: rules.length + 2 });
-    setShowCreateModal(false);
-    setStep(1);
+    try {
+      const payload = {
+        name: newRule.name,
+        trigger: { type: TRIGGER_TO_BACKEND[newRule.trigger] || newRule.trigger, value: newRule.triggerValue },
+        action: { type: ACTION_TO_BACKEND[newRule.action] || newRule.action, config: { label: newRule.actionValue } },
+        priority: rules.length + 1,
+      };
+      const res = await api.post('/automation', payload);
+      setRules(prev => [...prev, normalizeRule(res.data.data)]);
+      setNewRule({ name: '', trigger: '', triggerValue: '', action: '', actionValue: '', priority: rules.length + 2 });
+      setShowCreateModal(false);
+      setStep(1);
+    } catch (err) {
+      console.error('Failed to create rule:', err);
+    }
   };
 
-  const executionStats = [
-    { name: 'Success', value: EXECUTION_HISTORY.filter(e => e.status === 'success').length },
-    { name: 'Warning', value: EXECUTION_HISTORY.filter(e => e.status === 'warning').length },
-    { name: 'Error', value: EXECUTION_HISTORY.filter(e => e.status === 'error').length },
+  const executionStats = statsData ? [
+    { name: 'Active', value: statsData.summary?.activeRules || 0 },
+    { name: 'Inactive', value: (statsData.summary?.totalRules || 0) - (statsData.summary?.activeRules || 0) },
+    { name: 'Executions', value: statsData.summary?.totalExecutions || 0 },
+  ] : [
+    { name: 'Active', value: rules.filter(r => r.enabled).length },
+    { name: 'Inactive', value: rules.filter(r => !r.enabled).length },
+    { name: 'Executions', value: rules.reduce((s, r) => s + r.executions, 0) },
   ];
 
-  const dailyExecutions = [
-    { day: 'Mon', count: 8 }, { day: 'Tue', count: 5 }, { day: 'Wed', count: 12 },
-    { day: 'Thu', count: 7 }, { day: 'Fri', count: 15 }, { day: 'Sat', count: 3 }, { day: 'Sun', count: 4 },
-  ];
+  const triggerBreakdown = statsData?.triggerBreakdown?.map(t => ({
+    day: TRIGGER_FROM_BACKEND[t._id] || t._id || 'unknown',
+    count: t.count,
+  })) || TRIGGER_TYPES.map(t => ({
+    day: t.label,
+    count: rules.filter(r => r.trigger === t.id).length,
+  })).filter(t => t.count > 0);
 
   const tabs = [
     { id: 'rules', label: 'Active Rules' },
@@ -296,52 +384,81 @@ export default function AutomationRules() {
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <History className="w-5 h-5 text-blue-500" /> Execution History
             </h3>
-            <div className="space-y-3">
-              {EXECUTION_HISTORY.map(exec => (
-                <div key={exec.id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50">
-                  {exec.status === 'success' ? <Check className="w-5 h-5 text-green-500 flex-shrink-0" /> : exec.status === 'warning' ? <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0" /> : <X className="w-5 h-5 text-red-500 flex-shrink-0" />}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">{exec.rule}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{exec.detail}</p>
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+              </div>
+            ) : executionHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <History className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-500 dark:text-slate-400">No execution history yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {executionHistory.map((exec, idx) => (
+                  <div key={exec._id || idx} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{exec.name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {TRIGGER_FROM_BACKEND[exec.trigger?.type] || exec.trigger?.type || 'N/A'} → {ACTION_FROM_BACKEND[exec.action?.type] || exec.action?.type || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">{exec.executionCount} runs</span>
+                      <p className="text-xs text-slate-400 mt-1">{exec.lastExecutedAt ? new Date(exec.lastExecutedAt).toLocaleString() : 'Never'}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`text-xs px-2 py-1 rounded-full ${exec.status === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : exec.status === 'warning' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'}`}>{exec.status}</span>
-                    <p className="text-xs text-slate-400 mt-1">{new Date(exec.time).toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Statistics */}
         {activeTab === 'stats' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 dashboard-grid">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Execution Results</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={executionStats} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                    <Cell fill="#10b981" />
-                    <Cell fill="#f59e0b" />
-                    <Cell fill="#ef4444" />
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Daily Executions</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={dailyExecutions}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#64748b20" />
-                  <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                  <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {statsLoading ? (
+              <div className="col-span-full flex items-center justify-center py-12">
+                <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+              </div>
+            ) : (
+              <>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Rule Breakdown</h3>
+                  {executionStats.some(s => s.value > 0) ? (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <PieChart>
+                        <Pie data={executionStats} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                          <Cell fill="#10b981" />
+                          <Cell fill="#f59e0b" />
+                          <Cell fill="#3b82f6" />
+                        </Pie>
+                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[220px] text-slate-400 text-sm">No data available</div>
+                  )}
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Rules by Trigger Type</h3>
+                  {triggerBreakdown.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={triggerBreakdown}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#64748b20" />
+                        <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
+                        <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[220px] text-slate-400 text-sm">No data available</div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -23,19 +23,9 @@ const AnimatedValue = ({ end, prefix = '₹' }) => {
 const CATEGORIES = ['Food & Dining', 'Groceries', 'Shopping', 'Transport', 'Utilities', 'Healthcare', 'Entertainment', 'Other'];
 const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#64748b'];
 
-const MOCK_RECEIPTS = [
-  { id: 1, vendor: 'BigBasket', amount: 2350, date: '2026-02-24', category: 'Groceries', status: 'verified', items: 12, thumbnail: null },
-  { id: 2, vendor: 'Swiggy', amount: 580, date: '2026-02-23', category: 'Food & Dining', status: 'verified', items: 3, thumbnail: null },
-  { id: 3, vendor: 'Amazon', amount: 4999, date: '2026-02-22', category: 'Shopping', status: 'verified', items: 2, thumbnail: null },
-  { id: 4, vendor: 'Apollo Pharmacy', amount: 1200, date: '2026-02-20', category: 'Healthcare', status: 'pending', items: 5, thumbnail: null },
-  { id: 5, vendor: 'Shell Petrol', amount: 3000, date: '2026-02-18', category: 'Transport', status: 'verified', items: 1, thumbnail: null },
-  { id: 6, vendor: 'Reliance Fresh', amount: 1850, date: '2026-02-15', category: 'Groceries', status: 'verified', items: 8, thumbnail: null },
-  { id: 7, vendor: 'BookMyShow', amount: 750, date: '2026-02-14', category: 'Entertainment', status: 'verified', items: 2, thumbnail: null },
-  { id: 8, vendor: 'Electricity Board', amount: 2800, date: '2026-02-10', category: 'Utilities', status: 'verified', items: 1, thumbnail: null },
-];
-
 export default function ReceiptScanner() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
@@ -47,17 +37,19 @@ export default function ReceiptScanner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [batchFiles, setBatchFiles] = useState([]);
-  const [showPreview, setShowPreview] = useState(null);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
   const fetchReceipts = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await api.get('/documents/scan');
-      setReceipts(res.data?.receipts || MOCK_RECEIPTS);
-    } catch {
-      setReceipts(MOCK_RECEIPTS);
+      const res = await api.get('/documents', { params: { type: 'receipt' } });
+      setReceipts(res.data?.receipts || res.data?.documents || res.data || []);
+    } catch (err) {
+      console.error('Error fetching receipts:', err);
+      setError('Failed to load receipts.');
+      setReceipts([]);
     } finally {
       setLoading(false);
     }
@@ -66,15 +58,15 @@ export default function ReceiptScanner() {
   useEffect(() => { fetchReceipts(); }, [fetchReceipts]);
 
   const stats = useMemo(() => {
-    const total = receipts.reduce((s, r) => s + r.amount, 0);
+    const total = receipts.reduce((s, r) => s + (r.amount || 0), 0);
     const verified = receipts.filter(r => r.status === 'verified').length;
     const pending = receipts.filter(r => r.status === 'pending').length;
     const categoryBreakdown = {};
     receipts.forEach(r => {
       if (!categoryBreakdown[r.category]) categoryBreakdown[r.category] = 0;
-      categoryBreakdown[r.category] += r.amount;
+      categoryBreakdown[r.category] += (r.amount || 0);
     });
-    const chartData = Object.entries(categoryBreakdown).map(([name, value], i) => ({
+    const chartData = Object.entries(categoryBreakdown).map(([name, value]) => ({
       name, value, color: CATEGORY_COLORS[CATEGORIES.indexOf(name)] || '#64748b'
     }));
     return { total, verified, pending, count: receipts.length, chartData };
@@ -83,69 +75,85 @@ export default function ReceiptScanner() {
   const filteredReceipts = useMemo(() => {
     return receipts.filter(r => {
       if (filterCategory !== 'all' && r.category !== filterCategory) return false;
-      if (searchQuery && !r.vendor.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (searchQuery && !(r.vendor || '').toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
     });
   }, [receipts, filterCategory, searchQuery]);
 
-  const simulateScan = useCallback((fileName) => {
+  const handleFileUpload = useCallback(async (file) => {
     setScanning(true);
     setScanProgress(0);
-    const interval = setInterval(() => {
-      setScanProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setScanning(false);
-          const mockResult = {
-            vendor: ['BigBasket', 'DMart', 'Swiggy', 'Amazon', 'Flipkart'][Math.floor(Math.random() * 5)],
-            amount: Math.floor(500 + Math.random() * 5000),
-            date: new Date().toISOString().split('T')[0],
-            category: CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)],
-            items: Math.floor(1 + Math.random() * 15),
-            confidence: Math.floor(85 + Math.random() * 15),
-            fileName,
-          };
-          setScannedData(mockResult);
-          return 100;
-        }
-        return prev + Math.random() * 15 + 5;
+    const progressInterval = setInterval(() => {
+      setScanProgress(prev => Math.min(prev + 10, 90));
+    }, 300);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'receipt');
+      const res = await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-    }, 200);
+      clearInterval(progressInterval);
+      setScanProgress(100);
+      const result = res.data?.data || res.data || {};
+      setScannedData({
+        vendor: result.vendor || file.name,
+        amount: result.amount || 0,
+        date: result.date || new Date().toISOString().split('T')[0],
+        category: result.category || 'Other',
+        items: result.items || 0,
+        confidence: result.confidence || 0,
+        fileName: file.name,
+      });
+    } catch (err) {
+      console.error('Scan failed:', err);
+      clearInterval(progressInterval);
+      setError('Failed to scan receipt. Please try again.');
+    } finally {
+      setScanning(false);
+    }
   }, []);
 
   const handleFileSelect = useCallback((e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 1) {
-      simulateScan(files[0].name);
+      handleFileUpload(files[0]);
     } else if (files.length > 1) {
       setBatchFiles(files.map(f => ({ name: f.name, status: 'pending' })));
-      files.forEach((f, i) => {
-        setTimeout(() => {
-          setBatchFiles(prev => prev.map((bf, j) => j === i ? { ...bf, status: 'processing' } : bf));
-          setTimeout(() => {
-            setBatchFiles(prev => prev.map((bf, j) => j === i ? { ...bf, status: 'done' } : bf));
-            const newReceipt = {
-              id: Date.now() + i,
-              vendor: ['Store A', 'Store B', 'Store C'][i % 3],
-              amount: Math.floor(500 + Math.random() * 3000),
-              date: new Date().toISOString().split('T')[0],
-              category: CATEGORIES[Math.floor(Math.random() * 6)],
-              status: 'pending',
-              items: Math.floor(1 + Math.random() * 10),
-            };
-            setReceipts(prev => [...prev, newReceipt]);
-          }, 2000 + i * 500);
-        }, i * 2500);
+      files.forEach(async (f, i) => {
+        setBatchFiles(prev => prev.map((bf, j) => j === i ? { ...bf, status: 'processing' } : bf));
+        try {
+          const formData = new FormData();
+          formData.append('file', f);
+          formData.append('type', 'receipt');
+          const res = await api.post('/documents/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          const result = res.data?.data || res.data || {};
+          setBatchFiles(prev => prev.map((bf, j) => j === i ? { ...bf, status: 'done' } : bf));
+          setReceipts(prev => [...prev, {
+            id: result._id || result.id || Date.now() + i,
+            vendor: result.vendor || f.name,
+            amount: result.amount || 0,
+            date: result.date || new Date().toISOString().split('T')[0],
+            category: result.category || 'Other',
+            status: 'pending',
+            items: result.items || 0,
+          }]);
+        } catch {
+          setBatchFiles(prev => prev.map((bf, j) => j === i ? { ...bf, status: 'error' } : bf));
+        }
       });
     }
-  }, [simulateScan]);
+  }, [handleFileUpload]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) simulateScan(files[0].name);
-  }, [simulateScan]);
+    if (files.length > 0) handleFileUpload(files[0]);
+  }, [handleFileUpload]);
 
   const handleSaveScanned = useCallback(() => {
     if (!scannedData) return;
@@ -169,13 +177,13 @@ export default function ReceiptScanner() {
 
   const handleSaveEdit = useCallback(() => {
     if (!editingReceipt) return;
-    setReceipts(prev => prev.map(r => r.id === editingReceipt.id ? editingReceipt : r));
+    setReceipts(prev => prev.map(r => (r.id === editingReceipt.id || r._id === editingReceipt._id) ? editingReceipt : r));
     setShowEditModal(false);
     setEditingReceipt(null);
   }, [editingReceipt]);
 
   const handleDelete = useCallback((id) => {
-    setReceipts(prev => prev.filter(r => r.id !== id));
+    setReceipts(prev => prev.filter(r => r.id !== id && r._id !== id));
   }, []);
 
   if (loading) {
@@ -191,6 +199,9 @@ export default function ReceiptScanner() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
         <div>
@@ -264,7 +275,7 @@ export default function ReceiptScanner() {
             <div className="grid grid-cols-2 gap-3 text-left">
               {[
                 { label: 'Vendor', value: scannedData.vendor, icon: Store },
-                { label: 'Amount', value: `₹${scannedData.amount.toLocaleString()}`, icon: Tag },
+                { label: 'Amount', value: `₹${(scannedData.amount || 0).toLocaleString()}`, icon: Tag },
                 { label: 'Date', value: scannedData.date, icon: Calendar },
                 { label: 'Category', value: scannedData.category, icon: Filter },
               ].map((field, i) => (
@@ -316,40 +327,46 @@ export default function ReceiptScanner() {
                 {f.status === 'pending' && <Clock className="w-4 h-4 text-slate-400" />}
                 {f.status === 'processing' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
                 {f.status === 'done' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {f.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Category Breakdown & Filters */}
+      {/* Category Breakdown & Receipts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
           <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Spending by Category</h3>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={stats.chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
-                  {stats.chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff' }} formatter={(v) => [`₹${v.toLocaleString()}`]} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="space-y-1.5">
-            {stats.chartData.map((c, i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />
-                  <span className="text-slate-600 dark:text-slate-400">{c.name}</span>
-                </div>
-                <span className="font-medium text-slate-900 dark:text-white">₹{c.value.toLocaleString()}</span>
+          {stats.chartData.length === 0 ? (
+            <p className="text-sm text-slate-500 py-8 text-center">No data yet.</p>
+          ) : (
+            <>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={stats.chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
+                      {stats.chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff' }} formatter={(v) => [`₹${v.toLocaleString()}`]} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="space-y-1.5">
+                {stats.chartData.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />
+                      <span className="text-slate-600 dark:text-slate-400">{c.name}</span>
+                    </div>
+                    <span className="font-medium text-slate-900 dark:text-white">₹{c.value.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Receipts List */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="relative flex-1">
@@ -372,10 +389,16 @@ export default function ReceiptScanner() {
             </div>
           </div>
 
-          {viewMode === 'grid' ? (
+          {filteredReceipts.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 dark:text-slate-500">
+              <Image className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p className="text-lg font-medium">No receipts found</p>
+              <p className="text-sm mt-1">Upload a receipt to get started.</p>
+            </div>
+          ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {filteredReceipts.map(receipt => (
-                <div key={receipt.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all group">
+                <div key={receipt.id || receipt._id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all group">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-lg">
@@ -392,12 +415,12 @@ export default function ReceiptScanner() {
                   </div>
                   <div className="flex items-end justify-between">
                     <div>
-                      <div className="text-xl font-bold text-slate-900 dark:text-white">₹{receipt.amount.toLocaleString()}</div>
-                      <div className="text-xs text-slate-500">{new Date(receipt.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {receipt.items} items</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white">₹{(receipt.amount || 0).toLocaleString()}</div>
+                      <div className="text-xs text-slate-500">{receipt.date ? new Date(receipt.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''} • {receipt.items || 0} items</div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => handleEdit(receipt)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit3 className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => handleDelete(receipt.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleDelete(receipt.id || receipt._id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
                 </div>
@@ -406,30 +429,22 @@ export default function ReceiptScanner() {
           ) : (
             <div className="space-y-2">
               {filteredReceipts.map(receipt => (
-                <div key={receipt.id} className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex items-center gap-3 hover:shadow-md transition-all">
+                <div key={receipt.id || receipt._id} className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex items-center gap-3 hover:shadow-md transition-all">
                   <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center text-lg shrink-0">
                     {receipt.category === 'Groceries' ? '🛒' : receipt.category === 'Food & Dining' ? '🍔' : '📄'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-slate-900 dark:text-white text-sm truncate">{receipt.vendor}</div>
-                    <div className="text-xs text-slate-500">{receipt.category} • {new Date(receipt.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                    <div className="text-xs text-slate-500">{receipt.category} • {receipt.date ? new Date(receipt.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</div>
                   </div>
                   <span className={`px-2 py-0.5 text-xs font-medium rounded-full shrink-0 ${receipt.status === 'verified' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{receipt.status}</span>
-                  <span className="font-bold text-slate-900 dark:text-white shrink-0">₹{receipt.amount.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900 dark:text-white shrink-0">₹{(receipt.amount || 0).toLocaleString()}</span>
                   <div className="flex gap-1 shrink-0">
                     <button onClick={() => handleEdit(receipt)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit3 className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => handleDelete(receipt.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => handleDelete(receipt.id || receipt._id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {filteredReceipts.length === 0 && (
-            <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-              <Image className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-lg font-medium">No receipts found</p>
-              <p className="text-sm mt-1">Upload a receipt to get started.</p>
             </div>
           )}
         </div>
@@ -446,24 +461,24 @@ export default function ReceiptScanner() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Vendor</label>
-                <input value={editingReceipt.vendor} onChange={e => setEditingReceipt(p => ({ ...p, vendor: e.target.value }))}
+                <input value={editingReceipt.vendor || ''} onChange={e => setEditingReceipt(p => ({ ...p, vendor: e.target.value }))}
                   className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount (₹)</label>
-                  <input type="number" value={editingReceipt.amount} onChange={e => setEditingReceipt(p => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
+                  <input type="number" value={editingReceipt.amount || ''} onChange={e => setEditingReceipt(p => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
                     className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date</label>
-                  <input type="date" value={editingReceipt.date} onChange={e => setEditingReceipt(p => ({ ...p, date: e.target.value }))}
+                  <input type="date" value={editingReceipt.date || ''} onChange={e => setEditingReceipt(p => ({ ...p, date: e.target.value }))}
                     className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
-                <select value={editingReceipt.category} onChange={e => setEditingReceipt(p => ({ ...p, category: e.target.value }))}
+                <select value={editingReceipt.category || ''} onChange={e => setEditingReceipt(p => ({ ...p, category: e.target.value }))}
                   className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>

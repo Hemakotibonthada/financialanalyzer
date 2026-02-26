@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Landmark, Plus, TrendingUp, Calculator, Calendar, IndianRupee, X,
   Edit2, Trash2, ArrowUpRight, Clock, RefreshCw, Shield, AlertTriangle,
@@ -8,9 +8,11 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6'];
+
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const bankRates = [
   { bank: 'SBI', '1Y': 6.8, '2Y': 7.0, '3Y': 7.0, '5Y': 6.5 },
@@ -21,13 +23,6 @@ const bankRates = [
   { bank: 'PNB', '1Y': 6.5, '2Y': 6.8, '3Y': 7.0, '5Y': 6.5 },
 ];
 
-const initialFDs = [
-  { id: 1, bank: 'SBI', amount: 500000, rate: 7.1, tenure: 36, startDate: '2024-06-15', maturityDate: '2027-06-15', maturityAmount: 613536, autoRenew: true },
-  { id: 2, bank: 'HDFC', amount: 300000, rate: 7.25, tenure: 24, startDate: '2025-01-10', maturityDate: '2027-01-10', maturityAmount: 345633, autoRenew: false },
-  { id: 3, bank: 'ICICI', amount: 200000, rate: 7.0, tenure: 12, startDate: '2025-08-01', maturityDate: '2026-08-01', maturityAmount: 214000, autoRenew: true },
-  { id: 4, bank: 'Kotak', amount: 100000, rate: 7.3, tenure: 60, startDate: '2023-03-20', maturityDate: '2028-03-20', maturityAmount: 142576, autoRenew: false },
-  { id: 5, bank: 'Axis', amount: 250000, rate: 7.15, tenure: 18, startDate: '2025-06-01', maturityDate: '2026-12-01', maturityAmount: 277063, autoRenew: true },
-];
 
 const ladderingData = [
   { year: 'Year 1', amount: 200000, rate: 7.0, maturity: 214000 },
@@ -47,13 +42,15 @@ const comparisonData = [
 const emptyForm = { bank: 'SBI', amount: '', rate: '', tenure: '', startDate: '', autoRenew: false };
 
 export default function FixedDeposits() {
-  const [fds, setFDs] = useState(initialFDs);
+  const [fds, setFDs] = useState(() => loadLocal('fa_fixed_deposits'));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [calcAmount, setCalcAmount] = useState(100000);
   const [calcRate, setCalcRate] = useState(7.0);
   const [calcTenure, setCalcTenure] = useState(36);
   const [showCalc, setShowCalc] = useState(false);
+
+  useEffect(() => { saveLocal('fa_fixed_deposits', fds); }, [fds]);
 
   const totalInvested = useMemo(() => fds.reduce((s, f) => s + f.amount, 0), [fds]);
   const totalMaturity = useMemo(() => fds.reduce((s, f) => s + f.maturityAmount, 0), [fds]);

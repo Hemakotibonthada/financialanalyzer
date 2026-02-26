@@ -148,15 +148,8 @@ const EnhancedNetWorthTracker = () => {
       date: new Date(h.date).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
       assets: h.totalAssets || 0, liabilities: h.totalLiabilities || 0, netWorth: h.netWorth || 0
     }));
-    // Demo data
-    return Array.from({ length: 12 }, (_, i) => {
-      const assets = 2000000 + i * 150000 + Math.random() * 100000;
-      const liabilities = 800000 - i * 30000 + Math.random() * 50000;
-      return {
-        date: new Date(2025, i).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
-        assets, liabilities, netWorth: assets - liabilities
-      };
-    });
+    // No historical data available yet
+    return [];
   }, [history]);
 
   const handleAdd = async () => {

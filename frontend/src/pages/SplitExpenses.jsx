@@ -22,34 +22,6 @@ const AnimatedValue = ({ end, prefix = '₹' }) => {
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#f97316'];
 
-const MOCK_GROUPS = [
-  {
-    id: 1, name: 'Goa Trip 2026', members: ['You', 'Rahul', 'Priya', 'Amit'], avatar: '🏖️',
-    expenses: [
-      { id: 1, description: 'Hotel Booking', amount: 24000, paidBy: 'You', date: '2026-02-15', splitType: 'equal' },
-      { id: 2, description: 'Dinner at Beach Shack', amount: 3200, paidBy: 'Rahul', date: '2026-02-16', splitType: 'equal' },
-      { id: 3, description: 'Scuba Diving', amount: 8000, paidBy: 'Priya', date: '2026-02-17', splitType: 'equal' },
-      { id: 4, description: 'Taxi Rides', amount: 2400, paidBy: 'You', date: '2026-02-18', splitType: 'equal' },
-    ],
-  },
-  {
-    id: 2, name: 'Flatmates - Feb', members: ['You', 'Karan', 'Sneha'], avatar: '🏠',
-    expenses: [
-      { id: 5, description: 'Electricity Bill', amount: 3600, paidBy: 'You', date: '2026-02-05', splitType: 'equal' },
-      { id: 6, description: 'Groceries', amount: 4500, paidBy: 'Karan', date: '2026-02-08', splitType: 'equal' },
-      { id: 7, description: 'Internet Bill', amount: 1200, paidBy: 'Sneha', date: '2026-02-10', splitType: 'equal' },
-      { id: 8, description: 'Cleaning Supplies', amount: 800, paidBy: 'You', date: '2026-02-12', splitType: 'equal' },
-    ],
-  },
-  {
-    id: 3, name: 'Office Lunch Group', members: ['You', 'Deepak', 'Meera', 'Vikram', 'Anita'], avatar: '🍕',
-    expenses: [
-      { id: 9, description: 'Pizza Party', amount: 2500, paidBy: 'Deepak', date: '2026-02-20', splitType: 'equal' },
-      { id: 10, description: 'Coffee Run', amount: 750, paidBy: 'You', date: '2026-02-22', splitType: 'equal' },
-    ],
-  },
-];
-
 export default function SplitExpenses() {
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState([]);
@@ -66,9 +38,9 @@ export default function SplitExpenses() {
     setLoading(true);
     try {
       const res = await api.get('/financial/splits');
-      setGroups(res.data?.groups || MOCK_GROUPS);
+      setGroups(res.data?.groups || res.data || []);
     } catch {
-      setGroups(MOCK_GROUPS);
+      setGroups([]);
     } finally {
       setLoading(false);
     }

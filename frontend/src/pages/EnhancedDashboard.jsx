@@ -69,36 +69,32 @@ export default function EnhancedDashboard() {
           transactionsRes,
           goalsRes,
           billsRes,
+          dashboardRes,
         ] = await Promise.allSettled([
           api.get('/financial/summary'),
           api.get('/transactions?limit=10&sort=-date'),
           api.get('/goals'),
           api.get('/bill-reminders'),
+          api.get('/analytics/dashboard'),
         ]);
+
+        const dashData = dashboardRes.status === 'fulfilled' ? dashboardRes.value.data || {} : {};
 
         setDashboardData(prev => ({
           ...prev,
           summary: summaryRes.status === 'fulfilled' ? summaryRes.value.data : prev.summary,
-          transactions: transactionsRes.status === 'fulfilled' ? (transactionsRes.value.data?.transactions || transactionsRes.value.data || []) : prev.transactions,
-          goals: goalsRes.status === 'fulfilled' ? (goalsRes.value.data?.goals || goalsRes.value.data || []) : prev.goals,
-          bills: billsRes.status === 'fulfilled' ? (billsRes.value.data?.bills || billsRes.value.data || []) : prev.bills,
-          // Generate mock data for demo
-          expenses: generateMockExpenses(),
-          incomeExpenseHistory: generateMockIncomeExpense(),
-          investments: generateMockInvestments(),
-          subscriptions: generateMockSubscriptions(),
-          activities: generateMockActivities(),
-          netWorthHistory: generateMockNetWorthHistory(),
-          monthlyTrend: generateMockTrend(),
-          healthScore: 72,
-          healthMetrics: [
-            { label: 'Savings Rate', score: 72, weight: 20 },
-            { label: 'Debt-to-Income', score: 85, weight: 20 },
-            { label: 'Emergency Fund', score: 60, weight: 15 },
-            { label: 'Investment Portfolio', score: 78, weight: 20 },
-            { label: 'Insurance Coverage', score: 65, weight: 15 },
-            { label: 'Credit Score', score: 82, weight: 10 },
-          ],
+          transactions: transactionsRes.status === 'fulfilled' ? (transactionsRes.value.data?.transactions || transactionsRes.value.data || []) : [],
+          goals: goalsRes.status === 'fulfilled' ? (goalsRes.value.data?.goals || goalsRes.value.data || []) : [],
+          bills: billsRes.status === 'fulfilled' ? (billsRes.value.data?.bills || billsRes.value.data || []) : [],
+          expenses: dashData.expenses || [],
+          incomeExpenseHistory: dashData.incomeExpenseHistory || [],
+          investments: dashData.investments || [],
+          subscriptions: dashData.subscriptions || [],
+          activities: dashData.activities || [],
+          netWorthHistory: dashData.netWorthHistory || [],
+          monthlyTrend: dashData.monthlyTrend || [],
+          healthScore: dashData.healthScore || 0,
+          healthMetrics: dashData.healthMetrics || [],
         }));
       } catch (error) {
         console.error('Dashboard data fetch error:', error);
@@ -201,39 +197,39 @@ export default function EnhancedDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 title="Total Income"
-                value={summary.totalIncome || 125000}
+                value={summary.totalIncome || 0}
                 format="currency"
                 color="#10B981"
                 icon="💰"
-                trend={{ isPositive: true, percentage: 12 }}
+                trend={{ isPositive: true, percentage: summary.incomeGrowth || 0 }}
                 delay={0}
               />
               <StatCard
                 title="Total Expenses"
-                value={summary.totalExpense || 78500}
+                value={summary.totalExpense || 0}
                 format="currency"
                 color="#EF4444"
                 icon="💳"
-                trend={{ isPositive: false, percentage: 5 }}
+                trend={{ isPositive: false, percentage: summary.expenseGrowth || 0 }}
                 delay={100}
               />
               <StatCard
                 title="Net Savings"
-                value={(summary.totalIncome || 125000) - (summary.totalExpense || 78500)}
+                value={(summary.totalIncome || 0) - (summary.totalExpense || 0)}
                 format="currency"
                 color="#667eea"
                 icon="🏦"
-                trend={{ isPositive: true, percentage: 18 }}
+                trend={{ isPositive: true, percentage: summary.savingsGrowth || 0 }}
                 delay={200}
               />
               <StatCard
                 title="Net Worth"
-                value={summary.netWorth || 2850000}
+                value={summary.netWorth || 0}
                 format="currency"
                 compact
                 color="#8B5CF6"
                 icon="📈"
-                trend={{ isPositive: true, percentage: 8 }}
+                trend={{ isPositive: true, percentage: summary.netWorthGrowth || 0 }}
                 delay={300}
               />
             </div>
@@ -263,8 +259,8 @@ export default function EnhancedDashboard() {
             {/* Third Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <NetWorthWidget
-                assets={4500000}
-                liabilities={1650000}
+                assets={summary.totalAssets || 0}
+                liabilities={summary.totalLiabilities || 0}
                 history={netWorthHistory}
                 loading={loading}
               />
@@ -323,7 +319,7 @@ export default function EnhancedDashboard() {
         {/* Goals Tab */}
         {activeTab === 'goals' && (
           <div className="space-y-6 animate-fadeIn">
-            <GoalTrackerWidget goals={goals.length ? goals : generateMockGoals()} loading={loading} />
+            <GoalTrackerWidget goals={goals} loading={loading} />
           </div>
         )}
 
@@ -496,75 +492,4 @@ function AddTransactionForm({ onClose }) {
   );
 }
 
-// ======================== MOCK DATA GENERATORS ========================
-function generateMockExpenses() {
-  return [
-    { category: 'Food', amount: 12000 },
-    { category: 'Transport', amount: 8500 },
-    { category: 'Shopping', amount: 15000 },
-    { category: 'Entertainment', amount: 8500 },
-    { category: 'Utilities', amount: 6500 },
-    { category: 'Healthcare', amount: 3500 },
-    { category: 'Education', amount: 5000 },
-    { category: 'Other', amount: 4500 },
-  ];
-}
-
-function generateMockIncomeExpense() {
-  return [
-    { month: 'Jul', income: 120000, expense: 72000 },
-    { month: 'Aug', income: 125000, expense: 78000 },
-    { month: 'Sep', income: 118000, expense: 68000 },
-    { month: 'Oct', income: 130000, expense: 82000 },
-    { month: 'Nov', income: 122000, expense: 75000 },
-    { month: 'Dec', income: 135000, expense: 78500 },
-  ];
-}
-
-function generateMockInvestments() {
-  return [
-    { name: 'Nifty 50 Index Fund', type: 'mutual_funds', invested: 500000, currentValue: 625000 },
-    { name: 'HDFC Blue Chip', type: 'mutual_funds', invested: 300000, currentValue: 352000 },
-    { name: 'Sovereign Gold Bond', type: 'gold', invested: 200000, currentValue: 248000 },
-    { name: 'Bank FD', type: 'fd', invested: 500000, currentValue: 535000 },
-    { name: 'PPF Account', type: 'ppf', invested: 150000, currentValue: 168000 },
-  ];
-}
-
-function generateMockSubscriptions() {
-  return [
-    { name: 'Netflix', service: 'netflix', amount: 649, frequency: 'Monthly' },
-    { name: 'Spotify', service: 'spotify', amount: 119, frequency: 'Monthly' },
-    { name: 'Amazon Prime', service: 'amazon', amount: 1499, frequency: 'Yearly' },
-    { name: 'Gym Membership', service: 'gym', amount: 2000, frequency: 'Monthly' },
-    { name: 'Cloud Storage', service: 'cloud', amount: 130, frequency: 'Monthly' },
-  ];
-}
-
-function generateMockActivities() {
-  return [
-    { title: 'Added expense', description: 'Grocery shopping - ₹2,500', type: 'transaction', date: new Date(), status: 'completed' },
-    { title: 'Goal updated', description: 'Emergency fund: 65% complete', type: 'goal', date: new Date(Date.now() - 3600000), status: 'completed' },
-    { title: 'Budget alert', description: 'Food budget at 85% usage', type: 'alert', date: new Date(Date.now() - 7200000), status: 'active' },
-    { title: 'Bill paid', description: 'Electricity bill - ₹3,200', type: 'bill', date: new Date(Date.now() - 86400000), status: 'completed' },
-    { title: 'Investment', description: 'SIP deducted - ₹10,000', type: 'investment', date: new Date(Date.now() - 172800000), status: 'completed' },
-  ];
-}
-
-function generateMockNetWorthHistory() {
-  return [2200000, 2350000, 2280000, 2420000, 2500000, 2450000, 2580000, 2650000, 2700000, 2750000, 2800000, 2850000];
-}
-
-function generateMockTrend() {
-  return [65, 68, 70, 69, 72, 71, 74, 73, 75, 74, 73, 72];
-}
-
-function generateMockGoals() {
-  return [
-    { name: 'Emergency Fund', type: 'emergency', current: 195000, target: 300000, deadline: '2025-06-30' },
-    { name: 'Dream House', type: 'house', current: 850000, target: 5000000, deadline: '2028-12-31' },
-    { name: 'Europe Trip', type: 'vacation', current: 120000, target: 200000, deadline: '2025-04-30' },
-    { name: 'Retirement Fund', type: 'retirement', current: 1200000, target: 10000000, deadline: '2045-01-01' },
-    { name: 'New Car', type: 'car', current: 350000, target: 800000, deadline: '2026-03-31' },
-  ];
-}
+// ======================== MOCK DATA GENERATORS (REMOVED) ========================

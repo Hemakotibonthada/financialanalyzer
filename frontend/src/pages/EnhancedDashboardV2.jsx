@@ -66,7 +66,7 @@ const StatCard = ({ title, value, change, changeType, icon: Icon, color, sparkli
       <div className="p-3 rounded-xl" style={{ background: `${color}15` }}>
         <Icon size={22} style={{ color }} />
       </div>
-      {change !== undefined && (
+      {change !== undefined && change !== 0 && (
         <span className={`flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-lg ${
           changeType === 'positive' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' :
           changeType === 'negative' ? 'text-red-600 bg-red-50 dark:bg-red-900/30' :
@@ -81,7 +81,7 @@ const StatCard = ({ title, value, change, changeType, icon: Icon, color, sparkli
     <p className="text-2xl font-bold text-slate-900 dark:text-white">
       {typeof value === 'number' ? <AnimatedCounter end={value} prefix={prefix} /> : value}
     </p>
-    {sparklineData && (
+    {sparklineData && sparklineData.length > 1 && (
       <div className="mt-3">
         <MicroSparkline data={sparklineData} color={color} />
       </div>
@@ -149,6 +149,14 @@ const BudgetRing = ({ spent, budget, category, color }) => {
   );
 };
 
+// Chart section skeleton loader
+const ChartSkeleton = ({ height = 300 }) => (
+  <div className="animate-pulse">
+    <div className="h-6 w-40 bg-slate-200 dark:bg-slate-700 rounded mb-4" />
+    <div className="bg-slate-200 dark:bg-slate-700 rounded-xl" style={{ height }} />
+  </div>
+);
+
 // Custom tooltip for charts
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -164,12 +172,29 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
+/**
+ * Compute percentage change between two values.
+ * Returns 0 when previous value is unavailable or zero.
+ */
+const computeChange = (current, previous) => {
+  if (!previous || previous === 0) return 0;
+  return Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10;
+};
+
 const EnhancedDashboardV2 = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [timeRange, setTimeRange] = useState('month');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Chart-specific data & loading states
+  const [monthlyChartData, setMonthlyChartData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
+
+  // Trend data for sparklines & change %
+  const [trendData, setTrendData] = useState(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -193,39 +218,165 @@ const EnhancedDashboardV2 = () => {
     }
   }, []);
 
-  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+  const fetchChartData = useCallback(async () => {
+    try {
+      setChartsLoading(true);
+      const [dashboardRes, trendsRes, categoriesRes] = await Promise.allSettled([
+        api.get('/analytics/dashboard'),
+        api.get('/analytics/trends/12'),
+        api.get('/analytics/categories/6')
+      ]);
+
+      // --- Monthly chart data from trends endpoint ---
+      if (trendsRes.status === 'fulfilled') {
+        const trendsPayload = trendsRes.value?.data?.data;
+        const trendsArray = trendsPayload?.trends || trendsPayload || [];
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const mapped = (Array.isArray(trendsArray) ? trendsArray : []).map(t => {
+          const monthStr = t.month || '';
+          const monthIndex = monthStr.includes('-') ? parseInt(monthStr.split('-')[1], 10) - 1 : null;
+          const label = monthIndex !== null && monthIndex >= 0 && monthIndex < 12 ? monthNames[monthIndex] : monthStr;
+          return {
+            month: label,
+            income: t.totalIncome || t.income || 0,
+            expenses: t.totalSpending || t.expenses || 0,
+            savings: Math.max((t.totalIncome || t.income || 0) - (t.totalSpending || t.expenses || 0), 0),
+          };
+        });
+        setMonthlyChartData(mapped);
+      } else {
+        setMonthlyChartData([]);
+      }
+
+      // --- Category data from categories endpoint ---
+      if (categoriesRes.status === 'fulfilled') {
+        const catPayload = categoriesRes.value?.data?.data;
+        const chartDataArr = catPayload?.chartData || catPayload || [];
+        const mapped = (Array.isArray(chartDataArr) ? chartDataArr : []).map((c, i) => ({
+          name: c.category || c.name || 'Other',
+          value: c.amount || c.value || 0,
+          color: c.color || COLORS[i % COLORS.length],
+        }));
+        setCategoryData(mapped);
+      } else {
+        setCategoryData([]);
+      }
+
+      // --- Dashboard-level trend info for sparklines / change % ---
+      if (dashboardRes.status === 'fulfilled') {
+        const dData = dashboardRes.value?.data?.data;
+        setTrendData(dData || null);
+      } else {
+        setTrendData(null);
+      }
+    } catch (err) {
+      console.error('Chart data fetch error:', err);
+    } finally {
+      setChartsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchChartData();
+  }, [fetchDashboardData, fetchChartData]);
+
+  // Build sparkline arrays from monthly trends
+  const incomeSparkline = useMemo(() => {
+    const trends = trendData?.charts?.monthlyTrends?.trends || [];
+    if (!trends.length) return [];
+    return trends.map(t => t.totalIncome || 0);
+  }, [trendData]);
+
+  const expenseSparkline = useMemo(() => {
+    const trends = trendData?.charts?.monthlyTrends?.trends || [];
+    if (!trends.length) return [];
+    return trends.map(t => t.totalSpending || 0);
+  }, [trendData]);
+
+  const balanceSparkline = useMemo(() => {
+    const trends = trendData?.charts?.monthlyTrends?.trends || [];
+    if (!trends.length) return [];
+    return trends.map(t => (t.totalIncome || 0) - (t.totalSpending || 0));
+  }, [trendData]);
+
+  const savingsRateSparkline = useMemo(() => {
+    const trends = trendData?.charts?.monthlyTrends?.trends || [];
+    if (!trends.length) return [];
+    return trends.map(t => {
+      const income = t.totalIncome || 0;
+      if (income <= 0) return 0;
+      return Math.round(((income - (t.totalSpending || 0)) / income) * 100);
+    });
+  }, [trendData]);
+
+  // Compute change % from current vs previous month in trend data
+  const changeValues = useMemo(() => {
+    const mt = trendData?.charts?.monthlyTrends;
+    const cur = mt?.currentMonth || {};
+    const prev = mt?.previousMonth || {};
+
+    const curIncome = cur.totalIncome || 0;
+    const prevIncome = prev.totalIncome || 0;
+    const curExpenses = cur.totalSpending || 0;
+    const prevExpenses = prev.totalSpending || 0;
+    const curBalance = curIncome - curExpenses;
+    const prevBalance = prevIncome - prevExpenses;
+    const curSavingsRate = curIncome > 0 ? ((curIncome - curExpenses) / curIncome) * 100 : 0;
+    const prevSavingsRate = prevIncome > 0 ? ((prevIncome - prevExpenses) / prevIncome) * 100 : 0;
+
+    return {
+      balance: computeChange(curBalance, prevBalance),
+      income: computeChange(curIncome, prevIncome),
+      expenses: computeChange(curExpenses, prevExpenses),
+      savingsRate: computeChange(curSavingsRate, prevSavingsRate),
+    };
+  }, [trendData]);
 
   const stats = useMemo(() => {
     if (!dashboardData?.summary) return [];
     const s = dashboardData.summary;
     return [
-      { title: 'Total Balance', value: s.totalBalance || s.balance || 0, change: 12.5, changeType: 'positive', icon: Wallet, color: '#3b82f6', sparklineData: [30, 40, 35, 50, 49, 60, 70, 91] },
-      { title: 'Monthly Income', value: s.monthlyIncome || s.totalIncome || 0, change: 8.2, changeType: 'positive', icon: TrendingUp, color: '#10b981', sparklineData: [40, 30, 45, 50, 55, 60, 58, 65] },
-      { title: 'Monthly Expenses', value: s.monthlyExpenses || s.totalExpenses || 0, change: 3.1, changeType: 'negative', icon: CreditCard, color: '#ef4444', sparklineData: [50, 40, 60, 55, 45, 50, 48, 52] },
-      { title: 'Savings Rate', value: s.savingsRate || 0, change: 5.4, changeType: 'positive', icon: Target, color: '#8b5cf6', prefix: '', sparklineData: [20, 25, 22, 30, 28, 35, 33, 38] },
+      {
+        title: 'Total Balance',
+        value: s.totalBalance || s.balance || 0,
+        change: changeValues.balance,
+        changeType: changeValues.balance >= 0 ? 'positive' : 'negative',
+        icon: Wallet,
+        color: '#3b82f6',
+        sparklineData: balanceSparkline,
+      },
+      {
+        title: 'Monthly Income',
+        value: s.monthlyIncome || s.totalIncome || 0,
+        change: changeValues.income,
+        changeType: changeValues.income >= 0 ? 'positive' : 'negative',
+        icon: TrendingUp,
+        color: '#10b981',
+        sparklineData: incomeSparkline,
+      },
+      {
+        title: 'Monthly Expenses',
+        value: s.monthlyExpenses || s.totalExpenses || 0,
+        change: changeValues.expenses,
+        changeType: changeValues.expenses > 0 ? 'negative' : 'positive',
+        icon: CreditCard,
+        color: '#ef4444',
+        sparklineData: expenseSparkline,
+      },
+      {
+        title: 'Savings Rate',
+        value: s.savingsRate || 0,
+        change: changeValues.savingsRate,
+        changeType: changeValues.savingsRate >= 0 ? 'positive' : 'negative',
+        icon: Target,
+        color: '#8b5cf6',
+        prefix: '',
+        sparklineData: savingsRateSparkline,
+      },
     ];
-  }, [dashboardData]);
-
-  const monthlyChartData = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months.map((m, i) => ({
-      month: m,
-      income: Math.floor(Math.random() * 50000) + 30000,
-      expenses: Math.floor(Math.random() * 40000) + 20000,
-      savings: Math.floor(Math.random() * 20000) + 5000,
-    }));
-  }, []);
-
-  const categoryData = useMemo(() => [
-    { name: 'Food & Dining', value: 15000, color: '#3b82f6' },
-    { name: 'Transportation', value: 8000, color: '#10b981' },
-    { name: 'Shopping', value: 12000, color: '#8b5cf6' },
-    { name: 'Bills & Utilities', value: 10000, color: '#f59e0b' },
-    { name: 'Entertainment', value: 5000, color: '#ef4444' },
-    { name: 'Healthcare', value: 3000, color: '#06b6d4' },
-    { name: 'Education', value: 7000, color: '#ec4899' },
-    { name: 'Others', value: 4000, color: '#84cc16' }
-  ], []);
+  }, [dashboardData, changeValues, balanceSparkline, incomeSparkline, expenseSparkline, savingsRateSparkline]);
 
   const quickActions = [
     { icon: Plus, label: 'Add Expense', onClick: () => navigate('/analyze'), color: '#ef4444' },
@@ -287,7 +438,7 @@ const EnhancedDashboardV2 = () => {
               </button>
             ))}
           </div>
-          <button onClick={fetchDashboardData}
+          <button onClick={() => { fetchDashboardData(); fetchChartData(); }}
             className={`p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all ${refreshing ? 'animate-spin' : ''}`}>
             <RefreshCw size={18} className="text-slate-600 dark:text-slate-400" />
           </button>
@@ -321,54 +472,76 @@ const EnhancedDashboardV2 = () => {
               <Maximize2 size={16} className="text-slate-500" />
             </button>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={monthlyChartData}>
-              <defs>
-                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Area type="monotone" dataKey="income" fill="url(#colorIncome)" stroke="#10b981" strokeWidth={2} name="Income" />
-              <Area type="monotone" dataKey="expenses" fill="url(#colorExpenses)" stroke="#ef4444" strokeWidth={2} name="Expenses" />
-              <Bar dataKey="savings" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Savings" barSize={20} opacity={0.8} />
-            </ComposedChart>
-          </ResponsiveContainer>
+          {chartsLoading ? (
+            <ChartSkeleton height={300} />
+          ) : monthlyChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={monthlyChartData}>
+                <defs>
+                  <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Area type="monotone" dataKey="income" fill="url(#colorIncome)" stroke="#10b981" strokeWidth={2} name="Income" />
+                <Area type="monotone" dataKey="expenses" fill="url(#colorExpenses)" stroke="#ef4444" strokeWidth={2} name="Expenses" />
+                <Bar dataKey="savings" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Savings" barSize={20} opacity={0.8} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-slate-400 dark:text-slate-500">
+              <BarChart3 size={40} className="mb-3 opacity-50" />
+              <p className="font-medium">No monthly data available</p>
+              <p className="text-sm">Add transactions to see trends</p>
+            </div>
+          )}
         </div>
 
         {/* Category Breakdown */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Spending Categories</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <RePieChart>
-              <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={4} dataKey="value">
-                {categoryData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
+          {chartsLoading ? (
+            <ChartSkeleton height={200} />
+          ) : categoryData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <RePieChart>
+                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={4} dataKey="value">
+                    {categoryData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v) => `₹${v.toLocaleString()}`} />
+                </RePieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2 mt-4">
+                {categoryData.slice(0, 5).map((cat, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
+                      <span className="text-slate-600 dark:text-slate-400">{cat.name}</span>
+                    </div>
+                    <span className="font-medium text-slate-900 dark:text-white">₹{cat.value.toLocaleString()}</span>
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip formatter={(v) => `₹${v.toLocaleString()}`} />
-            </RePieChart>
-          </ResponsiveContainer>
-          <div className="space-y-2 mt-4">
-            {categoryData.slice(0, 5).map((cat, i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
-                  <span className="text-slate-600 dark:text-slate-400">{cat.name}</span>
-                </div>
-                <span className="font-medium text-slate-900 dark:text-white">₹{cat.value.toLocaleString()}</span>
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[200px] text-slate-400 dark:text-slate-500">
+              <PieChart size={40} className="mb-3 opacity-50" />
+              <p className="font-medium">No category data</p>
+              <p className="text-sm">Spending breakdown will appear here</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -409,12 +582,11 @@ const EnhancedDashboardV2 = () => {
               <BudgetRing key={i} spent={b.spent || 0} budget={b.amount || b.limit || 10000} category={b.category || 'General'} color={COLORS[i % COLORS.length]} />
             ))}
             {(!dashboardData?.budgets?.length) && (
-              <>
-                <BudgetRing spent={15000} budget={20000} category="Food & Dining" color="#3b82f6" />
-                <BudgetRing spent={7500} budget={10000} category="Transportation" color="#10b981" />
-                <BudgetRing spent={4200} budget={5000} category="Entertainment" color="#8b5cf6" />
-                <BudgetRing spent={9800} budget={12000} category="Shopping" color="#f59e0b" />
-              </>
+              <div className="text-center py-10 text-slate-500 dark:text-slate-400">
+                <Target size={40} className="mx-auto mb-3 opacity-50" />
+                <p className="font-medium">No budgets set</p>
+                <p className="text-sm">Create budgets to track your spending</p>
+              </div>
             )}
           </div>
         </div>

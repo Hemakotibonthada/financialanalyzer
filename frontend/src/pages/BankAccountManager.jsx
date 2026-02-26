@@ -25,25 +25,6 @@ const ACCOUNT_TYPES = ['Savings', 'Current', 'FD', 'RD'];
 const CATEGORIES = ['Personal', 'Business', 'Joint'];
 const BANK_COLORS = { 'SBI': '#1a237e', 'HDFC': '#004b87', 'ICICI': '#f37b21', 'Axis': '#800020', 'Kotak': '#ed1c24', 'PNB': '#0d47a1', 'Default': '#3b82f6' };
 
-const mockAccounts = [
-  { id: 1, bank: 'HDFC', accountNo: '****4521', type: 'Savings', category: 'Personal', balance: 245000, lastSync: '2 min ago', synced: true },
-  { id: 2, bank: 'SBI', accountNo: '****7832', type: 'Savings', category: 'Personal', balance: 128500, lastSync: '5 min ago', synced: true },
-  { id: 3, bank: 'ICICI', accountNo: '****1234', type: 'Current', category: 'Business', balance: 567800, lastSync: '1 hr ago', synced: true },
-  { id: 4, bank: 'Axis', accountNo: '****9087', type: 'FD', category: 'Personal', balance: 1000000, lastSync: '1 day ago', synced: false },
-  { id: 5, bank: 'Kotak', accountNo: '****5678', type: 'Savings', category: 'Joint', balance: 89200, lastSync: '10 min ago', synced: true },
-];
-
-const mockTransactions = [
-  { id: 1, accountId: 1, desc: 'Salary Credit', amount: 85000, type: 'credit', date: '2026-02-25', category: 'Income' },
-  { id: 2, accountId: 1, desc: 'Rent Payment', amount: 25000, type: 'debit', date: '2026-02-24', category: 'Housing' },
-  { id: 3, accountId: 2, desc: 'Electricity Bill', amount: 3200, type: 'debit', date: '2026-02-23', category: 'Utilities' },
-  { id: 4, accountId: 3, desc: 'Client Payment', amount: 150000, type: 'credit', date: '2026-02-22', category: 'Income' },
-  { id: 5, accountId: 1, desc: 'Grocery Shopping', amount: 4500, type: 'debit', date: '2026-02-21', category: 'Food' },
-  { id: 6, accountId: 2, desc: 'SIP Investment', amount: 10000, type: 'debit', date: '2026-02-20', category: 'Investment' },
-  { id: 7, accountId: 3, desc: 'Vendor Payment', amount: 45000, type: 'debit', date: '2026-02-19', category: 'Business' },
-  { id: 8, accountId: 5, desc: 'Joint Deposit', amount: 20000, type: 'credit', date: '2026-02-18', category: 'Transfer' },
-];
-
 export default function BankAccountManager() {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState([]);
@@ -59,23 +40,26 @@ export default function BankAccountManager() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await api.get('/bank-accounts');
-        setAccounts(res.data?.length ? res.data : mockAccounts);
-        setTransactions(mockTransactions);
+        const [accRes, txnRes] = await Promise.all([
+          api.get('/bank-accounts'),
+          api.get('/financial/transactions', { params: { limit: 10 } }),
+        ]);
+        setAccounts(Array.isArray(accRes.data) ? accRes.data : []);
+        setTransactions(Array.isArray(txnRes.data) ? txnRes.data : []);
       } catch {
-        setAccounts(mockAccounts);
-        setTransactions(mockTransactions);
+        setAccounts([]);
+        setTransactions([]);
       } finally {
-        setTimeout(() => setLoading(false), 500);
+        setLoading(false);
       }
     };
     load();
   }, []);
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
-  const savingsTotal = accounts.filter((a) => a.type === 'Savings').reduce((s, a) => s + a.balance, 0);
-  const currentTotal = accounts.filter((a) => a.type === 'Current').reduce((s, a) => s + a.balance, 0);
-  const fdTotal = accounts.filter((a) => a.type === 'FD' || a.type === 'RD').reduce((s, a) => s + a.balance, 0);
+  const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
+  const savingsTotal = accounts.filter((a) => a.type === 'Savings').reduce((s, a) => s + (a.balance || 0), 0);
+  const currentTotal = accounts.filter((a) => a.type === 'Current').reduce((s, a) => s + (a.balance || 0), 0);
+  const fdTotal = accounts.filter((a) => a.type === 'FD' || a.type === 'RD').reduce((s, a) => s + (a.balance || 0), 0);
 
   const filteredAccounts = useMemo(() => {
     let list = [...accounts];
@@ -88,8 +72,8 @@ export default function BankAccountManager() {
 
   const spendingByAccount = accounts.map((a) => ({
     name: a.bank,
-    spending: transactions.filter((t) => t.accountId === a.id && t.type === 'debit').reduce((s, t) => s + t.amount, 0),
-    income: transactions.filter((t) => t.accountId === a.id && t.type === 'credit').reduce((s, t) => s + t.amount, 0),
+    spending: transactions.filter((t) => t.accountId === a.id && t.type === 'debit').reduce((s, t) => s + (t.amount || 0), 0),
+    income: transactions.filter((t) => t.accountId === a.id && t.type === 'credit').reduce((s, t) => s + (t.amount || 0), 0),
   }));
 
   const typeBreakdown = [
@@ -98,23 +82,34 @@ export default function BankAccountManager() {
     { name: 'FD/RD', value: fdTotal },
   ].filter((d) => d.value > 0);
 
-  const addAccount = () => {
+  const addAccount = async () => {
     if (!newAccount.bank || !newAccount.accountNo) return;
-    setAccounts([...accounts, { id: Date.now(), ...newAccount, balance: +newAccount.balance || 0, lastSync: 'Just now', synced: true }]);
+    try {
+      const payload = { ...newAccount, balance: +newAccount.balance || 0 };
+      const res = await api.post('/bank-accounts', payload);
+      setAccounts([...accounts, res.data]);
+    } catch {
+      // silently fail
+    }
     setNewAccount({ bank: '', accountNo: '', type: 'Savings', category: 'Personal', balance: '' });
     setShowAddModal(false);
   };
 
   const deleteAccount = (id) => setAccounts(accounts.filter((a) => a.id !== id));
 
-  const doTransfer = () => {
+  const doTransfer = async () => {
     const amt = +transfer.amount;
     if (!transfer.from || !transfer.to || !amt || transfer.from === transfer.to) return;
-    setAccounts(accounts.map((a) => {
-      if (a.id === +transfer.from) return { ...a, balance: a.balance - amt };
-      if (a.id === +transfer.to) return { ...a, balance: a.balance + amt };
-      return a;
-    }));
+    try {
+      await api.post('/bank-accounts/transfer', { from: transfer.from, to: transfer.to, amount: amt });
+      setAccounts(accounts.map((a) => {
+        if (String(a.id) === String(transfer.from)) return { ...a, balance: a.balance - amt };
+        if (String(a.id) === String(transfer.to)) return { ...a, balance: a.balance + amt };
+        return a;
+      }));
+    } catch {
+      // silently fail
+    }
     setTransfer({ from: '', to: '', amount: '' });
     setShowTransferModal(false);
   };

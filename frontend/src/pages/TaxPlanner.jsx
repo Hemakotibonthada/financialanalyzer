@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Button, Chip, IconButton,
   TextField, InputAdornment, Select, MenuItem, FormControl, InputLabel,
@@ -6,7 +6,8 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Divider,
   ToggleButton, ToggleButtonGroup, Alert, Slider, Avatar, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Accordion, AccordionSummary, AccordionDetails, Radio, RadioGroup
+  Accordion, AccordionSummary, AccordionDetails, Radio, RadioGroup,
+  CircularProgress
 } from '@mui/material';
 import {
   AccountBalance, Calculate, TrendingUp, TrendingDown, ExpandMore,
@@ -19,13 +20,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   Legend, PieChart, Pie, Cell, Tooltip as RechartsTooltip
 } from 'recharts';
+import api from '../services/api';
 import '../styles/animations.css';
 
 // ============================================================
 // Feature #100: Tax Planning & Optimization Page
 // ============================================================
 
-// Indian Tax Slabs (FY 2024-25)
+// Indian Tax Slabs (FY 2024-25) — these are official GOI rates
 const NEW_REGIME_SLABS = [
   { min: 0, max: 300000, rate: 0, label: 'Up to ₹3L' },
   { min: 300001, max: 700000, rate: 5, label: '₹3L - ₹7L' },
@@ -42,7 +44,7 @@ const OLD_REGIME_SLABS = [
   { min: 1000001, max: Infinity, rate: 30, label: 'Above ₹10L' },
 ];
 
-// Deduction sections
+// Deduction sections — official Indian Income Tax deduction limits
 const DEDUCTION_SECTIONS = [
   {
     section: '80C',
@@ -130,7 +132,7 @@ const HRA_DEFAULTS = {
   isMetro: true,
 };
 
-// Tax calendar events
+// Tax calendar events — standard Indian tax filing dates
 const TAX_CALENDAR = [
   { date: 'Jun 15', event: 'Advance Tax - Q1 (15%)', type: 'payment', important: true },
   { date: 'Jul 31', event: 'ITR Filing Deadline', type: 'deadline', important: true },
@@ -143,31 +145,6 @@ const TAX_CALENDAR = [
   { date: 'Apr 30', event: 'Employer issues Form 16', type: 'document', important: false },
   { date: 'Jun 15', event: 'TDS on Salary certificates due', type: 'document', important: false },
 ];
-
-// Tax saving suggestions by income level
-const TAX_SUGGESTIONS = {
-  low: [
-    { action: 'Invest ₹1.5L in ELSS via monthly SIP', savings: 15000, priority: 'high', section: '80C' },
-    { action: 'Open PPF account with ₹500/month', savings: 3000, priority: 'medium', section: '80C' },
-    { action: 'Get health insurance for family', savings: 5000, priority: 'high', section: '80D' },
-  ],
-  medium: [
-    { action: 'Max out 80C with ELSS + PPF combination', savings: 46800, priority: 'high', section: '80C' },
-    { action: 'Invest ₹50,000 in NPS for 80CCD(1B)', savings: 15600, priority: 'high', section: '80CCD(1B)' },
-    { action: 'Get comprehensive health insurance', savings: 7500, priority: 'high', section: '80D' },
-    { action: 'Parents health insurance if senior citizen', savings: 15600, priority: 'medium', section: '80D' },
-    { action: 'Claim HRA exemption if paying rent', savings: 30000, priority: 'high', section: 'HRA' },
-  ],
-  high: [
-    { action: 'Max out all 80C instruments', savings: 46800, priority: 'high', section: '80C' },
-    { action: 'Max NPS under 80CCD(1B)', savings: 15600, priority: 'high', section: '80CCD(1B)' },
-    { action: 'Max health insurance - self + parents', savings: 31200, priority: 'high', section: '80D' },
-    { action: 'Home loan - ₹2L interest deduction', savings: 62400, priority: 'high', section: '24B' },
-    { action: 'Claim HRA exemption (metro city)', savings: 60000, priority: 'high', section: 'HRA' },
-    { action: 'Consider old tax regime', savings: 0, priority: 'medium', section: 'Regime' },
-    { action: 'Donate to PM Relief Fund (100% deduction)', savings: 9360, priority: 'low', section: '80G' },
-  ],
-};
 
 const TaxPlanner = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -187,6 +164,11 @@ const TaxPlanner = () => {
   });
   const [hraInputs, setHraInputs] = useState(HRA_DEFAULTS);
   const [expandedSection, setExpandedSection] = useState('80C');
+
+  // Suggestions state — fetched from API
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState(null);
 
   const formatCurrency = (val) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
@@ -285,8 +267,39 @@ const TaxPlanner = () => {
     });
   }, [regime, currentTax]);
 
-  const incomeLevel = grossIncome < 700000 ? 'low' : grossIncome < 1500000 ? 'medium' : 'high';
-  const suggestions = TAX_SUGGESTIONS[incomeLevel] || TAX_SUGGESTIONS.medium;
+  // Fetch suggestions from API when suggestions tab is opened
+  const fetchSuggestions = useCallback(async () => {
+    setSuggestionsLoading(true);
+    setSuggestionsError(null);
+    try {
+      const response = await api.post('/tax/suggestions', {
+        grossIncome,
+        deductions,
+        regime,
+      });
+      const data = response.data;
+      if (data?.success && Array.isArray(data.suggestions)) {
+        setSuggestions(data.suggestions);
+      } else if (Array.isArray(data)) {
+        setSuggestions(data);
+      } else {
+        setSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tax suggestions:', error);
+      setSuggestionsError('Unable to load tax suggestions. Please try again later.');
+      setSuggestions([]);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }, [grossIncome, deductions, regime]);
+
+  // Fetch suggestions when switching to the suggestions tab
+  useEffect(() => {
+    if (activeTab === 3) {
+      fetchSuggestions();
+    }
+  }, [activeTab]); // intentionally not including fetchSuggestions to avoid refetching on every input change
 
   // Pie chart data for tax breakdown
   const pieData = [
@@ -754,57 +767,111 @@ const TaxPlanner = () => {
         </Box>
       )}
 
-      {/* Suggestions Tab */}
+      {/* Suggestions Tab — fetched from API */}
       {activeTab === 3 && (
         <Box>
-          <Alert severity="info" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              Based on your income of {formatCurrency(grossIncome)}, here are personalized tax-saving suggestions.
-              Following all high-priority suggestions could save you up to {formatCurrency(suggestions.filter(s => s.priority === 'high').reduce((a, s) => a + s.savings, 0))} in taxes.
-            </Typography>
-          </Alert>
+          {suggestionsLoading ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <CircularProgress size={40} />
+              <Typography color="text.secondary" sx={{ mt: 2 }}>Loading tax-saving suggestions...</Typography>
+            </Box>
+          ) : suggestionsError ? (
+            <Box>
+              <Alert severity="warning" sx={{ mb: 3 }} action={
+                <Button size="small" startIcon={<Refresh />} onClick={fetchSuggestions}>Retry</Button>
+              }>
+                <Typography variant="body2">{suggestionsError}</Typography>
+              </Alert>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Lightbulb sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                <Typography color="text.secondary">
+                  Tax-saving suggestions could not be loaded. Use the calculator and deductions tabs to plan independently.
+                </Typography>
+              </Box>
+            </Box>
+          ) : suggestions.length === 0 ? (
+            <Box>
+              <Alert severity="info" sx={{ mb: 3 }} action={
+                <Button size="small" startIcon={<Refresh />} onClick={fetchSuggestions}>Refresh</Button>
+              }>
+                <Typography variant="body2">
+                  No personalized suggestions available right now. Add your income and deduction details for tailored recommendations.
+                </Typography>
+              </Alert>
+              <Box sx={{ textAlign: 'center', py: 6 }}>
+                <Lightbulb sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                <Typography color="text.secondary">
+                  Suggestions will appear here based on your financial profile.
+                </Typography>
+              </Box>
+            </Box>
+          ) : (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Alert severity="info" sx={{ flex: 1, mr: 2 }}>
+                  <Typography variant="body2">
+                    Based on your income of {formatCurrency(grossIncome)}, here are personalized tax-saving suggestions.
+                    {suggestions.filter(s => s.priority === 'high').length > 0 && (
+                      <> Following all high-priority suggestions could save you up to {formatCurrency(suggestions.filter(s => s.priority === 'high').reduce((a, s) => a + (s.savings || 0), 0))} in taxes.</>
+                    )}
+                  </Typography>
+                </Alert>
+                <Button size="small" variant="outlined" startIcon={<Refresh />} onClick={fetchSuggestions}>
+                  Refresh
+                </Button>
+              </Box>
 
-          <Grid container spacing={2}>
-            {suggestions.map((suggestion, idx) => (
-              <Grid item xs={12} md={6} key={idx}>
-                <Card sx={{
-                  border: '1px solid',
-                  borderColor: suggestion.priority === 'high' ? 'success.main' : suggestion.priority === 'medium' ? 'warning.main' : 'divider',
-                  transition: 'all 0.3s',
-                  '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
-                }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Chip
-                        label={suggestion.priority}
-                        size="small"
-                        color={suggestion.priority === 'high' ? 'success' : suggestion.priority === 'medium' ? 'warning' : 'default'}
-                      />
-                      <Chip label={suggestion.section} size="small" variant="outlined" />
-                    </Box>
-                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>{suggestion.action}</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography color="success.main" fontWeight={700}>
-                        Save {formatCurrency(suggestion.savings)}/year
-                      </Typography>
-                      <Button size="small" endIcon={<ArrowForward />}>Apply</Button>
-                    </Box>
+              <Grid container spacing={2}>
+                {suggestions.map((suggestion, idx) => (
+                  <Grid item xs={12} md={6} key={idx}>
+                    <Card sx={{
+                      border: '1px solid',
+                      borderColor: suggestion.priority === 'high' ? 'success.main' : suggestion.priority === 'medium' ? 'warning.main' : 'divider',
+                      transition: 'all 0.3s',
+                      '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                    }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Chip
+                            label={suggestion.priority || 'info'}
+                            size="small"
+                            color={suggestion.priority === 'high' ? 'success' : suggestion.priority === 'medium' ? 'warning' : 'default'}
+                          />
+                          {suggestion.section && <Chip label={suggestion.section} size="small" variant="outlined" />}
+                        </Box>
+                        <Typography variant="subtitle1" fontWeight={600} gutterBottom>{suggestion.action}</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          {suggestion.savings ? (
+                            <Typography color="success.main" fontWeight={700}>
+                              Save {formatCurrency(suggestion.savings)}/year
+                            </Typography>
+                          ) : (
+                            <Typography color="text.secondary" variant="body2">
+                              See details
+                            </Typography>
+                          )}
+                          <Button size="small" endIcon={<ArrowForward />}>Apply</Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+
+              {/* Total Potential Savings */}
+              {suggestions.some(s => s.savings > 0) && (
+                <Card sx={{ mt: 3, bgcolor: 'success.50' }}>
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <Typography variant="h6" fontWeight={600}>Total Potential Tax Savings</Typography>
+                    <Typography variant="h3" fontWeight={700} color="success.main">
+                      {formatCurrency(suggestions.reduce((a, s) => a + (s.savings || 0), 0))}
+                    </Typography>
+                    <Typography color="text.secondary">per year if you follow all suggestions</Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Total Potential Savings */}
-          <Card sx={{ mt: 3, bgcolor: 'success.50' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" fontWeight={600}>Total Potential Tax Savings</Typography>
-              <Typography variant="h3" fontWeight={700} color="success.main">
-                {formatCurrency(suggestions.reduce((a, s) => a + s.savings, 0))}
-              </Typography>
-              <Typography color="text.secondary">per year if you follow all suggestions</Typography>
-            </CardContent>
-          </Card>
+              )}
+            </Box>
+          )}
         </Box>
       )}
 

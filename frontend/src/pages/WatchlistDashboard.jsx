@@ -8,7 +8,9 @@ import {
   LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Area, AreaChart
 } from 'recharts';
-import api from '../services/api';
+
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
   const [v, setV] = useState(0);
@@ -22,35 +24,6 @@ const AnimatedValue = ({ end, prefix = '₹' }) => {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-const mockIndices = [
-  { name: 'NIFTY 50', value: 24876.50, change: 1.23 },
-  { name: 'SENSEX', value: 81432.18, change: 0.98 },
-  { name: 'BANK NIFTY', value: 52341.75, change: -0.45 },
-  { name: 'NIFTY IT', value: 38920.30, change: 2.15 },
-];
-
-const mockWatchlist = [
-  { id: 1, symbol: 'RELIANCE', name: 'Reliance Industries', price: 2845.60, change: 2.34, sector: 'Energy', sparkline: [2800, 2820, 2810, 2835, 2850, 2840, 2845], alert: null, type: 'Stock' },
-  { id: 2, symbol: 'TCS', name: 'Tata Consultancy', price: 4120.25, change: -0.87, sector: 'IT', sparkline: [4150, 4140, 4130, 4125, 4110, 4115, 4120], alert: 4200, type: 'Stock' },
-  { id: 3, symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1678.90, change: 1.12, sector: 'Banking', sparkline: [1660, 1665, 1670, 1668, 1675, 1680, 1678], alert: null, type: 'Stock' },
-  { id: 4, symbol: 'INFY', name: 'Infosys Ltd', price: 1892.40, change: -1.56, sector: 'IT', sparkline: [1920, 1915, 1910, 1900, 1895, 1890, 1892], alert: 1850, type: 'Stock' },
-  { id: 5, symbol: 'PARAG_FLEXI', name: 'Parag Parikh Flexi Cap', price: 72.45, change: 0.65, sector: 'Mutual Fund', sparkline: [71.5, 71.8, 72.0, 72.1, 72.3, 72.4, 72.45], alert: null, type: 'Mutual Fund' },
-  { id: 6, symbol: 'BAJFINANCE', name: 'Bajaj Finance', price: 7234.80, change: 3.21, sector: 'Finance', sparkline: [7100, 7140, 7180, 7200, 7210, 7230, 7234], alert: 7500, type: 'Stock' },
-  { id: 7, symbol: 'ITC', name: 'ITC Ltd', price: 465.30, change: 0.42, sector: 'FMCG', sparkline: [462, 463, 464, 463.5, 464.5, 465, 465.3], alert: null, type: 'Stock' },
-  { id: 8, symbol: 'AXISBANK', name: 'Axis Bank', price: 1156.75, change: -0.32, sector: 'Banking', sparkline: [1162, 1160, 1158, 1157, 1155, 1156, 1156.75], alert: null, type: 'Stock' },
-];
-
-const mockNews = [
-  { id: 1, title: 'RBI keeps repo rate unchanged at 6.5%', source: 'Economic Times', time: '2h ago', sentiment: 'neutral' },
-  { id: 2, title: 'IT sector sees strong Q3 earnings beat', source: 'Moneycontrol', time: '4h ago', sentiment: 'positive' },
-  { id: 3, title: 'Crude oil prices surge amid global tensions', source: 'LiveMint', time: '6h ago', sentiment: 'negative' },
-  { id: 4, title: 'New IPO listings expected next week', source: 'Business Standard', time: '8h ago', sentiment: 'neutral' },
-];
-
-const sectorData = [
-  { name: 'IT', value: 30 }, { name: 'Banking', value: 25 }, { name: 'Energy', value: 15 },
-  { name: 'Finance', value: 12 }, { name: 'FMCG', value: 10 }, { name: 'MF', value: 8 },
-];
 
 const SparklineChart = ({ data, positive }) => (
   <ResponsiveContainer width={80} height={32}>
@@ -62,7 +35,7 @@ const SparklineChart = ({ data, positive }) => (
 
 export default function WatchlistDashboard() {
   const [loading, setLoading] = useState(true);
-  const [watchlist, setWatchlist] = useState([]);
+  const [watchlist, setWatchlist] = useState(() => loadLocal('fa_watchlist'));
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [filterType, setFilterType] = useState('All');
@@ -72,27 +45,19 @@ export default function WatchlistDashboard() {
   const [newSymbol, setNewSymbol] = useState('');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await api.get('/watchlist');
-        setWatchlist(res.data?.length ? res.data : mockWatchlist);
-      } catch {
-        setWatchlist(mockWatchlist);
-      } finally {
-        setTimeout(() => setLoading(false), 600);
-      }
-    };
-    load();
+    setLoading(false);
   }, []);
+
+  useEffect(() => { saveLocal('fa_watchlist', watchlist); }, [watchlist]);
 
   const removeItem = (id) => setWatchlist((prev) => prev.filter((w) => w.id !== id));
 
   const addItem = () => {
     if (!newSymbol.trim()) return;
     const item = {
-      id: Date.now(), symbol: newSymbol.toUpperCase(), name: newSymbol, price: (Math.random() * 5000 + 100).toFixed(2),
-      change: (Math.random() * 6 - 3).toFixed(2), sector: 'Other',
-      sparkline: Array.from({ length: 7 }, () => Math.random() * 100 + 50), alert: null, type: 'Stock'
+      id: Date.now(), symbol: newSymbol.toUpperCase(), name: newSymbol, price: 0,
+      change: 0, sector: 'Other',
+      sparkline: [], alert: null, type: 'Stock'
     };
     setWatchlist((prev) => [...prev, item]);
     setNewSymbol('');
@@ -150,14 +115,22 @@ export default function WatchlistDashboard() {
         </div>
 
         {/* Market Overview */}
+        {watchlist.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 border border-slate-200 dark:border-slate-700 text-center">
+            <Eye className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-slate-500 dark:text-slate-400 text-lg font-medium">Your watchlist is empty</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">Click &quot;Add Symbol&quot; to start tracking stocks and mutual funds</p>
+          </div>
+        ) : (
+        <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 dashboard-grid">
-          {mockIndices.map((idx, i) => (
+          {watchlist.slice(0, 4).map((idx, i) => (
             <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{idx.name}</p>
-              <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">{idx.value.toLocaleString()}</p>
-              <div className={`flex items-center gap-1 mt-1 text-sm font-medium ${idx.change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                {idx.change >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                {Math.abs(idx.change)}%
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{idx.symbol}</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">₹{parseFloat(idx.price).toLocaleString()}</p>
+              <div className={`flex items-center gap-1 mt-1 text-sm font-medium ${parseFloat(idx.change) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                {parseFloat(idx.change) >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                {Math.abs(parseFloat(idx.change))}%
               </div>
             </div>
           ))}
@@ -254,38 +227,38 @@ export default function WatchlistDashboard() {
             {/* Sector Breakdown */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-4"><PieIcon className="w-5 h-5 text-purple-600" /> Sector Breakdown</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={sectorData} cx="50%" cy="50%" outerRadius={75} innerRadius={45} dataKey="value" paddingAngle={3}>
-                    {sectorData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {sectorData.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS[i] }} />
-                    <span className="text-slate-600 dark:text-slate-400">{s.name} ({s.value}%)</span>
+              {(() => {
+                const sMap = {};
+                watchlist.forEach(w => { sMap[w.sector || 'Other'] = (sMap[w.sector || 'Other'] || 0) + 1; });
+                const total = watchlist.length;
+                const sd = Object.entries(sMap).map(([name, cnt]) => ({ name, value: Math.round((cnt / total) * 100) }));
+                return (
+                  <>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={sd} cx="50%" cy="50%" outerRadius={75} innerRadius={45} dataKey="value" paddingAngle={3}>
+                        {sd.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    {sd.map((s, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS[i] }} />
+                        <span className="text-slate-600 dark:text-slate-400">{s.name} ({s.value}%)</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* News Feed */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-4"><Newspaper className="w-5 h-5 text-cyan-600" /> Market News</h3>
-              <div className="space-y-3">
-                {mockNews.map((n) => (
-                  <div key={n.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white leading-snug">{n.title}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{n.source}</span>
-                      <span className="text-xs text-slate-400">{n.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-center text-slate-400 dark:text-slate-500 py-8">No market news available</p>
             </div>
           </div>
         </div>
@@ -304,9 +277,9 @@ export default function WatchlistDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+        </>
+        )}
       </div>
-
-      {/* Add Symbol Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-700 shadow-2xl">

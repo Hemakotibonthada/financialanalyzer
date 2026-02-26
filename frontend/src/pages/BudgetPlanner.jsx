@@ -38,16 +38,17 @@ const BUDGET_RULES = {
 export default function BudgetPlanner() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [budgetRule, setBudgetRule] = useLocalStorage('budget_rule', '50-30-20');
-  
+
   const [budgetData, setBudgetData] = useState({
-    income: 125000,
-    totalBudget: 100000,
-    totalSpent: 72000,
+    income: 0,
+    totalBudget: 0,
+    totalSpent: 0,
     categories: BUDGET_CATEGORIES.map(cat => ({
       ...cat,
       budgeted: 0,
@@ -58,41 +59,113 @@ export default function BudgetPlanner() {
     alerts: [],
   });
 
-  // Fetch budget data
+  // Fetch budget data from API
   useEffect(() => {
     const fetchBudgets = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [budgetRes, transRes] = await Promise.allSettled([
+        const [budgetRes, summaryRes, alertsRes] = await Promise.allSettled([
           api.get('/budgets'),
-          api.get('/transactions/summary'),
+          api.get('/budgets/summary/overview'),
+          api.get('/budgets/alerts/check'),
         ]);
-        
-        // Process and merge data
-        const budgets = budgetRes.status === 'fulfilled' ? (budgetRes.value.data?.budgets || budgetRes.value.data || []) : [];
-        
-        setBudgetData(prev => ({
-          ...prev,
-          categories: BUDGET_CATEGORIES.map(cat => {
-            const budget = budgets.find(b => b.category?.toLowerCase() === cat.id);
-            const spent = Math.random() * (cat.recommended / 100) * prev.income * 1.2; // Mock
-            const budgeted = budget?.amount || (cat.recommended / 100) * prev.income;
-            return {
-              ...cat,
-              budgeted: Math.round(budgeted),
-              spent: Math.round(spent),
-              remaining: Math.round(budgeted - spent),
-            };
-          }),
-          history: generateBudgetHistory(),
-          alerts: generateBudgetAlerts(),
-        }));
-      } catch (error) {
-        console.error('Budget fetch error:', error);
+
+        // Extract budgets array from response
+        const budgets = budgetRes.status === 'fulfilled'
+          ? (budgetRes.value.data?.data?.budgets || budgetRes.value.data?.budgets || [])
+          : [];
+
+        // Extract summary (includes income context via analytics)
+        const summaryData = summaryRes.status === 'fulfilled'
+          ? (summaryRes.value.data?.data?.summary || summaryRes.value.data?.summary || {})
+          : {};
+
+        // Extract alerts from the alerts endpoint
+        const apiAlerts = alertsRes.status === 'fulfilled'
+          ? (alertsRes.value.data?.data?.alerts || alertsRes.value.data?.alerts || [])
+          : [];
+
+        // Try to fetch income from analytics summary
+        let income = 0;
+        try {
+          const analyticsRes = await api.get('/analytics/summary');
+          income = analyticsRes.data?.data?.currentMonth?.income
+            || analyticsRes.data?.currentMonth?.income
+            || 0;
+        } catch {
+          // analytics endpoint may not be available; income stays 0
+        }
+
+        // Build categories from real budget data
+        const categories = BUDGET_CATEGORIES.map(cat => {
+          const budget = budgets.find(
+            b => b.category?.toLowerCase() === cat.id.toLowerCase()
+          );
+          const budgeted = budget?.amount || 0;
+          const spent = budget?.spent || 0;
+          return {
+            ...cat,
+            budgeted: Math.round(budgeted),
+            spent: Math.round(spent),
+            remaining: Math.round(budgeted - spent),
+          };
+        });
+
+        setBudgetData({
+          income,
+          totalBudget: summaryData.totalBudgeted || categories.reduce((s, c) => s + c.budgeted, 0),
+          totalSpent: summaryData.totalSpent || categories.reduce((s, c) => s + c.spent, 0),
+          categories,
+          history: [], // will be populated below
+          alerts: apiAlerts,
+        });
+
+        // Fetch real history (last 12 months) in the background
+        fetchBudgetHistory();
+      } catch (err) {
+        console.error('Budget fetch error:', err);
+        setError('Failed to load budget data. Please try again.');
       } finally {
         setLoading(false);
       }
     };
+
+    const fetchBudgetHistory = async () => {
+      try {
+        // Build the last 12 months of real budget data by querying summary for each month
+        const months = [];
+        const now = new Date(selectedMonth + '-01');
+        for (let i = 0; i < 12; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          months.push(d);
+        }
+
+        const historyPromises = months.map(d => {
+          const monthStr = d.toISOString().slice(0, 7);
+          return api.get(`/budgets/summary/overview?month=${monthStr}`).catch(() => null);
+        });
+
+        const historyResults = await Promise.allSettled(historyPromises);
+
+        const history = months.map((d, idx) => {
+          const res = historyResults[idx];
+          const summary = res?.status === 'fulfilled'
+            ? (res.value?.data?.data?.summary || res.value?.data?.summary || {})
+            : {};
+          return {
+            month: d.toLocaleString('default', { month: 'long', year: 'numeric' }),
+            budgeted: summary.totalBudgeted || 0,
+            spent: summary.totalSpent || 0,
+          };
+        });
+
+        setBudgetData(prev => ({ ...prev, history }));
+      } catch {
+        // History fetch failed silently - history stays empty
+      }
+    };
+
     fetchBudgets();
   }, [selectedMonth]);
 
@@ -100,7 +173,7 @@ export default function BudgetPlanner() {
   const { totalBudgeted, totalSpent, totalRemaining, savingsRate, overBudgetCategories } = useMemo(() => {
     const tb = budgetData.categories.reduce((sum, c) => sum + c.budgeted, 0);
     const ts = budgetData.categories.reduce((sum, c) => sum + c.spent, 0);
-    const obc = budgetData.categories.filter(c => c.spent > c.budgeted);
+    const obc = budgetData.categories.filter(c => c.spent > c.budgeted && c.budgeted > 0);
     return {
       totalBudgeted: tb,
       totalSpent: ts,
@@ -110,12 +183,57 @@ export default function BudgetPlanner() {
     };
   }, [budgetData]);
 
+  // 50/30/20 rule analysis from real data
+  const ruleAnalysis = useMemo(() => {
+    const needsMap = ['housing', 'food', 'transport', 'utilities', 'healthcare', 'insurance'];
+    const wantsMap = ['entertainment', 'shopping', 'personal', 'gifts', 'education'];
+    const savingsMap = ['savings'];
+
+    const needsSpent = budgetData.categories
+      .filter(c => needsMap.includes(c.id))
+      .reduce((s, c) => s + c.spent, 0);
+    const wantsSpent = budgetData.categories
+      .filter(c => wantsMap.includes(c.id))
+      .reduce((s, c) => s + c.spent, 0);
+    const savingsSpent = budgetData.categories
+      .filter(c => savingsMap.includes(c.id))
+      .reduce((s, c) => s + c.spent, 0);
+
+    const total = needsSpent + wantsSpent + savingsSpent;
+    return {
+      needs: total > 0 ? Math.round((needsSpent / total) * 100) : 0,
+      wants: total > 0 ? Math.round((wantsSpent / total) * 100) : 0,
+      savings: total > 0 ? Math.round((savingsSpent / total) * 100) : 0,
+    };
+  }, [budgetData]);
+
+  // Spending efficiency computed from real data
+  const efficiencyData = useMemo(() => {
+    const withBudget = budgetData.categories.filter(c => c.budgeted > 0);
+    if (withBudget.length === 0) return { score: 0, best: null, worst: null };
+
+    const avgAdherence = withBudget.reduce((sum, c) => {
+      const ratio = c.spent / c.budgeted;
+      // Score: 100 if at/under budget, decreasing as overspend grows
+      return sum + Math.max(0, 100 - Math.max(0, (ratio - 1) * 100));
+    }, 0) / withBudget.length;
+
+    const sorted = [...withBudget].sort((a, b) => (a.spent / a.budgeted) - (b.spent / b.budgeted));
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+
+    return {
+      score: Math.round(avgAdherence),
+      best,
+      worst,
+    };
+  }, [budgetData]);
+
   // Apply budget rule
   const applySuggestion = useCallback((rule) => {
     const ruleConfig = BUDGET_RULES[rule];
     if (!ruleConfig) return;
     setBudgetRule(rule);
-    // Auto-distribute budget based on rule
     const needsMap = ['housing', 'food', 'transport', 'utilities', 'healthcare', 'insurance'];
     const wantsMap = ['entertainment', 'shopping', 'personal', 'gifts', 'education'];
     const savingsMap = ['savings'];
@@ -161,6 +279,35 @@ export default function BudgetPlanner() {
     { key: 'analysis', label: 'Analysis', icon: '📈' },
     { key: 'history', label: 'History', icon: '📅' },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500 dark:text-gray-400">Loading budget data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <span className="text-4xl block mb-4">⚠️</span>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Budgets</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={() => setSelectedMonth(prev => prev)} // triggers re-fetch
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -214,7 +361,7 @@ export default function BudgetPlanner() {
               <AnimatedCard>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Budget Usage</h3>
                 <GaugeChart
-                  value={Math.round((totalSpent / totalBudgeted) * 100)}
+                  value={totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0}
                   max={100}
                   size={220}
                   title="% of Budget Used"
@@ -393,9 +540,9 @@ export default function BudgetPlanner() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">50/30/20 Rule Analysis</h3>
                 <div className="space-y-4">
                   {[
-                    { label: 'Needs (50%)', actual: 48, target: 50, color: '#667eea' },
-                    { label: 'Wants (30%)', actual: 32, target: 30, color: '#f5576c' },
-                    { label: 'Savings (20%)', actual: 20, target: 20, color: '#10B981' },
+                    { label: 'Needs (50%)', actual: ruleAnalysis.needs, target: 50, color: '#667eea' },
+                    { label: 'Wants (30%)', actual: ruleAnalysis.wants, target: 30, color: '#f5576c' },
+                    { label: 'Savings (20%)', actual: ruleAnalysis.savings, target: 20, color: '#10B981' },
                   ].map((item, i) => (
                     <div key={i}>
                       <div className="flex justify-between text-sm mb-1">
@@ -426,7 +573,7 @@ export default function BudgetPlanner() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Spending Efficiency</h3>
                 <div className="flex items-center justify-center py-4">
                   <GaugeChart
-                    value={78}
+                    value={efficiencyData.score}
                     max={100}
                     size={200}
                     title="Efficiency Score"
@@ -438,30 +585,52 @@ export default function BudgetPlanner() {
                   />
                 </div>
                 <div className="space-y-2 mt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Most efficient category</span>
-                    <span className="font-medium text-green-600">🏠 Housing (95%)</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Needs improvement</span>
-                    <span className="font-medium text-red-600">🛍️ Shopping (142%)</span>
-                  </div>
+                  {efficiencyData.best && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Most efficient category</span>
+                      <span className="font-medium text-green-600">
+                        {efficiencyData.best.icon} {efficiencyData.best.name} ({efficiencyData.best.budgeted > 0 ? Math.round((efficiencyData.best.spent / efficiencyData.best.budgeted) * 100) : 0}%)
+                      </span>
+                    </div>
+                  )}
+                  {efficiencyData.worst && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Needs improvement</span>
+                      <span className="font-medium text-red-600">
+                        {efficiencyData.worst.icon} {efficiencyData.worst.name} ({efficiencyData.worst.budgeted > 0 ? Math.round((efficiencyData.worst.spent / efficiencyData.worst.budgeted) * 100) : 0}%)
+                      </span>
+                    </div>
+                  )}
+                  {!efficiencyData.best && !efficiencyData.worst && (
+                    <div className="text-center text-sm text-gray-400 py-2">
+                      No budget data to analyze yet
+                    </div>
+                  )}
                 </div>
               </AnimatedCard>
             </div>
 
             <AnimatedCard>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Budget Adherence</h3>
-              <EnhancedLineChart
-                labels={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
-                datasets={[
-                  { label: 'Budget', data: [95000, 95000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000] },
-                  { label: 'Actual', data: [88000, 92000, 87000, 105000, 95000, 98000, 82000, 91000, 110000, 94000, 89000, 72000] },
-                ]}
-                height={280}
-                currency
-                colors={['#667eea', '#f5576c']}
-              />
+              {budgetData.history.length > 0 ? (
+                <EnhancedLineChart
+                  labels={[...budgetData.history].reverse().map(h => h.month.split(' ')[0])}
+                  datasets={[
+                    { label: 'Budget', data: [...budgetData.history].reverse().map(h => h.budgeted) },
+                    { label: 'Actual', data: [...budgetData.history].reverse().map(h => h.spent) },
+                  ]}
+                  height={280}
+                  currency
+                  colors={['#667eea', '#f5576c']}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-64 text-gray-400">
+                  <div className="text-center">
+                    <span className="text-3xl block mb-2">📊</span>
+                    <span className="text-sm">No historical data available yet</span>
+                  </div>
+                </div>
+              )}
             </AnimatedCard>
           </div>
         )}
@@ -484,22 +653,9 @@ export default function BudgetPlanner() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { month: 'December 2024', budgeted: 100000, spent: 72000 },
-                      { month: 'November 2024', budgeted: 100000, spent: 89000 },
-                      { month: 'October 2024', budgeted: 100000, spent: 94000 },
-                      { month: 'September 2024', budgeted: 100000, spent: 110000 },
-                      { month: 'August 2024', budgeted: 100000, spent: 91000 },
-                      { month: 'July 2024', budgeted: 100000, spent: 82000 },
-                      { month: 'June 2024', budgeted: 100000, spent: 98000 },
-                      { month: 'May 2024', budgeted: 100000, spent: 95000 },
-                      { month: 'April 2024', budgeted: 100000, spent: 105000 },
-                      { month: 'March 2024', budgeted: 100000, spent: 87000 },
-                      { month: 'February 2024', budgeted: 95000, spent: 92000 },
-                      { month: 'January 2024', budgeted: 95000, spent: 88000 },
-                    ].map((row, i) => {
+                    {budgetData.history.length > 0 ? budgetData.history.map((row, i) => {
                       const savings = row.budgeted - row.spent;
-                      const adherence = (row.spent / row.budgeted) * 100;
+                      const adherence = row.budgeted > 0 ? (row.spent / row.budgeted) * 100 : 0;
                       return (
                         <tr key={i} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                           <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{row.month}</td>
@@ -529,7 +685,14 @@ export default function BudgetPlanner() {
                           </td>
                         </tr>
                       );
-                    })}
+                    }) : (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-gray-400">
+                          <span className="text-3xl block mb-2">📅</span>
+                          <span className="text-sm">No budget history available yet</span>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -567,32 +730,25 @@ export default function BudgetPlanner() {
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-            <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">💡 Personalized Tips</h4>
+            <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">💡 Tips</h4>
             <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
-              <li>• Your food spending is 18% above average - consider meal planning</li>
-              <li>• You could save ₹3,000/month by reducing subscription costs</li>
+              {overBudgetCategories.length > 0 && (
+                <li>• You are over budget in {overBudgetCategories.length} {overBudgetCategories.length === 1 ? 'category' : 'categories'} — review spending in {overBudgetCategories.map(c => c.name).join(', ')}</li>
+              )}
               <li>• Your savings rate of {savingsRate.toFixed(0)}% is {savingsRate >= 20 ? 'above' : 'below'} the recommended 20%</li>
-              <li>• Consider allocating more to emergency fund (currently 60% funded)</li>
+              {ruleAnalysis.needs > 55 && (
+                <li>• Your needs spending ({ruleAnalysis.needs}%) exceeds the recommended 50% — look for ways to reduce fixed costs</li>
+              )}
+              {ruleAnalysis.wants > 35 && (
+                <li>• Your wants spending ({ruleAnalysis.wants}%) exceeds the recommended 30% — consider cutting discretionary expenses</li>
+              )}
+              {budgetData.income === 0 && (
+                <li>• No income data found — add transactions to see accurate budget analysis</li>
+              )}
             </ul>
           </div>
         </div>
       </Modal>
     </div>
   );
-}
-
-function generateBudgetHistory() {
-  return Array.from({ length: 12 }, (_, i) => ({
-    month: new Date(2024, i).toLocaleString('default', { month: 'short' }),
-    budgeted: 100000,
-    spent: 80000 + Math.random() * 30000,
-  }));
-}
-
-function generateBudgetAlerts() {
-  return [
-    { type: 'warning', message: 'Shopping budget at 85% with 10 days remaining' },
-    { type: 'danger', message: 'Food & Dining budget exceeded by ₹2,500' },
-    { type: 'info', message: 'Consider increasing your savings allocation' },
-  ];
 }

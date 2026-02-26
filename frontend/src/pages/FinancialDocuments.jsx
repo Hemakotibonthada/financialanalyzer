@@ -1,45 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FileText, Upload, FolderOpen, Search, Eye, Download, Trash2,
   Grid, List, Share2, Clock, AlertTriangle, Plus, X, Filter,
   File, FileImage, FilePlus, ExternalLink, Shield, Calendar,
   HardDrive, ChevronRight, Tag, Lock
 } from 'lucide-react';
+import api from '../services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
 const categoryList = [
-  { name: 'Tax Returns', icon: FileText, color: '#3B82F6', count: 5 },
-  { name: 'Pay Slips', icon: File, color: '#10B981', count: 12 },
-  { name: 'Insurance', icon: Shield, color: '#EF4444', count: 6 },
-  { name: 'Investments', icon: File, color: '#F59E0B', count: 8 },
-  { name: 'Property', icon: File, color: '#8B5CF6', count: 3 },
-  { name: 'ID Documents', icon: Lock, color: '#EC4899', count: 4 },
+  { name: 'Tax Returns', icon: FileText, color: '#3B82F6' },
+  { name: 'Pay Slips', icon: File, color: '#10B981' },
+  { name: 'Insurance', icon: Shield, color: '#EF4444' },
+  { name: 'Investments', icon: File, color: '#F59E0B' },
+  { name: 'Property', icon: File, color: '#8B5CF6' },
+  { name: 'ID Documents', icon: Lock, color: '#EC4899' },
 ];
-
-const initialDocuments = [
-  { id: 1, name: 'ITR_FY2025.pdf', category: 'Tax Returns', size: '2.4 MB', uploaded: '2025-07-15', expiry: null, tags: ['tax', 'ITR'] },
-  { id: 2, name: 'ITR_FY2024.pdf', category: 'Tax Returns', size: '2.1 MB', uploaded: '2024-07-20', expiry: null, tags: ['tax', 'ITR'] },
-  { id: 3, name: 'Salary_Jan2026.pdf', category: 'Pay Slips', size: '450 KB', uploaded: '2026-02-01', expiry: null, tags: ['salary'] },
-  { id: 4, name: 'Salary_Dec2025.pdf', category: 'Pay Slips', size: '440 KB', uploaded: '2026-01-01', expiry: null, tags: ['salary'] },
-  { id: 5, name: 'Health_Insurance_Policy.pdf', category: 'Insurance', size: '1.8 MB', uploaded: '2025-08-10', expiry: '2026-08-15', tags: ['health', 'insurance'] },
-  { id: 6, name: 'Car_Insurance.pdf', category: 'Insurance', size: '1.2 MB', uploaded: '2025-11-15', expiry: '2026-11-20', tags: ['vehicle', 'insurance'] },
-  { id: 7, name: 'Life_Insurance_LIC.pdf', category: 'Insurance', size: '3.1 MB', uploaded: '2025-03-01', expiry: '2045-03-01', tags: ['life', 'insurance'] },
-  { id: 8, name: 'MF_Statement_Q4.pdf', category: 'Investments', size: '5.2 MB', uploaded: '2026-01-10', expiry: null, tags: ['mutual funds'] },
-  { id: 9, name: 'Demat_Holdings.pdf', category: 'Investments', size: '1.5 MB', uploaded: '2026-02-15', expiry: null, tags: ['stocks', 'demat'] },
-  { id: 10, name: 'PPF_Statement.pdf', category: 'Investments', size: '800 KB', uploaded: '2026-01-05', expiry: null, tags: ['PPF'] },
-  { id: 11, name: 'Property_Deed.pdf', category: 'Property', size: '8.5 MB', uploaded: '2024-06-20', expiry: null, tags: ['property', 'deed'] },
-  { id: 12, name: 'Sale_Agreement.pdf', category: 'Property', size: '4.2 MB', uploaded: '2024-06-15', expiry: null, tags: ['property'] },
-  { id: 13, name: 'Passport.pdf', category: 'ID Documents', size: '3.2 MB', uploaded: '2023-05-10', expiry: '2033-05-09', tags: ['ID', 'passport'] },
-  { id: 14, name: 'Aadhaar_Card.pdf', category: 'ID Documents', size: '1.1 MB', uploaded: '2023-01-15', expiry: null, tags: ['ID', 'aadhaar'] },
-  { id: 15, name: 'PAN_Card.pdf', category: 'ID Documents', size: '600 KB', uploaded: '2023-01-15', expiry: null, tags: ['ID', 'PAN'] },
-  { id: 16, name: 'Home_Insurance.pdf', category: 'Insurance', size: '1.5 MB', uploaded: '2025-01-01', expiry: '2025-12-31', tags: ['home', 'insurance'] },
-];
-
-const formatSize = (size) => size;
 
 export default function FinancialDocuments() {
-  const [documents, setDocuments] = useState(initialDocuments);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -48,10 +30,36 @@ export default function FinancialDocuments() {
   const [dragOver, setDragOver] = useState(false);
   const [shareLink, setShareLink] = useState(null);
 
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.get('/documents');
+        setDocuments(res.data?.documents || res.data || []);
+      } catch (err) {
+        console.error('Error fetching documents:', err);
+        setError('Failed to load documents.');
+        setDocuments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDocuments();
+  }, []);
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    documents.forEach(d => {
+      counts[d.category] = (counts[d.category] || 0) + 1;
+    });
+    return counts;
+  }, [documents]);
+
   const filteredDocs = useMemo(() => {
     return documents.filter(d => {
       if (filterCategory !== 'All' && d.category !== filterCategory) return false;
-      if (searchTerm && !d.name.toLowerCase().includes(searchTerm.toLowerCase()) && !d.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))) return false;
+      if (searchTerm && !d.name.toLowerCase().includes(searchTerm.toLowerCase()) && !(d.tags || []).some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))) return false;
       return true;
     });
   }, [documents, filterCategory, searchTerm]);
@@ -64,20 +72,48 @@ export default function FinancialDocuments() {
 
   const recentDocs = useMemo(() =>
     [...documents].sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded)).slice(0, 5),
-    [documents]
-  );
+  [documents]);
 
-  const totalStorage = 38; // MB
+  const totalStorage = useMemo(() => {
+    return documents.reduce((sum, d) => {
+      const sizeStr = d.size || '0';
+      const num = parseFloat(sizeStr);
+      if (sizeStr.includes('MB')) return sum + num;
+      if (sizeStr.includes('KB')) return sum + num / 1024;
+      return sum + num;
+    }, 0);
+  }, [documents]);
   const maxStorage = 100;
   const storagePct = (totalStorage / maxStorage) * 100;
 
-  const deleteDoc = (id) => setDocuments(documents.filter(d => d.id !== id));
-  const shareDoc = (doc) => setShareLink(`https://app.financialanalyzer.com/shared/${doc.id}/${Date.now()}`);
+  const deleteDoc = async (id) => {
+    try {
+      await api.delete(`/documents/${id}`);
+      setDocuments(documents.filter(d => d.id !== id && d._id !== id));
+    } catch {
+      setDocuments(documents.filter(d => d.id !== id && d._id !== id));
+    }
+  };
+  const shareDoc = (doc) => setShareLink(`https://app.financialanalyzer.com/shared/${doc.id || doc._id}/${Date.now()}`);
 
   const getCategoryColor = (cat) => categoryList.find(c => c.name === cat)?.color || '#64748b';
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 text-lg">Loading documents...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -95,7 +131,7 @@ export default function FinancialDocuments() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Documents', value: documents.length, icon: FileText, color: 'text-blue-600', sub: `${categoryList.length} categories` },
-          { label: 'Storage Used', value: `${totalStorage} MB`, icon: HardDrive, color: 'text-green-600', sub: `of ${maxStorage} MB` },
+          { label: 'Storage Used', value: `${Math.round(totalStorage)} MB`, icon: HardDrive, color: 'text-green-600', sub: `of ${maxStorage} MB` },
           { label: 'Expiring Soon', value: expiringDocs.length, icon: AlertTriangle, color: 'text-amber-600', sub: 'within 6 months' },
           { label: 'Recent Uploads', value: recentDocs.length, icon: Clock, color: 'text-purple-600', sub: 'last 5 documents' },
         ].map((c, i) => (
@@ -114,7 +150,7 @@ export default function FinancialDocuments() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Storage Usage</h2>
-          <span className="text-sm text-slate-500 dark:text-slate-400">{totalStorage} MB / {maxStorage} MB</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">{Math.round(totalStorage)} MB / {maxStorage} MB</span>
         </div>
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
           <div className={`h-3 rounded-full transition-all ${storagePct > 80 ? 'bg-red-500' : storagePct > 50 ? 'bg-amber-500' : 'bg-blue-500'}`} style={{ width: `${storagePct}%` }} />
@@ -123,7 +159,7 @@ export default function FinancialDocuments() {
           {categoryList.map((c, i) => (
             <div key={i} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-              {c.name}: {c.count}
+              {c.name}: {categoryCounts[c.name] || 0}
             </div>
           ))}
         </div>
@@ -140,7 +176,7 @@ export default function FinancialDocuments() {
                 <Icon className="w-5 h-5" style={{ color: cat.color }} />
               </div>
               <p className="text-xs font-medium text-slate-800 dark:text-white">{cat.name}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{cat.count} files</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{categoryCounts[cat.name] || 0} files</p>
             </button>
           );
         })}
@@ -169,17 +205,23 @@ export default function FinancialDocuments() {
       </div>
 
       {/* Document Grid/List */}
-      {viewMode === 'grid' ? (
+      {filteredDocs.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p className="text-lg font-medium">No documents found</p>
+          <p className="text-sm mt-1">Upload documents to get started.</p>
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredDocs.map(doc => (
-            <div key={doc.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+            <div key={doc.id || doc._id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
                 <FileText className="w-12 h-12" style={{ color: getCategoryColor(doc.category) }} />
               </div>
               <p className="text-sm font-medium text-slate-800 dark:text-white truncate" title={doc.name}>{doc.name}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{doc.size} • {doc.uploaded}</p>
               <div className="flex gap-1 mt-2 flex-wrap">
-                {doc.tags.slice(0, 2).map((t, i) => (
+                {(doc.tags || []).slice(0, 2).map((t, i) => (
                   <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">{t}</span>
                 ))}
               </div>
@@ -187,7 +229,7 @@ export default function FinancialDocuments() {
                 <button onClick={() => setPreviewDoc(doc)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Eye className="w-4 h-4 text-blue-500" /></button>
                 <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Download className="w-4 h-4 text-green-500" /></button>
                 <button onClick={() => shareDoc(doc)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Share2 className="w-4 h-4 text-purple-500" /></button>
-                <button onClick={() => deleteDoc(doc.id)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 ml-auto"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                <button onClick={() => deleteDoc(doc.id || doc._id)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 ml-auto"><Trash2 className="w-4 h-4 text-red-500" /></button>
               </div>
             </div>
           ))}
@@ -206,7 +248,7 @@ export default function FinancialDocuments() {
             </thead>
             <tbody>
               {filteredDocs.map(doc => (
-                <tr key={doc.id} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                <tr key={doc.id || doc._id} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4" style={{ color: getCategoryColor(doc.category) }} />
@@ -225,7 +267,7 @@ export default function FinancialDocuments() {
                       <button onClick={() => setPreviewDoc(doc)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Eye className="w-4 h-4 text-blue-500" /></button>
                       <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Download className="w-4 h-4 text-green-500" /></button>
                       <button onClick={() => shareDoc(doc)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Share2 className="w-4 h-4 text-purple-500" /></button>
-                      <button onClick={() => deleteDoc(doc.id)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                      <button onClick={() => deleteDoc(doc.id || doc._id)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><Trash2 className="w-4 h-4 text-red-500" /></button>
                     </div>
                   </td>
                 </tr>
@@ -241,44 +283,52 @@ export default function FinancialDocuments() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" /> Expiry Tracking
           </h2>
-          <div className="space-y-3">
-            {expiringDocs.map(doc => {
-              const expDate = new Date(doc.expiry);
-              const now = new Date();
-              const daysLeft = Math.ceil((expDate - now) / 86400000);
-              const isExpired = daysLeft < 0;
-              return (
-                <div key={doc.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isExpired ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-800' : daysLeft < 90 ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800' : 'bg-slate-50 dark:bg-slate-700/30 border-slate-100 dark:border-slate-700'}`}>
-                  <Calendar className={`w-5 h-5 ${isExpired ? 'text-red-500' : 'text-amber-500'}`} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-800 dark:text-white">{doc.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Expires: {doc.expiry}</p>
+          {expiringDocs.length === 0 ? (
+            <p className="text-sm text-slate-500 py-4 text-center">No documents expiring soon.</p>
+          ) : (
+            <div className="space-y-3">
+              {expiringDocs.map(doc => {
+                const expDate = new Date(doc.expiry);
+                const now = new Date();
+                const daysLeft = Math.ceil((expDate - now) / 86400000);
+                const isExpired = daysLeft < 0;
+                return (
+                  <div key={doc.id || doc._id} className={`flex items-center gap-3 p-3 rounded-xl border ${isExpired ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-800' : daysLeft < 90 ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800' : 'bg-slate-50 dark:bg-slate-700/30 border-slate-100 dark:border-slate-700'}`}>
+                    <Calendar className={`w-5 h-5 ${isExpired ? 'text-red-500' : 'text-amber-500'}`} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-800 dark:text-white">{doc.name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Expires: {doc.expiry}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${isExpired ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : daysLeft < 90 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                      {isExpired ? 'Expired' : `${daysLeft} days`}
+                    </span>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${isExpired ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : daysLeft < 90 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
-                    {isExpired ? 'Expired' : `${daysLeft} days`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-blue-500" /> Recent Documents
           </h2>
-          <div className="space-y-3">
-            {recentDocs.map(doc => (
-              <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50" onClick={() => setPreviewDoc(doc)}>
-                <FileText className="w-5 h-5" style={{ color: getCategoryColor(doc.category) }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{doc.name}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{doc.uploaded} • {doc.size}</p>
+          {recentDocs.length === 0 ? (
+            <p className="text-sm text-slate-500 py-4 text-center">No recent documents.</p>
+          ) : (
+            <div className="space-y-3">
+              {recentDocs.map(doc => (
+                <div key={doc.id || doc._id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50" onClick={() => setPreviewDoc(doc)}>
+                  <FileText className="w-5 h-5" style={{ color: getCategoryColor(doc.category) }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{doc.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{doc.uploaded} • {doc.size}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

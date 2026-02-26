@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer
@@ -11,56 +11,23 @@ import {
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
-const insuranceTypes = [
-  { type: 'Health', icon: Heart, color: '#EF4444', premium: 18000, cover: 500000, status: 'Active', expiry: '2026-08-15', provider: 'Star Health' },
-  { type: 'Life', icon: Shield, color: '#3B82F6', premium: 24000, cover: 5000000, status: 'Active', expiry: '2045-03-01', provider: 'LIC' },
-  { type: 'Vehicle', icon: Car, color: '#F59E0B', premium: 8500, cover: 750000, status: 'Active', expiry: '2026-11-20', provider: 'ICICI Lombard' },
-  { type: 'Home', icon: Home, color: '#10B981', premium: 5000, cover: 3000000, status: 'Expired', expiry: '2025-12-31', provider: 'HDFC Ergo' },
-  { type: 'Travel', icon: Plane, color: '#8B5CF6', premium: 2500, cover: 1000000, status: 'Inactive', provider: 'Bajaj Allianz' },
-];
-
-const coverageGaps = [
-  { category: 'Health Insurance', current: 500000, recommended: 1000000 },
-  { category: 'Life Insurance', current: 5000000, recommended: 10000000 },
-  { category: 'Critical Illness', current: 0, recommended: 2500000 },
-  { category: 'Home Insurance', current: 3000000, recommended: 5000000 },
-  { category: 'Personal Accident', current: 0, recommended: 2500000 },
-];
-
-const claimsHistory = [
-  { id: 1, date: '2025-11-10', type: 'Health', amount: 45000, status: 'Settled', description: 'Hospitalization' },
-  { id: 2, date: '2025-06-22', type: 'Vehicle', amount: 12000, status: 'Settled', description: 'Windshield damage' },
-  { id: 3, date: '2024-09-05', type: 'Health', amount: 28000, status: 'Settled', description: 'Day care procedure' },
-  { id: 4, date: '2024-03-18', type: 'Vehicle', amount: 55000, status: 'Rejected', description: 'Fender dent repair' },
-  { id: 5, date: '2023-12-01', type: 'Home', amount: 15000, status: 'Settled', description: 'Water damage' },
-];
-
-const premiumComparison = [
-  { provider: 'Star Health', health: 18000, life: 0, vehicle: 0 },
-  { provider: 'LIC', health: 0, life: 24000, vehicle: 0 },
-  { provider: 'ICICI Lombard', health: 22000, life: 20000, vehicle: 8500 },
-  { provider: 'HDFC Ergo', health: 19000, life: 22000, vehicle: 9000 },
-  { provider: 'Bajaj Allianz', health: 17000, life: 21000, vehicle: 7500 },
-];
-
-const recommendations = [
-  { title: 'Increase Health Cover to ₹10L', reason: 'Current cover may not suffice for major hospitalization.', savings: 'Protects against medical inflation', priority: 'High' },
-  { title: 'Add Critical Illness Rider', reason: 'No critical illness cover detected.', savings: 'Covers cancer, stroke, heart attack', priority: 'High' },
-  { title: 'Renew Home Insurance', reason: 'Home insurance expired on Dec 2025.', savings: 'Protect your ₹30L asset', priority: 'Medium' },
-  { title: 'Consider Super Top-Up Health', reason: 'Get extra ₹25L cover at low premium.', savings: '₹3,000/year for ₹25L cover', priority: 'Medium' },
-  { title: 'Add Personal Accident Cover', reason: 'No accident cover in your portfolio.', savings: '₹2,500/year for ₹25L cover', priority: 'Low' },
-];
+const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(1)}L` : `₹${n.toLocaleString('en-IN')}`;
 
 export default function InsurancePlanner() {
   const [showModal, setShowModal] = useState(false);
   const [editPolicy, setEditPolicy] = useState(null);
-  const [policies, setPolicies] = useState(insuranceTypes);
+  const [policies, setPolicies] = useState(() => loadLocal('fa_insurance_policies'));
+  const [claims, setClaims] = useState(() => loadLocal('fa_insurance_claims'));
   const [formData, setFormData] = useState({ type: 'Health', provider: '', premium: '', cover: '', expiry: '' });
   const [calcAge, setCalcAge] = useState(30);
   const [calcIncome, setCalcIncome] = useState(1200000);
   const [calcDependents, setCalcDependents] = useState(2);
+
+  useEffect(() => { saveLocal('fa_insurance_policies', policies); }, [policies]);
+  useEffect(() => { saveLocal('fa_insurance_claims', claims); }, [claims]);
 
   const premiumData = useMemo(() => policies.map((p, i) => ({
     name: p.type, value: p.premium
@@ -75,6 +42,13 @@ export default function InsurancePlanner() {
     const base = calcAge < 35 ? 500000 : calcAge < 50 ? 1000000 : 2000000;
     return base + calcDependents * 200000;
   }, [calcAge, calcDependents]);
+
+  const coverageGaps = useMemo(() => {
+    const typeMap = {};
+    policies.forEach(p => { typeMap[p.type] = (typeMap[p.type] || 0) + p.cover; });
+    const recommended = { Health: recommendedHealthCover, Life: recommendedLifeCover, Vehicle: 750000, Home: 5000000, Travel: 1000000 };
+    return Object.entries(recommended).map(([type, rec]) => ({ category: `${type} Insurance`, current: typeMap[type] || 0, recommended: rec }));
+  }, [policies, recommendedHealthCover, recommendedLifeCover]);
 
   const openAddModal = () => { setEditPolicy(null); setFormData({ type: 'Health', provider: '', premium: '', cover: '', expiry: '' }); setShowModal(true); };
   const openEditModal = (p, idx) => { setEditPolicy(idx); setFormData({ type: p.type, provider: p.provider, premium: p.premium, cover: p.cover, expiry: p.expiry || '' }); setShowModal(true); };
@@ -209,30 +183,32 @@ export default function InsurancePlanner() {
       {/* Premium Comparison Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Premium Comparison</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Provider</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Health</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Life</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Vehicle</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {premiumComparison.map((row, i) => (
-                <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                  <td className="py-3 px-4 text-slate-800 dark:text-white font-medium">{row.provider}</td>
-                  <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{row.health ? `₹${row.health.toLocaleString('en-IN')}` : '-'}</td>
-                  <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{row.life ? `₹${row.life.toLocaleString('en-IN')}` : '-'}</td>
-                  <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{row.vehicle ? `₹${row.vehicle.toLocaleString('en-IN')}` : '-'}</td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-800 dark:text-white">₹{(row.health + row.life + row.vehicle).toLocaleString('en-IN')}</td>
+          {policies.length === 0 ? (
+            <p className="text-center text-slate-400 dark:text-slate-500 py-8">Add policies to see premium comparison</p>
+          ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Type</th>
+                  <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Provider</th>
+                  <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Premium</th>
+                  <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Coverage</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {policies.map((p, i) => (
+                  <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                    <td className="py-3 px-4 text-slate-800 dark:text-white font-medium">{p.type}</td>
+                    <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{p.provider || '-'}</td>
+                    <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{fmt(p.premium)}</td>
+                    <td className="py-3 px-4 text-right font-bold text-slate-800 dark:text-white">{fmt(p.cover)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          )}
       </div>
 
       {/* Claims History + Recommendations */}
@@ -242,7 +218,10 @@ export default function InsurancePlanner() {
             <Calendar className="w-5 h-5 text-blue-500" /> Claims History
           </h2>
           <div className="space-y-4">
-            {claimsHistory.map((c) => (
+            {claims.length === 0 ? (
+              <p className="text-center text-slate-400 dark:text-slate-500 py-8">No claims history yet</p>
+            ) : (
+            claims.map((c) => (
               <div key={c.id} className="flex items-start gap-3 relative pl-6 before:absolute before:left-[9px] before:top-6 before:bottom-0 before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
                 <div className={`absolute left-0 top-1 w-5 h-5 rounded-full flex items-center justify-center ${c.status === 'Settled' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
                   {c.status === 'Settled' ? <CheckCircle className="w-3 h-3 text-green-600" /> : <X className="w-3 h-3 text-red-600" />}
@@ -255,7 +234,8 @@ export default function InsurancePlanner() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">{c.type} • {c.date} • <span className={c.status === 'Settled' ? 'text-green-600' : 'text-red-500'}>{c.status}</span></p>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
 
@@ -264,18 +244,20 @@ export default function InsurancePlanner() {
             <TrendingUp className="w-5 h-5 text-green-500" /> Recommendations
           </h2>
           <div className="space-y-3">
-            {recommendations.map((r, i) => (
-              <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-sm font-medium text-slate-800 dark:text-white">{r.title}</h4>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.priority === 'High' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : r.priority === 'Medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
-                    {r.priority}
-                  </span>
+            {coverageGaps.filter(g => g.current < g.recommended).length === 0 ? (
+              <p className="text-center text-slate-400 dark:text-slate-500 py-8">Your coverage looks adequate!</p>
+            ) : (
+              coverageGaps.filter(g => g.current < g.recommended).map((g, i) => (
+                <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-sm font-medium text-slate-800 dark:text-white">Increase {g.category}</h4>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Gap</span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Current: {fmt(g.current)} → Recommended: {fmt(g.recommended)}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1"><Info className="w-3 h-3" /> Gap of {fmt(g.recommended - g.current)}</p>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{r.reason}</p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1"><Info className="w-3 h-3" /> {r.savings}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

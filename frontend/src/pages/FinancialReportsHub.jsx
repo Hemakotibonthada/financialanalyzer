@@ -3,7 +3,8 @@ import {
   FileBarChart2, Download, FileText, Calendar, Clock, Star, StarOff, Plus,
   Filter, Search, Eye, Trash2, Mail, X, Check, ChevronDown, Settings,
   PieChart as PieChartIcon, BarChart3, TrendingUp, CreditCard, Receipt,
-  FileSpreadsheet, FileType as FilePdf, Printer, RefreshCw, ArrowRight, BookOpen, Shield
+  FileSpreadsheet, FileType as FilePdf, Printer, RefreshCw, ArrowRight, BookOpen, Shield,
+  AlertTriangle
 } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis,
@@ -35,46 +36,15 @@ const REPORT_TEMPLATES = [
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-const MOCK_MONTHLY = Array.from({ length: 12 }, (_, i) => ({
-  month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-  income: 150000 + Math.floor(Math.random() * 50000),
-  expense: 80000 + Math.floor(Math.random() * 40000),
-  savings: 40000 + Math.floor(Math.random() * 30000),
-}));
-
-const MOCK_SPENDING = [
-  { name: 'Housing', value: 35000 }, { name: 'Food', value: 15000 },
-  { name: 'Transport', value: 8000 }, { name: 'Shopping', value: 12000 },
-  { name: 'Healthcare', value: 5000 }, { name: 'Entertainment', value: 6000 },
-  { name: 'Others', value: 9000 },
-];
-
-const MOCK_NETWORTH = Array.from({ length: 12 }, (_, i) => ({
-  month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-  assets: 2500000 + i * 80000 + Math.floor(Math.random() * 50000),
-  liabilities: 1200000 - i * 20000 + Math.floor(Math.random() * 30000),
-  networth: 1300000 + i * 100000 + Math.floor(Math.random() * 40000),
-}));
-
-const MOCK_SAVED_REPORTS = [
-  { id: 1, name: 'February 2026 Summary', template: 'monthly', date: '2026-02-25', starred: true },
-  { id: 2, name: 'FY 2025-26 Tax Report', template: 'tax', date: '2026-02-20', starred: true },
-  { id: 3, name: 'Jan Spending Analysis', template: 'spending', date: '2026-02-01', starred: false },
-  { id: 4, name: 'Q3 Investment Review', template: 'investment', date: '2026-01-15', starred: false },
-];
-
-const MOCK_SCHEDULED = [
-  { id: 1, template: 'monthly', name: 'Monthly Summary', frequency: 'Monthly', nextRun: '2026-03-01', email: 'user@email.com', format: 'pdf' },
-  { id: 2, template: 'spending', name: 'Spending Analysis', frequency: 'Weekly', nextRun: '2026-03-03', email: 'user@email.com', format: 'excel' },
-];
-
 export default function FinancialReportsHub() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('templates');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [previewData, setPreviewData] = useState(null);
-  const [savedReports, setSavedReports] = useState(MOCK_SAVED_REPORTS);
-  const [scheduled, setScheduled] = useState(MOCK_SCHEDULED);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [savedReports, setSavedReports] = useState([]);
+  const [scheduled, setScheduled] = useState([]);
   const [dateRange, setDateRange] = useState({ start: '2026-02-01', end: '2026-02-28' });
   const [showExportModal, setShowExportModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -82,39 +52,111 @@ export default function FinancialReportsHub() {
   const [searchQuery, setSearchQuery] = useState('');
   const [scheduleForm, setScheduleForm] = useState({ frequency: 'Monthly', email: '', format: 'pdf' });
 
-  const fetchReports = useCallback(async () => {
+  // Fetch summary data on mount
+  const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await api.get('/reports');
-      if (res.data?.reports) setSavedReports(res.data.reports);
-    } catch { /* use mock */ }
-    finally { setLoading(false); }
+      const res = await api.get('/reports/summary');
+      const data = res.data;
+      if (data?.success === false) {
+        setError(data.error || 'Failed to load reports data');
+      }
+      // Populate saved reports if the API returns them
+      if (data?.savedReports) setSavedReports(data.savedReports);
+      if (data?.scheduledReports) setScheduled(data.scheduledReports);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to load reports data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { fetchReports(); }, [fetchReports]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleGeneratePreview = useCallback((template) => {
+  const handleGeneratePreview = useCallback(async (template) => {
     setSelectedTemplate(template);
-    setPreviewData({
-      summary: {
-        totalIncome: 185000,
-        totalExpense: 95000,
-        savings: 90000,
-        savingsRate: 48.6,
-      },
-      monthly: MOCK_MONTHLY,
-      spending: MOCK_SPENDING,
-      networth: MOCK_NETWORTH,
-    });
-  }, []);
+    setPreviewLoading(true);
+    setPreviewData(null);
+    try {
+      const res = await api.post('/reports/generate', {
+        templateId: template.id,
+        format: 'pdf',
+        dateRange,
+      });
+      const data = res.data;
+      if (data?.success && data.report?.data) {
+        const rd = data.report.data;
+        // Map API response into the shape the charts expect
+        const summary = rd.overview || rd.totalSpending || {};
+        const monthly = (rd.incomeVsExpense || data.incomeVsExpense || []).map(item => ({
+          month: item.period || item.month,
+          income: item.income || 0,
+          expense: item.expense || 0,
+          savings: (item.income || 0) - (item.expense || 0),
+        }));
+        const spending = (rd.categoryBreakdown || data.topCategories || []).map(cat => ({
+          name: cat.name || cat.category,
+          value: cat.amount || cat.value || 0,
+        }));
+        const networth = (rd.networth || []).map(item => ({
+          month: item.period || item.month,
+          assets: item.assets || 0,
+          liabilities: item.liabilities || 0,
+          networth: item.networth || (item.assets || 0) - (item.liabilities || 0),
+        }));
+
+        setPreviewData({
+          summary: {
+            totalIncome: summary.totalIncome || 0,
+            totalExpense: summary.totalExpenses || summary.totalExpense || 0,
+            savings: summary.netSavings || summary.savings || 0,
+            savingsRate: summary.savingsRate || 0,
+          },
+          monthly,
+          spending,
+          networth,
+        });
+      } else {
+        // Fallback: try /reports/summary for basic data
+        const summaryRes = await api.get('/reports/summary', { params: { period: 'month' } });
+        const sd = summaryRes.data;
+        if (sd?.success) {
+          const monthly = (sd.incomeVsExpense || []).map(item => ({
+            month: item.period || item.month,
+            income: item.income || 0,
+            expense: item.expense || 0,
+            savings: (item.income || 0) - (item.expense || 0),
+          }));
+          const spending = (sd.topCategories || []).map(cat => ({
+            name: cat.name,
+            value: cat.amount || 0,
+          }));
+          setPreviewData({
+            summary: {
+              totalIncome: sd.summary?.totalIncome || 0,
+              totalExpense: sd.summary?.totalExpenses || 0,
+              savings: sd.summary?.netSavings || 0,
+              savingsRate: sd.summary?.savingsRate || 0,
+            },
+            monthly,
+            spending,
+            networth: [],
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to generate preview:', err);
+      setPreviewData(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [dateRange]);
 
   const handleExport = useCallback(async (format) => {
     setExporting(true);
     try {
       await api.post('/reports/export', { template: selectedTemplate?.id, format, dateRange });
-    } catch { /* simulate download */ }
-    setTimeout(() => {
-      setExporting(false);
       setShowExportModal(false);
       const newReport = {
         id: Date.now(),
@@ -124,7 +166,11 @@ export default function FinancialReportsHub() {
         starred: false,
       };
       setSavedReports(prev => [newReport, ...prev]);
-    }, 1500);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
   }, [selectedTemplate, dateRange]);
 
   const toggleStar = useCallback((id) => {
@@ -139,17 +185,32 @@ export default function FinancialReportsHub() {
     setScheduled(prev => prev.filter(s => s.id !== id));
   }, []);
 
-  const addSchedule = useCallback(() => {
+  const addSchedule = useCallback(async () => {
     if (!selectedTemplate || !scheduleForm.email) return;
-    setScheduled(prev => [...prev, {
-      id: Date.now(),
-      template: selectedTemplate.id,
-      name: selectedTemplate.name,
-      frequency: scheduleForm.frequency,
-      nextRun: '2026-03-01',
-      email: scheduleForm.email,
-      format: scheduleForm.format,
-    }]);
+    try {
+      const res = await api.post('/reports/schedule', {
+        templateId: selectedTemplate.id,
+        schedule: {
+          frequency: scheduleForm.frequency.toLowerCase(),
+          format: scheduleForm.format,
+          email: scheduleForm.email,
+        },
+      });
+      const data = res.data;
+      if (data?.success && data.scheduledReport) {
+        setScheduled(prev => [...prev, {
+          id: data.scheduledReport.id,
+          template: selectedTemplate.id,
+          name: data.scheduledReport.templateName || selectedTemplate.name,
+          frequency: scheduleForm.frequency,
+          nextRun: data.scheduledReport.nextRun,
+          email: scheduleForm.email,
+          format: scheduleForm.format,
+        }]);
+      }
+    } catch (err) {
+      console.error('Failed to schedule report:', err);
+    }
     setShowScheduleModal(false);
     setScheduleForm({ frequency: 'Monthly', email: '', format: 'pdf' });
   }, [selectedTemplate, scheduleForm]);
@@ -165,6 +226,21 @@ export default function FinancialReportsHub() {
         <div className="text-center animate-fade-in-up">
           <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400 text-lg">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center animate-fade-in-up max-w-md">
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <p className="text-slate-700 dark:text-slate-300 text-lg font-medium mb-2">Failed to load reports</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{error}</p>
+          <button onClick={fetchData} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -225,7 +301,14 @@ export default function FinancialReportsHub() {
           </div>
 
           {/* Report Preview */}
-          {selectedTemplate && previewData && (
+          {selectedTemplate && previewLoading && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center animate-fade-in-up">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">Generating preview...</p>
+            </div>
+          )}
+
+          {selectedTemplate && !previewLoading && previewData && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-in">
               <div className="p-6 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -266,6 +349,7 @@ export default function FinancialReportsHub() {
               {/* Charts */}
               <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Income vs Expense */}
+                {previewData.monthly.length > 0 ? (
                 <div>
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Income vs Expense</h3>
                   <div className="h-64">
@@ -282,8 +366,14 @@ export default function FinancialReportsHub() {
                     </ResponsiveContainer>
                   </div>
                 </div>
+                ) : (
+                <div className="flex items-center justify-center h-64 text-slate-400 dark:text-slate-500">
+                  <p className="text-sm">No income/expense data available for this period.</p>
+                </div>
+                )}
 
                 {/* Spending Breakdown */}
+                {previewData.spending.length > 0 ? (
                 <div>
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Spending Breakdown</h3>
                   <div className="h-48">
@@ -306,8 +396,14 @@ export default function FinancialReportsHub() {
                     ))}
                   </div>
                 </div>
+                ) : (
+                <div className="flex items-center justify-center h-64 text-slate-400 dark:text-slate-500">
+                  <p className="text-sm">No spending data available for this period.</p>
+                </div>
+                )}
 
                 {/* Net Worth Trend */}
+                {previewData.networth.length > 0 && (
                 <div className="lg:col-span-2">
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Net Worth Trend</h3>
                   <div className="h-56">
@@ -331,6 +427,7 @@ export default function FinancialReportsHub() {
                     </ResponsiveContainer>
                   </div>
                 </div>
+                )}
               </div>
             </div>
           )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Shield, ShieldCheck, ShieldAlert, Smartphone, Laptop, Monitor,
   MapPin, Clock, Trash2, LogOut, Key, Lock, Unlock, Eye, EyeOff,
@@ -27,72 +27,157 @@ const AnimatedValue = ({ value, suffix = '', duration = 1000 }) => {
   return <span>{display}{suffix}</span>;
 };
 
-const SECURITY_SCORE_DATA = [
-  { subject: 'Password', score: 9 },
-  { subject: '2FA', score: 7 },
-  { subject: 'Sessions', score: 8 },
-  { subject: 'Privacy', score: 6 },
-  { subject: 'Encryption', score: 10 },
-  { subject: 'Updates', score: 8 },
-];
-
-const LOGIN_HISTORY = [
-  { id: 1, device: 'Chrome on Windows', icon: 'laptop', ip: '192.168.1.45', location: 'Mumbai, India', time: '2026-02-26T10:30:00', status: 'success', current: true },
-  { id: 2, device: 'Safari on iPhone', icon: 'phone', ip: '103.52.14.89', location: 'Mumbai, India', time: '2026-02-25T18:45:00', status: 'success', current: false },
-  { id: 3, device: 'Firefox on macOS', icon: 'monitor', ip: '45.67.89.12', location: 'Delhi, India', time: '2026-02-24T14:20:00', status: 'success', current: false },
-  { id: 4, device: 'Unknown Browser', icon: 'monitor', ip: '78.90.12.34', location: 'Unknown', time: '2026-02-23T03:15:00', status: 'failed', current: false },
-  { id: 5, device: 'Chrome on Android', icon: 'phone', ip: '192.168.1.50', location: 'Mumbai, India', time: '2026-02-22T09:00:00', status: 'success', current: false },
-];
-
-const ACTIVE_SESSIONS = [
-  { id: 1, device: 'Chrome on Windows', location: 'Mumbai, India', lastActive: '2 minutes ago', current: true },
-  { id: 2, device: 'Safari on iPhone', location: 'Mumbai, India', lastActive: '1 hour ago', current: false },
-  { id: 3, device: 'Firefox on macOS', location: 'Delhi, India', lastActive: '2 days ago', current: false },
-];
-
-const SECURITY_EVENTS = [
-  { id: 1, event: 'Password changed', time: '2026-02-20', type: 'info' },
-  { id: 2, event: '2FA enabled for login', time: '2026-02-18', type: 'success' },
-  { id: 3, event: 'Failed login attempt blocked', time: '2026-02-23', type: 'warning' },
-  { id: 4, event: 'New device authorized', time: '2026-02-15', type: 'info' },
-  { id: 5, event: 'Security review completed', time: '2026-02-10', type: 'success' },
-  { id: 6, event: 'Suspicious IP blocked', time: '2026-02-08', type: 'warning' },
-];
-
+// Instructional UI constants (not data)
 const TWO_FA_STEPS = [
-  { id: 1, label: 'Authenticator App', done: true },
-  { id: 2, label: 'Recovery Codes', done: true },
+  { id: 1, label: 'Authenticator App', done: false },
+  { id: 2, label: 'Recovery Codes', done: false },
   { id: 3, label: 'SMS Backup', done: false },
   { id: 4, label: 'Biometric', done: false },
 ];
 
+const DEFAULT_SCORE_DATA = [
+  { subject: 'Password', score: 0 },
+  { subject: '2FA', score: 0 },
+  { subject: 'Sessions', score: 0 },
+  { subject: 'Privacy', score: 0 },
+  { subject: 'Encryption', score: 0 },
+  { subject: 'Updates', score: 0 },
+];
+
 export default function SecurityCenter() {
   const [loading, setLoading] = useState(true);
-  const [sessions, setSessions] = useState(ACTIVE_SESSIONS);
+  const [error, setError] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [loginHistory, setLoginHistory] = useState([]);
+  const [securityEvents, setSecurityEvents] = useState([]);
+  const [securityScoreData, setSecurityScoreData] = useState(DEFAULT_SCORE_DATA);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [twoFaSteps, setTwoFaSteps] = useState(TWO_FA_STEPS);
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState(82);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [privacy, setPrivacy] = useState({
     dataSharing: false,
-    analytics: true,
+    analytics: false,
     thirdParty: false,
-    marketingEmails: true,
+    marketingEmails: false,
   });
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
+  const fetchSecurityData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const results = await Promise.allSettled([
+        api.get('/security/sessions'),
+        api.get('/security/audit-log'),
+        api.get('/security/overview'),
+      ]);
+
+      // Sessions
+      if (results[0].status === 'fulfilled') {
+        const sessionsData = results[0].value.data;
+        const list = Array.isArray(sessionsData) ? sessionsData : (sessionsData.sessions || []);
+        setSessions(list.map((s, i) => ({
+          id: s.id || s._id || i + 1,
+          device: s.device || s.userAgent || 'Unknown Device',
+          location: s.location || s.ipAddress || 'Unknown',
+          lastActive: s.lastActive || 'Unknown',
+          current: !!s.current,
+        })));
+      }
+
+      // Audit log → security events + login history
+      if (results[1].status === 'fulfilled') {
+        const auditData = results[1].value.data;
+        const logs = Array.isArray(auditData) ? auditData : (auditData.logs || []);
+
+        const events = logs.map((log, i) => ({
+          id: log.id || log._id || i + 1,
+          event: log.event || log.action || log.message || 'Security event',
+          time: log.time || log.timestamp || log.createdAt || '',
+          type: log.type || log.severity || 'info',
+        }));
+        setSecurityEvents(events);
+
+        // Derive login history from audit logs that look like login events
+        const logins = logs
+          .filter(log => {
+            const action = (log.event || log.action || log.message || '').toLowerCase();
+            return action.includes('login') || action.includes('sign') || action.includes('auth');
+          })
+          .map((log, i) => ({
+            id: log.id || log._id || i + 1,
+            device: log.device || log.userAgent || 'Unknown Browser',
+            icon: (log.device || log.userAgent || '').toLowerCase().includes('phone') || (log.device || log.userAgent || '').toLowerCase().includes('android') || (log.device || log.userAgent || '').toLowerCase().includes('iphone') ? 'phone' : 'laptop',
+            ip: log.ip || log.ipAddress || 'Unknown',
+            location: log.location || 'Unknown',
+            time: log.time || log.timestamp || log.createdAt || '',
+            status: log.status || (log.type === 'warning' || log.type === 'error' ? 'failed' : 'success'),
+            current: false,
+          }));
+        setLoginHistory(logins);
+      }
+
+      // Overview (may not exist — that's okay)
+      if (results[2].status === 'fulfilled') {
+        const overview = results[2].value.data;
+        if (overview.scoreData && Array.isArray(overview.scoreData)) {
+          setSecurityScoreData(overview.scoreData);
+        } else if (typeof overview.securityScore === 'number') {
+          // Build score data from a single score value
+          setSecurityScoreData(DEFAULT_SCORE_DATA.map(d => ({ ...d, score: Math.round(overview.securityScore / 10) })));
+        }
+        if (typeof overview.passwordStrength === 'number') {
+          setPasswordStrength(overview.passwordStrength);
+        }
+        if (overview.twoFaSteps && Array.isArray(overview.twoFaSteps)) {
+          setTwoFaSteps(overview.twoFaSteps);
+        }
+        if (overview.privacy) {
+          setPrivacy(prev => ({ ...prev, ...overview.privacy }));
+        }
+        if (overview.loginHistory && Array.isArray(overview.loginHistory)) {
+          setLoginHistory(overview.loginHistory);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching security data:', err);
+      setError('Failed to load security data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const securityScore = Math.round(SECURITY_SCORE_DATA.reduce((sum, d) => sum + d.score, 0) / SECURITY_SCORE_DATA.length * 10);
-  const revokeSession = (id) => setSessions(prev => prev.filter(s => s.id !== id));
+  useEffect(() => {
+    fetchSecurityData();
+  }, [fetchSecurityData]);
+
+  const securityScore = securityScoreData.length > 0
+    ? Math.round(securityScoreData.reduce((sum, d) => sum + (d.score || 0), 0) / securityScoreData.length * 10)
+    : 0;
+
+  const revokeSession = async (id) => {
+    try {
+      await api.delete(`/security/sessions/${id}`);
+      setSessions(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      console.error('Failed to revoke session:', err);
+      // Still remove from UI as fallback
+      setSessions(prev => prev.filter(s => s.id !== id));
+    }
+  };
 
   const getDeviceIcon = (type) => {
     if (type === 'phone') return Smartphone;
     if (type === 'laptop') return Laptop;
     return Monitor;
+  };
+
+  const revokeAllOtherSessions = async () => {
+    const otherSessions = sessions.filter(s => !s.current);
+    await Promise.allSettled(otherSessions.map(s => api.delete(`/security/sessions/${s.id}`).catch(() => {})));
+    setSessions(prev => prev.filter(s => s.current));
   };
 
   const scoreColor = securityScore >= 80 ? 'text-green-500' : securityScore >= 60 ? 'text-yellow-500' : 'text-red-500';
@@ -112,6 +197,20 @@ export default function SecurityCenter() {
         <div className="text-center">
           <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400">Loading security data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+          <button onClick={fetchSecurityData} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
         </div>
       </div>
     );
@@ -175,7 +274,7 @@ export default function SecurityCenter() {
               <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Security Breakdown</h3>
                 <ResponsiveContainer width="100%" height={220}>
-                  <RadarChart data={SECURITY_SCORE_DATA}>
+                  <RadarChart data={securityScoreData}>
                     <PolarGrid stroke="#64748b40" />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} />
@@ -192,7 +291,7 @@ export default function SecurityCenter() {
                 <Fingerprint className="w-5 h-5 text-blue-500" /> Two-Factor Authentication
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {TWO_FA_STEPS.map(step => (
+                {twoFaSteps.map(step => (
                   <div key={step.id} className={`p-4 rounded-xl border-2 text-center ${step.done ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30'}`}>
                     {step.done ? <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" /> : <XCircle className="w-8 h-8 text-slate-400 mx-auto mb-2" />}
                     <p className={`text-sm font-medium ${step.done ? 'text-green-700 dark:text-green-400' : 'text-slate-500 dark:text-slate-400'}`}>{step.label}</p>
@@ -254,7 +353,9 @@ export default function SecurityCenter() {
                 <Activity className="w-5 h-5 text-blue-500" /> Recent Security Events
               </h3>
               <div className="space-y-3">
-                {SECURITY_EVENTS.map(evt => (
+                {securityEvents.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No recent security events.</p>
+                ) : securityEvents.map(evt => (
                   <div key={evt.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50">
                     {evt.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" /> : evt.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0" /> : <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />}
                     <div className="flex-1">
@@ -273,10 +374,12 @@ export default function SecurityCenter() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Active Sessions</h3>
-              <button onClick={() => setSessions(prev => prev.filter(s => s.current))} className="text-sm text-red-500 hover:text-red-600 font-medium">Revoke All Others</button>
+              <button onClick={revokeAllOtherSessions} className="text-sm text-red-500 hover:text-red-600 font-medium">Revoke All Others</button>
             </div>
             <div className="space-y-3">
-              {sessions.map(session => (
+              {sessions.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">No active sessions found.</p>
+              ) : sessions.map(session => (
                 <div key={session.id} className={`flex items-center justify-between p-4 rounded-xl ${session.current ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800' : 'bg-slate-50 dark:bg-slate-700/50'}`}>
                   <div className="flex items-center gap-3">
                     <Laptop className="w-6 h-6 text-slate-500" />
@@ -301,7 +404,9 @@ export default function SecurityCenter() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Login History</h3>
             <div className="space-y-3">
-              {LOGIN_HISTORY.map(login => {
+              {loginHistory.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">No login history available.</p>
+              ) : loginHistory.map(login => {
                 const DeviceIcon = getDeviceIcon(login.icon);
                 return (
                   <div key={login.id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50">
