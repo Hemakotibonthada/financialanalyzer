@@ -43,6 +43,23 @@ router.get('/', auth, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/notifications/unread-count
+ * @desc    Get unread notification count
+ * @access  Private
+ */
+router.get('/unread-count', auth, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const notifications = getNotifications(userId);
+    const count = notifications.filter(n => !n.isRead).length;
+    res.json({ success: true, data: { count } });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get unread count' });
+  }
+});
+
+/**
  * @route   PATCH /api/notifications/:id/read
  * @desc    Mark notification as read
  * @access  Private

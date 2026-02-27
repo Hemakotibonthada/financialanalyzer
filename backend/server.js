@@ -89,19 +89,20 @@ app.use(generalLimiter);
 
 // Build allowed origins list once at startup (avoid rebuilding per-request)
 const buildAllowedOrigins = () => {
-  const origins = new Set([
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-  ]);
+  const frontendPorts = [3000, 3001, 3002, 3003, 3004, 3005];
+  const origins = new Set();
+  for (const port of frontendPorts) {
+    origins.add(`http://localhost:${port}`);
+    origins.add(`http://127.0.0.1:${port}`);
+  }
   if (process.env.FRONTEND_URL) origins.add(process.env.FRONTEND_URL);
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        origins.add(`http://${iface.address}:3000`);
-        origins.add(`http://${iface.address}:3001`);
+        for (const port of frontendPorts) {
+          origins.add(`http://${iface.address}:${port}`);
+        }
       }
     }
   }

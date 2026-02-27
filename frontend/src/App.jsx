@@ -21,6 +21,23 @@ import { initializeStorage } from './services/storage';
 import './styles/theme-variables.css';
 import './styles/advanced-animations.css';
 
+// Retry wrapper for lazy imports - handles Vite HMR "Failed to fetch dynamically imported module" errors
+const lazyRetry = (importFn, retries = 3, delay = 1000) =>
+  lazy(() =>
+    new Promise((resolve, reject) => {
+      const attempt = (remaining) => {
+        importFn().then(resolve).catch((err) => {
+          if (remaining > 0) {
+            setTimeout(() => attempt(remaining - 1), delay);
+          } else {
+            reject(err);
+          }
+        });
+      };
+      attempt(retries);
+    })
+  );
+
 // Eager load auth pages (small, frequently used)
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -55,7 +72,7 @@ const RealEstateDashboard = lazy(() => import('./components/realEstate/RealEstat
 const BusinessDashboard = lazy(() => import('./components/business/BusinessDashboard'));
 const NotificationCenter = lazy(() => import('./components/notifications/NotificationCenter'));
 const AdvancedSearch = lazy(() => import('./components/search/AdvancedSearch'));
-const FinancialHealthDashboard = lazy(() => import('./pages/FinancialHealthDashboard'));
+const FinancialHealthDashboard = lazyRetry(() => import('./pages/FinancialHealthDashboard'));
 const AIInsights = lazy(() => import('./pages/AIInsights'));
 const SpendingInsights = lazy(() => import('./pages/SpendingInsights'));
 const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboard'));
@@ -66,7 +83,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 // ========== NEW ENHANCED PAGES ==========
 // Dashboard & Transactions
-const EnhancedDashboardV2 = lazy(() => import('./pages/EnhancedDashboardV2'));
+const EnhancedDashboardV2 = lazyRetry(() => import('./pages/EnhancedDashboardV2'));
 const TransactionManager = lazy(() => import('./pages/TransactionManager'));
 const EnhancedNetWorthTracker = lazy(() => import('./pages/EnhancedNetWorthTracker'));
 

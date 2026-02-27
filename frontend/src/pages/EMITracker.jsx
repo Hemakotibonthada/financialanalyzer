@@ -169,7 +169,28 @@ const EMITracker = () => {
   const [upcomingMonthsToShow, setUpcomingMonthsToShow] = useState(1); // Default show next month only
 
   // Debt Freedom Plan State
-  const [debtAnalysis, setDebtAnalysis] = useState(null);
+  const [debtAnalysisData, setDebtAnalysis] = useState(null);
+  const debtAnalysis = debtAnalysisData || {
+    debtToIncomeRatio: 0,
+    debtTrapStatus: 'healthy',
+    debtTrapMessage: 'Loading...',
+    monthlyIncome: 0,
+    monthlyBurden: 0,
+    availableIncome: 0,
+    availablePercentage: 0,
+    totalOutstanding: 0,
+    totalInterestOutstanding: 0,
+    totalInterestToPay: 0,
+    avgMonthsRemaining: 0,
+    emergencyFundGoal: 0,
+    currentEmergencyFund: 0,
+    emergencyFundPercentage: 0,
+    emergencyFundMonths: 0,
+    sortedEMIsAvalanche: [],
+    sortedEMIsSnowball: [],
+    calculateEarlyRepaymentSavings: () => 0,
+    recommendedMonthlyExtra: 0,
+  };
   const [earlyPaymentAmount, setEarlyPaymentAmount] = useState('');
   const [selectedEMIForEarlyPayment, setSelectedEMIForEarlyPayment] = useState(null);
   const [earlyPaymentDialogOpen, setEarlyPaymentDialogOpen] = useState(false);
@@ -703,7 +724,7 @@ const EMITracker = () => {
 
   // Build guardrail alerts feed when risk conditions are met
   useEffect(() => {
-    if (!debtAnalysis || !overview?.activeEMIs) return;
+    if (!debtAnalysisData || !overview?.activeEMIs) return;
 
     const alerts = [];
     if (guardrailSettings.lockNewEmiAbove50 && debtAnalysis.debtToIncomeRatio > 50) {
@@ -768,7 +789,7 @@ const EMITracker = () => {
     }
 
     setGuardrailAlerts(alerts);
-  }, [guardrailSettings, debtAnalysis, overview]);
+  }, [guardrailSettings, debtAnalysisData, overview]);
 
   const handleGuardrailToggle = (key) => (event) => {
     setGuardrailSettings((prev) => ({ ...prev, [key]: event.target.checked }));
@@ -4647,7 +4668,7 @@ const EMITracker = () => {
                 Go to Profile Settings
               </Button>
             </Box>
-          ) : !debtAnalysis ? (
+          ) : !debtAnalysisData ? (
             <Box display="flex" justifyContent="center" alignItems="center" py={8}>
               <CircularProgress size={60} />
               <Typography variant="h6" sx={{ ml: 3 }}>

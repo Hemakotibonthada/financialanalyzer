@@ -354,7 +354,7 @@ const NotificationBell = () => {
           ) : (
             <List sx={{ p: 0 }}>
               {notifications.map((notification, index) => (
-                <React.Fragment key={notification._id}>
+                <React.Fragment key={notification._id || notification.id || index}>
                   <ListItem
                     alignItems="flex-start"
                     sx={{

@@ -327,9 +327,15 @@ export const AuthProvider = ({ children }) => {
       toast.success('Registration successful!');
       return { success: true, user, token: authToken };
     } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Registration failed';
+      // Show detailed validation errors if available
+      const data = error.response?.data;
+      let message = data?.message || error.message || 'Registration failed';
+      if (data?.errors?.length) {
+        message = data.errors.map(e => e.message || e.msg).join('. ');
+      }
       toast.error(message);
       console.error('Registration error:', error);
+      console.error('Registration error details:', data);
       return { success: false, message };
     }
   };
