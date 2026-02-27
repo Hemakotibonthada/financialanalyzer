@@ -1959,6 +1959,7 @@ router.post('/manual', authenticate, async (req, res) => {
       productDescription,
       principalAmount,
       interestRate,
+      interestType, // 'percentage' or 'flat' (rupees)
       processingFee,
       emiAmount,
       totalTenure,
@@ -2021,8 +2022,12 @@ router.post('/manual', authenticate, async (req, res) => {
     
     // Calculate payment schedule (only for MONTHLY type)
     const paymentHistory = [];
+    const finalInterestType = interestType || 'percentage';
     if (repaymentType === 'MONTHLY') {
-      const monthlyInterest = (interestRate || 0) / 12 / 100;
+      // For flat interest: interestRate is total flat amount in rupees
+      // For percentage interest: interestRate is annual percentage
+      const monthlyInterest = finalInterestType === 'flat' ? 0 : (interestRate || 0) / 12 / 100;
+      const flatInterestPerMonth = finalInterestType === 'flat' ? (parseFloat(interestRate) || 0) / finalTotalTenure : 0;
       
       for (let i = 1; i <= finalTotalTenure; i++) {
         const dueDate = new Date(emiStartDate);
@@ -2030,7 +2035,7 @@ router.post('/manual', authenticate, async (req, res) => {
         
         // Calculate principal and interest for this installment
         const outstandingPrincipal = principalAmount - ((i - 1) * (principalAmount / finalTotalTenure));
-        const interestPaid = outstandingPrincipal * monthlyInterest;
+        const interestPaid = finalInterestType === 'flat' ? flatInterestPerMonth : (outstandingPrincipal * monthlyInterest);
         const principalPaid = finalEmiAmount - interestPaid;
         
         paymentHistory.push({
@@ -2069,6 +2074,7 @@ router.post('/manual', authenticate, async (req, res) => {
       productDescription: productDescription || (repaymentType === 'ON_REQUEST' ? 'Personal Loan' : 'Manual Entry'),
       principalAmount: parseFloat(principalAmount),
       interestRate: parseFloat(interestRate) || 0,
+      interestType: finalInterestType,
       processingFee: parseFloat(processingFee) || 0,
       emiAmount: finalEmiAmount,
       totalTenure: finalTotalTenure,
@@ -2127,7 +2133,7 @@ router.put('/:id', authenticate, async (req, res) => {
     // Update allowed fields
     const allowedUpdates = [
       'merchantName', 'productDescription', 'notes', 'tags',
-      'cardHolderName', 'interestRate'
+      'cardHolderName', 'interestRate', 'interestType'
     ];
     
     Object.keys(req.body).forEach(key => {

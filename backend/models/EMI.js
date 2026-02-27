@@ -61,8 +61,12 @@ const emiSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
-    max: 100,
     default: 0
+  },
+  interestType: {
+    type: String,
+    enum: ['percentage', 'flat'],
+    default: 'percentage'
   },
   processingFee: {
     type: Number,

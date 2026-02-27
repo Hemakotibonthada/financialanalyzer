@@ -34,12 +34,11 @@ const personalLoanSchema = new mongoose.Schema({
   interestRate: {
     type: Number,
     default: 0,
-    min: 0,
-    max: 100
+    min: 0
   },
   interestType: {
     type: String,
-    enum: ['simple', 'none'],
+    enum: ['simple', 'flat', 'none'],
     default: 'none'
   },
   purpose: {
@@ -81,6 +80,11 @@ const personalLoanSchema = new mongoose.Schema({
 personalLoanSchema.virtual('currentInterest').get(function() {
   if (this.interestType === 'none' || this.interestRate === 0) {
     return 0;
+  }
+
+  // Flat interest: fixed rupee amount, no time-based calculation
+  if (this.interestType === 'flat') {
+    return this.interestRate; // interestRate is the flat rupee amount
   }
 
   const startDate = new Date(this.loanTakenDate);

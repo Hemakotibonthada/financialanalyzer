@@ -118,6 +118,11 @@ const loanGivenSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  interestType: {
+    type: String,
+    enum: ['none', 'percentage', 'flat'],
+    default: 'none'
+  },
   hasInterest: {
     type: Boolean,
     default: false

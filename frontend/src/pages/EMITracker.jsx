@@ -170,6 +170,7 @@ const EMITracker = () => {
     productDescription: '',
     principalAmount: '',
     interestRate: '',
+    interestType: 'percentage', // 'percentage' or 'flat' (rupees)
     processingFee: '',
     emiAmount: '',
     totalTenure: '',
@@ -274,6 +275,7 @@ const EMITracker = () => {
     },
     hasInterest: false,
     interestRate: 0,
+    interestType: 'none', // 'none', 'percentage', 'flat'
     notes: '',
     priority: 'medium',
     tags: []
@@ -928,6 +930,7 @@ const EMITracker = () => {
         contactDetails: { phone: '', email: '' },
         hasInterest: false,
         interestRate: 0,
+        interestType: 'none',
         notes: '',
         priority: 'medium',
         tags: []
@@ -1349,6 +1352,7 @@ const EMITracker = () => {
       productDescription: '',
       principalAmount: '',
       interestRate: '',
+      interestType: 'percentage',
       processingFee: '',
       emiAmount: '',
       totalTenure: '',
@@ -1957,7 +1961,9 @@ const EMITracker = () => {
                 <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.principalAmount)}</Typography>
 
                 <Typography variant="subtitle2">Interest Rate</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.interestRate}% p.a.</Typography>
+                <Typography variant="body1" gutterBottom>
+                  {selectedEMI.interestType === 'flat' ? `${formatCurrency(selectedEMI.interestRate)} (Flat)` : `${selectedEMI.interestRate}% p.a.`}
+                </Typography>
 
                 <Typography variant="subtitle2">Repayment Type</Typography>
                 <Typography variant="body1" gutterBottom>{selectedEMI.repaymentType === 'ON_REQUEST' ? 'On Request (flexible)' : 'Monthly'}</Typography>
@@ -2176,7 +2182,11 @@ const EMITracker = () => {
                   </Box>
                   <Box textAlign="right">
                     <Typography variant="caption" color="text.secondary">Interest Rate</Typography>
-                    <Typography variant="body1" fontWeight="bold" color="error">{selectedEMIForEarlyPayment.interestRate}%</Typography>
+                    <Typography variant="body1" fontWeight="bold" color="error">
+                      {selectedEMIForEarlyPayment.interestType === 'flat' 
+                        ? `${formatCurrency(selectedEMIForEarlyPayment.interestRate)} Flat` 
+                        : `${selectedEMIForEarlyPayment.interestRate}%`}
+                    </Typography>
                   </Box>
                 </Box>
               </Box>
@@ -3487,6 +3497,7 @@ const EMITracker = () => {
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                       backgroundColor: isDark ? '#1e293b' : '#fff',
                       color: isDark ? '#f1f5f9' : '#333'
+                    }}
                     iconType="circle"
                   />
                   
@@ -4277,7 +4288,7 @@ const EMITracker = () => {
                         </IconButton>
                       </Tooltip>
                       <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 1 }}>
-                        {emi.interestRate}% Interest
+                        {emi.interestType === 'flat' ? `${formatCurrency(emi.interestRate)} Flat Interest` : `${emi.interestRate}% Interest`}
                       </Typography>
                     </Box>
                   </Box>
@@ -4437,7 +4448,7 @@ const EMITracker = () => {
                           />
                         </Box>
                         <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 1 }}>
-                          {emi.interestRate}% Interest
+                          {emi.interestType === 'flat' ? `${formatCurrency(emi.interestRate)} Flat Interest` : `${emi.interestRate}% Interest`}
                         </Typography>
                       </Box>
 
@@ -4564,6 +4575,7 @@ const EMITracker = () => {
                   contactDetails: { phone: '', email: '' },
                   hasInterest: false,
                   interestRate: 0,
+                  interestType: 'none',
                   notes: '',
                   priority: 'medium',
                   tags: []
@@ -7049,7 +7061,7 @@ const EMITracker = () => {
                         {loan.currentInterest > 0 && (
                           <Box mb={2}>
                             <Typography variant="body2" color="warning.main" gutterBottom>
-                              Current Interest ({loan.interestRate}% p.a.)
+                              Current Interest ({loan.interestType === 'flat' ? `₹${loan.interestRate.toLocaleString()} Flat` : `${loan.interestRate}% p.a.`})
                             </Typography>
                             <Typography variant="h6" color="warning.dark">
                               + ₹{loan.currentInterest.toLocaleString()}
@@ -7681,14 +7693,31 @@ const EMITracker = () => {
             )}
 
             <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Interest Type</InputLabel>
+                <Select
+                  value={manualEMIData.interestType}
+                  onChange={(e) => {
+                    handleManualEMIChange('interestType', e.target.value);
+                    handleManualEMIChange('interestRate', '');
+                  }}
+                  label="Interest Type"
+                >
+                  <MenuItem value="percentage">Percentage (% p.a.)</MenuItem>
+                  <MenuItem value="flat">Flat Amount (₹)</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
-                label="Interest Rate (%)"
+                label={manualEMIData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (%)'}
                 type="number"
                 value={manualEMIData.interestRate}
                 onChange={(e) => handleManualEMIChange('interestRate', e.target.value)}
-                placeholder="12"
-                InputProps={{ endAdornment: '%' }}
+                placeholder={manualEMIData.interestType === 'flat' ? '5000' : '12'}
+                InputProps={{ endAdornment: manualEMIData.interestType === 'flat' ? '₹' : '%' }}
               />
             </Grid>
 
@@ -7799,7 +7828,13 @@ const EMITracker = () => {
                         <Grid item xs={6} sm={3}>
                           <Typography variant="caption" color="text.secondary">Total Interest</Typography>
                           <Typography variant="h6" color="error">
-                            {formatCurrency((parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure)) - parseFloat(manualEMIData.principalAmount))}
+                            {manualEMIData.interestType === 'flat' 
+                              ? formatCurrency(parseFloat(manualEMIData.interestRate) || 0)
+                              : formatCurrency((parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure)) - parseFloat(manualEMIData.principalAmount))
+                            }
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {manualEMIData.interestType === 'flat' ? '(Flat)' : `(${manualEMIData.interestRate || 0}% p.a.)`}
                           </Typography>
                         </Grid>
                       </Grid>
@@ -8373,6 +8408,38 @@ const EMITracker = () => {
               </Select>
             </FormControl>
 
+            <FormControl fullWidth>
+              <InputLabel>Interest Type</InputLabel>
+              <Select
+                value={loanGivenFormData.interestType}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLoanGivenFormData({
+                    ...loanGivenFormData,
+                    interestType: val,
+                    hasInterest: val !== 'none',
+                    interestRate: val === 'none' ? 0 : loanGivenFormData.interestRate
+                  });
+                }}
+                label="Interest Type"
+              >
+                <MenuItem value="none">No Interest</MenuItem>
+                <MenuItem value="percentage">Percentage (% p.a.)</MenuItem>
+                <MenuItem value="flat">Flat Amount (₹)</MenuItem>
+              </Select>
+            </FormControl>
+
+            {loanGivenFormData.interestType !== 'none' && (
+              <TextField
+                label={loanGivenFormData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (% per annum)'}
+                type="number"
+                fullWidth
+                value={loanGivenFormData.interestRate}
+                onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, interestRate: parseFloat(e.target.value) || 0 })}
+                InputProps={{ endAdornment: loanGivenFormData.interestType === 'flat' ? '₹' : '%' }}
+              />
+            )}
+
             <TextField
               label="Notes"
               fullWidth
@@ -8573,22 +8640,23 @@ const EMITracker = () => {
               <InputLabel>Interest Type</InputLabel>
               <Select
                 value={personalLoanFormData.interestType}
-                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, interestType: e.target.value })}
+                onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, interestType: e.target.value, interestRate: e.target.value === 'none' ? 0 : personalLoanFormData.interestRate })}
                 label="Interest Type"
               >
                 <MenuItem value="none">No Interest</MenuItem>
-                <MenuItem value="simple">Simple Interest</MenuItem>
+                <MenuItem value="simple">Simple Interest (% p.a.)</MenuItem>
+                <MenuItem value="flat">Flat Amount (₹)</MenuItem>
               </Select>
             </FormControl>
 
-            {personalLoanFormData.interestType === 'simple' && (
+            {personalLoanFormData.interestType !== 'none' && (
               <TextField
-                label="Interest Rate (% per annum)"
+                label={personalLoanFormData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (% per annum)'}
                 type="number"
                 fullWidth
                 value={personalLoanFormData.interestRate}
                 onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, interestRate: parseFloat(e.target.value) || 0 })}
-                InputProps={{ endAdornment: '%' }}
+                InputProps={{ endAdornment: personalLoanFormData.interestType === 'flat' ? '₹' : '%' }}
               />
             )}
 
