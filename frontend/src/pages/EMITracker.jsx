@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import EMIMonthlyTrends from '../components/EMIMonthlyTrends';
+import { useTheme } from '../context/ThemeContext';
 import {
   Box,
   Container,
@@ -88,20 +89,25 @@ import { API_URL as API_BASE } from '../services/api';
 const API_URL = API_BASE;
 
 // Color palette for charts
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
+const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 
-// Enhanced chart card styling
-const chartCardHoverEffect = {
-  bgcolor: 'white',
+// Theme-aware chart card styling factory
+const getChartCardStyle = (isDark) => ({
+  bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'white',
   borderRadius: 4,
-  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+  boxShadow: isDark
+    ? '0 2px 12px rgba(0,0,0,0.3)'
+    : '0 2px 12px rgba(0,0,0,0.08)',
   overflow: 'hidden',
   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   border: '1px solid',
-  borderColor: 'divider',
+  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'divider',
+  backdropFilter: isDark ? 'blur(20px)' : 'none',
   '&:hover': {
-    transform: 'translateY(-8px)',
-    boxShadow: '0 16px 48px rgba(0,0,0,0.15)',
+    transform: 'translateY(-6px)',
+    boxShadow: isDark
+      ? '0 16px 48px rgba(0,0,0,0.4)'
+      : '0 16px 48px rgba(0,0,0,0.15)',
     borderColor: 'primary.main',
     '& .chart-title': {
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -110,14 +116,30 @@ const chartCardHoverEffect = {
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
       transform: 'translateX(8px)'
-    },
-    '& .chart-header': {
-      borderColor: 'primary.main'
     }
   }
-};
+});
+
+// Theme-aware surface colors
+const getSurface = (isDark) => isDark ? 'rgba(30, 41, 59, 0.6)' : '#ffffff';
+const getSurfaceAlt = (isDark) => isDark ? 'rgba(15, 23, 42, 0.5)' : '#f8fafc';
+const getSurfaceMuted = (isDark) => isDark ? 'rgba(51, 65, 85, 0.5)' : '#f5f5f5';
+const getBorder = (isDark) => isDark ? 'rgba(255,255,255,0.08)' : '#e0e0e0';
+const getTableHover = (isDark) => isDark ? 'rgba(255,255,255,0.04)' : '#f5f5f5';
+const getTableHeader = (isDark) => isDark ? 'rgba(30, 41, 59, 0.8)' : '#fafafa';
 
 const EMITracker = () => {
+  const { isDark, mode, accent } = useTheme();
+
+  // Memoized theme-aware styles
+  const chartCardHoverEffect = useMemo(() => getChartCardStyle(isDark), [isDark]);
+  const surface = useMemo(() => getSurface(isDark), [isDark]);
+  const surfaceAlt = useMemo(() => getSurfaceAlt(isDark), [isDark]);
+  const surfaceMuted = useMemo(() => getSurfaceMuted(isDark), [isDark]);
+  const borderColor = useMemo(() => getBorder(isDark), [isDark]);
+  const tableHoverBg = useMemo(() => getTableHover(isDark), [isDark]);
+  const tableHeaderBg = useMemo(() => getTableHeader(isDark), [isDark]);
+
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
@@ -1699,16 +1721,20 @@ const EMITracker = () => {
   return (
     <>
       <Sidebar />
-      <Box className="lg:ml-72 min-h-screen bg-gray-50">
+      <Box className={`lg:ml-72 min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
       {/* Enhanced Header with Gradient Background */}
       <Box 
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: isDark 
+            ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)'
+            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           borderRadius: 4,
-          p: 4,
+          p: { xs: 3, md: 4 },
           mb: 4,
-          boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+          boxShadow: isDark 
+            ? '0 20px 60px rgba(30, 27, 75, 0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
+            : '0 20px 60px rgba(102, 126, 234, 0.3)',
           position: 'relative',
           overflow: 'hidden',
           '&::before': {
@@ -1902,6 +1928,7 @@ const EMITracker = () => {
         onClose={() => setEmiDetailOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
       >
         <DialogTitle>
           {selectedEMI ? `${selectedEMI.merchantName} — EMI Details` : 'EMI Details'}
@@ -2073,7 +2100,7 @@ const EMITracker = () => {
       <Dialog
         open={confirmationDialog.open}
         onClose={() => setConfirmationDialog(prev => ({ ...prev, open: false }))}
-        PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' } }}
+        PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', bgcolor: isDark ? '#1e293b' : '#fff' } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: confirmationDialog.isError ? 'error.main' : confirmationDialog.isSuccess ? 'success.main' : 'text.primary' }}>
           {confirmationDialog.isError ? <WarningIcon color="error" /> : confirmationDialog.isSuccess ? <CheckCircleIcon color="success" /> : <InfoIcon />}
@@ -2082,7 +2109,7 @@ const EMITracker = () => {
         <DialogContent>
           <Typography>{confirmationDialog.message}</Typography>
           {confirmationDialog.emiDetails && !confirmationDialog.isSuccess && !confirmationDialog.isError && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Box sx={{ mt: 2, p: 2, bgcolor: surfaceMuted, borderRadius: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">Payment Details</Typography>
               <Typography variant="body1" sx={{ mt: 1 }}>Amount: {formatCurrency(confirmationDialog.emiDetails.amount)}</Typography>
               <Typography variant="body2" color="text.secondary">Due Date: {confirmationDialog.emiDetails.dueDate ? formatDate(confirmationDialog.emiDetails.dueDate) : '—'}</Typography>
@@ -2126,10 +2153,10 @@ const EMITracker = () => {
         }}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? '#1e293b' : '#fff' } }}
       >
         <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: isDark ? 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
           fontWeight: 'bold'
         }}>
@@ -2138,7 +2165,7 @@ const EMITracker = () => {
         <DialogContent sx={{ mt: 2 }}>
           {selectedEMIForEarlyPayment && (
             <>
-              <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+              <Box sx={{ mb: 3, p: 2, bgcolor: surfaceMuted, borderRadius: 2 }}>
                 <Typography variant="subtitle2" color="text.secondary">Selected EMI</Typography>
                 <Typography variant="h6" fontWeight="bold">{selectedEMIForEarlyPayment.merchantName}</Typography>
                 <Typography variant="body2" color="text.secondary">{selectedEMIForEarlyPayment.cardProvider}</Typography>
@@ -2567,18 +2594,25 @@ const EMITracker = () => {
           elevation={3}
           sx={{
             mb: 4,
-            bgcolor: 'white',
+            bgcolor: isDark ? 'rgba(30, 41, 59, 0.7)' : 'white',
             borderRadius: 4,
-            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.15)',
+            boxShadow: isDark 
+              ? '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)'
+              : '0 8px 32px rgba(102, 126, 234, 0.15)',
             border: '2px solid',
-            borderColor: '#667eea',
+            borderColor: isDark ? 'rgba(99, 102, 241, 0.3)' : '#667eea',
             overflow: 'hidden',
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%)'
+            backdropFilter: isDark ? 'blur(20px)' : 'none',
+            background: isDark 
+              ? 'linear-gradient(135deg, rgba(30, 27, 75, 0.4) 0%, rgba(30, 41, 59, 0.6) 100%)'
+              : 'linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%)'
           }}
         >
           <Box
             sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: isDark
+                ? 'linear-gradient(135deg, #312e81 0%, #4c1d95 100%)'
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               p: 2,
               color: 'white'
             }}
@@ -2631,7 +2665,7 @@ const EMITracker = () => {
               return (
                 <>
                   {/* Summary Overview Section */}
-                  <Box sx={{ mb: 3, p: 2.5, bgcolor: '#f8f9fa', borderRadius: 3, border: '1px solid #e0e0e0' }}>
+                  <Box sx={{ mb: 3, p: 2.5, bgcolor: surfaceMuted, borderRadius: 3, border: `1px solid ${borderColor}` }}>
                     <Grid container spacing={2}>
                       <Grid item xs={6} sm={3}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600}>Active EMIs</Typography>
@@ -2655,7 +2689,7 @@ const EMITracker = () => {
                   {/* Quick Stats Row */}
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={12} sm={4}>
-                      <Card sx={{ bgcolor: '#e8f5e9', border: '2px solid #4caf50', borderRadius: 3 }}>
+                      <Card sx={{ bgcolor: isDark ? 'rgba(76, 175, 80, 0.12)' : '#e8f5e9', border: '2px solid', borderColor: isDark ? 'rgba(76, 175, 80, 0.4)' : '#4caf50', borderRadius: 3 }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="caption" fontWeight={700} color="#2e7d32">🛡️ EMERGENCY FUND</Typography>
                           <Typography variant="h6" fontWeight={900} color="#2e7d32">
@@ -2664,7 +2698,7 @@ const EMITracker = () => {
                           <LinearProgress 
                             variant="determinate" 
                             value={Math.min(efPercentage, 100)}
-                            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: '#c8e6c9', '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }}
+                            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: isDark ? 'rgba(76,175,80,0.2)' : '#c8e6c9', '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }}
                           />
                           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                             {formatCurrency(currentEmergencyFund)} / {formatCurrency(emergencyFundGoal)}
@@ -2673,7 +2707,7 @@ const EMITracker = () => {
                       </Card>
                     </Grid>
                     <Grid item xs={12} sm={4}>
-                      <Card sx={{ bgcolor: '#e3f2fd', border: '2px solid #2196f3', borderRadius: 3 }}>
+                      <Card sx={{ bgcolor: isDark ? 'rgba(33, 150, 243, 0.12)' : '#e3f2fd', border: '2px solid', borderColor: isDark ? 'rgba(33, 150, 243, 0.4)' : '#2196f3', borderRadius: 3 }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="caption" fontWeight={700} color="#1565c0">📅 NEXT MONTH DUE</Typography>
                           <Typography variant="h6" fontWeight={900} color="#1565c0">
@@ -2688,7 +2722,7 @@ const EMITracker = () => {
                       </Card>
                     </Grid>
                     <Grid item xs={12} sm={4}>
-                      <Card sx={{ bgcolor: '#f3e5f5', border: '2px solid #9c27b0', borderRadius: 3 }}>
+                      <Card sx={{ bgcolor: isDark ? 'rgba(156, 39, 176, 0.12)' : '#f3e5f5', border: '2px solid', borderColor: isDark ? 'rgba(156, 39, 176, 0.4)' : '#9c27b0', borderRadius: 3 }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="caption" fontWeight={700} color="#6a1b9a">🎉 DEBT-FREE PROGRESS</Typography>
                           <Typography variant="h6" fontWeight={900} color="#6a1b9a">
@@ -2697,7 +2731,7 @@ const EMITracker = () => {
                           <LinearProgress 
                             variant="determinate" 
                             value={Math.min(debtFreeProgress, 100)}
-                            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: '#e1bee7', '& .MuiLinearProgress-bar': { bgcolor: '#9c27b0' } }}
+                            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: isDark ? 'rgba(156,39,176,0.2)' : '#e1bee7', '& .MuiLinearProgress-bar': { bgcolor: '#9c27b0' } }}
                           />
                           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                             {totalOriginal > 0 
@@ -2773,7 +2807,7 @@ const EMITracker = () => {
                           <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
                             <Table size="small">
                               <TableHead>
-                                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                <TableRow sx={{ bgcolor: surfaceMuted }}>
                                   <TableCell sx={{ fontWeight: 800 }}>EMI</TableCell>
                                   <TableCell align="right" sx={{ fontWeight: 800 }}>Amount</TableCell>
                                   <TableCell align="right" sx={{ fontWeight: 800 }}>Due</TableCell>
@@ -2975,10 +3009,15 @@ const EMITracker = () => {
       <Box 
         sx={{ 
           mb: 4,
-          bgcolor: 'white',
+          bgcolor: isDark ? 'rgba(30, 41, 59, 0.7)' : 'white',
           borderRadius: 4,
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          overflow: 'hidden'
+          boxShadow: isDark 
+            ? '0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
+            : '0 2px 12px rgba(0,0,0,0.08)',
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent',
+          backdropFilter: isDark ? 'blur(20px)' : 'none'
         }}
       >
         <Tabs 
@@ -2992,22 +3031,28 @@ const EMITracker = () => {
             '& .MuiTabs-indicator': {
               height: 4,
               borderRadius: '4px 4px 0 0',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+              background: isDark 
+                ? 'linear-gradient(135deg, #818cf8 0%, #a78bfa 100%)'
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
             },
             '& .MuiTab-root': {
               fontWeight: 600,
-              fontSize: '1rem',
+              fontSize: '0.95rem',
               textTransform: 'none',
               minHeight: 64,
+              color: isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary',
               transition: 'all 0.3s ease',
               '&:hover': {
-                color: '#667eea',
+                color: isDark ? '#818cf8' : '#667eea',
                 transform: 'translateY(-2px)'
               }
             },
             '& .Mui-selected': {
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)'
+              color: isDark ? '#a78bfa !important' : '#667eea !important',
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(129,140,248,0.1) 0%, rgba(167,139,250,0.1) 100%)'
+                : 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)'
             }
           }}
         >
@@ -3133,7 +3178,9 @@ const EMITracker = () => {
                       contentStyle={{ 
                         borderRadius: 12, 
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        border: 'none'
+                        border: 'none',
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        color: isDark ? '#f1f5f9' : '#333'
                       }}
                     />
                     <Legend 
@@ -3261,9 +3308,9 @@ const EMITracker = () => {
           <Grid container spacing={2} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={3}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#d4f4dd',
+                bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#d4f4dd',
                 borderRadius: 2,
-                border: '1px solid #a8e6b8'
+                border: `1px solid ${isDark ? 'rgba(76,175,80,0.3)' : '#a8e6b8'}`
               }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -3283,9 +3330,9 @@ const EMITracker = () => {
 
             <Grid item xs={12} sm={6} md={3}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#fde8e8',
+                bgcolor: isDark ? 'rgba(239,68,68,0.12)' : '#fde8e8',
                 borderRadius: 2,
-                border: '1px solid #f8b4b4'
+                border: `1px solid ${isDark ? 'rgba(239,68,68,0.3)' : '#f8b4b4'}`
               }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -3305,9 +3352,9 @@ const EMITracker = () => {
 
             <Grid item xs={12} sm={6} md={3}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#f0e6f6',
+                bgcolor: isDark ? 'rgba(139,92,246,0.12)' : '#f0e6f6',
                 borderRadius: 2,
-                border: '1px solid #d4b5e8'
+                border: `1px solid ${isDark ? 'rgba(139,92,246,0.3)' : '#d4b5e8'}`
               }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -3327,9 +3374,9 @@ const EMITracker = () => {
 
             <Grid item xs={12} sm={6} md={3}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#e3f2fd',
+                bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd',
                 borderRadius: 2,
-                border: '1px solid #90caf9'
+                border: `1px solid ${isDark ? 'rgba(33,150,243,0.3)' : '#90caf9'}`
               }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -3351,8 +3398,8 @@ const EMITracker = () => {
           {/* Month-over-Month Change Banner */}
           <Card elevation={0} sx={{ 
             mb: 3, 
-            bgcolor: '#fafafa',
-            border: '1px solid #e0e0e0',
+            bgcolor: tableHeaderBg,
+            border: `1px solid ${borderColor}`,
             borderRadius: 2
           }}>
             <CardContent sx={{ p: 2 }}>
@@ -3392,7 +3439,8 @@ const EMITracker = () => {
           {/* Main Comprehensive Chart */}
           <Card elevation={0} sx={{ 
             borderRadius: 2,
-            border: '1px solid #e0e0e0',
+            border: `1px solid ${borderColor}`,
+            bgcolor: surface,
             mb: 3
           }}>
             <CardContent sx={{ p: 3 }}>
@@ -3435,13 +3483,10 @@ const EMITracker = () => {
                     formatter={(value, name) => [formatCurrency(value), name]}
                     contentStyle={{ 
                       borderRadius: 8, 
-                      border: '1px solid #e0e0e0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                  
-                  <Legend 
-                    wrapperStyle={{ paddingTop: 20 }}
+                      border: `1px solid ${borderColor}`,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      backgroundColor: isDark ? '#1e293b' : '#fff',
+                      color: isDark ? '#f1f5f9' : '#333'
                     iconType="circle"
                   />
                   
@@ -3501,9 +3546,9 @@ const EMITracker = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#fafafa',
+                bgcolor: tableHeaderBg,
                 borderRadius: 2,
-                border: '1px solid #e0e0e0'
+                border: `1px solid ${borderColor}`
               }}>
                 <CardContent>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -3518,9 +3563,9 @@ const EMITracker = () => {
 
             <Grid item xs={12} md={4}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#fafafa',
+                bgcolor: tableHeaderBg,
                 borderRadius: 2,
-                border: '1px solid #e0e0e0'
+                border: `1px solid ${borderColor}`
               }}>
                 <CardContent>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -3535,9 +3580,9 @@ const EMITracker = () => {
 
             <Grid item xs={12} md={4}>
               <Card elevation={0} sx={{ 
-                bgcolor: '#fafafa',
+                bgcolor: tableHeaderBg,
                 borderRadius: 2,
-                border: '1px solid #e0e0e0'
+                border: `1px solid ${borderColor}`
               }}>
                 <CardContent>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -3555,7 +3600,8 @@ const EMITracker = () => {
           <Card elevation={0} sx={{ 
             mt: 3,
             borderRadius: 2,
-            border: '1px solid #e0e0e0'
+            bgcolor: surface,
+            border: `1px solid ${borderColor}`
           }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
@@ -3564,7 +3610,7 @@ const EMITracker = () => {
               <TableContainer>
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
+                    <TableRow sx={{ bgcolor: tableHeaderBg }}>
                       <TableCell sx={{ fontWeight: 700 }}>Month</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700 }}>Income</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700 }}>Spendings</TableCell>
@@ -3581,7 +3627,7 @@ const EMITracker = () => {
                       <TableRow 
                         key={idx} 
                         hover
-                        sx={{ '&:hover': { bgcolor: '#f5f5f5' } }}
+                        sx={{ '&:hover': { bgcolor: surfaceMuted } }}
                       >
                         <TableCell sx={{ fontWeight: 600 }}>
                           {row.monthName} {row.year}
@@ -3703,15 +3749,17 @@ const EMITracker = () => {
                       angle={-45} 
                       textAnchor="end" 
                       height={100}
-                      tick={{ fill: '#666' }}
+                      tick={{ fill: isDark ? '#94a3b8' : '#666' }}
                     />
-                    <YAxis tick={{ fill: '#666' }} />
+                    <YAxis tick={{ fill: isDark ? '#94a3b8' : '#666' }} />
                     <RechartsTooltip 
                       formatter={(value) => formatCurrency(value)}
                       contentStyle={{ 
                         borderRadius: 12, 
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        border: 'none'
+                        border: 'none',
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        color: isDark ? '#f1f5f9' : '#333'
                       }}
                     />
                     <Legend />
@@ -4008,7 +4056,7 @@ const EMITracker = () => {
       {activeTab === 4 && upcomingPayments && (
         <Box>
           {/* Time Period Selector */}
-          <Card elevation={2} sx={{ mb: 3, p: 2 }}>
+          <Card elevation={isDark ? 0 : 2} sx={{ mb: 3, p: 2, bgcolor: surface, border: `1px solid ${borderColor}` }}>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} sm={6} md={3}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -4063,12 +4111,14 @@ const EMITracker = () => {
             {getDisplayedMonths().map((month, index) => (
               <Grid item xs={12} md={6} key={index}>
                 <Card
-                  elevation={3}
+                  elevation={isDark ? 0 : 3}
                   sx={{
                     transition: 'all 0.3s ease',
+                    bgcolor: surface,
+                    border: `1px solid ${borderColor}`,
                     '&:hover': {
                       transform: 'translateY(-8px)',
-                      boxShadow: 8,
+                      boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 8,
                       borderTop: '4px solid',
                       borderColor: 'primary.main'
                     }
@@ -4153,7 +4203,7 @@ const EMITracker = () => {
 
           {/* No Results Message */}
           {getDisplayedMonths().length === 0 && (
-            <Card elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+            <Card elevation={isDark ? 0 : 2} sx={{ p: 4, textAlign: 'center', bgcolor: surface, border: `1px solid ${borderColor}` }}>
               <Typography variant="h6" color="text.secondary">
                 No upcoming payments found
               </Typography>
@@ -4171,7 +4221,7 @@ const EMITracker = () => {
           {overview.activeEMIs.map((emi) => (
             <Grid item xs={12} md={6} lg={4} key={emi.id}>
               <Card 
-                elevation={3}
+                elevation={isDark ? 0 : 3}
                 onClick={() => {
                   // Open EMI detail when card is clicked
                   setSelectedEMI(emi);
@@ -4181,9 +4231,11 @@ const EMITracker = () => {
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
                   position: 'relative',
+                  bgcolor: surface,
+                  border: `1px solid ${borderColor}`,
                   '&:hover': {
                     transform: 'scale(1.03)',
-                    boxShadow: 8,
+                    boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 8,
                     borderLeft: '4px solid',
                     borderColor: 'primary.main'
                   }
@@ -4308,7 +4360,7 @@ const EMITracker = () => {
                   </Box>
 
                   {emi.notes && (
-                    <Box mt={2} p={1} bgcolor="grey.100" borderRadius={1}>
+                    <Box mt={2} p={1} bgcolor={surfaceMuted} borderRadius={1}>
                       <Typography variant="caption" color="text.secondary">
                         📝 {emi.notes}
                       </Typography>
@@ -4330,9 +4382,9 @@ const EMITracker = () => {
                 textAlign: 'center', 
                 py: 8,
                 px: 3,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                 borderRadius: 4,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.08)'
               }}
             >
               <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main', mb: 2, opacity: 0.5 }} />
@@ -4348,15 +4400,16 @@ const EMITracker = () => {
               {overview.completedEMIs.map((emi) => (
                 <Grid item xs={12} md={6} lg={4} key={emi.id}>
                   <Card 
-                    elevation={3}
+                    elevation={isDark ? 0 : 3}
                     sx={{
                       transition: 'all 0.3s ease',
                       position: 'relative',
+                      bgcolor: surface,
                       border: '2px solid',
                       borderColor: 'success.main',
                       '&:hover': {
                         transform: 'scale(1.03)',
-                        boxShadow: 8,
+                        boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 8,
                         borderColor: 'success.dark'
                       }
                     }}
@@ -4432,7 +4485,7 @@ const EMITracker = () => {
                       </Box>
 
                       {emi.notes && (
-                        <Box mt={2} p={1} bgcolor="grey.100" borderRadius={1}>
+                        <Box mt={2} p={1} bgcolor={surfaceMuted} borderRadius={1}>
                           <Typography variant="caption" color="text.secondary">
                             📝 {emi.notes}
                           </Typography>
@@ -4540,7 +4593,7 @@ const EMITracker = () => {
             <Grid container spacing={3}>
               {loansGiven.map((loan) => (
                 <Grid item xs={12} md={6} lg={4} key={loan._id}>
-                  <Card elevation={3} sx={{ '&:hover': { boxShadow: 6 } }}>
+                  <Card elevation={isDark ? 0 : 3} sx={{ bgcolor: surface, border: `1px solid ${borderColor}`, '&:hover': { boxShadow: isDark ? '0 6px 20px rgba(0,0,0,0.4)' : 6 } }}>
                     <CardContent>
                       <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
                         <Box>
@@ -4766,7 +4819,7 @@ const EMITracker = () => {
                             const saving = Math.max(0, (candidate.interestRate - offer.rate) / (candidate.interestRate || 1)) * candidate.emiAmount * 0.35;
                             return (
                               <Grid item xs={12} md={4} key={offer.provider}>
-                                <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: 'white', height: '100%' }}>
+                                <Box sx={{ p: 2, border: `1px solid ${borderColor}`, borderRadius: 2, bgcolor: surface, height: '100%' }}>
                                   <Typography variant="subtitle1" fontWeight="bold">{offer.provider}</Typography>
                                   <Typography variant="body2" color="text.secondary">New rate: {offer.rate}%</Typography>
                                   <Typography variant="body2" color="text.secondary">Processing fee: ₹{offer.fee.toLocaleString()}</Typography>
@@ -4857,7 +4910,7 @@ const EMITracker = () => {
                         />
                         <RechartsTooltip 
                           formatter={(value) => formatCurrency(value)}
-                          contentStyle={{ borderRadius: 8, border: '1px solid #e0e0e0' }}
+                          contentStyle={{ borderRadius: 8, border: `1px solid ${borderColor}`, backgroundColor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : '#333' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -4909,7 +4962,7 @@ const EMITracker = () => {
                       sx={{ 
                         height: 20, 
                         borderRadius: 2,
-                        bgcolor: '#e0e0e0',
+                        bgcolor: isDark ? 'rgba(255,255,255,0.1)' : '#e0e0e0',
                         '& .MuiLinearProgress-bar': {
                           background: debtAnalysis.emergencyFundPercentage >= 100 
                             ? 'linear-gradient(90deg, #11998e 0%, #38ef7d 100%)'
@@ -4928,7 +4981,7 @@ const EMITracker = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 2, mb: 2 }}>
+                  <Box sx={{ bgcolor: surfaceMuted, p: 2, borderRadius: 2, mb: 2 }}>
                     <Alert severity="info" sx={{ mb: 2 }}>
                       <Typography variant="body2" fontWeight="bold" gutterBottom>
                         🤖 Smart Goal Calculation
@@ -5061,10 +5114,10 @@ const EMITracker = () => {
                   )}
 
                   <Typography variant="h6" fontWeight="bold" mb={2}>Recommended Payoff Order:</Typography>
-                  <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                  <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)', bgcolor: surface }}>
                     <Table>
                       <TableHead>
-                        <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                        <TableRow sx={{ bgcolor: surfaceMuted }}>
                           <TableCell align="center" sx={{ fontWeight: 'bold' }}>Priority</TableCell>
                           <TableCell sx={{ fontWeight: 'bold' }}>EMI</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 'bold' }}>Remaining</TableCell>
@@ -5176,7 +5229,7 @@ const EMITracker = () => {
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>🚀 Your Action Plan</Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 2, borderLeft: '4px solid #2196f3' }}>
+                    <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd', borderRadius: 2, borderLeft: '4px solid #2196f3' }}>
                       <Typography variant="subtitle2" fontWeight="bold" color="primary">Step 1: Build Emergency Fund</Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
                         Current: {formatCurrency(currentEmergencyFund)} | Goal: {formatCurrency(emergencyFundGoal)}
@@ -5186,7 +5239,7 @@ const EMITracker = () => {
                       </Typography>
                     </Box>
 
-                    <Box sx={{ p: 2, bgcolor: '#f3e5f5', borderRadius: 2, borderLeft: '4px solid #9c27b0' }}>
+                    <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(156,39,176,0.12)' : '#f3e5f5', borderRadius: 2, borderLeft: '4px solid #9c27b0' }}>
                       <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#9c27b0' }}>Step 2: Extra EMI Payments</Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
                         Available for extra payments: {formatCurrency(debtAnalysis.recommendedMonthlyExtra)}
@@ -5196,7 +5249,7 @@ const EMITracker = () => {
                       </Typography>
                     </Box>
 
-                    <Box sx={{ p: 2, bgcolor: '#e8f5e9', borderRadius: 2, borderLeft: '4px solid #4caf50' }}>
+                    <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, borderLeft: '4px solid #4caf50' }}>
                       <Typography variant="subtitle2" fontWeight="bold" color="success.main">Step 3: Follow {repaymentStrategy === 'avalanche' ? 'Avalanche' : 'Snowball'} Method</Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
                         Focus on: {(repaymentStrategy === 'avalanche' ? debtAnalysis.sortedEMIsAvalanche : debtAnalysis.sortedEMIsSnowball)[0]?.merchantName}
@@ -5207,7 +5260,7 @@ const EMITracker = () => {
                     </Box>
 
                     {debtAnalysis.debtToIncomeRatio > 40 && (
-                      <Box sx={{ p: 2, bgcolor: '#ffebee', borderRadius: 2, borderLeft: '4px solid #f44336' }}>
+                      <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(244,67,54,0.12)' : '#ffebee', borderRadius: 2, borderLeft: '4px solid #f44336' }}>
                         <Typography variant="subtitle2" fontWeight="bold" color="error.main">⚠️ High Debt Alert</Typography>
                         <Typography variant="body2" sx={{ mt: 1 }}>
                           Your debt-to-income ratio is {debtAnalysis.debtToIncomeRatio.toFixed(1)}%. Consider:
@@ -5271,14 +5324,14 @@ const EMITracker = () => {
                         <Grid item xs={12} md={8}>
                           <Grid container spacing={2}>
                             <Grid item xs={12} sm={4}>
-                              <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                              <Box sx={{ p: 2, bgcolor: surfaceMuted, borderRadius: 2 }}>
                                 <Typography variant="subtitle2" fontWeight="bold">Baseline</Typography>
                                 <Typography variant="h4" fontWeight="bold">{Math.round(baseProjection.months)} mo</Typography>
                                 <Typography variant="body2" color="text.secondary">Target: {baseProjection.targetDate}</Typography>
                               </Box>
                             </Grid>
                             <Grid item xs={12} sm={4}>
-                              <Box sx={{ p: 2, bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                              <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(76,175,80,0.3)' : '#c8e6c9'}` }}>
                                 <Typography variant="subtitle2" fontWeight="bold">Current Boost</Typography>
                                 <Typography variant="h4" fontWeight="bold" color="success.main">
                                   {Math.max(1, Math.round(boostedProjection.months))} mo
@@ -5290,7 +5343,7 @@ const EMITracker = () => {
                               </Box>
                             </Grid>
                             <Grid item xs={12} sm={4}>
-                              <Box sx={{ p: 2, bgcolor: '#fff8e1', borderRadius: 2, border: '1px solid #ffe0b2' }}>
+                              <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(255,193,7,0.12)' : '#fff8e1', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(255,152,0,0.3)' : '#ffe0b2'}` }}>
                                 <Typography variant="subtitle2" fontWeight="bold">Max Push (adds recommended extra)</Typography>
                                 <Typography variant="h4" fontWeight="bold" color="warning.main">
                                   {Math.max(1, Math.round(aggressiveProjection.months))} mo
@@ -5320,7 +5373,7 @@ const EMITracker = () => {
                   <Typography variant="h5" fontWeight="bold" mb={3}>💳 Monthly Commitments Breakdown</Typography>
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                      <Box sx={{ textAlign: 'center', p: 3, bgcolor: surfaceMuted, borderRadius: 2 }}>
                         <Typography variant="h2" fontWeight="bold" color="primary">
                           {formatCurrency(debtAnalysis.monthlyBurden)}
                         </Typography>
@@ -5328,7 +5381,7 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                      <Box sx={{ textAlign: 'center', p: 3, bgcolor: surfaceMuted, borderRadius: 2 }}>
                         <Typography variant="h2" fontWeight="bold" color="success.main">
                           {formatCurrency(debtAnalysis.availableIncome)}
                         </Typography>
@@ -5336,7 +5389,7 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                      <Box sx={{ textAlign: 'center', p: 3, bgcolor: surfaceMuted, borderRadius: 2 }}>
                         <Typography variant="h2" fontWeight="bold" color="warning.main">
                           {formatCurrency(debtAnalysis.recommendedMonthlyExtra)}
                         </Typography>
@@ -5345,7 +5398,7 @@ const EMITracker = () => {
                     </Grid>
                   </Grid>
 
-                  <Box sx={{ mt: 3, p: 3, bgcolor: '#e3f2fd', borderRadius: 2 }}>
+                  <Box sx={{ mt: 3, p: 3, bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd', borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>💡 Smart Spending Tips to Close EMIs Faster:</Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
@@ -5576,7 +5629,7 @@ const EMITracker = () => {
                           <Box sx={{ 
                             p: 2, 
                             borderRadius: 2, 
-                            bgcolor: '#f5f5f5',
+                            bgcolor: surfaceMuted,
                             border: isPriority ? '2px solid #f44336' : '1px solid #e0e0e0'
                           }}>
                             <Box display="flex" justifyContent="space-between" mb={1}>
@@ -5596,7 +5649,7 @@ const EMITracker = () => {
                                 height: 10, 
                                 borderRadius: 5,
                                 mb: 2,
-                                bgcolor: '#e0e0e0',
+                                bgcolor: isDark ? 'rgba(255,255,255,0.1)' : '#e0e0e0',
                                 '& .MuiLinearProgress-bar': {
                                   background: completionPct > 75 
                                     ? 'linear-gradient(90deg, #11998e 0%, #38ef7d 100%)'
@@ -5705,8 +5758,8 @@ const EMITracker = () => {
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: 2, 
-                        bgcolor: '#fff3e0',
-                        border: '2px solid #ff9800'
+                        bgcolor: isDark ? 'rgba(255,152,0,0.12)' : '#fff3e0',
+                        border: `2px solid ${isDark ? 'rgba(255,152,0,0.5)' : '#ff9800'}`
                       }}>
                         <Typography variant="h6" fontWeight="bold" mb={1}>
                           🎯 Priority EMI
@@ -5731,8 +5784,8 @@ const EMITracker = () => {
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: 2, 
-                        bgcolor: '#e8f5e9',
-                        border: '2px solid #4caf50'
+                        bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9',
+                        border: `2px solid ${isDark ? 'rgba(76,175,80,0.5)' : '#4caf50'}`
                       }}>
                         <Typography variant="h6" fontWeight="bold" mb={1}>
                           ✨ Lifestyle/Savings
@@ -5859,7 +5912,7 @@ const EMITracker = () => {
                         p: 2, 
                         borderRadius: 2, 
                         bgcolor: 'rgba(76,175,80,0.25)',
-                        border: '2px solid #4caf50',
+                        border: `2px solid ${isDark ? 'rgba(76,175,80,0.5)' : '#4caf50'}`,
                         textAlign: 'center',
                         position: 'relative'
                       }}>
@@ -5977,7 +6030,7 @@ const EMITracker = () => {
                         <XAxis dataKey="name" stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
                         <YAxis stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
                         <RechartsTooltip 
-                          contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', fontSize: '12px' }}
+                          contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#333', border: 'none', borderRadius: '8px', fontSize: '12px', color: '#f1f5f9' }}
                           formatter={(value, name) => [
                             name === 'months' ? `${value} months` : formatCurrency(value),
                             name === 'months' ? 'Time' : 'Interest Saved'
@@ -6181,7 +6234,7 @@ const EMITracker = () => {
                             <XAxis dataKey="name" stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
                             <YAxis stroke="rgba(255,255,255,0.7)" tick={{ fontSize: 12 }} />
                             <RechartsTooltip 
-                              contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', fontSize: '12px' }}
+                              contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#333', border: 'none', borderRadius: '8px', fontSize: '12px', color: '#f1f5f9' }}
                               formatter={(value) => [`${value} months`, 'Duration']}
                             />
                             <Bar dataKey="months" radius={[6, 6, 0, 0]}>
@@ -6408,7 +6461,7 @@ const EMITracker = () => {
                         sx={{ 
                           height: 8, 
                           borderRadius: 4,
-                          bgcolor: '#e0e0e0',
+                          bgcolor: isDark ? 'rgba(255,255,255,0.1)' : '#e0e0e0',
                           '& .MuiLinearProgress-bar': {
                             background: milestone.completed 
                               ? 'linear-gradient(90deg, #11998e 0%, #38ef7d 100%)'
@@ -6423,7 +6476,7 @@ const EMITracker = () => {
                     </Box>
                   ))}
 
-                  <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2, textAlign: 'center' }}>
+                  <Box sx={{ mt: 3, p: 2, bgcolor: surfaceMuted, borderRadius: 2, textAlign: 'center' }}>
                     <Typography variant="h6" fontWeight="bold" color="primary">
                       {[true, false, false, false].filter(Boolean).length} / 4 Milestones
                     </Typography>
@@ -6449,7 +6502,7 @@ const EMITracker = () => {
                   <Grid container spacing={3}>
                     {/* DTI Target Planner */}
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ p: 3, bgcolor: '#fff3e0', borderRadius: 2, border: '2px solid #ff9800', height: '100%' }}>
+                      <Box sx={{ p: 3, bgcolor: isDark ? 'rgba(255,152,0,0.12)' : '#fff3e0', borderRadius: 2, border: `2px solid ${isDark ? 'rgba(255,152,0,0.5)' : '#ff9800'}`, height: '100%' }}>
                         <Typography variant="h6" fontWeight="bold" color="#ef6c00" gutterBottom>
                           🎯 Safe DTI Target (≤ 50%)
                         </Typography>
@@ -6467,7 +6520,7 @@ const EMITracker = () => {
 
                     {/* Consolidation Opportunity */}
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ p: 3, bgcolor: '#e3f2fd', borderRadius: 2, border: '2px solid #2196f3', height: '100%' }}>
+                      <Box sx={{ p: 3, bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd', borderRadius: 2, border: `2px solid ${isDark ? 'rgba(33,150,243,0.5)' : '#2196f3'}`, height: '100%' }}>
                         <Typography variant="h6" fontWeight="bold" color="#1565c0" gutterBottom>
                           🔄 Consolidation Check
                         </Typography>
@@ -6498,7 +6551,7 @@ const EMITracker = () => {
 
                     {/* Income Lift Playbook */}
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ p: 3, bgcolor: '#e8f5e9', borderRadius: 2, border: '2px solid #4caf50', height: '100%' }}>
+                      <Box sx={{ p: 3, bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `2px solid ${isDark ? 'rgba(76,175,80,0.5)' : '#4caf50'}`, height: '100%' }}>
                         <Typography variant="h6" fontWeight="bold" color="#2e7d32" gutterBottom>
                           💼 Income Lift Playbook
                         </Typography>
@@ -6542,10 +6595,10 @@ const EMITracker = () => {
 
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={7}>
-                      <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                      <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)', bgcolor: surface }}>
                         <Table size="small">
                           <TableHead>
-                            <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                            <TableRow sx={{ bgcolor: surfaceMuted }}>
                               <TableCell sx={{ fontWeight: 'bold' }}>Risk EMI</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 'bold' }}>Interest</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 'bold' }}>Remaining</TableCell>
@@ -6600,7 +6653,7 @@ const EMITracker = () => {
                     </Grid>
 
                     <Grid item xs={12} md={5}>
-                      <Box sx={{ p: 3, bgcolor: '#f5f5f5', borderRadius: 2, height: '100%' }}>
+                      <Box sx={{ p: 3, bgcolor: surfaceMuted, borderRadius: 2, height: '100%' }}>
                         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                           Auto-Guardrails
                         </Typography>
@@ -6687,17 +6740,17 @@ const EMITracker = () => {
                     const tenureReliefMonths = Math.ceil((targetEmi.emiAmount * 0.2) / (targetEmi.emiAmount || 1) * 12);
                     return (
                       <Box display="grid" gap={2}>
-                        <Box p={2} sx={{ bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                        <Box p={2} sx={{ bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(76,175,80,0.3)' : '#c8e6c9'}` }}>
                           <Typography variant="subtitle2" fontWeight="bold">Ask for 3% rate drop</Typography>
                           <Typography variant="body2" color="text.secondary">On {targetEmi.merchantName} @ {targetEmi.interestRate}%</Typography>
                           <Typography variant="body2" fontWeight="bold" color="success.main">Save ≈ {formatCurrency(threePointDropSavings)} / month</Typography>
                         </Box>
-                        <Box p={2} sx={{ bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ffe0b2' }}>
+                        <Box p={2} sx={{ bgcolor: isDark ? 'rgba(255,152,0,0.12)' : '#fff3e0', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(255,152,0,0.3)' : '#ffe0b2'}` }}>
                           <Typography variant="subtitle2" fontWeight="bold">Request fee/penalty waiver</Typography>
                           <Typography variant="body2" color="text.secondary">Waive late/foreclosure fees to speed prepayment.</Typography>
                           <Typography variant="caption" color="text.secondary">Mention spotless repayment streaks to negotiate.</Typography>
                         </Box>
-                        <Box p={2} sx={{ bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #bbdefb' }}>
+                        <Box p={2} sx={{ bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(33,150,243,0.3)' : '#bbdefb'}` }}>
                           <Typography variant="subtitle2" fontWeight="bold">Extend tenure short-term</Typography>
                           <Typography variant="body2" color="text.secondary">Add a few months temporarily to lower EMI during crunch.</Typography>
                           <Typography variant="caption" color="text.secondary">Est. relief: {tenureReliefMonths} months cushion on {targetEmi.merchantName}.</Typography>
@@ -6721,7 +6774,7 @@ const EMITracker = () => {
                     {[{title: 'Sell 3 idle items', impact: 3000, eta: '1 week'}, {title: 'Weekend gig (8 hrs)', impact: 2500, eta: 'This week'}, {title: 'Renegotiate 2 subscriptions', impact: 800, eta: '2 days'}]
                       .map((item, idx) => (
                         <Grid item xs={12} key={idx}>
-                          <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
                               <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
                               <Typography variant="caption" color="text.secondary">ETA: {item.eta}</Typography>
@@ -6754,13 +6807,13 @@ const EMITracker = () => {
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                      <Box p={2} sx={{ bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ffe0b2' }}>
+                      <Box p={2} sx={{ bgcolor: isDark ? 'rgba(255,152,0,0.12)' : '#fff3e0', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(255,152,0,0.3)' : '#ffe0b2'}` }}>
                         <Typography variant="subtitle2" fontWeight="bold">Min-pay envelope</Typography>
                         <Typography variant="body2" color="text.secondary">Allocate ₹{Math.round(debtAnalysis.monthlyBurden * 0.6).toLocaleString()} to keep EMIs current.</Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <Box p={2} sx={{ bgcolor: '#e8f5e9', borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                      <Box p={2} sx={{ bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(76,175,80,0.3)' : '#c8e6c9'}` }}>
                         <Typography variant="subtitle2" fontWeight="bold">Essential spend cap</Typography>
                         <Typography variant="body2" color="text.secondary">Target monthly essentials ≤ {Math.max(0, debtAnalysis.availableIncome).toLocaleString()}.</Typography>
                       </Box>
@@ -6788,7 +6841,7 @@ const EMITracker = () => {
                         const remaining = Math.max(0, debtAnalysis.totalOutstanding - paid);
                         return (
                           <Grid item xs={12} sm={6} key={idx}>
-                            <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                            <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2 }}>
                               <Typography variant="subtitle2" fontWeight="bold">Month {idx + 1}</Typography>
                               <Typography variant="caption" color="text.secondary">Projected remaining</Typography>
                               <Typography variant="body1" fontWeight="bold">{formatCurrency(remaining)}</Typography>
@@ -6854,15 +6907,15 @@ const EMITracker = () => {
                   <Typography variant="h5" fontWeight="bold" mb={2}>🏅 Behavioral Nudges & Streaks</Typography>
                   <Typography variant="body2" color="text.secondary" mb={2}>Small wins compound—keep your momentum.</Typography>
                   <Box display="grid" gap={1.5}>
-                    <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2 }}>
                       <Typography variant="subtitle2" fontWeight="bold">On-time streak</Typography>
                       <Typography variant="body2" color="text.secondary">Maintain 3-month streak to unlock lower-risk profile.</Typography>
                     </Box>
-                    <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2 }}>
                       <Typography variant="subtitle2" fontWeight="bold">Round-up challenge</Typography>
                       <Typography variant="body2" color="text.secondary">Add ₹100 daily for 10 days → prepay highest APR EMI.</Typography>
                     </Box>
-                    <Box p={2} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2 }}>
                       <Typography variant="subtitle2" fontWeight="bold">No-new-EMI pledge</Typography>
                       <Typography variant="body2" color="text.secondary">30-day freeze on new credit while DTI {`>`} 40%.</Typography>
                     </Box>
@@ -6963,10 +7016,11 @@ const EMITracker = () => {
                 const daysSinceTaken = Math.floor((new Date() - new Date(loan.loanTakenDate)) / (1000 * 60 * 60 * 24));
                 return (
                   <Grid item xs={12} md={6} lg={4} key={loan._id}>
-                    <Card elevation={3} sx={{ 
-                      '&:hover': { boxShadow: 6 },
+                    <Card elevation={isDark ? 0 : 3} sx={{ 
+                      bgcolor: surface,
+                      '&:hover': { boxShadow: isDark ? '0 6px 20px rgba(0,0,0,0.4)' : 6 },
                       border: loan.priority === 'urgent' ? '2px solid #f44336' : 
-                              loan.priority === 'high' ? '2px solid #ff9800' : 'none'
+                              loan.priority === 'high' ? '2px solid #ff9800' : `1px solid ${borderColor}`
                     }}>
                       <CardContent>
                         <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
@@ -7339,12 +7393,13 @@ const EMITracker = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            bgcolor: isDark ? '#1e293b' : '#fff'
           }
         }}
       >
         <DialogTitle sx={{ 
-          background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+          background: isDark ? 'linear-gradient(45deg, #1e3a5f 30%, #1a6b8a 90%)' : 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
           color: 'white',
           fontWeight: 'bold'
         }}>
@@ -7392,7 +7447,7 @@ const EMITracker = () => {
               transition: 'all 0.3s ease',
               '&:hover': {
                 transform: 'scale(1.05)',
-                backgroundColor: 'grey.100'
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'grey.100'
               }
             }}
           >
@@ -7429,12 +7484,13 @@ const EMITracker = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            bgcolor: isDark ? '#1e293b' : '#fff'
           }
         }}
       >
         <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+          background: isDark ? 'linear-gradient(135deg, #155e75 0%, #1e1b4b 100%)' : 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
           color: 'white',
           fontWeight: 'bold',
           display: 'flex',
@@ -7830,7 +7886,8 @@ const EMITracker = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            bgcolor: isDark ? '#1e293b' : '#fff'
           }
         }}
       >
@@ -7849,7 +7906,7 @@ const EMITracker = () => {
             Are you sure you want to delete this EMI?
           </Typography>
           {selectedEMI && (
-            <Box mt={2} p={2} bgcolor="grey.100" borderRadius={2}>
+            <Box mt={2} p={2} bgcolor={surfaceMuted} borderRadius={2}>
               <Typography variant="body2"><strong>Merchant:</strong> {selectedEMI.merchantName}</Typography>
               <Typography variant="body2"><strong>Card:</strong> {selectedEMI.cardProvider} {selectedEMI.cardLastFourDigits}</Typography>
               <Typography variant="body2"><strong>EMI Amount:</strong> {formatCurrency(selectedEMI.emiAmount)}</Typography>
@@ -8058,7 +8115,7 @@ const EMITracker = () => {
                   mb: 2,
                   p: 2,
                   borderRadius: 2,
-                  bgcolor: '#f8fafc'
+                  bgcolor: surfaceAlt
                 }}
               >
                 <Typography variant="subtitle1" fontWeight="bold">
@@ -8215,7 +8272,9 @@ const EMITracker = () => {
       </Dialog>
 
       {/* Add/Edit Loan Given Dialog */}
-      <Dialog open={loanGivenDialogOpen} onClose={() => setLoanGivenDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={loanGivenDialogOpen} onClose={() => setLoanGivenDialogOpen(false)} maxWidth="md" fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+      >
         <DialogTitle>
           {selectedLoanGiven ? 'Edit Loan' : 'Add New Loan Given'}
         </DialogTitle>
@@ -8333,7 +8392,9 @@ const EMITracker = () => {
       </Dialog>
 
       {/* Add Repayment Dialog */}
-      <Dialog open={repaymentDialogOpen} onClose={() => setRepaymentDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={repaymentDialogOpen} onClose={() => setRepaymentDialogOpen(false)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+      >
         <DialogTitle>Add Repayment</DialogTitle>
         <DialogContent>
           {selectedLoanGiven && (
@@ -8412,6 +8473,7 @@ const EMITracker = () => {
         onClose={() => setPersonalLoanDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
       >
         <DialogTitle>
           {selectedPersonalLoan ? 'Edit Personal Loan' : 'Add Personal Loan'}
@@ -8598,6 +8660,7 @@ const EMITracker = () => {
         onClose={() => setPersonalLoanRepaymentDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
       >
         <DialogTitle>Add Repayment</DialogTitle>
         <DialogContent>
