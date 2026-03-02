@@ -44,9 +44,11 @@ import {
   EmojiEvents as TrophyIcon
 } from '@mui/icons-material';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
+import MainLayout from '../components/MainLayout';
 import { useSidebar } from '../context/SidebarContext';
+import { useTheme } from '../context/ThemeContext';
 import { API_URL } from '../services/api';
+import '../styles/animations.css';
 
 const GOAL_CATEGORIES = [
   { value: 'retirement', label: 'Retirement', icon: '🏖️' },
@@ -67,6 +69,7 @@ const SAVINGS_STRATEGIES = ['lump_sum', 'monthly', 'weekly', 'variable'];
 
 function FinancialGoals() {
   const { isCollapsed } = useSidebar();
+  const { isDark } = useTheme();
   const [goals, setGoals] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -268,12 +271,14 @@ function FinancialGoals() {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
-          <Typography>Loading goals...</Typography>
+      <MainLayout title="Financial Goals" subtitle="Track your financial aspirations">
+        <Box className="flex items-center justify-center min-h-[60vh]">
+          <Box sx={{ textAlign: 'center' }}>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <Typography sx={{ color: isDark ? '#94a3b8' : 'text.secondary' }}>Loading goals...</Typography>
+          </Box>
         </Box>
-      </>
+      </MainLayout>
     );
   }
 
@@ -281,15 +286,23 @@ function FinancialGoals() {
   const totalSaved = summary?.totalCurrentAmount || 0;
   const totalProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
 
+  // Dark mode card styles
+  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', '&:hover': { boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 4 } };
+  const paperSx = { bgcolor: isDark ? '#1e293b' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', backgroundImage: 'none' } };
+  const inputSx = { '& .MuiOutlinedInput-root': { bgcolor: isDark ? '#0f172a' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', '& fieldset': { borderColor: isDark ? '#334155' : '#e2e8f0' } }, '& .MuiInputLabel-root': { color: isDark ? '#94a3b8' : undefined } };
+  const textColor = isDark ? '#f1f5f9' : undefined;
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
+
   return (
-    <>
-      <Sidebar />
-      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 pb-8 transition-all duration-300`}>
+    <MainLayout title="Financial Goals" subtitle="Set, track & achieve your aspirations">
+      <Box sx={{ pb: 4 }}>
         {/* Enhanced Header with Gradient */}
         <Box
+          className="animate-fade-in-up"
           sx={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: 0,
+            borderRadius: 3,
             p: 4,
             mb: 3,
             boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
@@ -336,7 +349,7 @@ function FinancialGoals() {
 
         <Container maxWidth="xl">
           {/* Enhanced Summary Cards with Gradients */}
-          <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid container spacing={3} sx={{ mb: 3 }} className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
@@ -438,7 +451,7 @@ function FinancialGoals() {
 
       {/* Goals Grid */}
       {goals.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ p: 4, textAlign: 'center', ...paperSx }}>
           <TrophyIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No financial goals yet
@@ -466,7 +479,9 @@ function FinancialGoals() {
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  '&:hover': { boxShadow: 4 }
+                  ...cardSx,
+                  transition: 'all 0.3s ease',
+                  '&:hover': { transform: 'translateY(-4px)', boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.4)' : 6 }
                 }}
               >
                 <CardContent sx={{ flexGrow: 1 }}>
@@ -530,7 +545,7 @@ function FinancialGoals() {
                   {/* Metrics */}
                   <Grid container spacing={1} sx={{ mb: 2 }}>
                     <Grid size={6}>
-                      <Paper variant="outlined" sx={{ p: 1 }}>
+                      <Paper variant="outlined" sx={{ p: 1, ...paperSx }}>
                         <Typography variant="caption" color="text.secondary">
                           Shortfall
                         </Typography>
@@ -540,7 +555,7 @@ function FinancialGoals() {
                       </Paper>
                     </Grid>
                     <Grid size={6}>
-                      <Paper variant="outlined" sx={{ p: 1 }}>
+                      <Paper variant="outlined" sx={{ p: 1, ...paperSx }}>
                         <Typography variant="caption" color="text.secondary">
                           Days Left
                         </Typography>
@@ -550,7 +565,7 @@ function FinancialGoals() {
                       </Paper>
                     </Grid>
                     <Grid size={12}>
-                      <Paper variant="outlined" sx={{ p: 1 }}>
+                      <Paper variant="outlined" sx={{ p: 1, ...paperSx }}>
                         <Typography variant="caption" color="text.secondary">
                           Monthly Target
                         </Typography>
@@ -623,8 +638,9 @@ function FinancialGoals() {
         }}
         maxWidth="md"
         fullWidth
+        sx={dialogSx}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: textColor }}>
           {editingGoal ? 'Edit Goal' : 'Create New Goal'}
         </DialogTitle>
         <DialogContent>
@@ -765,8 +781,9 @@ function FinancialGoals() {
         onClose={() => setOpenContributeDialog(false)}
         maxWidth="sm"
         fullWidth
+        sx={dialogSx}
       >
-        <DialogTitle>Add Contribution</DialogTitle>
+        <DialogTitle sx={{ color: textColor }}>Add Contribution</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid size={12}>
@@ -819,8 +836,9 @@ function FinancialGoals() {
         onClose={() => setOpenMilestoneDialog(false)}
         maxWidth="sm"
         fullWidth
+        sx={dialogSx}
       >
-        <DialogTitle>Add Milestone</DialogTitle>
+        <DialogTitle sx={{ color: textColor }}>Add Milestone</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid size={12}>
@@ -868,7 +886,7 @@ function FinancialGoals() {
       </Dialog>
         </Container>
       </Box>
-    </>
+    </MainLayout>
   );
 }
 

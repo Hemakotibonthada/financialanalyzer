@@ -15,6 +15,8 @@ import {
 } from 'recharts';
 
 import { API_URL } from '../services/api';
+import MainLayout from '../components/MainLayout';
+import '../styles/animations.css';
 
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
@@ -132,30 +134,34 @@ const AdvancedAnalytics = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-slate-400">Loading advanced analytics...</p>
+      <MainLayout title="Analytics" subtitle="AI-powered insights">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-slate-500 dark:text-slate-400">Loading advanced analytics...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 flex items-center justify-center">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
-          <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 text-center mb-2">Error Loading Analytics</h3>
-          <p className="text-red-700 dark:text-red-400 text-center">{error}</p>
-          <button
-            onClick={fetchAllAnalytics}
-            className="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-          >
-            Try Again
-          </button>
+      <MainLayout title="Analytics" subtitle="AI-powered insights">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 max-w-md">
+            <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 text-center mb-2">Error Loading Analytics</h3>
+            <p className="text-red-700 dark:text-red-400 text-center">{error}</p>
+            <button
+              onClick={fetchAllAnalytics}
+              className="mt-4 w-full bg-red-600 text-white py-2.5 rounded-xl hover:bg-red-700 transition-colors font-medium"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
@@ -172,18 +178,28 @@ const AdvancedAnalytics = () => {
   const scrollableClass = 'max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
+    <MainLayout title="Advanced Analytics" subtitle="AI-powered insights into your finances">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Advanced Analytics Dashboard</h1>
-          <p className="text-gray-600 dark:text-slate-400">AI-powered insights into your financial patterns</p>
+        <div className="mb-8 animate-fade-in-up">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-6 md:p-8 shadow-xl">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNEgyNHYtMmgxMnYyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+            <div className="relative flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Advanced Analytics</h1>
+                <p className="text-emerald-100 mt-1">AI-powered insights into your financial patterns</p>
+              </div>
+            </div>
+          </div>
         </div>
 
 
         {/* Advanced Financial Health Score + EMI Burden */}
         {healthScore && (
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 mb-6 text-white shadow-lg">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 mb-6 text-white shadow-lg animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center space-x-2 mb-2">
@@ -750,7 +766,7 @@ const AdvancedAnalytics = () => {
           )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

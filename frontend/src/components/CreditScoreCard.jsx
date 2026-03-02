@@ -66,8 +66,12 @@ const CreditScoreCard = () => {
             if (creditScore.score) {
               setCreditData(creditScore);
               console.log('✅ Credit score loaded and set in component state');
+            } else if (creditScore.totalCreditLimit || creditScore.creditUtilization || creditScore.grade || creditScore.accounts) {
+              // Has partial data (credit cards, utilization, etc.) but no score yet
+              setCreditData({ ...creditScore, score: null });
+              console.log('⚠️ Partial credit data loaded (no score value yet)');
             } else {
-              console.log('⚠️ Credit score exists but has no score value');
+              console.log('⚠️ Credit score exists but has no usable data');
             }
           } else {
             console.log('❌ No credit score found in profile response');
@@ -253,12 +257,12 @@ const CreditScoreCard = () => {
       ) : (
         <div className="space-y-4">
           {/* Credit Score Display */}
-          <div className={`p-4 rounded-lg ${getScoreBgColor(creditData.creditScore)}`}>
+          <div className={`p-4 rounded-lg ${getScoreBgColor(creditData.score)}`}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className={`text-3xl font-bold ${getScoreColor(creditData.creditScore)}`}>
-                    {creditData.creditScore}
+                  <span className={`text-3xl font-bold ${getScoreColor(creditData.score)}`}>
+                    {creditData.score || '—'}
                   </span>
                   <div className="flex items-center space-x-1">
                     {getGradeIcon(creditData.grade)}

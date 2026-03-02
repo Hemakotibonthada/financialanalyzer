@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, ProgressRing } from '../components/ui/ComponentLibrary';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 import '../styles/animations.css';
 
 const EXPORT_FORMATS = [
@@ -265,13 +266,21 @@ export default function ExportCenter() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <MainLayout title="Export Center" subtitle="Generate reports & export data">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Export Center</h1>
-            <p className="text-gray-500 mt-1">Generate reports, export data, and share insights</p>
+        {/* Hero Header */}
+        <div className="animate-fade-in-up">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 p-6 md:p-8 shadow-xl">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNEgyNHYtMmgxMnYyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+            <div className="relative flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <span className="text-3xl">📥</span>
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Export Center</h1>
+                <p className="text-amber-100 mt-1">Generate reports, export data & share insights</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -371,7 +380,7 @@ export default function ExportCenter() {
           )}
         </Modal>
       )}
-    </div>
+    </MainLayout>
   );
 }
 
@@ -386,11 +395,11 @@ function ReportTemplatesView({ templates, onSelect }) {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex gap-2">
-        <button onClick={() => setFilterCategory('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filterCategory === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+        <button onClick={() => setFilterCategory('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterCategory === 'all' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
           All
         </button>
         {categories.map(cat => (
-          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize ${filterCategory === cat ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${filterCategory === cat ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
             {cat}
           </button>
         ))}

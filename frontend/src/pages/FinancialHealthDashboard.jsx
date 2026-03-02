@@ -59,13 +59,22 @@ const FinancialHealthDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [healthResponse, spendingResponse] = await Promise.all([
+      const [healthResult, spendingResult] = await Promise.allSettled([
         api.get('/insights/financial-health'),
         api.get('/insights/spending-behavior')
       ]);
       
-      setHealthData(healthResponse.data);
-      setSpendingData(spendingResponse.data);
+      if (healthResult.status === 'fulfilled') {
+        setHealthData(healthResult.value.data);
+      } else {
+        console.error('Error fetching financial health:', healthResult.reason);
+      }
+      
+      if (spendingResult.status === 'fulfilled') {
+        setSpendingData(spendingResult.value.data);
+      } else {
+        console.error('Error fetching spending behavior:', spendingResult.reason);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {

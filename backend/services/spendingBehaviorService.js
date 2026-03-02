@@ -17,13 +17,13 @@ class SpendingBehaviorService {
       
       // Get all transactions
       const transactions = await Transaction.find({
-        user: userId,
+        userId: userId,
         date: { $gte: dateRange.start, $lte: dateRange.end }
       }).sort({ date: -1 });
 
       // Get budgets and goals for context
-      const budgets = await Budget.find({ user: userId });
-      const goals = await FinancialGoal.find({ user: userId });
+      const budgets = await Budget.find({ userId: userId });
+      const goals = await FinancialGoal.find({ userId: userId });
 
       // Perform comprehensive analysis
       const analysis = {
@@ -95,7 +95,7 @@ class SpendingBehaviorService {
     // Group by merchant and amount
     transactions.forEach(t => {
       if (t.amount < 0) {
-        const key = `${t.merchant}_${Math.abs(t.amount)}`;
+        const key = `${t.merchantName || t.description}_${Math.abs(t.amount)}`;
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push(t);
       }
@@ -121,7 +121,7 @@ class SpendingBehaviorService {
         
         if (stdDev / avgInterval < 0.2) {
           recurring.push({
-            merchant: group[0].merchant,
+            merchant: group[0].merchantName || group[0].description,
             amount: Math.abs(group[0].amount),
             frequency: this.determineFrequency(avgInterval),
             occurrences: group.length,
@@ -140,6 +140,7 @@ class SpendingBehaviorService {
    */
   detectImpulsePurchases(transactions) {
     const expenses = transactions.filter(t => t.amount < 0);
+    if (expenses.length === 0) return { count: 0, totalAmount: 0, purchases: [] };
     const avgAmount = Math.abs(expenses.reduce((sum, t) => sum + t.amount, 0) / expenses.length);
     const stdDev = this.calculateStdDev(expenses.map(t => Math.abs(t.amount)));
 
@@ -147,7 +148,7 @@ class SpendingBehaviorService {
     const impulsePurchases = expenses.filter(t => 
       Math.abs(t.amount) > avgAmount + (2 * stdDev)
     ).map(t => ({
-      merchant: t.merchant,
+      merchant: t.merchantName || t.description,
       amount: Math.abs(t.amount),
       date: t.date,
       category: t.category,
@@ -175,8 +176,10 @@ class SpendingBehaviorService {
       }
     });
 
-    const avgMonthlySpend = Object.values(monthlySpending).reduce((a, b) => a + b, 0) / 
-                            Object.keys(monthlySpending).length;
+    const monthlyValues = Object.values(monthlySpending);
+    const avgMonthlySpend = monthlyValues.length > 0 
+      ? monthlyValues.reduce((a, b) => a + b, 0) / monthlyValues.length 
+      : 0;
 
     const peaks = Object.keys(monthlySpending)
       .filter(month => monthlySpending[month] > avgMonthlySpend * 1.3)
@@ -255,9 +258,10 @@ class SpendingBehaviorService {
       }
     });
 
-    const mostActive = Object.keys(timeSlots).reduce((a, b) => 
-      timeSlots[a].count > timeSlots[b].count ? a : b
-    );
+    const slotKeys = Object.keys(timeSlots);
+    const mostActive = slotKeys.length > 0 
+      ? slotKeys.reduce((a, b) => timeSlots[a].count > timeSlots[b].count ? a : b)
+      : 'morning';
 
     return { timeSlots, mostActiveTime: mostActive };
   }
@@ -305,14 +309,15 @@ class SpendingBehaviorService {
     });
 
     // Calculate percentages and averages
-    const totalSpend = Object.values(categoryData).reduce((sum, cat) => sum + cat.total, 0);
+    const catValues = Object.values(categoryData);
+    const totalSpend = catValues.length > 0 ? catValues.reduce((sum, cat) => sum + cat.total, 0) : 0;
     
     const categorySummary = Object.keys(categoryData).map(category => ({
       category,
       total: categoryData[category].total,
       count: categoryData[category].count,
       average: categoryData[category].total / categoryData[category].count,
-      percentage: (categoryData[category].total / totalSpend * 100).toFixed(1),
+      percentage: totalSpend > 0 ? (categoryData[category].total / totalSpend * 100).toFixed(1) : '0.0',
       trend: this.calculateCategoryTrend(categoryData[category].transactions)
     })).sort((a, b) => b.total - a.total);
 
@@ -424,7 +429,7 @@ class SpendingBehaviorService {
    */
   calculateDiversificationIndex(transactions) {
     const categories = new Set(transactions.map(t => t.category));
-    const merchants = new Set(transactions.map(t => t.merchant));
+    const merchants = new Set(transactions.map(t => t.merchantName || t.description));
     
     // More categories and merchants = higher diversification
     const categoryScore = Math.min(categories.size * 5, 50);
@@ -490,8 +495,9 @@ class SpendingBehaviorService {
       );
       
       const spent = Math.abs(categoryTransactions.reduce((sum, t) => sum + t.amount, 0));
-      const percentUsed = (spent / budget.limit) * 100;
-      const remaining = budget.limit - spent;
+      const budgetLimit = budget.amount || budget.limit || 0;
+      const percentUsed = budgetLimit > 0 ? (spent / budgetLimit) * 100 : 0;
+      const remaining = budgetLimit - spent;
       
       let status = 'safe';
       if (percentUsed >= 100) status = 'exceeded';
@@ -499,7 +505,7 @@ class SpendingBehaviorService {
       
       return {
         category: budget.category,
-        limit: budget.limit,
+        limit: budgetLimit,
         spent,
         remaining,
         percentUsed: parseFloat(percentUsed.toFixed(2)),
@@ -560,7 +566,7 @@ class SpendingBehaviorService {
       const spent = transactions
         .filter(t => t.category === b.category && t.amount < 0)
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      return spent > b.limit;
+      return spent > (b.amount || b.limit || 0);
     });
 
     if (exceededBudgets.length > 0) {
@@ -626,18 +632,18 @@ class SpendingBehaviorService {
     const recentTransactions = transactions.slice(0, 30);
 
     // Unusual spending alert
-    const avgAmount = Math.abs(
-      transactions.filter(t => t.amount < 0)
-        .reduce((sum, t) => sum + t.amount, 0) / transactions.length
-    );
+    const expenseTransactions = transactions.filter(t => t.amount < 0);
+    const avgAmount = expenseTransactions.length > 0 
+      ? Math.abs(expenseTransactions.reduce((sum, t) => sum + t.amount, 0) / expenseTransactions.length)
+      : 0;
 
     recentTransactions.forEach(t => {
-      if (Math.abs(t.amount) > avgAmount * 3) {
+      if (avgAmount > 0 && Math.abs(t.amount) > avgAmount * 3) {
         alerts.push({
           type: 'unusual_spending',
           severity: 'warning',
           title: 'Unusual Large Transaction',
-          message: `Transaction of ₹${Math.abs(t.amount).toFixed(2)} at ${t.merchant} is significantly higher than your average`,
+          message: `Transaction of ₹${Math.abs(t.amount).toFixed(2)} at ${t.merchantName || t.description} is significantly higher than your average`,
           transaction: t
         });
       }
@@ -649,7 +655,8 @@ class SpendingBehaviorService {
         .filter(t => t.category === budget.category && t.amount < 0)
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
       
-      const percentUsed = (spent / budget.limit) * 100;
+      const budgetAmt = budget.amount || budget.limit || 0;
+      const percentUsed = budgetAmt > 0 ? (spent / budgetAmt) * 100 : 0;
 
       if (percentUsed >= 90) {
         alerts.push({
@@ -659,7 +666,7 @@ class SpendingBehaviorService {
           message: `You've used ${percentUsed.toFixed(1)}% of your ${budget.category} budget`,
           category: budget.category,
           spent,
-          limit: budget.limit
+          limit: budgetAmt
         });
       }
     });
@@ -699,18 +706,22 @@ class SpendingBehaviorService {
     // Most frequent merchant
     const merchantFrequency = {};
     transactions.forEach(t => {
-      merchantFrequency[t.merchant] = (merchantFrequency[t.merchant] || 0) + 1;
+      const merchant = t.merchantName || t.description || 'Unknown';
+      merchantFrequency[merchant] = (merchantFrequency[merchant] || 0) + 1;
     });
-    const topMerchant = Object.keys(merchantFrequency).reduce((a, b) => 
-      merchantFrequency[a] > merchantFrequency[b] ? a : b
-    );
-    
-    insights.push({
-      type: 'frequent_merchant',
-      title: 'Most Frequent Merchant',
-      message: `You shop most at ${topMerchant} (${merchantFrequency[topMerchant]} transactions)`,
-      icon: '🛒'
-    });
+    const merchantKeys = Object.keys(merchantFrequency);
+    if (merchantKeys.length > 0) {
+      const topMerchant = merchantKeys.reduce((a, b) => 
+        merchantFrequency[a] > merchantFrequency[b] ? a : b
+      );
+      
+      insights.push({
+        type: 'frequent_merchant',
+        title: 'Most Frequent Merchant',
+        message: `You shop most at ${topMerchant} (${merchantFrequency[topMerchant]} transactions)`,
+        icon: '🛒'
+      });
+    }
 
     // Weekend vs weekday
     if (patterns.weekend.preference) {
@@ -804,7 +815,9 @@ class SpendingBehaviorService {
    * Helper: Find maximum value in object
    */
   findMax(obj) {
-    return Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
+    const keys = Object.keys(obj);
+    if (keys.length === 0) return 'N/A';
+    return keys.reduce((a, b) => obj[a] > obj[b] ? a : b);
   }
 
   /**
