@@ -498,6 +498,16 @@ const currencyService = {
       return { success: false, error: error.message };
     }
   },
+
+  /**
+   * Get currency symbol for a given currency code.
+   * @param {string} code - Currency code (e.g. 'INR', 'USD').
+   * @returns {string} The symbol (e.g. '₹', '$').
+   */
+  getCurrencySymbol(code) {
+    const upper = (code || 'INR').toUpperCase();
+    return CURRENCIES[upper]?.symbol || code || '₹';
+  },
 };
 
 module.exports = currencyService;

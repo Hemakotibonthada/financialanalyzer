@@ -205,7 +205,7 @@ router.post('/', authenticate, async (req, res) => {
       cardProvider: cardProvider.toUpperCase(),
       cardLastFourDigits,
       cardHolderName: cardHolderName || '',
-      cardNetwork: cardNetwork || '',
+      cardNetwork: (cardNetwork || '').toLowerCase(),
       statementDate: new Date(statementDate),
       billingPeriodStart: billingPeriodStart ? new Date(billingPeriodStart) : undefined,
       billingPeriodEnd: billingPeriodEnd ? new Date(billingPeriodEnd) : undefined,
@@ -341,21 +341,6 @@ router.delete('/:id', authenticate, async (req, res) => {
     res.json({ success: true, message: 'Bill deleted' });
   } catch (err) {
     logger.error('Delete CC bill error:', err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ============================================================
-// GET /api/cc-bills/:id — Get a single bill
-// ============================================================
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const bill = await CreditCardBill.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!bill) return res.status(404).json({ success: false, message: 'Bill not found' });
-
-    res.json({ success: true, data: bill });
-  } catch (err) {
-    logger.error('Get CC bill error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -592,6 +577,21 @@ router.get('/analytics/spending', authenticate, async (req, res) => {
     });
   } catch (err) {
     logger.error('CC spending analytics error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================================
+// GET /api/cc-bills/:id — Get a single bill (MUST be last GET)
+// ============================================================
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const bill = await CreditCardBill.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!bill) return res.status(404).json({ success: false, message: 'Bill not found' });
+
+    res.json({ success: true, data: bill });
+  } catch (err) {
+    logger.error('Get CC bill error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

@@ -1,8 +1,167 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const spendingBehaviorService = require('../services/spendingBehaviorService');
 const financialHealthService = require('../services/financialHealthService');
 const { authenticate } = require('../middleware/auth');
+const Transaction = require('../models/Transaction');
+const EMI = require('../models/EMI');
+
+/**
+ * @route   GET /api/insights
+ * @desc    Get combined AI insights (used by AIInsights page)
+ * @access  Private
+ */
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const { period = 'month' } = req.query;
+    const userId = req.user._id || req.user.id;
+
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate;
+    switch (period) {
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'year':
+        startDate = new Date(now);
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case 'month':
+      default:
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+    }
+
+    // Aggregate transactions
+    const [incomeAgg, expenseAgg] = await Promise.all([
+      Transaction.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(userId), type: 'credit', date: { $gte: startDate } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      Transaction.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(userId), type: 'debit', date: { $gte: startDate } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const totalIncome = incomeAgg[0]?.total || 0;
+    const totalExpenses = expenseAgg[0]?.total || 0;
+    const savings = totalIncome - totalExpenses;
+    const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
+
+    // Detect recurring transactions
+    let recurringTransactions = [];
+    try {
+      const { detectRecurringTransactions } = require('../services/documentProcessor');
+      const allTxns = await Transaction.find({
+        userId: new mongoose.Types.ObjectId(userId),
+        date: { $gte: startDate }
+      }).lean();
+      const detected = detectRecurringTransactions(allTxns);
+      recurringTransactions = (detected || []).slice(0, 10);
+    } catch (e) {
+      // Non-critical — skip
+    }
+
+    // EMI summary
+    let emiSummary = { totalMonthlyEMI: 0, activeCount: 0, emiToIncomeRatio: 0 };
+    try {
+      const activeEMIs = await EMI.find({ userId: new mongoose.Types.ObjectId(userId), status: 'active' }).lean();
+      const totalMonthlyEMI = activeEMIs.reduce((sum, e) => sum + (e.emiAmount || 0), 0);
+      emiSummary = {
+        totalMonthlyEMI,
+        activeCount: activeEMIs.length,
+        emiToIncomeRatio: totalIncome > 0 ? Math.round((totalMonthlyEMI / totalIncome) * 100) : 0
+      };
+    } catch (e) {
+      // Non-critical
+    }
+
+    // Build recommendations
+    const recommendations = [];
+    if (savingsRate < 20) {
+      recommendations.push({
+        title: 'Increase Your Savings Rate',
+        description: `Your savings rate is ${savingsRate.toFixed(1)}%. Aim for at least 20% to build a solid financial cushion.`,
+        priority: savingsRate < 10 ? 'high' : 'medium',
+        category: 'savings',
+        icon: '💰',
+        potentialSavings: Math.round(totalIncome * 0.2 - savings),
+        actionItems: [
+          'Review and reduce discretionary spending',
+          'Set up automatic transfers to savings',
+          'Track daily expenses for a week'
+        ]
+      });
+    }
+    if (emiSummary.emiToIncomeRatio > 40) {
+      recommendations.push({
+        title: 'High EMI Burden',
+        description: `Your EMIs consume ${emiSummary.emiToIncomeRatio}% of income. Consider prepaying high-interest loans.`,
+        priority: 'high',
+        category: 'debt',
+        icon: '⚠️',
+        potentialSavings: 0,
+        actionItems: [
+          'List all loans by interest rate',
+          'Consider prepaying highest-rate loan first',
+          'Avoid taking new debt until ratio drops below 40%'
+        ]
+      });
+    }
+    if (totalExpenses > totalIncome && totalIncome > 0) {
+      recommendations.push({
+        title: 'Spending Exceeds Income',
+        description: `You spent ₹${(totalExpenses - totalIncome).toLocaleString()} more than you earned this period.`,
+        priority: 'high',
+        category: 'expenses',
+        icon: '🔴',
+        potentialSavings: Math.round(totalExpenses - totalIncome),
+        actionItems: [
+          'Create a strict monthly budget',
+          'Identify top 3 expense categories to cut',
+          'Set spending alerts on your accounts'
+        ]
+      });
+    }
+    if (savingsRate >= 20) {
+      recommendations.push({
+        title: 'Great Savings Rate!',
+        description: `You're saving ${savingsRate.toFixed(1)}% of your income. Consider investing the surplus.`,
+        priority: 'low',
+        category: 'investment',
+        icon: '📈',
+        potentialSavings: 0,
+        potentialGains: Math.round(savings * 0.12),
+        actionItems: [
+          'Explore mutual funds or index funds',
+          'Max out tax-saving investments (80C)',
+          'Build 6 months emergency fund if not done'
+        ]
+      });
+    }
+
+    res.json({
+      success: true,
+      totalIncome,
+      totalExpenses,
+      savings,
+      savingsRate,
+      recurringTransactions,
+      emiSummary,
+      recommendations,
+      period,
+      dateRange: { start: startDate, end: now }
+    });
+  } catch (error) {
+    console.error('Error getting insights:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
 
 /**
  * @route   GET /api/insights/spending-behavior

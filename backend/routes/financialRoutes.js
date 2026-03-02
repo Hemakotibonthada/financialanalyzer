@@ -2661,6 +2661,84 @@ router.get('/test', async (req, res) => {
 });
 
 /**
+ * @route   GET /api/financial/summary
+ * @desc    Get financial summary (income, expenses, savings, net worth)
+ * @access  Private
+ */
+router.get('/summary', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    // Current month aggregation
+    const [currentIncome, currentExpense, lastIncome, lastExpense] = await Promise.all([
+      Transaction.aggregate([
+        { $match: { userId, type: 'credit', date: { $gte: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      Transaction.aggregate([
+        { $match: { userId, type: 'debit', date: { $gte: startOfMonth } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      Transaction.aggregate([
+        { $match: { userId, type: 'credit', date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      Transaction.aggregate([
+        { $match: { userId, type: 'debit', date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const totalIncome = currentIncome[0]?.total || 0;
+    const totalExpense = currentExpense[0]?.total || 0;
+    const prevIncome = lastIncome[0]?.total || 0;
+    const prevExpense = lastExpense[0]?.total || 0;
+
+    const incomeGrowth = prevIncome > 0 ? Math.round(((totalIncome - prevIncome) / prevIncome) * 100) : 0;
+    const expenseGrowth = prevExpense > 0 ? Math.round(((totalExpense - prevExpense) / prevExpense) * 100) : 0;
+    const currentSavings = totalIncome - totalExpense;
+    const prevSavings = prevIncome - prevExpense;
+    const savingsGrowth = prevSavings > 0 ? Math.round(((currentSavings - prevSavings) / prevSavings) * 100) : 0;
+
+    // Net worth from profile
+    let netWorth = 0;
+    let totalAssets = 0;
+    let totalLiabilities = 0;
+    let netWorthGrowth = 0;
+    try {
+      const profile = await FinancialProfile.findOne({ userId });
+      if (profile) {
+        totalAssets = (profile.assets?.savings || 0) + (profile.assets?.investments || 0) + (profile.assets?.property || 0) + (profile.assets?.other || 0);
+        totalLiabilities = (profile.liabilities?.loans || 0) + (profile.liabilities?.creditCards || 0) + (profile.liabilities?.other || 0);
+        netWorth = totalAssets - totalLiabilities;
+      }
+    } catch (e) {
+      // Non-critical
+    }
+
+    res.json({
+      success: true,
+      totalIncome,
+      totalExpense,
+      incomeGrowth,
+      expenseGrowth,
+      savingsGrowth,
+      netWorth,
+      netWorthGrowth,
+      totalAssets,
+      totalLiabilities
+    });
+  } catch (error) {
+    logger.error('Financial summary error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * @route   POST /api/financial/quick-expense
  * @desc    Add a quick expense entry
  * @access  Private
@@ -2703,7 +2781,7 @@ router.post('/quick-expense', authenticate, invalidateCacheMiddleware([
       tags: ['quick_entry', 'manual']
     });
 
-    const symbol = currencyService.getCurrencySymbol(expenseCurrency);
+    const symbol = (currencyService.getCurrencySymbol && currencyService.getCurrencySymbol(expenseCurrency)) || expenseCurrency;
     logger.info(`Quick expense added for user ${req.user._id}: ${description} - ${symbol}${amount}`);
 
     // Check budget limits and send alert if exceeded
@@ -2791,7 +2869,7 @@ router.post('/quick-expense', authenticate, invalidateCacheMiddleware([
     logger.error('Quick expense error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add expense'
+      message: error.message || 'Failed to add expense'
     });
   }
 });
@@ -2933,7 +3011,7 @@ router.get('/expense-history', authenticate, async (req, res) => {
     // Get transactions
     let transactions = await Transaction.find(query)
       .sort({ date: -1 })
-      .limit(500); // Limit to 500 most recent
+      .limit(500);
 
     // Apply search filter if provided
     if (search) {
@@ -2944,9 +3022,44 @@ router.get('/expense-history', authenticate, async (req, res) => {
       );
     }
 
+    // Calculate category-wise totals
+    const categoryTotals = {};
+    let grandTotal = 0;
+    transactions.forEach(t => {
+      const cat = t.category || t.ai_category || 'other';
+      if (!categoryTotals[cat]) {
+        categoryTotals[cat] = { count: 0, total: 0 };
+      }
+      categoryTotals[cat].count += 1;
+      categoryTotals[cat].total += t.amount;
+      grandTotal += t.amount;
+    });
+
+    // Calculate daily totals for sparkline
+    const dailyMap = {};
+    transactions.forEach(t => {
+      const day = new Date(t.date).toISOString().split('T')[0];
+      dailyMap[day] = (dailyMap[day] || 0) + t.amount;
+    });
+    const dailyTotals = Object.entries(dailyMap)
+      .map(([date, total]) => ({ date, total: Math.round(total) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Find highest spending day
+    const highestDay = dailyTotals.reduce((max, d) => d.total > (max?.total || 0) ? d : max, null);
+
     res.json({
       success: true,
-      expenses: transactions
+      expenses: transactions,
+      summary: {
+        totalCount: transactions.length,
+        grandTotal: Math.round(grandTotal),
+        avgPerTransaction: transactions.length > 0 ? Math.round(grandTotal / transactions.length) : 0,
+        categoryTotals,
+        dailyTotals,
+        highestSpendingDay: highestDay,
+        dateRange: { start: startDate?.toISOString(), end: now.toISOString(), label: range }
+      }
     });
   } catch (error) {
     logger.error('Get expense history error:', error);
@@ -2990,7 +3103,7 @@ router.get('/expense-templates', authenticate, async (req, res) => {
  */
 router.post('/expense-template', authenticate, async (req, res) => {
   try {
-    const { description, amount, category } = req.body;
+    const { description, amount, category, currency } = req.body;
 
     if (!description || !amount || !category) {
       return res.status(400).json({
@@ -3010,12 +3123,25 @@ router.post('/expense-template', authenticate, async (req, res) => {
       profile.expenseTemplates = [];
     }
 
+    // Check for duplicate template
+    const exists = profile.expenseTemplates.some(
+      t => t.description.toLowerCase() === description.toLowerCase() && t.category === category
+    );
+    if (exists) {
+      return res.status(400).json({
+        success: false,
+        message: 'A template with this description and category already exists'
+      });
+    }
+
     // Add new template
     const template = {
       _id: new mongoose.Types.ObjectId(),
       description,
-      amount,
+      amount: parseFloat(amount),
       category,
+      currency: currency || 'INR',
+      usageCount: 0,
       createdAt: new Date()
     };
 
@@ -3033,6 +3159,68 @@ router.post('/expense-template', authenticate, async (req, res) => {
       success: false,
       message: 'Failed to save template'
     });
+  }
+});
+
+/**
+ * Update expense template
+ * @route   PUT /api/financial/expense-template/:id
+ * @access  Private
+ */
+router.put('/expense-template/:id', authenticate, async (req, res) => {
+  try {
+    const { description, amount, category, currency } = req.body;
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+
+    if (!profile || !profile.expenseTemplates) {
+      return res.status(404).json({ success: false, message: 'No templates found' });
+    }
+
+    const template = profile.expenseTemplates.id(req.params.id);
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    if (description) template.description = description;
+    if (amount) template.amount = parseFloat(amount);
+    if (category) template.category = category;
+    if (currency) template.currency = currency;
+
+    await profile.save();
+
+    res.json({ success: true, message: 'Template updated', template });
+  } catch (error) {
+    logger.error('Update expense template error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update template' });
+  }
+});
+
+/**
+ * Track template usage (called when a template is used to create an expense)
+ * @route   POST /api/financial/expense-template/:id/use
+ * @access  Private
+ */
+router.post('/expense-template/:id/use', authenticate, async (req, res) => {
+  try {
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+
+    if (!profile || !profile.expenseTemplates) {
+      return res.status(404).json({ success: false, message: 'No templates found' });
+    }
+
+    const template = profile.expenseTemplates.id(req.params.id);
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    template.usageCount = (template.usageCount || 0) + 1;
+    template.lastUsedAt = new Date();
+    await profile.save();
+
+    res.json({ success: true, template });
+  } catch (error) {
+    logger.error('Track template usage error:', error);
+    res.status(500).json({ success: false, message: 'Failed to track usage' });
   }
 });
 

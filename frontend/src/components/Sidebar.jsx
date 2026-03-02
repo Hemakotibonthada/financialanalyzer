@@ -188,7 +188,7 @@ const Sidebar = () => {
 
   // — Bottom pinned items (always visible) —
   const bottomLinks = [
-    { label: 'Settings', icon: Settings, path: '/profile', color: 'gray' },
+    { label: 'Settings', icon: Settings, path: '/settings', color: 'gray' },
     { label: 'Profile', icon: User, path: '/profile', color: 'blue' },
   ];
 

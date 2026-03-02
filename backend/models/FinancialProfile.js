@@ -329,6 +329,9 @@ const financialProfileSchema = new mongoose.Schema({
     description: String,
     amount: Number,
     category: String,
+    currency: { type: String, default: 'INR' },
+    usageCount: { type: Number, default: 0 },
+    lastUsedAt: Date,
     createdAt: Date
   }],
   isProfileComplete: {
