@@ -1,41 +1,42 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate: auth } = require('../middleware/auth');
-
-// In-memory notification store
-const userNotifications = {};
-const userPreferences = {};
-
-function getNotifications(userId) {
-  if (!userNotifications[userId]) {
-    userNotifications[userId] = [
-      { id: '1', type: 'bill_reminder', title: 'Electricity Bill Due', message: 'Your electricity bill of ₹2,450 is due on Feb 28', priority: 'high', isRead: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
-      { id: '2', type: 'transaction_alert', title: 'Large Transaction', message: 'Debit of ₹45,000 detected from HDFC account', priority: 'medium', isRead: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
-      { id: '3', type: 'budget_alert', title: 'Budget Exceeded', message: 'Dining out budget exceeded by ₹3,200 this month', priority: 'high', isRead: true, createdAt: new Date(Date.now() - 86400000).toISOString() },
-      { id: '4', type: 'emi_reminder', title: 'EMI Due Tomorrow', message: 'Home loan EMI of ₹35,420 due tomorrow', priority: 'urgent', isRead: false, createdAt: new Date(Date.now() - 172800000).toISOString() },
-      { id: '5', type: 'info', title: 'FD Maturity Alert', message: 'Your SBI FD of ₹5,00,000 matures in 15 days', priority: 'medium', isRead: true, createdAt: new Date(Date.now() - 259200000).toISOString() },
-      { id: '6', type: 'cibil_update', title: 'CIBIL Score Updated', message: 'Your CIBIL score has increased by 12 points to 764', priority: 'low', isRead: true, createdAt: new Date(Date.now() - 432000000).toISOString() },
-    ];
-  }
-  return userNotifications[userId];
-}
+const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
 
 /**
  * @route   GET /api/notifications
- * @desc    Get user notifications
+ * @desc    Get user notifications (paginated, filterable)
  * @access  Private
  */
 router.get('/', auth, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const { type, priority, isRead, page = 1, limit = 20 } = req.query;
-    let notifications = getNotifications(userId);
-    if (type) notifications = notifications.filter(n => n.type === type);
-    if (priority) notifications = notifications.filter(n => n.priority === priority);
-    if (isRead !== undefined) notifications = notifications.filter(n => n.isRead === (isRead === 'true'));
-    const start = (page - 1) * limit;
-    const paginated = notifications.slice(start, start + Number(limit));
-    res.json({ success: true, data: { notifications: paginated, total: notifications.length, page: Number(page), totalPages: Math.ceil(notifications.length / limit) } });
+    const userId = req.user._id;
+    const { type, priority, isRead, page = 1, limit = 20, sort = '-createdAt' } = req.query;
+
+    const filter = { userId, isArchived: false };
+    if (type) filter.type = type;
+    if (priority) filter.priority = priority;
+    if (isRead !== undefined) filter.isRead = isRead === 'true';
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const total = await Notification.countDocuments(filter);
+    const notifications = await Notification.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+
+    res.json({
+      success: true,
+      data: {
+        notifications,
+        total,
+        page: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        pagination: { hasMore: skip + notifications.length < total }
+      }
+    });
   } catch (error) {
     console.error('Get notifications error:', error);
     res.status(500).json({ success: false, error: 'Failed to get notifications' });
@@ -49,9 +50,7 @@ router.get('/', auth, async (req, res) => {
  */
 router.get('/unread-count', auth, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const notifications = getNotifications(userId);
-    const count = notifications.filter(n => !n.isRead).length;
+    const count = await Notification.getUnreadCount(req.user._id);
     res.json({ success: true, data: { count } });
   } catch (error) {
     console.error('Get unread count error:', error);
@@ -60,59 +59,17 @@ router.get('/unread-count', auth, async (req, res) => {
 });
 
 /**
- * @route   PATCH /api/notifications/:id/read
- * @desc    Mark notification as read
+ * @route   GET /api/notifications/stats
+ * @desc    Get notification statistics
  * @access  Private
  */
-router.patch('/:id/read', auth, async (req, res) => {
+router.get('/stats', auth, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const notifications = getNotifications(userId);
-    const notification = notifications.find(n => n.id === req.params.id);
-    if (!notification) return res.status(404).json({ success: false, error: 'Notification not found' });
-    notification.isRead = true;
-    notification.readAt = new Date().toISOString();
-    res.json({ success: true, data: notification });
+    const stats = await Notification.getStats(req.user._id);
+    res.json({ success: true, data: stats });
   } catch (error) {
-    console.error('Mark as read error:', error);
-    res.status(500).json({ success: false, error: 'Failed to mark as read' });
-  }
-});
-
-/**
- * @route   PATCH /api/notifications/read-all
- * @desc    Mark all notifications as read
- * @access  Private
- */
-router.patch('/read-all', auth, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const notifications = getNotifications(userId);
-    let count = 0;
-    notifications.forEach(n => { if (!n.isRead) { n.isRead = true; n.readAt = new Date().toISOString(); count++; } });
-    res.json({ success: true, message: `${count} notifications marked as read` });
-  } catch (error) {
-    console.error('Mark all as read error:', error);
-    res.status(500).json({ success: false, error: 'Failed to mark all as read' });
-  }
-});
-
-/**
- * @route   DELETE /api/notifications/:id
- * @desc    Delete notification
- * @access  Private
- */
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const notifications = getNotifications(userId);
-    const index = notifications.findIndex(n => n.id === req.params.id);
-    if (index === -1) return res.status(404).json({ success: false, error: 'Notification not found' });
-    notifications.splice(index, 1);
-    res.json({ success: true, message: 'Notification deleted' });
-  } catch (error) {
-    console.error('Delete notification error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete notification' });
+    console.error('Get stats error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get notification stats' });
   }
 });
 
@@ -123,14 +80,15 @@ router.delete('/:id', auth, async (req, res) => {
  */
 router.get('/preferences', auth, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const db = mongoose.connection.db;
+    const prefs = await db.collection('notification_preferences').findOne({ userId: req.user._id.toString() });
     const defaults = {
       email: { billReminders: true, emiAlerts: true, budgetAlerts: true, transactionAlerts: true, weeklyDigest: true, marketNews: false },
       push: { billReminders: true, emiAlerts: true, budgetAlerts: true, transactionAlerts: true, priceAlerts: true },
       sms: { emiAlerts: true, securityAlerts: true },
       quietHours: { enabled: false, start: '22:00', end: '07:00' },
     };
-    res.json({ success: true, data: userPreferences[userId] || defaults });
+    res.json({ success: true, data: prefs || defaults });
   } catch (error) {
     console.error('Get preferences error:', error);
     res.status(500).json({ success: false, error: 'Failed to get preferences' });
@@ -144,9 +102,13 @@ router.get('/preferences', auth, async (req, res) => {
  */
 router.put('/preferences', auth, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    userPreferences[userId] = { ...(userPreferences[userId] || {}), ...req.body };
-    res.json({ success: true, message: 'Preferences updated', data: userPreferences[userId] });
+    const db = mongoose.connection.db;
+    const result = await db.collection('notification_preferences').findOneAndUpdate(
+      { userId: req.user._id.toString() },
+      { $set: { ...req.body, userId: req.user._id.toString(), updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
+      { upsert: true, returnDocument: 'after' }
+    );
+    res.json({ success: true, message: 'Preferences updated', data: result });
   } catch (error) {
     console.error('Update preferences error:', error);
     res.status(500).json({ success: false, error: 'Failed to update preferences' });
@@ -154,28 +116,97 @@ router.put('/preferences', auth, async (req, res) => {
 });
 
 /**
- * @route   GET /api/notifications/stats
- * @desc    Get notification statistics
+ * @route   PUT /api/notifications/mark-all-read
+ * @desc    Mark all notifications as read
  * @access  Private
  */
-router.get('/stats', auth, async (req, res) => {
+router.put('/mark-all-read', auth, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const notifications = getNotifications(userId);
-    const stats = {
-      total: notifications.length,
-      unread: notifications.filter(n => !n.isRead).length,
-      byType: {},
-      byPriority: { low: 0, medium: 0, high: 0, urgent: 0 },
-    };
-    notifications.forEach(n => {
-      stats.byType[n.type] = (stats.byType[n.type] || 0) + 1;
-      stats.byPriority[n.priority] = (stats.byPriority[n.priority] || 0) + 1;
-    });
-    res.json({ success: true, data: stats });
+    const result = await Notification.markAllAsRead(req.user._id);
+    res.json({ success: true, message: `${result.modifiedCount || 0} notifications marked as read` });
   } catch (error) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get notification stats' });
+    console.error('Mark all as read error:', error);
+    res.status(500).json({ success: false, error: 'Failed to mark all as read' });
+  }
+});
+
+/**
+ * @route   PUT /api/notifications/:id/read
+ * @desc    Mark a single notification as read
+ * @access  Private
+ */
+router.put('/:id/read', auth, async (req, res) => {
+  try {
+    const notification = await Notification.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!notification) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+    await notification.markAsRead();
+    res.json({ success: true, data: notification });
+  } catch (error) {
+    console.error('Mark as read error:', error);
+    res.status(500).json({ success: false, error: 'Failed to mark as read' });
+  }
+});
+
+/**
+ * @route   PUT /api/notifications/:id/archive
+ * @desc    Archive a notification
+ * @access  Private
+ */
+router.put('/:id/archive', auth, async (req, res) => {
+  try {
+    const notification = await Notification.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!notification) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+    await notification.archive();
+    res.json({ success: true, data: notification });
+  } catch (error) {
+    console.error('Archive notification error:', error);
+    res.status(500).json({ success: false, error: 'Failed to archive notification' });
+  }
+});
+
+/**
+ * @route   DELETE /api/notifications/:id
+ * @desc    Delete a notification
+ * @access  Private
+ */
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    if (!notification) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+    res.json({ success: true, message: 'Notification deleted' });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete notification' });
+  }
+});
+
+/**
+ * @route   POST /api/notifications
+ * @desc    Create a new notification (internal/admin use)
+ * @access  Private
+ */
+router.post('/', auth, async (req, res) => {
+  try {
+    const { type, title, message, priority, category, data, actionUrl, actions } = req.body;
+    const notification = await Notification.createNotification(req.user._id, {
+      type: type || 'info',
+      title,
+      message,
+      priority: priority || 'medium',
+      category: category || 'system',
+      data,
+      actions: actions || (actionUrl ? [{ label: 'View', action: 'navigate', url: actionUrl, primary: true }] : [])
+    });
+    res.status(201).json({ success: true, data: notification });
+  } catch (error) {
+    console.error('Create notification error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create notification' });
   }
 });
 

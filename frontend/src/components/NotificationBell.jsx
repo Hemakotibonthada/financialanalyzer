@@ -55,14 +55,18 @@ const NotificationBell = () => {
     // Listen for real-time notifications
     if (socket) {
       socket.on('notification', handleNewNotification);
+      socket.on('notification:new', handleNewNotification);
       
       return () => {
         socket.off('notification', handleNewNotification);
+        socket.off('notification:new', handleNewNotification);
       };
     }
   }, [socket]);
 
-  const handleNewNotification = (notification) => {
+  const handleNewNotification = (data) => {
+    // Handle both direct notification object and {notification: ...} wrapper
+    const notification = data?.notification || data;
     setNotifications(prev => [notification, ...prev]);
     setUnreadCount(prev => prev + 1);
     
@@ -165,8 +169,9 @@ const NotificationBell = () => {
     try {
       const response = await api.put(`/notifications/${notificationId}/archive`);
       if (response.data.success) {
-        setNotifications(prev => prev.filter(n => n._id !== notificationId));
-        if (!notifications.find(n => n._id === notificationId)?.isRead) {
+        setNotifications(prev => prev.filter(n => n._id !== notificationId && n.id !== notificationId));
+        const notif = notifications.find(n => (n._id || n.id) === notificationId);
+        if (notif && !notif.isRead) {
           setUnreadCount(prev => Math.max(0, prev - 1));
         }
       }
@@ -227,9 +232,10 @@ const NotificationBell = () => {
       markAsRead(notification._id);
     }
     
-    // Handle action URL
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
+    // Handle action URL - check both actionUrl and actions array
+    const actionUrl = notification.actionUrl || notification.actions?.[0]?.url;
+    if (actionUrl) {
+      window.location.href = actionUrl;
       handleClose();
     }
   };
@@ -396,6 +402,7 @@ const NotificationBell = () => {
                       secondary={
                         <>
                           <Typography
+                            component="span"
                             variant="body2"
                             color="text.secondary"
                             sx={{ display: 'block', mb: 0.5 }}
@@ -403,6 +410,7 @@ const NotificationBell = () => {
                             {notification.message}
                           </Typography>
                           <Typography
+                            component="span"
                             variant="caption"
                             color="text.secondary"
                             sx={{ display: 'block' }}
