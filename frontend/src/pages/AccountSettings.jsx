@@ -551,7 +551,18 @@ function DataManagementTab() {
   const [loading, setLoading] = useState(true);
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [message, setMessage] = useState(null);
+
+  // Database backup state
+  const [backups, setBackups] = useState([]);
+  const [backupSchedule, setBackupSchedule] = useState({ enabled: false, frequency: 'weekly', retentionCount: { daily: 7, weekly: 4, monthly: 6 } });
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [createBackupLoading, setCreateBackupLoading] = useState(false);
+  const [restoreId, setRestoreId] = useState(null);
+  const [restoreStrategy, setRestoreStrategy] = useState('merge');
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showUploadRestore, setShowUploadRestore] = useState(false);
 
   // Handle OAuth callback from Google Drive
   useEffect(() => {
@@ -566,7 +577,6 @@ function DataManagementTab() {
         api.post('/drive/save-tokens', { tokens }).then(() => {
           setMessage({ type: 'success', text: 'Google Drive connected successfully!' });
           loadDriveStatus();
-          // Clean URL
           window.history.replaceState({}, '', window.location.pathname);
         }).catch(err => {
           setMessage({ type: 'error', text: 'Failed to save Drive tokens.' });
@@ -605,9 +615,27 @@ function DataManagementTab() {
     }
   }, []);
 
+  const loadBackups = useCallback(async () => {
+    try {
+      const res = await api.get('/backup/list');
+      if (res.data.success) setBackups(res.data.backups || []);
+    } catch (err) {
+      console.log('Backup list not available');
+    }
+  }, []);
+
+  const loadSchedule = useCallback(async () => {
+    try {
+      const res = await api.get('/backup/schedule');
+      if (res.data.success) setBackupSchedule(res.data.schedule);
+    } catch (err) {
+      console.log('Backup schedule not available');
+    }
+  }, []);
+
   useEffect(() => {
-    Promise.all([loadDriveStatus(), loadDataCounts()]).finally(() => setLoading(false));
-  }, [loadDriveStatus, loadDataCounts]);
+    Promise.all([loadDriveStatus(), loadDataCounts(), loadBackups(), loadSchedule()]).finally(() => setLoading(false));
+  }, [loadDriveStatus, loadDataCounts, loadBackups, loadSchedule]);
 
   const connectDrive = async () => {
     try {
@@ -663,6 +691,160 @@ function DataManagementTab() {
     }
   };
 
+  // ========== Database Backup Functions ==========
+
+  const createDatabaseBackup = async () => {
+    setCreateBackupLoading(true);
+    try {
+      const res = await api.post('/backup/create');
+      if (res.data.success) {
+        setMessage({ type: 'success', text: `Backup created! ${res.data.backup.totalDocuments} documents from ${res.data.backup.totalCollections} collections.` });
+        loadBackups();
+      } else {
+        setMessage({ type: 'error', text: res.data.message || 'Backup failed.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to create backup.' });
+    } finally {
+      setCreateBackupLoading(false);
+    }
+  };
+
+  const exportBackup = async () => {
+    setExportLoading(true);
+    try {
+      const res = await api.get('/backup/export', { responseType: 'blob' });
+      const disposition = res.headers['content-disposition'];
+      let filename = 'FinancialAnalyzer_Backup.json';
+      if (disposition) {
+        const match = disposition.match(/filename="?(.+?)"?$/);
+        if (match) filename = match[1];
+      }
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setMessage({ type: 'success', text: 'Backup exported and downloaded!' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to export backup.' });
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const downloadBackup = async (id, filename) => {
+    try {
+      const res = await api.get(`/backup/download/${id}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to download backup.' });
+    }
+  };
+
+  const restoreFromServerBackup = async () => {
+    if (!restoreId) return;
+    if (!window.confirm(`This will restore from the selected backup using "${restoreStrategy}" strategy. Continue?`)) return;
+    setRestoreLoading(true);
+    setShowRestoreModal(false);
+    try {
+      const res = await api.post(`/backup/restore/${restoreId}`, { strategy: restoreStrategy });
+      if (res.data.success) {
+        setMessage({ type: 'success', text: `Restored ${res.data.results.totalRestored} documents. ${res.data.results.totalSkipped} skipped.` });
+        setTimeout(() => window.location.reload(), 2500);
+      } else {
+        setMessage({ type: 'error', text: res.data.message || 'Restore failed.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Restore failed.' });
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
+
+  const restoreFromUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!window.confirm(`Restore from "${file.name}" using "${restoreStrategy}" strategy? This may overwrite existing data.`)) {
+      e.target.value = '';
+      return;
+    }
+    setRestoreLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('backup', file);
+      formData.append('strategy', restoreStrategy);
+      const res = await api.post('/backup/restore-upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setMessage({ type: 'success', text: `Restored ${res.data.results.totalRestored} documents from uploaded file.` });
+        setTimeout(() => window.location.reload(), 2500);
+      } else {
+        setMessage({ type: 'error', text: res.data.message || 'Restore failed.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Restore failed.' });
+    } finally {
+      setRestoreLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const deleteBackup = async (id) => {
+    if (!window.confirm('Delete this backup permanently?')) return;
+    try {
+      await api.delete(`/backup/${id}`);
+      setMessage({ type: 'success', text: 'Backup deleted.' });
+      loadBackups();
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to delete backup.' });
+    }
+  };
+
+  const updateSchedule = async (newSettings) => {
+    setScheduleLoading(true);
+    try {
+      const res = await api.put('/backup/schedule', newSettings);
+      if (res.data.success) {
+        setBackupSchedule(res.data.schedule);
+        setMessage({ type: 'success', text: res.data.message });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to update schedule.' });
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+  };
+
+  const getTypeColor = (type) => {
+    const colors = {
+      manual: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      daily: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      weekly: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      monthly: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      export: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+    };
+    return colors[type] || colors.manual;
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -676,15 +858,15 @@ function DataManagementTab() {
     <div className="space-y-6">
       {/* Status Message */}
       {message && (
-        <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
+        <div className={`p-4 rounded-xl text-sm font-medium animate-fadeIn ${message.type === 'success' ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
           {message.type === 'success' ? '✅' : '❌'} {message.text}
         </div>
       )}
 
-      {/* Data Overview - Real counts from API */}
+      {/* Data Overview */}
       <AnimatedCard>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Data Overview</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.transactions.toLocaleString()}</div>
             <div className="text-xs text-gray-500">Transactions</div>
@@ -694,16 +876,255 @@ function DataManagementTab() {
             <div className="text-xs text-gray-500">Budgets</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{backups.length}</div>
+            <div className="text-xs text-gray-500">Saved Backups</div>
+          </div>
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {driveStatus.connected ? '☁️' : '📱'}
+              {backupSchedule.enabled ? '🟢' : '⚪'}
             </div>
-            <div className="text-xs text-gray-500">{driveStatus.connected ? 'Cloud Synced' : 'Local Only'}</div>
+            <div className="text-xs text-gray-500">{backupSchedule.enabled ? `Auto: ${backupSchedule.frequency}` : 'Auto-backup Off'}</div>
           </div>
         </div>
       </AnimatedCard>
 
-      {/* Google Drive Integration */}
+      {/* ===== DATABASE BACKUP & RESTORE ===== */}
       <AnimatedCard delay={100}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">💾 Database Backup & Restore</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Full database backup of all your financial data — transactions, budgets, loans, investments, and more.
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <button
+            onClick={createDatabaseBackup}
+            disabled={createBackupLoading}
+            className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 border border-blue-200 dark:border-blue-800 transition-all duration-300 text-left disabled:opacity-50 group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{createBackupLoading ? '⏳' : '💾'}</div>
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {createBackupLoading ? 'Creating Backup...' : 'Create Backup'}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Save a snapshot of all your data to the server
+            </div>
+          </button>
+
+          <button
+            onClick={exportBackup}
+            disabled={exportLoading}
+            className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border border-green-200 dark:border-green-800 transition-all duration-300 text-left disabled:opacity-50 group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{exportLoading ? '⏳' : '📤'}</div>
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {exportLoading ? 'Exporting...' : 'Export & Download'}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Download your entire database as a JSON file
+            </div>
+          </button>
+
+          <button
+            onClick={() => setShowUploadRestore(true)}
+            disabled={restoreLoading}
+            className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 border border-purple-200 dark:border-purple-800 transition-all duration-300 text-left disabled:opacity-50 group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{restoreLoading ? '⏳' : '📥'}</div>
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {restoreLoading ? 'Restoring...' : 'Restore from File'}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Upload a backup file to restore data
+            </div>
+          </button>
+        </div>
+
+        {/* Upload Restore Panel */}
+        {showUploadRestore && (
+          <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 animate-fadeIn">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">📥 Restore from Uploaded File</h4>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Restore Strategy</label>
+                <select
+                  value={restoreStrategy}
+                  onChange={(e) => setRestoreStrategy(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-white text-sm"
+                >
+                  <option value="merge">Merge (keep existing + add new)</option>
+                  <option value="replace">Replace (overwrite with backup data)</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Backup File (.json or .json.gz)</label>
+                <input
+                  type="file"
+                  accept=".json,.gz"
+                  onChange={restoreFromUpload}
+                  disabled={restoreLoading}
+                  className="w-full text-sm text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
+                />
+              </div>
+              <button onClick={() => setShowUploadRestore(false)} className="text-xs text-gray-400 hover:text-gray-600 mt-6">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Backup History */}
+        {backups.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              📋 Backup History
+              <Badge variant="default" className="text-xs">{backups.length}</Badge>
+            </h4>
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {backups.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="text-xl">{b.fileExists ? '💾' : '⚠️'}</div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {new Date(b.createdAt).toLocaleString()}
+                        </span>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getTypeColor(b.type)}`}>
+                          {b.type}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {b.totalDocuments} docs · {b.totalCollections} collections · {formatBytes(b.sizeBytes)}
+                        {b.uncompressedSizeBytes && ` (${formatBytes(b.uncompressedSizeBytes)} uncompressed)`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {b.fileExists && (
+                      <>
+                        <button
+                          onClick={() => downloadBackup(b.id, b.filename)}
+                          className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          title="Download"
+                        >⬇️</button>
+                        <button
+                          onClick={() => { setRestoreId(b.id); setShowRestoreModal(true); }}
+                          className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                          title="Restore"
+                        >🔄</button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => deleteBackup(b.id)}
+                      className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      title="Delete"
+                    >🗑️</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {backups.length === 0 && (
+          <div className="text-center py-6 text-gray-400 dark:text-gray-500">
+            <div className="text-3xl mb-2">📭</div>
+            <p className="text-sm">No backups yet. Create your first backup above!</p>
+          </div>
+        )}
+      </AnimatedCard>
+
+      {/* ===== AUTOMATIC BACKUP SCHEDULE ===== */}
+      <AnimatedCard delay={200}>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">⏰ Automatic Backup Schedule</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Configure automatic scheduled backups to protect your data without manual effort.
+        </p>
+
+        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-4">
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">Enable Auto-Backup</div>
+              <div className="text-xs text-gray-500">Automatically create backups on a schedule</div>
+            </div>
+            <button
+              onClick={() => updateSchedule({ ...backupSchedule, enabled: !backupSchedule.enabled })}
+              disabled={scheduleLoading}
+              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${backupSchedule.enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'} disabled:opacity-50`}
+            >
+              <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${backupSchedule.enabled ? 'translate-x-8' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {/* Frequency Selection */}
+          {backupSchedule.enabled && (
+            <div className="animate-fadeIn space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Backup Frequency</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['daily', 'weekly', 'monthly'].map(freq => (
+                    <button
+                      key={freq}
+                      onClick={() => updateSchedule({ ...backupSchedule, frequency: freq })}
+                      disabled={scheduleLoading}
+                      className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 border-2 ${
+                        backupSchedule.frequency === freq
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 shadow-md'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      } disabled:opacity-50`}
+                    >
+                      <div className="text-lg mb-1">{freq === 'daily' ? '📅' : freq === 'weekly' ? '📆' : '🗓️'}</div>
+                      <div className="capitalize">{freq}</div>
+                      <div className="text-xs opacity-60 mt-0.5">
+                        {freq === 'daily' ? 'Every 24 hrs' : freq === 'weekly' ? 'Every 7 days' : 'Every 30 days'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Retention Settings */}
+              <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Retention Policy</div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { key: 'daily', label: 'Daily', count: backupSchedule.retentionCount?.daily || 7 },
+                    { key: 'weekly', label: 'Weekly', count: backupSchedule.retentionCount?.weekly || 4 },
+                    { key: 'monthly', label: 'Monthly', count: backupSchedule.retentionCount?.monthly || 6 }
+                  ].map(r => (
+                    <div key={r.key} className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">{r.label} backups</div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-white">Keep {r.count}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Schedule Info */}
+              {backupSchedule.lastRun && (
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Last auto-backup: {new Date(backupSchedule.lastRun).toLocaleString()}
+                </div>
+              )}
+              {backupSchedule.nextRun && (
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Next auto-backup: {new Date(backupSchedule.nextRun).toLocaleString()}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </AnimatedCard>
+
+      {/* Google Drive Integration */}
+      <AnimatedCard delay={300}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">☁️ Google Drive Sync</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Backup your financial data to Google Drive and access it from any device.
@@ -733,10 +1154,9 @@ function DataManagementTab() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Connected Status */}
             <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
               <div className="flex items-center gap-3">
-                <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
                 <div>
                   <div className="text-sm font-medium text-green-700 dark:text-green-400">Google Drive Connected</div>
                   {driveStatus.backup && (
@@ -752,8 +1172,6 @@ function DataManagementTab() {
                 Disconnect
               </button>
             </div>
-
-            {/* Backup & Restore Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button onClick={backupToDrive} disabled={backupLoading}
                 className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-left disabled:opacity-50">
@@ -774,33 +1192,18 @@ function DataManagementTab() {
         )}
       </AnimatedCard>
 
-      {/* Import/Export */}
-      <AnimatedCard delay={200}>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">⬇️ Import & Export</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 transition-colors text-left">
-            <div className="text-lg mb-1">📥 Import Data</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Import from CSV, Excel, or other apps</div>
-          </button>
-          <button className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 transition-colors text-left">
-            <div className="text-lg mb-1">📤 Export All Data</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Download all your data in one file</div>
-          </button>
-        </div>
-      </AnimatedCard>
-
       {/* Danger Zone */}
-      <AnimatedCard delay={300} className="border border-red-200 dark:border-red-800">
+      <AnimatedCard delay={400} className="border border-red-200 dark:border-red-800">
         <h3 className="text-lg font-semibold text-red-600 mb-4">⚠️ Danger Zone</h3>
         <div className="space-y-3">
-          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-between">
+          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-between">
             <div>
               <div className="font-medium text-red-700 dark:text-red-400">Clear All Data</div>
               <div className="text-xs text-red-500">Delete all transactions, budgets, and settings</div>
             </div>
             <span className="text-red-400">🗑️</span>
           </button>
-          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-between">
+          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-between">
             <div>
               <div className="font-medium text-red-700 dark:text-red-400">Delete Account</div>
               <div className="text-xs text-red-500">Permanently delete your account and all data</div>
@@ -809,6 +1212,43 @@ function DataManagementTab() {
           </button>
         </div>
       </AnimatedCard>
+
+      {/* Restore Modal */}
+      {showRestoreModal && (
+        <Modal onClose={() => setShowRestoreModal(false)} title="Restore from Backup">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Choose how to restore data from this backup:
+            </p>
+            <div className="space-y-2">
+              <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <input type="radio" name="strategy" value="merge" checked={restoreStrategy === 'merge'} onChange={(e) => setRestoreStrategy(e.target.value)} className="mt-1" />
+                <div>
+                  <div className="font-medium text-gray-900 dark:text-white">Merge</div>
+                  <div className="text-xs text-gray-500">Keep existing data and add missing items from the backup. Safest option.</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <input type="radio" name="strategy" value="replace" checked={restoreStrategy === 'replace'} onChange={(e) => setRestoreStrategy(e.target.value)} className="mt-1" />
+                <div>
+                  <div className="font-medium text-red-600">Replace</div>
+                  <div className="text-xs text-gray-500">Delete existing data and replace with backup data. ⚠️ Destructive.</div>
+                </div>
+              </label>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowRestoreModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                Cancel
+              </button>
+              <button onClick={restoreFromServerBackup}
+                className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                Restore Now
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

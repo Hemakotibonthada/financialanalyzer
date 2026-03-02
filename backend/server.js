@@ -261,6 +261,8 @@ app.use('/api/subscriptions', require('./routes/subscription'));
 app.use('/api/tax', require('./routes/tax'));
 // Support Tickets
 app.use('/api/support', require('./routes/support'));
+// Database Backup & Restore
+app.use('/api/backup', require('./routes/backup'));
 
 // 404 handler
 app.use((req, res) => {
@@ -347,11 +349,16 @@ io.on('connection', (socket) => {
 app.set('io', io);
 websocketService.initialize(io);
 
+// Start backup scheduler
+const backupScheduler = require('./services/backupScheduler');
+backupScheduler.start();
+
 server.listen(PORT, '0.0.0.0', () => {
   const networkIPs = getNetworkIPs();
   
   logger.info(`✅ Server running on port ${PORT}`);
   logger.info(`🏠 Local: http://localhost:${PORT}`);
+  logger.info(`💾 Backup Scheduler: Active`);
   
   if (networkIPs.length > 0) {
     networkIPs.forEach(ip => {
@@ -367,6 +374,9 @@ server.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown handler
 const gracefulShutdown = (signal) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
+  
+  // Stop backup scheduler
+  backupScheduler.stop();
   
   server.close(() => {
     logger.info('HTTP server closed.');
