@@ -2,6 +2,10 @@ const Analysis = require('../models/Analysis');
 const Transaction = require('../models/Transaction');
 const FinancialProfile = require('../models/FinancialProfile');
 const EMI = require('../models/EMI');
+const CreditCardBill = require('../models/CreditCardBill');
+const Investment = require('../models/Investment');
+const BillReminder = require('../models/BillReminder');
+const LoanGiven = require('../models/LoanGiven');
 const logger = require('../utils/logger');
 
 /**
@@ -17,6 +21,11 @@ class AnalyticsService {
     try {
       logger.info(`Generating dashboard for user ${userId}`);
 
+      // Current month boundaries for comprehensive aggregation
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
       const [
         profile,
         recentAnalyses,
@@ -27,19 +36,152 @@ class AnalyticsService {
         savingsGoals,
         recurringTransactions,
         financialHealth,
-        monthlyIncomeData
+        monthlyIncomeData,
+        // Comprehensive data from all models
+        activeEMIs,
+        currentMonthCCBills,
+        paidBillReminders,
+        activeInvestments,
+        currentMonthInvestmentPurchases,
+        loanRepayments,
+        investmentDividends
       ] = await Promise.all([
         this.getUserProfile(userId),
         this.getRecentAnalyses(userId, 10),
-  this.getMonthlyTrends(userId, 12), // return last 12 months for dashboard by default
+        this.getMonthlyTrends(userId, 12),
         this.getCategoryBreakdown(userId, 6),
         this.getSpendingPatterns(userId),
         this.getBudgetAnalysis(userId),
         this.getSavingsGoals(userId),
         this.getRecurringTransactions(userId),
         this.calculateFinancialHealth(userId),
-        this.getMonthlyIncome(userId)
+        this.getMonthlyIncome(userId),
+        // EMI: active EMIs (monthly installment amounts count as spending)
+        EMI.find({ userId, status: 'active' }).lean().catch(err => {
+          logger.warn('Failed to fetch EMIs for dashboard:', err.message);
+          return [];
+        }),
+        // Credit Card Bills: bills paid this month count as spending
+        CreditCardBill.find({
+          userId,
+          paymentStatus: { $in: ['full_paid', 'partial_paid', 'minimum_paid'] },
+          paymentDate: { $gte: currentMonthStart, $lte: currentMonthEnd }
+        }).lean().catch(err => {
+          logger.warn('Failed to fetch CC bills for dashboard:', err.message);
+          return [];
+        }),
+        // Bill Reminders: paid this month count as spending
+        BillReminder.find({
+          userId,
+          isPaid: true,
+          paidDate: { $gte: currentMonthStart, $lte: currentMonthEnd }
+        }).lean().catch(err => {
+          logger.warn('Failed to fetch bill reminders for dashboard:', err.message);
+          return [];
+        }),
+        // Investments: active investments for total portfolio value
+        Investment.find({ userId, status: 'active' }).lean().catch(err => {
+          logger.warn('Failed to fetch investments for dashboard:', err.message);
+          return [];
+        }),
+        // Investments: purchases made this month
+        Investment.find({
+          userId,
+          purchaseDate: { $gte: currentMonthStart, $lte: currentMonthEnd }
+        }).lean().catch(err => {
+          logger.warn('Failed to fetch investment purchases for dashboard:', err.message);
+          return [];
+        }),
+        // Loan Given: repayments received this month (income)
+        LoanGiven.find({
+          userId,
+          'repayments.date': { $gte: currentMonthStart, $lte: currentMonthEnd }
+        }).lean().catch(err => {
+          logger.warn('Failed to fetch loan repayments for dashboard:', err.message);
+          return [];
+        }),
+        // Investment dividends received this month (income)
+        Investment.find({
+          userId,
+          'dividends.date': { $gte: currentMonthStart, $lte: currentMonthEnd }
+        }).lean().catch(err => {
+          logger.warn('Failed to fetch investment dividends for dashboard:', err.message);
+          return [];
+        })
       ]);
+
+      // --- Comprehensive Monthly Spending ---
+      // Start with Transaction-based spending from getMonthlyTrends
+      let comprehensiveSpending = monthlyTrends.currentMonth?.totalSpending || 0;
+
+      // Add active EMI monthly installments
+      const emiMonthlyTotal = activeEMIs.reduce((sum, emi) => {
+        return sum + (emi.emiAmountInINR || emi.emiAmount || 0);
+      }, 0);
+      comprehensiveSpending += emiMonthlyTotal;
+
+      // Add credit card bill payments made this month
+      const ccBillTotal = currentMonthCCBills.reduce((sum, bill) => {
+        return sum + (bill.amountPaid || 0);
+      }, 0);
+      comprehensiveSpending += ccBillTotal;
+
+      // Add paid bill reminders this month
+      const billReminderTotal = paidBillReminders.reduce((sum, bill) => {
+        return sum + (bill.paidAmount || bill.amount || 0);
+      }, 0);
+      comprehensiveSpending += billReminderTotal;
+
+      // --- Comprehensive Monthly Investments ---
+      // Start with Transaction-based investments from getMonthlyTrends
+      let comprehensiveInvestments = monthlyTrends.currentMonth?.totalInvestments || 0;
+
+      // Add investment purchases made this month (avoid double counting with transactions)
+      const investmentPurchaseTotal = currentMonthInvestmentPurchases.reduce((sum, inv) => {
+        return sum + (inv.totalInvestedAmount || 0);
+      }, 0);
+      comprehensiveInvestments += investmentPurchaseTotal;
+
+      // Add active SIP amounts (monthly recurring investments)
+      const sipMonthlyTotal = activeInvestments
+        .filter(inv => inv.isSIP && inv.sipAmount)
+        .reduce((sum, inv) => sum + (inv.sipAmount || 0), 0);
+      // Only add SIP if no investment purchases were found for this month (to avoid double counting)
+      if (investmentPurchaseTotal === 0) {
+        comprehensiveInvestments += sipMonthlyTotal;
+      }
+
+      // --- Comprehensive Monthly Income ---
+      let comprehensiveIncome = monthlyIncomeData.amount || 0;
+
+      // Add loan repayments received this month
+      const loanRepaymentIncome = loanRepayments.reduce((sum, loan) => {
+        const monthlyRepayments = (loan.repayments || []).filter(r => {
+          const repDate = new Date(r.date);
+          return repDate >= currentMonthStart && repDate <= currentMonthEnd;
+        });
+        return sum + monthlyRepayments.reduce((s, r) => s + (r.amountInINR || r.amount || 0), 0);
+      }, 0);
+      comprehensiveIncome += loanRepaymentIncome;
+
+      // Add dividends received this month
+      const dividendIncome = investmentDividends.reduce((sum, inv) => {
+        const monthlyDividends = (inv.dividends || []).filter(d => {
+          const divDate = new Date(d.date);
+          return divDate >= currentMonthStart && divDate <= currentMonthEnd;
+        });
+        return sum + monthlyDividends.reduce((s, d) => s + (d.amount || 0), 0);
+      }, 0);
+      comprehensiveIncome += dividendIncome;
+
+      logger.info(`Dashboard comprehensive data for user ${userId}: ` +
+        `Spending: ₹${comprehensiveSpending} (Txn: ${monthlyTrends.currentMonth?.totalSpending || 0}, ` +
+        `EMI: ${emiMonthlyTotal}, CC: ${ccBillTotal}, Bills: ${billReminderTotal}), ` +
+        `Investments: ₹${comprehensiveInvestments} (Txn: ${monthlyTrends.currentMonth?.totalInvestments || 0}, ` +
+        `Purchases: ${investmentPurchaseTotal}, SIP: ${sipMonthlyTotal}), ` +
+        `Income: ₹${comprehensiveIncome} (Base: ${monthlyIncomeData.amount}, ` +
+        `LoanRepay: ${loanRepaymentIncome}, Dividends: ${dividendIncome})`
+      );
 
       const dashboard = {
         profile,
@@ -47,11 +189,33 @@ class AnalyticsService {
           totalAnalyses: recentAnalyses.length,
           lastSyncDate: profile?.gmailSettings?.lastSync || null,
           financialHealthScore: financialHealth.score,
-          monthlySpending: monthlyTrends.currentMonth?.totalSpending || 0,
-          monthlyInvestments: monthlyTrends.currentMonth?.totalInvestments || 0,
-          monthlyIncome: monthlyIncomeData.amount,
+          // Comprehensive values from ALL sources
+          monthlySpending: comprehensiveSpending,
+          monthlyInvestments: comprehensiveInvestments,
+          monthlyIncome: comprehensiveIncome,
           incomeSource: monthlyIncomeData.source,
-          lastSalaryDate: monthlyIncomeData.lastSalaryDate
+          lastSalaryDate: monthlyIncomeData.lastSalaryDate,
+          // Breakdown details for transparency
+          spendingBreakdown: {
+            transactions: monthlyTrends.currentMonth?.totalSpending || 0,
+            emiPayments: emiMonthlyTotal,
+            creditCardBills: ccBillTotal,
+            billReminders: billReminderTotal
+          },
+          investmentBreakdown: {
+            transactions: monthlyTrends.currentMonth?.totalInvestments || 0,
+            newPurchases: investmentPurchaseTotal,
+            sipContributions: sipMonthlyTotal
+          },
+          incomeBreakdown: {
+            salary: monthlyIncomeData.amount,
+            loanRepayments: loanRepaymentIncome,
+            dividends: dividendIncome
+          },
+          // Additional portfolio info
+          totalActiveEMIs: activeEMIs.length,
+          totalActiveInvestments: activeInvestments.length,
+          portfolioValue: activeInvestments.reduce((sum, inv) => sum + (inv.currentValue || inv.totalInvestedAmount || 0), 0)
         },
         charts: {
           monthlyTrends,

@@ -7,6 +7,10 @@ const FinancialProfile = require('../models/FinancialProfile');
 const Transaction = require('../models/Transaction');
 const Document = require('../models/Document');
 const BillReminder = require('../models/BillReminder');
+const EMI = require('../models/EMI');
+const CreditCardBill = require('../models/CreditCardBill');
+const Investment = require('../models/Investment');
+const LoanGiven = require('../models/LoanGiven');
 const { authenticate } = require('../middleware/auth');
 const { invalidateCacheMiddleware, cacheMiddleware } = require('../middleware/cacheMiddleware');
 const { processMultipleDocuments, categorizeTransaction, detectRecurringTransactions } = require('../services/documentProcessor');
@@ -2670,11 +2674,17 @@ router.get('/summary', authenticate, async (req, res) => {
     const userId = req.user._id;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    // Current month aggregation
-    const [currentIncome, currentExpense, lastIncome, lastExpense] = await Promise.all([
+    // Comprehensive aggregation from ALL data sources
+    const [
+      currentIncome, currentExpense, lastIncome, lastExpense,
+      activeEMIs, currentMonthCCBills, paidBillReminders,
+      activeInvestments, currentMonthInvestments,
+      loanRepayments, investmentDividends, profile
+    ] = await Promise.all([
       Transaction.aggregate([
         { $match: { userId, type: 'credit', date: { $gte: startOfMonth } } },
         { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -2690,11 +2700,70 @@ router.get('/summary', authenticate, async (req, res) => {
       Transaction.aggregate([
         { $match: { userId, type: 'debit', date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, total: { $sum: '$amount' } } }
-      ])
+      ]),
+      // EMI: active EMIs
+      EMI.find({ userId, status: 'active' }).lean().catch(() => []),
+      // CC Bills: paid this month
+      CreditCardBill.find({
+        userId,
+        paymentStatus: { $in: ['full_paid', 'partial_paid', 'minimum_paid'] },
+        paymentDate: { $gte: startOfMonth, $lte: endOfMonth }
+      }).lean().catch(() => []),
+      // Bill Reminders: paid this month
+      BillReminder.find({
+        userId, isPaid: true,
+        paidDate: { $gte: startOfMonth, $lte: endOfMonth }
+      }).lean().catch(() => []),
+      // Active investments for portfolio value
+      Investment.find({ userId, status: 'active' }).lean().catch(() => []),
+      // New investments this month
+      Investment.find({
+        userId,
+        purchaseDate: { $gte: startOfMonth, $lte: endOfMonth }
+      }).lean().catch(() => []),
+      // Loan repayments received this month
+      LoanGiven.find({
+        userId,
+        'repayments.date': { $gte: startOfMonth, $lte: endOfMonth }
+      }).lean().catch(() => []),
+      // Dividends this month
+      Investment.find({
+        userId,
+        'dividends.date': { $gte: startOfMonth, $lte: endOfMonth }
+      }).lean().catch(() => []),
+      // Profile for monthly income
+      FinancialProfile.findOne({ userId }).lean().catch(() => null)
     ]);
 
-    const totalIncome = currentIncome[0]?.total || 0;
-    const totalExpense = currentExpense[0]?.total || 0;
+    // -- Comprehensive Expense --
+    let totalExpense = currentExpense[0]?.total || 0;
+    const emiTotal = activeEMIs.reduce((s, e) => s + (e.emiAmountInINR || e.emiAmount || 0), 0);
+    const ccTotal = currentMonthCCBills.reduce((s, b) => s + (b.amountPaid || 0), 0);
+    const billTotal = paidBillReminders.reduce((s, b) => s + (b.paidAmount || b.amount || 0), 0);
+    totalExpense += emiTotal + ccTotal + billTotal;
+
+    // -- Comprehensive Income --
+    let totalIncome = currentIncome[0]?.total || 0;
+    // Add profile monthly income if no salary credits found
+    if (totalIncome === 0 && profile?.monthlyIncome) {
+      totalIncome = profile.monthlyIncome;
+    }
+    const repaymentIncome = loanRepayments.reduce((sum, loan) => {
+      return sum + (loan.repayments || [])
+        .filter(r => new Date(r.date) >= startOfMonth && new Date(r.date) <= endOfMonth)
+        .reduce((s, r) => s + (r.amountInINR || r.amount || 0), 0);
+    }, 0);
+    const dividendIncome = investmentDividends.reduce((sum, inv) => {
+      return sum + (inv.dividends || [])
+        .filter(d => new Date(d.date) >= startOfMonth && new Date(d.date) <= endOfMonth)
+        .reduce((s, d) => s + (d.amount || 0), 0);
+    }, 0);
+    totalIncome += repaymentIncome + dividendIncome;
+
+    // -- Investment total --
+    const investmentTotal = currentMonthInvestments.reduce((s, i) => s + (i.totalInvestedAmount || 0), 0);
+    const portfolioValue = activeInvestments.reduce((s, i) => s + (i.currentValue || i.totalInvestedAmount || 0), 0);
+
     const prevIncome = lastIncome[0]?.total || 0;
     const prevExpense = lastExpense[0]?.total || 0;
 
@@ -2704,18 +2773,19 @@ router.get('/summary', authenticate, async (req, res) => {
     const prevSavings = prevIncome - prevExpense;
     const savingsGrowth = prevSavings > 0 ? Math.round(((currentSavings - prevSavings) / prevSavings) * 100) : 0;
 
-    // Net worth from profile
-    let netWorth = 0;
-    let totalAssets = 0;
+    // Net worth from portfolio + profile
+    let netWorth = portfolioValue;
+    let totalAssets = portfolioValue;
     let totalLiabilities = 0;
-    let netWorthGrowth = 0;
     try {
-      const profile = await FinancialProfile.findOne({ userId });
       if (profile) {
-        totalAssets = (profile.assets?.savings || 0) + (profile.assets?.investments || 0) + (profile.assets?.property || 0) + (profile.assets?.other || 0);
+        totalAssets += (profile.assets?.savings || 0) + (profile.assets?.investments || 0) + (profile.assets?.property || 0) + (profile.assets?.other || 0);
         totalLiabilities = (profile.liabilities?.loans || 0) + (profile.liabilities?.creditCards || 0) + (profile.liabilities?.other || 0);
-        netWorth = totalAssets - totalLiabilities;
       }
+      // Add EMI outstanding as liabilities
+      const emiLiabilities = activeEMIs.reduce((s, e) => s + ((e.emiAmountInINR || e.emiAmount || 0) * (e.remainingInstallments || 0)), 0);
+      totalLiabilities += emiLiabilities;
+      netWorth = totalAssets - totalLiabilities;
     } catch (e) {
       // Non-critical
     }
@@ -2728,9 +2798,18 @@ router.get('/summary', authenticate, async (req, res) => {
       expenseGrowth,
       savingsGrowth,
       netWorth,
-      netWorthGrowth,
+      netWorthGrowth: 0,
       totalAssets,
-      totalLiabilities
+      totalLiabilities,
+      portfolioValue,
+      totalActiveEMIs: activeEMIs.length,
+      monthlyInvestments: investmentTotal,
+      spendingBreakdown: {
+        transactions: currentExpense[0]?.total || 0,
+        emiPayments: emiTotal,
+        creditCardBills: ccTotal,
+        billReminders: billTotal
+      }
     });
   } catch (error) {
     logger.error('Financial summary error:', error);

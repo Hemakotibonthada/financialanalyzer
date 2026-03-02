@@ -1,5 +1,52 @@
-import React from 'react';
-import { DollarSign, TrendingUp, TrendingDown, PiggyBank, CreditCard, TrendingUpIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { DollarSign, TrendingUp, TrendingDown, PiggyBank, CreditCard, TrendingUpIcon, Info } from 'lucide-react';
+
+const BreakdownTooltip = ({ breakdown, prefix = '₹' }) => {
+  const [show, setShow] = useState(false);
+  if (!breakdown || Object.keys(breakdown).length === 0) return null;
+
+  const labels = {
+    transactions: 'Transactions',
+    emiPayments: 'EMI Payments',
+    creditCardBills: 'Credit Card Bills',
+    billReminders: 'Bills & Reminders',
+    newPurchases: 'New Purchases',
+    sipContributions: 'SIP Contributions',
+    salary: 'Salary / Income',
+    loanRepayments: 'Loan Repayments',
+    dividends: 'Dividends'
+  };
+
+  const items = Object.entries(breakdown).filter(([, val]) => val > 0);
+  if (items.length === 0) return null;
+
+  return (
+    <div className="relative inline-block ml-1">
+      <button
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow(!show)}
+        className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      {show && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 p-3">
+          <p className="text-xs font-semibold text-gray-700 dark:text-slate-200 mb-2 border-b border-gray-100 dark:border-slate-600 pb-1">Breakdown</p>
+          {items.map(([key, val]) => (
+            <div key={key} className="flex justify-between text-xs py-0.5">
+              <span className="text-gray-600 dark:text-slate-300">{labels[key] || key}</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {prefix}{val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          ))}
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 bg-white dark:bg-slate-700 border-r border-b border-gray-200 dark:border-slate-600 rotate-45"></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const FinancialSummary = ({ summary }) => {
   if (!summary) {
@@ -23,7 +70,8 @@ const FinancialSummary = ({ summary }) => {
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      prefix: '₹'
+      prefix: '₹',
+      breakdown: summary.incomeBreakdown
     },
     {
       title: 'Monthly Spending',
@@ -31,7 +79,8 @@ const FinancialSummary = ({ summary }) => {
       icon: CreditCard,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-      prefix: '₹'
+      prefix: '₹',
+      breakdown: summary.spendingBreakdown
     },
     {
       title: 'Monthly Investments',
@@ -39,7 +88,8 @@ const FinancialSummary = ({ summary }) => {
       icon: TrendingUpIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      prefix: '₹'
+      prefix: '₹',
+      breakdown: summary.investmentBreakdown
     },
     {
       title: 'Net Savings',
@@ -77,7 +127,10 @@ const FinancialSummary = ({ summary }) => {
                     <Icon className={`w-6 h-6 ${card.color}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-1">{card.title}</p>
+                    <div className="flex items-center">
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-1">{card.title}</p>
+                      {card.breakdown && <BreakdownTooltip breakdown={card.breakdown} prefix={card.prefix || ''} />}
+                    </div>
                     <p className={`text-xl font-bold ${card.color}`}>
                       {card.prefix && card.prefix}
                       {Math.abs(card.value).toLocaleString('en-IN', {
@@ -135,7 +188,7 @@ const FinancialSummary = ({ summary }) => {
 
         {/* Quick Stats */}
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalAnalyses || 0}</p>
               <p className="text-sm text-gray-600 dark:text-slate-400">Total Analyses</p>
@@ -149,6 +202,20 @@ const FinancialSummary = ({ summary }) => {
               </p>
               <p className="text-sm text-gray-600 dark:text-slate-400">Last Sync</p>
             </div>
+            {summary.totalActiveEMIs > 0 && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-600">{summary.totalActiveEMIs}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400">Active EMIs</p>
+              </div>
+            )}
+            {summary.portfolioValue > 0 && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">
+                  ₹{summary.portfolioValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-slate-400">Portfolio Value</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
