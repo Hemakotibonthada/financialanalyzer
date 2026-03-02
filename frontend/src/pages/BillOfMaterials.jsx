@@ -43,9 +43,7 @@ import {
   FilterList as FilterIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import api from '../services/api';
 
 const BillOfMaterials = () => {
   const [materials, setMaterials] = useState([]);

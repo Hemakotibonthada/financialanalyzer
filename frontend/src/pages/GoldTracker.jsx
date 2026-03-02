@@ -8,6 +8,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line
 } from 'recharts';
+import api from '../services/api';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#ec4899'];
 
@@ -47,6 +48,27 @@ export default function GoldTracker() {
     try { return JSON.parse(localStorage.getItem('fa_gold_price')) || { perGram: 0, per10g: 0, perOunce: 0, change24h: 0 }; } catch { return { perGram: 0, per10g: 0, perOunce: 0, change24h: 0 }; }
   });
 
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/investments', { params: { type: 'gold' } });
+        const data = res.data?.investments || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(inv => ({
+            id: inv._id || inv.id, type: inv.subType || 'physical', name: inv.name,
+            weight: inv.quantity, unit: 'grams', purchasePrice: inv.purchasePrice,
+            purchaseDate: inv.purchaseDate ? new Date(inv.purchaseDate).toISOString().split('T')[0] : '',
+            purity: inv.purity || '24K', _backendId: inv._id
+          }));
+          setHoldings(mapped);
+          saveLocal('fa_gold_holdings', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
+
   useEffect(() => { saveLocal('fa_gold_holdings', holdings); }, [holdings]);
   useEffect(() => { saveLocal('fa_gold_alerts', alerts); }, [alerts]);
   useEffect(() => { localStorage.setItem('fa_gold_price', JSON.stringify(goldPrice)); }, [goldPrice]);
@@ -85,14 +107,33 @@ export default function GoldTracker() {
     }
   }, [totalCurrentValue]);
 
-  const handleAddHolding = () => {
+  const handleAddHolding = async () => {
     if (!form.name || !form.weight || !form.purchasePrice) return;
-    setHoldings(prev => [...prev, { id: Date.now(), ...form, weight: Number(form.weight), purchasePrice: Number(form.purchasePrice) }]);
+    const newHolding = { id: Date.now(), ...form, weight: Number(form.weight), purchasePrice: Number(form.purchasePrice) };
+    setHoldings(prev => [...prev, newHolding]);
     setForm(emptyForm);
     setShowForm(false);
+    try {
+      const res = await api.post('/investments', {
+        type: 'gold', name: newHolding.name, subType: newHolding.type,
+        quantity: newHolding.weight, purchasePrice: newHolding.purchasePrice,
+        totalInvestedAmount: newHolding.weight * newHolding.purchasePrice,
+        purchaseDate: newHolding.purchaseDate || new Date().toISOString(),
+        purity: newHolding.purity
+      });
+      if (res.data?._id) {
+        setHoldings(prev => prev.map(h => h.id === newHolding.id ? { ...h, _backendId: res.data._id } : h));
+      }
+    } catch { /* saved locally */ }
   };
 
-  const handleDeleteHolding = (id) => setHoldings(prev => prev.filter(h => h.id !== id));
+  const handleDeleteHolding = async (id) => {
+    const holding = holdings.find(h => h.id === id);
+    setHoldings(prev => prev.filter(h => h.id !== id));
+    if (holding?._backendId) {
+      try { await api.delete(`/investments/${holding._backendId}`); } catch { /* removed locally */ }
+    }
+  };
 
   const addAlert = () => {
     if (!alertForm.price) return;

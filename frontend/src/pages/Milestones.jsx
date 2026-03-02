@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const BADGE_COLORS = {
   gold: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', border: 'border-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', icon: '🏆' },
@@ -46,14 +47,36 @@ export default function Milestones() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [celebrating, setCelebrating] = useState(null);
   const [shareOpen, setShareOpen] = useState(null);
+  const [milestones, setMilestones] = useState(MILESTONES_DATA);
+  const [leaderboard, setLeaderboard] = useState(LEADERBOARD);
 
-  const totalXP = MILESTONES_DATA.filter(m => m.unlocked).reduce((s, m) => s + m.xp, 0);
+  useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        const [profileRes, lbRes] = await Promise.allSettled([
+          api.get('/achievements/profile'),
+          api.get('/achievements/leaderboard'),
+        ]);
+        if (profileRes.status === 'fulfilled' && profileRes.value.data?.data?.milestones) {
+          setMilestones(profileRes.value.data.data.milestones);
+        }
+        if (lbRes.status === 'fulfilled' && lbRes.value.data?.data) {
+          setLeaderboard(lbRes.value.data.data);
+        }
+      } catch (err) {
+        console.log('Achievements fetch fallback to defaults:', err.message);
+      }
+    };
+    fetchAchievements();
+  }, []);
+
+  const totalXP = milestones.filter(m => m.unlocked).reduce((s, m) => s + m.xp, 0);
   const level = getLevel(totalXP);
   const nextLevelXP = [0, 200, 500, 500, 1000, 1000, 1500, 1500, 2000, 2000, 2500, 3000, 3500][level + 1] || 3500;
 
-  const filtered = activeCategory === 'all' ? MILESTONES_DATA : MILESTONES_DATA.filter(m => m.category === activeCategory);
-  const unlockedCount = MILESTONES_DATA.filter(m => m.unlocked).length;
-  const inProgressCount = MILESTONES_DATA.filter(m => !m.unlocked && m.current > 0).length;
+  const filtered = activeCategory === 'all' ? milestones : milestones.filter(m => m.category === activeCategory);
+  const unlockedCount = milestones.filter(m => m.unlocked).length;
+  const inProgressCount = milestones.filter(m => !m.unlocked && m.current > 0).length;
 
   const handleCelebrate = (milestone) => {
     setCelebrating(milestone.id);
@@ -226,7 +249,7 @@ export default function Milestones() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">🏅 Leaderboard</h2>
           <div className="space-y-3">
-            {LEADERBOARD.map((entry) => (
+            {leaderboard.map((entry) => (
               <div
                 key={entry.rank}
                 className={`flex items-center justify-between p-3 rounded-xl ${

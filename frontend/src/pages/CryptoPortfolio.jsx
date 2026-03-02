@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Bitcoin, Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   IndianRupee, X, Trash2, RefreshCw, AlertTriangle, Newspaper, Calculator,
@@ -8,6 +8,7 @@ import {
   PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import api from '../services/api';
 
 const COLORS = ['#f7931a', '#627eea', '#26a17b', '#e6007a', '#8247e5', '#00d4aa', '#ff007a', '#3b82f6'];
 
@@ -25,6 +26,26 @@ export default function CryptoPortfolio() {
   const [dcaFreq, setDcaFreq] = useState('weekly');
   const [dcaDuration, setDcaDuration] = useState(12);
 
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/investments', { params: { type: 'crypto' } });
+        const data = res.data?.investments || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((inv, i) => ({
+            id: inv._id || inv.id, name: inv.name, symbol: inv.symbol || inv.name.substring(0, 4).toUpperCase(),
+            quantity: inv.quantity, avgPrice: inv.purchasePrice, currentPrice: inv.currentPrice || inv.purchasePrice,
+            change24h: inv.returnPercentage || 0, color: COLORS[i % COLORS.length], _backendId: inv._id
+          }));
+          setHoldings(mapped);
+          saveLocal('fa_crypto_holdings', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
+
   useEffect(() => { saveLocal('fa_crypto_holdings', holdings); }, [holdings]);
 
   const totalValue = useMemo(() => holdings.reduce((s, h) => s + h.quantity * h.currentPrice, 0), [holdings]);
@@ -34,20 +55,36 @@ export default function CryptoPortfolio() {
 
   const allocationData = useMemo(() => holdings.map(h => ({ name: h.symbol, value: Math.round(h.quantity * h.currentPrice) })), [holdings]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name || !form.quantity || !form.avgPrice) return;
-    setHoldings(prev => [...prev, {
+    const newHolding = {
       id: Date.now(), name: form.name, symbol: form.symbol || form.name.substring(0, 4).toUpperCase(),
       quantity: Number(form.quantity), avgPrice: Number(form.avgPrice),
       currentPrice: Number(form.currentPrice) || Number(form.avgPrice),
-      change24h: 0, color: COLORS[prev.length % COLORS.length]
-    }]);
+      change24h: 0, color: COLORS[holdings.length % COLORS.length]
+    };
+    setHoldings(prev => [...prev, newHolding]);
     setForm(emptyForm);
     setShowAddModal(false);
+    try {
+      const res = await api.post('/investments', {
+        type: 'crypto', name: newHolding.name, symbol: newHolding.symbol,
+        quantity: newHolding.quantity, purchasePrice: newHolding.avgPrice,
+        currentPrice: newHolding.currentPrice, totalInvestedAmount: newHolding.quantity * newHolding.avgPrice,
+        purchaseDate: new Date().toISOString()
+      });
+      if (res.data?._id) {
+        setHoldings(prev => prev.map(h => h.id === newHolding.id ? { ...h, _backendId: res.data._id } : h));
+      }
+    } catch { /* saved locally */ }
   };
 
-  const handleRemove = (id) => {
+  const handleRemove = async (id) => {
+    const holding = holdings.find(h => h.id === id);
     setHoldings(prev => prev.filter(h => h.id !== id));
+    if (holding?._backendId) {
+      try { await api.delete(`/investments/${holding._backendId}`); } catch { /* removed locally */ }
+    }
   };
 
   const dcaResult = useMemo(() => {

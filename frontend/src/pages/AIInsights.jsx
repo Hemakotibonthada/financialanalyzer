@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   Lightbulb, 
   TrendingUp, 
@@ -34,11 +34,7 @@ const AIInsights = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`/api/insights?period=${period}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await api.get(`/insights?period=${period}`);
       setInsights(response.data);
     } catch (err) {
       console.error('Error fetching insights:', err);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import {
   TrendingUp,
   TrendingDown,
@@ -59,7 +59,7 @@ const PortfolioAnalyticsDashboard = () => {
   const fetchPortfolioData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/portfolio/analytics?timeframe=${timeframe}`);
+      const response = await api.get(`/portfolio/analytics?timeframe=${timeframe}`);
       setPortfolioData(response.data);
     } catch (error) {
       console.error('Error fetching portfolio data:', error);

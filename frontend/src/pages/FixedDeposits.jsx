@@ -8,6 +8,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6'];
 
@@ -50,6 +51,30 @@ export default function FixedDeposits() {
   const [calcTenure, setCalcTenure] = useState(36);
   const [showCalc, setShowCalc] = useState(false);
 
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/investments', { params: { type: 'fd' } });
+        const data = res.data?.investments || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(inv => ({
+            id: inv._id || inv.id, bank: inv.platform || inv.broker || 'SBI',
+            amount: inv.totalInvestedAmount || inv.purchasePrice * inv.quantity,
+            rate: inv.interestRate || 7.0, tenure: inv.tenure || 12,
+            startDate: inv.purchaseDate ? new Date(inv.purchaseDate).toISOString().split('T')[0] : '',
+            maturityDate: inv.maturityDate ? new Date(inv.maturityDate).toISOString().split('T')[0] : '',
+            maturityAmount: inv.currentValue || inv.totalInvestedAmount,
+            autoRenew: inv.autoRenew || false, _backendId: inv._id
+          }));
+          setFDs(mapped);
+          saveLocal('fa_fixed_deposits', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
+
   useEffect(() => { saveLocal('fa_fixed_deposits', fds); }, [fds]);
 
   const totalInvested = useMemo(() => fds.reduce((s, f) => s + f.amount, 0), [fds]);
@@ -91,7 +116,7 @@ export default function FixedDeposits() {
     };
   }, [fds]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.amount || !form.rate || !form.tenure || !form.startDate) return;
     const amt = Number(form.amount);
     const r = Number(form.rate) / 100;
@@ -100,17 +125,34 @@ export default function FixedDeposits() {
     const start = new Date(form.startDate);
     const matDate = new Date(start);
     matDate.setMonth(matDate.getMonth() + Number(form.tenure));
-    setFDs(prev => [...prev, {
+    const newFD = {
       id: Date.now(), bank: form.bank, amount: amt, rate: Number(form.rate),
       tenure: Number(form.tenure), startDate: form.startDate,
       maturityDate: matDate.toISOString().split('T')[0], maturityAmount: maturity,
       autoRenew: form.autoRenew
-    }]);
+    };
+    setFDs(prev => [...prev, newFD]);
     setForm(emptyForm);
     setShowForm(false);
+    try {
+      const res = await api.post('/investments', {
+        type: 'fd', name: `${form.bank} FD`, platform: form.bank,
+        quantity: 1, purchasePrice: amt, currentPrice: amt, totalInvestedAmount: amt,
+        currentValue: maturity, interestRate: Number(form.rate), tenure: Number(form.tenure),
+        purchaseDate: form.startDate, maturityDate: matDate.toISOString(),
+        autoRenew: form.autoRenew
+      });
+      if (res.data?._id) {
+        setFDs(prev => prev.map(f => f.id === newFD.id ? { ...f, _backendId: res.data._id } : f));
+      }
+    } catch { /* saved locally */ }
   };
 
-  const deleteFD = (id) => setFDs(prev => prev.filter(f => f.id !== id));
+  const deleteFD = async (id) => {
+    const fd = fds.find(f => f.id === id);
+    setFDs(prev => prev.filter(f => f.id !== id));
+    if (fd?._backendId) { try { await api.delete(`/investments/${fd._backendId}`); } catch { /* removed locally */ } }
+  };
   const toggleAutoRenew = (id) => setFDs(prev => prev.map(f => f.id === id ? { ...f, autoRenew: !f.autoRenew } : f));
 
   return (

@@ -88,7 +88,7 @@ const TransactionManager = () => {
     try {
       const payload = { ...newTransaction, amount: parseFloat(newTransaction.amount) };
       if (editingTxn) {
-        await api.put(`/api/financial/transactions/${editingTxn._id}`, payload);
+        await api.put(`/financial/transactions/${editingTxn._id}`, payload);
       } else {
         await api.post('/financial/transactions', payload);
       }
@@ -104,7 +104,7 @@ const TransactionManager = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this transaction?')) return;
     try {
-      await api.delete(`/api/financial/transactions/${id}`);
+      await api.delete(`/financial/transactions/${id}`);
       fetchTransactions();
     } catch (err) {
       console.error('Delete error:', err);
@@ -114,7 +114,7 @@ const TransactionManager = () => {
   const handleBulkDelete = async () => {
     if (!window.confirm(`Delete ${selectedTxns.size} transactions?`)) return;
     try {
-      await Promise.all([...selectedTxns].map(id => api.delete(`/api/financial/transactions/${id}`)));
+      await Promise.all([...selectedTxns].map(id => api.delete(`/financial/transactions/${id}`)));
       setSelectedTxns(new Set());
       fetchTransactions();
     } catch (err) {

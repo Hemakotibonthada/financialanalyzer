@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../services/api';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -100,6 +101,33 @@ export default function TaxEstimator() {
   });
   const [selectedRegime, setSelectedRegime] = useState('new');
   const [showSlabs, setShowSlabs] = useState(false);
+  const [tips, setTips] = useState(taxSavingTips);
+  const [calendar, setCalendar] = useState(taxCalendar);
+
+  useEffect(() => {
+    const fetchTaxData = async () => {
+      try {
+        const [suggestionsRes, calendarRes, deductionsRes] = await Promise.allSettled([
+          api.post('/tax-optimization/suggestions', { income: grossIncome, deductions }),
+          api.get('/tax-optimization/calendar'),
+          api.get('/tax-optimization/deductions'),
+        ]);
+        if (suggestionsRes.status === 'fulfilled' && suggestionsRes.value.data?.data) {
+          setTips(suggestionsRes.value.data.data);
+        }
+        if (calendarRes.status === 'fulfilled' && calendarRes.value.data?.data) {
+          setCalendar(calendarRes.value.data.data);
+        }
+        if (deductionsRes.status === 'fulfilled' && deductionsRes.value.data?.data) {
+          const ded = deductionsRes.value.data.data;
+          if (typeof ded === 'object' && !Array.isArray(ded)) setDeductions(prev => ({ ...prev, ...ded }));
+        }
+      } catch (err) {
+        console.log('Tax data fetch fallback to defaults:', err.message);
+      }
+    };
+    fetchTaxData();
+  }, []);
 
   const totalDeductions = useMemo(() => Object.values(deductions).reduce((s, v) => s + v, 0), [deductions]);
   const taxableOld = useMemo(() => Math.max(grossIncome - totalDeductions, 0), [grossIncome, totalDeductions]);
@@ -264,7 +292,7 @@ export default function TaxEstimator() {
           <TrendingUp className="w-5 h-5 text-green-500" /> Tax Saving Suggestions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {taxSavingTips.map((tip, i) => (
+          {tips.map((tip, i) => (
             <div key={i} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
               <div className="flex items-center justify-between mb-1">
                 <h4 className="text-sm font-medium text-slate-800 dark:text-white">{tip.title}</h4>
@@ -303,7 +331,7 @@ export default function TaxEstimator() {
             <Calendar className="w-5 h-5 text-blue-500" /> Tax Calendar
           </h2>
           <div className="space-y-3">
-            {taxCalendar.map((e, i) => (
+            {calendar.map((e, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
                   <Clock className="w-5 h-5 text-blue-600" />

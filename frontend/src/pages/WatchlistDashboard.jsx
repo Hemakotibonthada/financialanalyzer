@@ -8,6 +8,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Area, AreaChart
 } from 'recharts';
+import api from '../services/api';
 
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
 const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
@@ -45,7 +46,23 @@ export default function WatchlistDashboard() {
   const [newSymbol, setNewSymbol] = useState('');
 
   useEffect(() => {
-    setLoading(false);
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/market/watchlist');
+        const data = res.data?.watchlist || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(w => ({
+            id: w._id || w.id, symbol: w.symbol, name: w.name || w.symbol,
+            price: w.price || w.currentPrice || 0, change: w.change || w.changePercent || 0,
+            sector: w.sector || 'Other', sparkline: w.sparkline || w.priceHistory || [],
+            alert: w.alertPrice || w.alert || null, type: w.type || 'Stock', _backendId: w._id
+          }));
+          setWatchlist(mapped);
+          saveLocal('fa_watchlist', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI().finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { saveLocal('fa_watchlist', watchlist); }, [watchlist]);

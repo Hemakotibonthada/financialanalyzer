@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, CartesianGrid, Legend, LineChart, Line
 } from 'recharts';
+import api from '../services/api';
 
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
 const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
@@ -42,6 +43,31 @@ export default function FamilyFinance() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [viewMode, setViewMode] = useState('family');
 
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/family/dashboard');
+        const data = res.data?.data || res.data || {};
+        if (data.members && Array.isArray(data.members) && data.members.length > 0) {
+          const mapped = data.members.map((m, i) => ({
+            id: m._id || m.id, name: m.name, role: m.role || 'Member',
+            avatar: m.avatar || AVATARS[i % AVATARS.length],
+            budget: m.budget || 0, allowance: m.allowance || 0,
+            spent: m.spent || 0, color: COLORS[i % COLORS.length], _backendId: m._id
+          }));
+          setMembers(mapped);
+          saveLocal('fa_family_members', mapped);
+        }
+        if (data.goals && Array.isArray(data.goals)) {
+          setGoals(data.goals);
+          saveLocal('fa_family_goals', data.goals);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
+
   useEffect(() => { saveLocal('fa_family_members', members); }, [members]);
   useEffect(() => { saveLocal('fa_family_bills', bills); }, [bills]);
   useEffect(() => { saveLocal('fa_family_goals', goals); }, [goals]);
@@ -56,11 +82,18 @@ export default function FamilyFinance() {
   const totalSaved = goals.reduce((sum, g) => sum + g.saved, 0);
   const pieData = members.map(m => ({ name: m.name, value: m.spent }));
 
-  const handleAddMember = () => {
+  const handleAddMember = async () => {
     if (!newMember.name.trim()) return;
-    setMembers(prev => [...prev, { ...newMember, id: Date.now(), color: COLORS[prev.length % COLORS.length], spent: 0 }]);
+    const memberObj = { ...newMember, id: Date.now(), color: COLORS[members.length % COLORS.length], spent: 0 };
+    setMembers(prev => [...prev, memberObj]);
     setNewMember({ name: '', role: 'Child', avatar: '👦', budget: 0, allowance: 0 });
     setShowAddMember(false);
+    try {
+      const res = await api.post('/family/members', { name: memberObj.name, role: memberObj.role, budget: memberObj.budget, allowance: memberObj.allowance });
+      if (res.data?._id) {
+        setMembers(prev => prev.map(m => m.id === memberObj.id ? { ...m, _backendId: res.data._id } : m));
+      }
+    } catch { /* saved locally */ }
   };
 
   const toggleBillStatus = (billId) => {

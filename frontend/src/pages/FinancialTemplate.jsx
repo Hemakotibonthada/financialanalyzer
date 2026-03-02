@@ -137,6 +137,7 @@ export default function FinancialTemplate() {
   const [favorites, setFavorites] = useState([]);
   const [applied, setApplied] = useState([]);
   const [sortBy, setSortBy] = useState('popular');
+  const [newTemplate, setNewTemplate] = useState({ name: '', description: '', category: 'personal', type: 'budget' });
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
@@ -154,7 +155,25 @@ export default function FinancialTemplate() {
   }, [category, searchQuery, sortBy]);
 
   const toggleFavorite = (id) => setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
-  const applyTemplate = (id) => { setApplied(prev => [...prev, id]); setPreviewTemplate(null); };
+  const applyTemplate = async (id) => {
+    setApplied(prev => [...prev, id]);
+    setPreviewTemplate(null);
+    try {
+      await api.post('/budget-optimization/apply-template', { templateId: id });
+    } catch (err) {
+      console.error('Failed to apply template:', err.message);
+    }
+  };
+  const handleCreateTemplate = async () => {
+    if (!newTemplate.name) return;
+    try {
+      await api.post('/budget-optimization/templates', newTemplate);
+    } catch (err) {
+      console.error('Failed to create template:', err.message);
+    }
+    setNewTemplate({ name: '', description: '', category: 'personal', type: 'budget' });
+    setShowCreate(false);
+  };
 
   const renderStars = (rating) => (
     <div className="flex items-center gap-0.5">
@@ -363,21 +382,21 @@ export default function FinancialTemplate() {
               <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             <div className="space-y-4">
-              <input placeholder="Template Name" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500" />
-              <textarea placeholder="Description" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500 resize-none" />
-              <select className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+              <input value={newTemplate.name} onChange={e => setNewTemplate(p => ({ ...p, name: e.target.value }))} placeholder="Template Name" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500" />
+              <textarea value={newTemplate.description} onChange={e => setNewTemplate(p => ({ ...p, description: e.target.value }))} placeholder="Description" rows={3} className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500 resize-none" />
+              <select value={newTemplate.category} onChange={e => setNewTemplate(p => ({ ...p, category: e.target.value }))} className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
                 <option value="personal">Personal</option>
                 <option value="family">Family</option>
                 <option value="business">Business</option>
               </select>
-              <select className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+              <select value={newTemplate.type} onChange={e => setNewTemplate(p => ({ ...p, type: e.target.value }))} className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
                 <option value="budget">Budget Template</option>
                 <option value="goal">Goal Template</option>
               </select>
             </div>
             <div className="flex gap-3 justify-end mt-6">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Create</button>
+              <button onClick={handleCreateTemplate} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Create</button>
             </div>
           </div>
         </div>

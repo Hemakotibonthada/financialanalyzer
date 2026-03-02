@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import api from '../services/api';
 
 const STEPS = ['Income', 'Fixed Expenses', 'Variable Expenses', 'Savings', 'Review'];
 
@@ -84,9 +85,25 @@ export default function SmartBudgetWizard() {
   const handleNext = () => { if (currentStep < STEPS.length - 1 && canProceed()) setCurrentStep(s => s + 1); };
   const handleBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+    try {
+      // Save budget plan to backend
+      const budgetData = {
+        income: totalIncome,
+        fixedExpenses: Object.fromEntries(
+          Object.entries(fixedExpenses).filter(([k]) => selectedFixed.has(k)).map(([k, v]) => [k, toMonthly(Number(v) || 0, frequency)])
+        ),
+        variableExpenses: Object.fromEntries(
+          Object.entries(variableExpenses).filter(([k]) => selectedVariable.has(k)).map(([k, v]) => [k, toMonthly(Number(v) || 0, frequency)])
+        ),
+        savings: Object.fromEntries(Object.entries(savings).map(([k, v]) => [k, toMonthly(Number(v) || 0, frequency)])),
+        totalFixed, totalVariable, totalSavings, remaining,
+        recommendation: recommendation503020
+      };
+      await api.post('/budget-optimization/analyze', budgetData);
+    } catch { /* saved locally */ }
   };
 
   const toggleFixed = (id) => {

@@ -8,6 +8,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
+import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6'];
 
@@ -34,6 +35,30 @@ export default function PropertyManager() {
   const [showMaintenance, setShowMaintenance] = useState(null);
   const [compareIds, setCompareIds] = useState([]);
 
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/real-estate');
+        const data = res.data?.properties || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(p => ({
+            id: p._id || p.id, name: p.name || p.propertyName, type: p.propertyType || p.type || 'owned',
+            value: p.currentValue || p.purchasePrice || 0, address: p.address || p.location || '',
+            area: p.area || p.squareFeet || 0, year: p.purchaseYear || (p.purchaseDate ? new Date(p.purchaseDate).getFullYear() : 2024),
+            rentalIncome: p.monthlyRent || p.rentalIncome || 0,
+            mortgage: p.mortgage || { amount: 0, emi: 0, remaining: 0, rate: 0 },
+            tax: p.propertyTax || p.tax || 0, maintenanceLog: p.maintenanceLog || p.expenses || [],
+            appreciation: p.appreciation || p.valuationHistory || [], _backendId: p._id
+          }));
+          setProperties(mapped);
+          saveLocal('fa_properties', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
+
   useEffect(() => { saveLocal('fa_properties', properties); }, [properties]);
 
   const totalValue = useMemo(() => properties.reduce((s, p) => s + p.value, 0), [properties]);
@@ -58,10 +83,14 @@ export default function PropertyManager() {
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
   }, [properties]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.value) return;
     if (editId) {
       setProperties(prev => prev.map(p => p.id === editId ? { ...p, ...form, value: Number(form.value), area: Number(form.area), year: Number(form.year) } : p));
+      const existing = properties.find(p => p.id === editId);
+      if (existing?._backendId) {
+        try { await api.put(`/real-estate/${existing._backendId}`, { name: form.name, propertyType: form.type, currentValue: Number(form.value), address: form.address, area: Number(form.area) }); } catch { /* updated locally */ }
+      }
     } else {
       const newProp = {
         id: Date.now(), ...form, value: Number(form.value), area: Number(form.area), year: Number(form.year),
@@ -69,15 +98,28 @@ export default function PropertyManager() {
         maintenanceLog: [], appreciation: [{ year: Number(form.year), value: Number(form.value) }]
       };
       setProperties(prev => [...prev, newProp]);
+      try {
+        const res = await api.post('/real-estate', {
+          name: form.name, propertyType: form.type, purchasePrice: Number(form.value), currentValue: Number(form.value),
+          address: form.address, area: Number(form.area), purchaseYear: Number(form.year)
+        });
+        if (res.data?._id) {
+          setProperties(prev => prev.map(p => p.id === newProp.id ? { ...p, _backendId: res.data._id } : p));
+        }
+      } catch { /* saved locally */ }
     }
     setShowModal(false);
     setForm(emptyForm);
     setEditId(null);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    const prop = properties.find(p => p.id === id);
     setProperties(prev => prev.filter(p => p.id !== id));
     if (selectedProperty?.id === id) setSelectedProperty(null);
+    if (prop?._backendId) {
+      try { await api.delete(`/real-estate/${prop._backendId}`); } catch { /* removed locally */ }
+    }
   };
 
   const handleEdit = (p) => {

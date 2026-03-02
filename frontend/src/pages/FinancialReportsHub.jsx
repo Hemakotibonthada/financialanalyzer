@@ -57,7 +57,7 @@ export default function FinancialReportsHub() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/reports/summary');
+      const res = await api.get('/financial-reports/summary');
       const data = res.data;
       if (data?.success === false) {
         setError(data.error || 'Failed to load reports data');
@@ -79,7 +79,7 @@ export default function FinancialReportsHub() {
     setPreviewLoading(true);
     setPreviewData(null);
     try {
-      const res = await api.post('/reports/generate', {
+      const res = await api.post('/financial-reports/generate', {
         templateId: template.id,
         format: 'pdf',
         dateRange,
@@ -119,7 +119,7 @@ export default function FinancialReportsHub() {
         });
       } else {
         // Fallback: try /reports/summary for basic data
-        const summaryRes = await api.get('/reports/summary', { params: { period: 'month' } });
+        const summaryRes = await api.get('/financial-reports/summary', { params: { period: 'month' } });
         const sd = summaryRes.data;
         if (sd?.success) {
           const monthly = (sd.incomeVsExpense || []).map(item => ({
@@ -156,7 +156,7 @@ export default function FinancialReportsHub() {
   const handleExport = useCallback(async (format) => {
     setExporting(true);
     try {
-      await api.post('/reports/export', { template: selectedTemplate?.id, format, dateRange });
+      await api.post('/financial-reports/generate', { templateId: selectedTemplate?.id, format, dateRange });
       setShowExportModal(false);
       const newReport = {
         id: Date.now(),
@@ -188,7 +188,7 @@ export default function FinancialReportsHub() {
   const addSchedule = useCallback(async () => {
     if (!selectedTemplate || !scheduleForm.email) return;
     try {
-      const res = await api.post('/reports/schedule', {
+      const res = await api.post('/financial-reports/schedule', {
         templateId: selectedTemplate.id,
         schedule: {
           frequency: scheduleForm.frequency.toLowerCase(),

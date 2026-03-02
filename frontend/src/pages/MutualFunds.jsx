@@ -8,6 +8,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import api from '../services/api';
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6', '#6366f1'];
 
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
@@ -47,6 +48,29 @@ export default function MutualFunds() {
   const [calcYears, setCalcYears] = useState(10);
   const [showCalc, setShowCalc] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/investments', { params: { type: 'mutual_fund' } });
+        const data = res.data?.investments || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(inv => ({
+            id: inv._id || inv.id, name: inv.name, category: inv.subType || inv.category || 'equity',
+            nav: inv.currentPrice || inv.purchasePrice, units: inv.quantity,
+            invested: inv.totalInvestedAmount, current: inv.currentValue || inv.totalInvestedAmount,
+            returns: inv.returnPercentage || 0, sipAmount: inv.sipAmount || 0,
+            risk: inv.riskLevel || 'Medium', rating: inv.rating || 3, growth: inv.priceHistory || [],
+            _backendId: inv._id
+          }));
+          setFunds(mapped);
+          saveLocal('fa_mutual_funds', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
 
   useEffect(() => { saveLocal('fa_mutual_funds', funds); }, [funds]);
 
@@ -89,7 +113,7 @@ export default function MutualFunds() {
 
   const comparedFunds = useMemo(() => funds.filter(f => compareIds.includes(f.id)), [funds, compareIds]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name || !form.amount) return;
     const amt = Number(form.amount);
     const nav = Number(form.nav) || 50;
@@ -101,6 +125,17 @@ export default function MutualFunds() {
     setFunds(prev => [...prev, newFund]);
     setForm(emptyForm);
     setShowAddModal(false);
+    try {
+      const res = await api.post('/investments', {
+        type: 'mutual_fund', name: newFund.name, subType: newFund.category,
+        quantity: newFund.units, purchasePrice: nav, currentPrice: nav,
+        totalInvestedAmount: amt, isSIP: form.type === 'sip', sipAmount: newFund.sipAmount,
+        purchaseDate: new Date().toISOString()
+      });
+      if (res.data?._id) {
+        setFunds(prev => prev.map(f => f.id === newFund.id ? { ...f, _backendId: res.data._id } : f));
+      }
+    } catch { /* saved locally */ }
   };
 
   const toggleCompare = (id) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   TrendingUp, 
   TrendingDown,
@@ -60,8 +60,8 @@ const FinancialHealthDashboard = () => {
     try {
       setLoading(true);
       const [healthResponse, spendingResponse] = await Promise.all([
-        axios.get('/api/insights/financial-health'),
-        axios.get('/api/insights/spending-behavior')
+        api.get('/insights/financial-health'),
+        api.get('/insights/spending-behavior')
       ]);
       
       setHealthData(healthResponse.data);

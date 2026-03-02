@@ -563,7 +563,7 @@ function DataManagementTab() {
     if (driveSuccess && driveTokens) {
       try {
         const tokens = JSON.parse(atob(driveTokens));
-        api.post('/api/drive/save-tokens', { tokens }).then(() => {
+        api.post('/drive/save-tokens', { tokens }).then(() => {
           setMessage({ type: 'success', text: 'Google Drive connected successfully!' });
           loadDriveStatus();
           // Clean URL
@@ -582,7 +582,7 @@ function DataManagementTab() {
 
   const loadDriveStatus = useCallback(async () => {
     try {
-      const res = await api.get('/api/drive/status');
+      const res = await api.get('/drive/status');
       setDriveStatus(res.data);
     } catch (err) {
       console.log('Drive status not available');
@@ -592,8 +592,8 @@ function DataManagementTab() {
   const loadDataCounts = useCallback(async () => {
     try {
       const [txRes, budgetRes] = await Promise.allSettled([
-        api.get('/api/transactions?limit=1'),
-        api.get('/api/budgets'),
+        api.get('/transactions?limit=1'),
+        api.get('/budgets'),
       ]);
       setDataCounts({
         transactions: txRes.status === 'fulfilled' ? (txRes.value.data.total || txRes.value.data.transactions?.length || 0) : 0,
@@ -611,7 +611,7 @@ function DataManagementTab() {
 
   const connectDrive = async () => {
     try {
-      const res = await api.get('/api/drive/auth-url');
+      const res = await api.get('/drive/auth-url');
       window.location.href = res.data.url;
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to start Drive connection.' });
@@ -620,7 +620,7 @@ function DataManagementTab() {
 
   const disconnectDrive = async () => {
     try {
-      await api.post('/api/drive/disconnect');
+      await api.post('/drive/disconnect');
       setDriveStatus(prev => ({ ...prev, connected: false, backup: null }));
       setMessage({ type: 'success', text: 'Google Drive disconnected.' });
     } catch (err) {
@@ -631,7 +631,7 @@ function DataManagementTab() {
   const backupToDrive = async () => {
     setBackupLoading(true);
     try {
-      const res = await api.post('/api/drive/backup');
+      const res = await api.post('/drive/backup');
       if (res.data.success) {
         setMessage({ type: 'success', text: 'Data backed up to Google Drive successfully!' });
         loadDriveStatus();
@@ -649,7 +649,7 @@ function DataManagementTab() {
     if (!window.confirm('This will restore data from your Google Drive backup. Existing data will be merged. Continue?')) return;
     setRestoreLoading(true);
     try {
-      const res = await api.post('/api/drive/restore');
+      const res = await api.post('/drive/restore');
       if (res.data.success) {
         setMessage({ type: 'success', text: `Data restored from backup (${res.data.backupDate}). Refreshing...` });
         setTimeout(() => window.location.reload(), 2000);

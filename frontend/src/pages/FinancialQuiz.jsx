@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import api from '../services/api';
 
 const QUIZ_CATEGORIES = [
   { id: 'basics', label: 'Financial Basics', icon: '📚', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
@@ -62,7 +63,22 @@ export default function FinancialQuiz() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [quizHistory, setQuizHistory] = useState([]);
   const [streak, setStreak] = useState(5);
+  const [leaderboard, setLeaderboard] = useState(LEADERBOARD_DATA);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await api.get('/achievements/leaderboard');
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          setLeaderboard(res.data.data);
+        }
+      } catch (err) {
+        console.log('Leaderboard fetch fallback:', err.message);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
 
   const questions = selectedCategory ? QUESTIONS[selectedCategory] : [];
   const currentQuestion = questions[currentQ];
@@ -96,13 +112,26 @@ export default function FinancialQuiz() {
     clearTimeout(timerRef.current);
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     if (currentQ < questions.length - 1) {
       setCurrentQ(q => q + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
       setTimeLeft(difficulty === 'beginner' ? 30 : difficulty === 'intermediate' ? 20 : 15);
     } else {
+      // Submit quiz results to backend
+      const finalScore = [...answers].filter((a, i) => a === QUESTIONS[selectedCategory]?.[i]?.correct).length;
+      try {
+        await api.post('/achievements/check', {
+          type: 'quiz',
+          category: selectedCategory,
+          score: finalScore,
+          total: questions.length,
+          difficulty,
+        });
+      } catch (err) {
+        console.error('Failed to submit quiz results:', err.message);
+      }
       setView('results');
     }
   };
@@ -371,7 +400,7 @@ export default function FinancialQuiz() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">🏆 Quiz Leaderboard</h2>
             <div className="space-y-3">
-              {LEADERBOARD_DATA.map((entry) => (
+              {leaderboard.map((entry) => (
                 <div
                   key={entry.rank}
                   className={`flex items-center justify-between p-4 rounded-xl ${

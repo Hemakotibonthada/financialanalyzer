@@ -6,6 +6,7 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+import api from '../services/api';
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
 const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
@@ -59,6 +60,16 @@ export default function CurrencyConverter() {
 
   const fetchRates = useCallback(async () => {
     setLoading(true);
+    try {
+      // Try backend currency API first
+      const res = await api.get('/currency/rates');
+      const apiRates = res.data?.rates || res.data?.data || res.data || {};
+      if (Object.keys(apiRates).length > 0) {
+        setRates(apiRates);
+        saveLocal('fa_currency_rates', apiRates);
+        return;
+      }
+    } catch { /* fallback */ }
     try {
       const saved = loadLocal('fa_currency_rates', null);
       if (saved && Object.keys(saved).length > 0) {

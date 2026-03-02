@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import {
   TrendingUp,
   TrendingDown,
@@ -60,7 +60,7 @@ const SpendingInsights = () => {
   const fetchSpendingData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/insights/spending-behavior?timeframe=${timeframe}`);
+      const response = await api.get(`/insights/spending-behavior?timeframe=${timeframe}`);
       setSpendingData(response.data);
     } catch (error) {
       console.error('Error fetching spending data:', error);

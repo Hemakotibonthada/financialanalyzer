@@ -159,7 +159,7 @@ export default function FinancialChat() {
     setIsTyping(true);
 
     try {
-      const res = await api.post('/api/chat/message', { message: text.trim() });
+      const res = await api.post('/chat/message', { message: text.trim() });
       const data = res.data;
       setMessages(prev => [...prev, {
         id: Date.now() + 1,

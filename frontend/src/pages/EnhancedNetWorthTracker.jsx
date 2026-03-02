@@ -171,7 +171,7 @@ const EnhancedNetWorthTracker = () => {
   const handleDelete = async (id, type) => {
     if (!window.confirm(`Delete this ${type}?`)) return;
     try {
-      await api.delete(`/api/networth/${type}s/${id}`);
+      await api.delete(`/networth/${type}s/${id}`);
       fetchData();
     } catch (err) {
       console.error(err);

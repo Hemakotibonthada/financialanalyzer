@@ -59,7 +59,7 @@ const RiskDashboard = () => {
       } catch (err) {
         console.error('Error fetching risk data:', err);
         try {
-          const fallback = await api.get('/risk/assessment');
+          const fallback = await api.get('/risk-assessment/quick');
           const data = fallback.data?.data || fallback.data || {};
           setRiskData(data);
           setRiskHistory(data.history || []);

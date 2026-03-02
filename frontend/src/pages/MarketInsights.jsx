@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const MARKET_INDICES = [
   { name: 'SENSEX', value: 82450.32, change: 345.67, changePercent: 0.42, high: 82680, low: 81920 },
@@ -73,6 +74,49 @@ const PORTFOLIO_IMPACT = [
 export default function MarketInsights() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sentimentScore, setSentimentScore] = useState(62);
+  const [indices, setIndices] = useState(MARKET_INDICES);
+  const [gainers, setGainers] = useState(TOP_GAINERS);
+  const [losers, setLosers] = useState(TOP_LOSERS);
+  const [sectors, setSectors] = useState(SECTORS);
+  const [globalMarkets, setGlobalMarkets] = useState(GLOBAL_MARKETS);
+  const [trending, setTrending] = useState(TRENDING_STOCKS);
+  const [news, setNews] = useState(MARKET_NEWS);
+  const [portfolioImpact, setPortfolioImpact] = useState(PORTFOLIO_IMPACT);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMarketData = async () => {
+    setLoading(true);
+    try {
+      const [indicesRes, gainersRes, losersRes, sectorsRes, globalRes, sentimentRes, trendingRes, newsRes, impactRes] = await Promise.allSettled([
+        api.get('/market/indices'),
+        api.get('/market/gainers'),
+        api.get('/market/losers'),
+        api.get('/market/sectors'),
+        api.get('/market/global'),
+        api.get('/market/sentiment'),
+        api.get('/market/trending'),
+        api.get('/market/news'),
+        api.get('/market/portfolio-impact'),
+      ]);
+      if (indicesRes.status === 'fulfilled' && indicesRes.value.data?.data) setIndices(indicesRes.value.data.data);
+      if (gainersRes.status === 'fulfilled' && gainersRes.value.data?.data) setGainers(gainersRes.value.data.data);
+      if (losersRes.status === 'fulfilled' && losersRes.value.data?.data) setLosers(losersRes.value.data.data);
+      if (sectorsRes.status === 'fulfilled' && sectorsRes.value.data?.data) setSectors(sectorsRes.value.data.data);
+      if (globalRes.status === 'fulfilled' && globalRes.value.data?.data) setGlobalMarkets(globalRes.value.data.data);
+      if (sentimentRes.status === 'fulfilled' && sentimentRes.value.data?.data?.score != null) setSentimentScore(sentimentRes.value.data.data.score);
+      if (trendingRes.status === 'fulfilled' && trendingRes.value.data?.data) setTrending(trendingRes.value.data.data);
+      if (newsRes.status === 'fulfilled' && newsRes.value.data?.data) setNews(newsRes.value.data.data);
+      if (impactRes.status === 'fulfilled' && impactRes.value.data?.data) setPortfolioImpact(impactRes.value.data.data);
+    } catch (err) {
+      console.error('Market data fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMarketData();
+  }, []);
 
   const getSentimentLabel = () => {
     if (sentimentScore >= 70) return { label: 'Bullish', color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' };
@@ -81,7 +125,7 @@ export default function MarketInsights() {
   };
   const sentiment = getSentimentLabel();
 
-  const totalPortfolioImpact = PORTFOLIO_IMPACT.reduce((s, p) => s + p.impact, 0);
+  const totalPortfolioImpact = portfolioImpact.reduce((s, p) => s + p.impact, 0);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
@@ -98,8 +142,8 @@ export default function MarketInsights() {
               <span className={`text-sm font-semibold ${sentiment.color}`}>Market: {sentiment.label}</span>
               <span className="text-xs text-slate-500">({sentimentScore}/100)</span>
             </div>
-            <button className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 transition-colors">
-              Refresh Data
+            <button onClick={fetchMarketData} disabled={loading} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 transition-colors disabled:opacity-50">
+              {loading ? 'Refreshing...' : 'Refresh Data'}
             </button>
           </div>
         </div>
@@ -125,7 +169,7 @@ export default function MarketInsights() {
         {(activeTab === 'overview') && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {MARKET_INDICES.map((index) => (
+              {indices.map((index) => (
                 <div key={index.name} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
                   <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{index.name}</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">{index.value.toLocaleString()}</p>
@@ -151,17 +195,17 @@ export default function MarketInsights() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">📰 Market News</h2>
               <div className="space-y-3">
-                {MARKET_NEWS.map((news) => (
-                  <div key={news.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                {news.map((n) => (
+                  <div key={n.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
                     <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                      news.sentiment === 'positive' ? 'bg-green-500' : news.sentiment === 'negative' ? 'bg-red-500' : 'bg-amber-500'
+                      n.sentiment === 'positive' ? 'bg-green-500' : n.sentiment === 'negative' ? 'bg-red-500' : 'bg-amber-500'
                     }`} />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">{news.title}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{n.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-400">{news.source}</span>
+                        <span className="text-xs text-slate-400">{n.source}</span>
                         <span className="text-xs text-slate-400">•</span>
-                        <span className="text-xs text-slate-400">{news.time}</span>
+                        <span className="text-xs text-slate-400">{n.time}</span>
                       </div>
                     </div>
                   </div>
@@ -173,7 +217,7 @@ export default function MarketInsights() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">🔥 Trending Stocks</h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {TRENDING_STOCKS.map((stock) => (
+                {trending.map((stock) => (
                   <div key={stock.symbol} className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 text-center">
                     <p className="text-sm font-bold text-slate-900 dark:text-white">{stock.symbol}</p>
                     <p className="text-xs text-slate-500 mt-1">{stock.mentions} mentions</p>
@@ -194,7 +238,7 @@ export default function MarketInsights() {
         {/* Top Gainers/Losers */}
         {activeTab === 'gainers/losers' && (
           <div className="grid md:grid-cols-2 gap-6">
-            {[{ title: '📈 Top Gainers', data: TOP_GAINERS, isGainer: true }, { title: '📉 Top Losers', data: TOP_LOSERS, isGainer: false }].map(({ title, data, isGainer }) => (
+            {[{ title: '📈 Top Gainers', data: gainers, isGainer: true }, { title: '📉 Top Losers', data: losers, isGainer: false }].map(({ title, data, isGainer }) => (
               <div key={title} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{title}</h2>
                 <div className="overflow-x-auto">
@@ -231,7 +275,7 @@ export default function MarketInsights() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">🗺️ Sector Performance Heatmap</h2>
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {SECTORS.map((sector) => {
+              {sectors.map((sector) => {
                 const intensity = Math.min(Math.abs(sector.change) * 100, 255);
                 const bgColor = sector.change >= 0
                   ? `rgba(34, 197, 94, ${0.2 + Math.abs(sector.change) * 0.15})`
@@ -258,7 +302,7 @@ export default function MarketInsights() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">🌍 Global Markets</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {GLOBAL_MARKETS.map((market) => (
+              {globalMarkets.map((market) => (
                 <div key={market.name} className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-900 dark:text-white">{market.name}</p>
@@ -298,7 +342,7 @@ export default function MarketInsights() {
                   </tr>
                 </thead>
                 <tbody>
-                  {PORTFOLIO_IMPACT.map((item) => (
+                  {portfolioImpact.map((item) => (
                     <tr key={item.stock} className="border-b border-slate-100 dark:border-slate-700/50">
                       <td className="py-3 font-medium text-slate-900 dark:text-white">{item.stock}</td>
                       <td className="py-3 text-right">{item.shares}</td>

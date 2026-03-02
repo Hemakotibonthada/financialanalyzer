@@ -10,6 +10,7 @@ import {
   ArrowDownRight, Filter, Calendar, Briefcase, Landmark, Coins,
   Building, Gem, Search
 } from 'lucide-react';
+import api from '../services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -27,6 +28,26 @@ export default function InvestmentAnalyzer() {
   const [newInv, setNewInv] = useState({ name: '', type: 'Stock', invested: '', current: '', units: '', sector: '' });
   const [holdingsList, setHoldingsList] = useState(() => loadLocal('fa_investments'));
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/investments');
+        const data = res.data?.investments || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(inv => ({
+            id: inv._id || inv.id, name: inv.name, type: inv.type || 'Stock',
+            invested: inv.totalInvestedAmount || 0, current: inv.currentValue || inv.totalInvestedAmount || 0,
+            units: inv.quantity || 0, sector: inv.sector || '', _backendId: inv._id
+          }));
+          setHoldingsList(mapped);
+          saveLocal('fa_investments', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
 
   useEffect(() => { saveLocal('fa_investments', holdingsList); }, [holdingsList]);
 
@@ -60,14 +81,34 @@ export default function InvestmentAnalyzer() {
     [holdingsList, searchTerm]
   );
 
-  const addInvestment = () => {
+  const addInvestment = async () => {
     if (!newInv.name || !newInv.invested) return;
-    setHoldingsList([...holdingsList, { ...newInv, id: Date.now(), invested: Number(newInv.invested), current: Number(newInv.current) || Number(newInv.invested), units: Number(newInv.units) }]);
+    const invObj = { ...newInv, id: Date.now(), invested: Number(newInv.invested), current: Number(newInv.current) || Number(newInv.invested), units: Number(newInv.units) };
+    setHoldingsList([...holdingsList, invObj]);
     setNewInv({ name: '', type: 'Stock', invested: '', current: '', units: '', sector: '' });
     setShowAddForm(false);
+    try {
+      const typeMap = { Stock: 'stock', 'Mutual Fund': 'mutual_fund', ETF: 'etf', Bond: 'bond', Crypto: 'crypto', Gold: 'gold', FD: 'fd', 'Real Estate': 'real_estate' };
+      const res = await api.post('/investments', {
+        type: typeMap[invObj.type] || 'other', name: invObj.name, quantity: invObj.units || 1,
+        purchasePrice: invObj.units ? invObj.invested / invObj.units : invObj.invested,
+        currentPrice: invObj.units ? invObj.current / invObj.units : invObj.current,
+        totalInvestedAmount: invObj.invested, currentValue: invObj.current,
+        sector: invObj.sector, purchaseDate: new Date().toISOString()
+      });
+      if (res.data?._id) {
+        setHoldingsList(prev => prev.map(h => h.id === invObj.id ? { ...h, _backendId: res.data._id } : h));
+      }
+    } catch { /* saved locally */ }
   };
 
-  const removeHolding = (id) => setHoldingsList(prev => prev.filter(h => h.id !== id));
+  const removeHolding = async (id) => {
+    const holding = holdingsList.find(h => h.id === id);
+    setHoldingsList(prev => prev.filter(h => h.id !== id));
+    if (holding?._backendId) {
+      try { await api.delete(`/investments/${holding._backendId}`); } catch { /* removed locally */ }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">

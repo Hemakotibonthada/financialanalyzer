@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../services/api';
 import { 
   Phone, Mail, MessageCircle, MapPin, Clock, Send,
   CheckCircle, Building2, Globe, Headphones
@@ -16,10 +17,13 @@ const ContactSupport = () => {
   });
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Support request:', formData);
+    try {
+      await api.post('/support/tickets', formData);
+    } catch (err) {
+      console.error('Failed to submit support ticket:', err.message);
+    }
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);

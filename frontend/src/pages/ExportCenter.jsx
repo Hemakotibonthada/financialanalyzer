@@ -168,7 +168,7 @@ export default function ExportCenter() {
     setExportError(null);
 
     try {
-      const response = await api.post('/reports/generate', {
+      const response = await api.post('/financial-reports/generate', {
         templateId: template.id,
         format,
       });
@@ -214,7 +214,7 @@ export default function ExportCenter() {
     setExportError(null);
 
     try {
-      const response = await api.post('/reports/generate', {
+      const response = await api.post('/financial-reports/generate', {
         templateId: 'quick-export',
         format: quickExportConfig.format,
         dateRange: quickExportConfig.dateRange,
@@ -616,7 +616,7 @@ function ScheduledExportsView() {
   useEffect(() => {
     const fetchScheduled = async () => {
       try {
-        const response = await api.get('/reports/scheduled');
+        const response = await api.get('/financial-reports/scheduled');
         if (response.data?.schedules) {
           setScheduledExports(response.data.schedules);
         }

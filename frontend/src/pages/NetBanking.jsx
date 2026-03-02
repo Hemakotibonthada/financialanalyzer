@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../services/api';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
@@ -73,9 +74,30 @@ export default function NetBanking() {
   const [showConnect, setShowConnect] = useState(false);
   const [connectStep, setConnectStep] = useState(0);
   const [transactions, setTransactions] = useState(recentTransactions);
+  const [bankList, setBankList] = useState(banks);
 
-  const totalBalance = useMemo(() => banks.reduce((s, b) => s + b.balance, 0), []);
-  const connectedCount = useMemo(() => banks.filter(b => b.status === 'connected').length, []);
+  useEffect(() => {
+    const fetchBankingData = async () => {
+      try {
+        const [accountsRes, txnRes] = await Promise.allSettled([
+          api.get('/bank-accounts'),
+          api.get('/banking/sync-transactions'),
+        ]);
+        if (accountsRes.status === 'fulfilled' && Array.isArray(accountsRes.value.data?.data)) {
+          setBankList(accountsRes.value.data.data);
+        }
+        if (txnRes.status === 'fulfilled' && Array.isArray(txnRes.value.data?.data)) {
+          setTransactions(txnRes.value.data.data);
+        }
+      } catch (err) {
+        console.log('Banking data fetch fallback to defaults:', err.message);
+      }
+    };
+    fetchBankingData();
+  }, []);
+
+  const totalBalance = useMemo(() => bankList.reduce((s, b) => s + (b.balance || 0), 0), [bankList]);
+  const connectedCount = useMemo(() => bankList.filter(b => b.status === 'connected').length, [bankList]);
   const monthCredits = useMemo(() => transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0), [transactions]);
   const monthDebits = useMemo(() => transactions.filter(t => t.type === 'debit').reduce((s, t) => s + Math.abs(t.amount), 0), [transactions]);
 
@@ -88,10 +110,15 @@ export default function NetBanking() {
     });
   }, [transactions, filterCategory, filterBank, searchTerm]);
 
-  const bankBalancePie = useMemo(() => banks.map(b => ({ name: b.name, value: b.balance })), []);
+  const bankBalancePie = useMemo(() => bankList.map(b => ({ name: b.name, value: b.balance || 0 })), [bankList]);
 
-  const updateCategory = (id, newCat) => {
+  const updateCategory = async (id, newCat) => {
     setTransactions(transactions.map(t => t.id === id ? { ...t, category: newCat, autoCategory: false } : t));
+    try {
+      await api.put(`/transactions/${id}`, { category: newCat });
+    } catch (err) {
+      console.error('Failed to update category:', err.message);
+    }
   };
 
   return (
@@ -117,8 +144,8 @@ export default function NetBanking() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Balance', value: fmt(totalBalance), icon: CreditCard, color: 'text-blue-600', sub: `Across ${banks.length} banks` },
-          { label: 'Connected Banks', value: connectedCount, icon: Link2, color: 'text-green-600', sub: `${banks.length - connectedCount} need attention` },
+          { label: 'Total Balance', value: fmt(totalBalance), icon: CreditCard, color: 'text-blue-600', sub: `Across ${bankList.length} banks` },
+          { label: 'Connected Banks', value: connectedCount, icon: Link2, color: 'text-green-600', sub: `${bankList.length - connectedCount} need attention` },
           { label: 'Month Credits', value: fmt(monthCredits), icon: ArrowUpRight, color: 'text-emerald-600', sub: 'Feb 2026' },
           { label: 'Month Debits', value: fmt(monthDebits), icon: ArrowDownRight, color: 'text-red-600', sub: 'Feb 2026' },
         ].map((c, i) => (
@@ -137,7 +164,7 @@ export default function NetBanking() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Connected Banks</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {banks.map(bank => (
+          {bankList.map(bank => (
             <div key={bank.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: bank.color + '15' }}>
@@ -181,7 +208,7 @@ export default function NetBanking() {
             <Shield className="w-5 h-5 text-green-500" /> Connection Health
           </h2>
           <div className="space-y-3">
-            {banks.map(bank => (
+            {bankList.map(bank => (
               <div key={bank.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
                 <span className="text-lg">{bank.logo}</span>
                 <div className="flex-1">
@@ -208,7 +235,7 @@ export default function NetBanking() {
             </div>
             <select value={filterBank} onChange={e => setFilterBank(e.target.value)} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm">
               <option value="All">All Banks</option>
-              {banks.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              {bankList.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
             </select>
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm">
               {categories.map(c => <option key={c} value={c}>{c}</option>)}

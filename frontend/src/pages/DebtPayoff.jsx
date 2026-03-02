@@ -8,6 +8,7 @@ import {
   Zap, Snowflake, Target, Clock, ArrowDown, ArrowUp,
   CheckCircle, AlertTriangle, Trash2, Calculator
 } from 'lucide-react';
+import api from '../services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -61,6 +62,28 @@ export default function DebtPayoff() {
   const [newDebt, setNewDebt] = useState({ name: '', balance: '', rate: '', minPayment: '', type: 'Unsecured' });
   const [selectedStrategy, setSelectedStrategy] = useState('avalanche');
 
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/debt');
+        const data = res.data?.debts || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(d => ({
+            id: d._id || d.id, name: d.name || d.lender || d.description,
+            balance: d.currentBalance || d.balance || d.amount,
+            rate: d.interestRate || d.rate || 0,
+            minPayment: d.minimumPayment || d.minPayment || d.emiAmount || 0,
+            type: d.type || d.category || 'Unsecured', _backendId: d._id
+          }));
+          setDebts(mapped);
+          saveLocal('fa_debts', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
+
   useEffect(() => { saveLocal('fa_debts', debts); }, [debts]);
 
   const totalDebt = useMemo(() => debts.reduce((s, d) => s + d.balance, 0), [debts]);
@@ -102,14 +125,31 @@ export default function DebtPayoff() {
     return sorted.map(d => ({ ...d, order: order++, monthlyInterest: Math.round(d.balance * d.rate / 100 / 12) }));
   }, [debts, selectedStrategy]);
 
-  const addDebt = () => {
+  const addDebt = async () => {
     if (!newDebt.name || !newDebt.balance) return;
-    setDebts([...debts, { ...newDebt, id: Date.now(), balance: Number(newDebt.balance), rate: Number(newDebt.rate), minPayment: Number(newDebt.minPayment) }]);
+    const debtObj = { ...newDebt, id: Date.now(), balance: Number(newDebt.balance), rate: Number(newDebt.rate), minPayment: Number(newDebt.minPayment) };
+    setDebts([...debts, debtObj]);
     setNewDebt({ name: '', balance: '', rate: '', minPayment: '', type: 'Unsecured' });
     setShowAddForm(false);
+    try {
+      const res = await api.post('/debt', {
+        name: debtObj.name, amount: debtObj.balance, currentBalance: debtObj.balance,
+        interestRate: debtObj.rate, minimumPayment: debtObj.minPayment,
+        type: debtObj.type, category: debtObj.type
+      });
+      if (res.data?._id) {
+        setDebts(prev => prev.map(d => d.id === debtObj.id ? { ...d, _backendId: res.data._id } : d));
+      }
+    } catch { /* saved locally */ }
   };
 
-  const removeDebt = (id) => setDebts(debts.filter(d => d.id !== id));
+  const removeDebt = async (id) => {
+    const debt = debts.find(d => d.id === id);
+    setDebts(debts.filter(d => d.id !== id));
+    if (debt?._backendId) {
+      try { await api.delete(`/debt/${debt._backendId}`); } catch { /* removed locally */ }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">

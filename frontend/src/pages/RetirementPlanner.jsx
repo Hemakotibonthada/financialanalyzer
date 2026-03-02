@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../services/api';
 import {
   BarChart, Bar, AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -80,6 +81,33 @@ export default function RetirementPlanner() {
   const [activeScenario, setActiveScenario] = useState('moderate');
   const [items, setItems] = useState(actionItems);
   const [withdrawalStrategy, setWithdrawalStrategy] = useState('4percent');
+  const [savingsData, setSavingsData] = useState(savingsVsTarget);
+  const [pension, setPension] = useState(pensionBreakdown);
+  const [planId, setPlanId] = useState(null);
+
+  useEffect(() => {
+    const fetchRetirementData = async () => {
+      try {
+        const res = await api.get('/retirement');
+        const plans = res.data?.data;
+        if (Array.isArray(plans) && plans.length > 0) {
+          const plan = plans[0];
+          setPlanId(plan._id);
+          if (plan.retireAge) setRetireAge(plan.retireAge);
+          if (plan.monthlyContribution) setMonthlyContribution(plan.monthlyContribution);
+          if (plan.expectedReturn) setExpectedReturn(plan.expectedReturn);
+          if (plan.monthlyExpense) setMonthlyExpense(plan.monthlyExpense);
+          if (plan.withdrawalStrategy) setWithdrawalStrategy(plan.withdrawalStrategy);
+          if (plan.savings) setSavingsData(plan.savings);
+          if (plan.pension) setPension(plan.pension);
+          if (plan.actionItems) setItems(plan.actionItems);
+        }
+      } catch (err) {
+        console.log('Retirement data fetch fallback to defaults:', err.message);
+      }
+    };
+    fetchRetirementData();
+  }, []);
 
   const yearsToRetire = retireAge - currentAge;
   const months = yearsToRetire * 12;
@@ -102,11 +130,21 @@ export default function RetirementPlanner() {
     return Math.round(projectedCorpus * 0.035 / 12);
   }, [projectedCorpus, withdrawalStrategy]);
 
-  const totalSaved = useMemo(() => savingsVsTarget.reduce((s, i) => s + i.current, 0), []);
-  const totalTarget = useMemo(() => savingsVsTarget.reduce((s, i) => s + i.target, 0), []);
-  const pensionTotal = useMemo(() => pensionBreakdown.reduce((s, i) => s + i.value, 0), []);
+  const totalSaved = useMemo(() => savingsData.reduce((s, i) => s + i.current, 0), [savingsData]);
+  const totalTarget = useMemo(() => savingsData.reduce((s, i) => s + i.target, 0), [savingsData]);
+  const pensionTotal = useMemo(() => pension.reduce((s, i) => s + i.value, 0), [pension]);
 
-  const toggleItem = (id) => setItems(items.map(i => i.id === id ? { ...i, done: !i.done } : i));
+  const toggleItem = async (id) => {
+    const updated = items.map(i => i.id === id ? { ...i, done: !i.done } : i);
+    setItems(updated);
+    if (planId) {
+      try {
+        await api.put(`/retirement/${planId}`, { actionItems: updated });
+      } catch (err) {
+        console.error('Failed to save action item:', err.message);
+      }
+    }
+  };
   const completedCount = items.filter(i => i.done).length;
 
   const gaugeAngle = (readinessScore / 100) * 180;
@@ -194,7 +232,7 @@ export default function RetirementPlanner() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Current Savings vs Target</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={savingsVsTarget} layout="vertical">
+          <BarChart data={savingsData} layout="vertical">
             <XAxis type="number" tickFormatter={v => fmt(v)} tick={{ fill: '#94a3b8', fontSize: 12 }} />
             <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} width={100} />
             <Tooltip formatter={v => fmt(v)} />
@@ -263,9 +301,9 @@ export default function RetirementPlanner() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Pension & Social Security</h2>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={pensionBreakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value"
+              <Pie data={pension} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value"
                 label={({ name, value }) => `${name}: ₹${value.toLocaleString('en-IN')}`}>
-                {pensionBreakdown.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                {pension.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
               </Pie>
               <Tooltip formatter={v => `₹${v.toLocaleString('en-IN')}`} />
             </PieChart>

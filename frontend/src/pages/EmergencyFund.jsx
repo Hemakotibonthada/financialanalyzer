@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../services/api';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer
@@ -61,6 +62,28 @@ export default function EmergencyFund() {
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [transAmount, setTransAmount] = useState('');
+  const [history, setHistory] = useState(contributionHistory);
+  const [withdrawals, setWithdrawals] = useState(withdrawalHistory);
+
+  useEffect(() => {
+    const fetchFundData = async () => {
+      try {
+        const res = await api.get('/profile/debt-freedom/emergency-fund');
+        if (res.data) {
+          const d = res.data.data || res.data;
+          if (d.currentAmount != null) setCurrentFund(d.currentAmount);
+          if (d.targetMonths != null) setTargetMonths(d.targetMonths);
+          if (d.autoSaveAmount != null) setAutoSaveAmount(d.autoSaveAmount);
+          if (d.autoSaveEnabled != null) setAutoSaveEnabled(d.autoSaveEnabled);
+          if (d.contributions) setHistory(d.contributions);
+          if (d.withdrawals) setWithdrawals(d.withdrawals);
+        }
+      } catch (err) {
+        console.log('Emergency fund fetch fallback to defaults:', err.message);
+      }
+    };
+    fetchFundData();
+  }, []);
 
   const monthlyExpense = useMemo(() => expenseBreakdown.reduce((s, e) => s + e.amount, 0), []);
   const targetAmount = useMemo(() => monthlyExpense * targetMonths, [monthlyExpense, targetMonths]);
@@ -74,19 +97,31 @@ export default function EmergencyFund() {
   const circumference = 2 * Math.PI * radius;
   const strokeDash = (progressPct / 100) * circumference;
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     if (transAmount && Number(transAmount) > 0) {
-      setCurrentFund(currentFund + Number(transAmount));
+      const amt = Number(transAmount);
+      setCurrentFund(currentFund + amt);
       setTransAmount('');
       setShowDeposit(false);
+      try {
+        await api.post('/profile/debt-freedom/emergency-fund/contribution', { amount: amt, type: 'deposit' });
+      } catch (err) {
+        console.error('Failed to sync deposit:', err.message);
+      }
     }
   };
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     if (transAmount && Number(transAmount) > 0 && Number(transAmount) <= currentFund) {
-      setCurrentFund(currentFund - Number(transAmount));
+      const amt = Number(transAmount);
+      setCurrentFund(currentFund - amt);
       setTransAmount('');
       setShowWithdraw(false);
+      try {
+        await api.post('/profile/debt-freedom/emergency-fund/contribution', { amount: amt, type: 'withdrawal' });
+      } catch (err) {
+        console.error('Failed to sync withdrawal:', err.message);
+      }
     }
   };
 

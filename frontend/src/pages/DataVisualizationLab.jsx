@@ -552,7 +552,7 @@ function AIInsightsView({ colorTheme }) {
     const fetchInsights = async () => {
       try {
         const { default: api } = await import('../services/api');
-        const res = await api.get('/api/insights');
+        const res = await api.get('/insights');
         if (res.data && Array.isArray(res.data.insights)) {
           setInsights(res.data.insights);
         }

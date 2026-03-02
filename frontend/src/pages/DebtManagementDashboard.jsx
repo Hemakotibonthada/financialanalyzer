@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import {
   TrendingDown,
   Target,
@@ -64,7 +64,7 @@ const DebtManagementDashboard = () => {
   const fetchDebtData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/debt/analyze');
+      const response = await api.get('/debt/analyze');
       setDebtData(response.data);
     } catch (error) {
       console.error('Error fetching debt data:', error);
@@ -75,7 +75,7 @@ const DebtManagementDashboard = () => {
 
   const fetchComparison = async () => {
     try {
-      const response = await axios.post('/api/debt/compare-strategies', { extraPayment });
+      const response = await api.post('/debt/compare-strategies', { extraPayment });
       setComparison(response.data);
     } catch (error) {
       console.error('Error fetching comparison:', error);
@@ -84,7 +84,7 @@ const DebtManagementDashboard = () => {
 
   const calculateStrategy = async (strategy) => {
     try {
-      const response = await axios.post(`/api/debt/${strategy}`, { extraPayment });
+      const response = await api.post(`/debt/${strategy}`, { extraPayment });
       setDebtData({ ...debtData, selectedStrategy: response.data });
       setSelectedStrategy(strategy);
     } catch (error) {

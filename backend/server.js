@@ -236,6 +236,32 @@ app.use('/api/tax-optimization', require('./routes/taxOptimization'));
 // Webhooks
 app.use('/api/webhooks', require('./routes/webhooks'));
 
+// ========== PREVIOUSLY UNREGISTERED ROUTES ==========
+// Business Management (Invoices, Clients, Projects, Vendors, Contracts)
+app.use('/api/business', require('./routes/business'));
+// Data Management (Import/Export/Backup)
+app.use('/api/data-management', require('./routes/dataManagement'));
+// Debt Management
+app.use('/api/debt', require('./routes/debt'));
+// Insurance Management
+app.use('/api/insurance', require('./routes/insurance'));
+// Machine Learning Models & Predictions
+app.use('/api/ml', require('./routes/ml'));
+// Portfolio Analytics
+app.use('/api/portfolio', require('./routes/portfolio'));
+// Real Estate Management
+app.use('/api/real-estate', require('./routes/realEstate'));
+// Retirement Planning
+app.use('/api/retirement', require('./routes/retirement'));
+// Advanced Search
+app.use('/api/advanced-search', require('./routes/search'));
+// Subscription Management
+app.use('/api/subscriptions', require('./routes/subscription'));
+// Tax Management
+app.use('/api/tax', require('./routes/tax'));
+// Support Tickets
+app.use('/api/support', require('./routes/support'));
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

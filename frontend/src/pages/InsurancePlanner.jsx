@@ -8,6 +8,7 @@ import {
   AlertTriangle, CheckCircle, TrendingUp, IndianRupee, Calendar,
   ChevronRight, Info, FileText
 } from 'lucide-react';
+import api from '../services/api';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -25,6 +26,27 @@ export default function InsurancePlanner() {
   const [calcAge, setCalcAge] = useState(30);
   const [calcIncome, setCalcIncome] = useState(1200000);
   const [calcDependents, setCalcDependents] = useState(2);
+
+  // Sync with backend on mount
+  useEffect(() => {
+    const fetchFromAPI = async () => {
+      try {
+        const res = await api.get('/insurance');
+        const data = res.data?.policies || res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(p => ({
+            type: p.type || p.policyType || 'Health', provider: p.provider || p.insurer || '',
+            premium: p.premiumAmount || p.premium || 0, cover: p.coverAmount || p.cover || p.sumAssured || 0,
+            expiry: p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : '',
+            status: p.status || 'Active', _backendId: p._id
+          }));
+          setPolicies(mapped);
+          saveLocal('fa_insurance_policies', mapped);
+        }
+      } catch { /* fallback to localStorage */ }
+    };
+    fetchFromAPI();
+  }, []);
 
   useEffect(() => { saveLocal('fa_insurance_policies', policies); }, [policies]);
   useEffect(() => { saveLocal('fa_insurance_claims', claims); }, [claims]);
@@ -53,21 +75,37 @@ export default function InsurancePlanner() {
   const openAddModal = () => { setEditPolicy(null); setFormData({ type: 'Health', provider: '', premium: '', cover: '', expiry: '' }); setShowModal(true); };
   const openEditModal = (p, idx) => { setEditPolicy(idx); setFormData({ type: p.type, provider: p.provider, premium: p.premium, cover: p.cover, expiry: p.expiry || '' }); setShowModal(true); };
 
-  const savePolicy = () => {
+  const savePolicy = async () => {
     const iconMap = { Health: Heart, Life: Shield, Vehicle: Car, Home: Home, Travel: Plane };
     const colorMap = { Health: '#EF4444', Life: '#3B82F6', Vehicle: '#F59E0B', Home: '#10B981', Travel: '#8B5CF6' };
     const newPolicy = { ...formData, premium: Number(formData.premium), cover: Number(formData.cover), icon: iconMap[formData.type], color: colorMap[formData.type], status: 'Active' };
     if (editPolicy !== null) {
       const updated = [...policies];
-      updated[editPolicy] = { ...updated[editPolicy], ...newPolicy };
+      const existing = updated[editPolicy];
+      updated[editPolicy] = { ...existing, ...newPolicy };
       setPolicies(updated);
+      if (existing?._backendId) {
+        try { await api.put(`/insurance/${existing._backendId}`, { type: newPolicy.type, provider: newPolicy.provider, premiumAmount: newPolicy.premium, coverAmount: newPolicy.cover, endDate: newPolicy.expiry }); } catch { /* updated locally */ }
+      }
     } else {
       setPolicies([...policies, newPolicy]);
+      try {
+        const res = await api.post('/insurance', { type: newPolicy.type, provider: newPolicy.provider, premiumAmount: newPolicy.premium, coverAmount: newPolicy.cover, sumAssured: newPolicy.cover, endDate: newPolicy.expiry, status: 'Active' });
+        if (res.data?._id) {
+          setPolicies(prev => { const copy = [...prev]; copy[copy.length - 1] = { ...copy[copy.length - 1], _backendId: res.data._id }; return copy; });
+        }
+      } catch { /* saved locally */ }
     }
     setShowModal(false);
   };
 
-  const deletePolicy = (idx) => setPolicies(policies.filter((_, i) => i !== idx));
+  const deletePolicy = async (idx) => {
+    const policy = policies[idx];
+    setPolicies(policies.filter((_, i) => i !== idx));
+    if (policy?._backendId) {
+      try { await api.delete(`/insurance/${policy._backendId}`); } catch { /* removed locally */ }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">

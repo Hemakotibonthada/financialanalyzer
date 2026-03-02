@@ -156,6 +156,7 @@ const Milestones = lazy(() => import('./pages/Milestones'));
 const ReceiptScanner = lazy(() => import('./pages/ReceiptScanner'));
 const FinancialDocuments = lazy(() => import('./pages/FinancialDocuments'));
 const FinancialTemplate = lazy(() => import('./pages/FinancialTemplate'));
+const BillOfMaterials = lazy(() => import('./pages/BillOfMaterials'));
 const AutomationRules = lazy(() => import('./pages/AutomationRules'));
 
 // Social & Communication
@@ -247,6 +248,7 @@ function App() {
               <Route path="/cash-flow" element={<ProtectedRoute><CashFlowForecast /></ProtectedRoute>} />
               <Route path="/financial-calendar" element={<ProtectedRoute><FinancialCalendar /></ProtectedRoute>} />
               <Route path="/templates" element={<ProtectedRoute><FinancialTemplate /></ProtectedRoute>} />
+              <Route path="/bill-of-materials" element={<ProtectedRoute><BillOfMaterials /></ProtectedRoute>} />
               
               {/* ========== INCOME & EXPENSES ========== */}
               <Route path="/income-tracker" element={<ProtectedRoute><IncomeTracker /></ProtectedRoute>} />
