@@ -152,7 +152,14 @@ class AnalyticsService {
       }
 
       // --- Comprehensive Monthly Income ---
-      let comprehensiveIncome = monthlyIncomeData.amount || 0;
+      // Use the higher of: getMonthlyIncome (salary-focused) vs getMonthlyTrends totalIncome (all credits + profile)
+      // getMonthlyTrends.totalIncome already includes: profile.monthlyIncome + non-salary credits
+      // getMonthlyIncome returns: detected salary average OR profile.monthlyIncome
+      const trendsIncome = monthlyTrends.currentMonth?.totalIncome || 0;
+      const salaryIncome = monthlyIncomeData.amount || 0;
+      // Use trends income as base since it includes all credit transactions + profile income
+      // This avoids double-counting profile income which is already in trendsIncome
+      let comprehensiveIncome = Math.max(trendsIncome, salaryIncome);
 
       // Add loan repayments received this month
       const loanRepaymentIncome = loanRepayments.reduce((sum, loan) => {
@@ -179,7 +186,7 @@ class AnalyticsService {
         `EMI: ${emiMonthlyTotal}, CC: ${ccBillTotal}, Bills: ${billReminderTotal}), ` +
         `Investments: ₹${comprehensiveInvestments} (Txn: ${monthlyTrends.currentMonth?.totalInvestments || 0}, ` +
         `Purchases: ${investmentPurchaseTotal}, SIP: ${sipMonthlyTotal}), ` +
-        `Income: ₹${comprehensiveIncome} (Base: ${monthlyIncomeData.amount}, ` +
+        `Income: ₹${comprehensiveIncome} (TrendsIncome: ${trendsIncome}, Salary: ${salaryIncome}, ` +
         `LoanRepay: ${loanRepaymentIncome}, Dividends: ${dividendIncome})`
       );
 
@@ -208,7 +215,8 @@ class AnalyticsService {
             sipContributions: sipMonthlyTotal
           },
           incomeBreakdown: {
-            salary: monthlyIncomeData.amount,
+            salary: salaryIncome,
+            otherCredits: trendsIncome > salaryIncome ? trendsIncome - salaryIncome : 0,
             loanRepayments: loanRepaymentIncome,
             dividends: dividendIncome
           },
@@ -1374,7 +1382,7 @@ class AnalyticsService {
 
   /**
    * Calculate and update monthly income from salary transactions or profile
-   * Priority: 1) Recent salary transactions, 2) Profile setting
+   * Priority: 1) Most recent salary transaction, 2) Average of recent salary transactions, 3) Profile setting
    */
   async getMonthlyIncome(userId) {
     try {
@@ -1401,21 +1409,25 @@ class AnalyticsService {
       }).sort({ date: -1 }).lean();
 
       if (salaryTransactions.length > 0) {
-        // Calculate average salary from recent transactions
+        // Use the LATEST salary transaction amount (reflects most recent salary/raise)
+        const latestSalary = Math.abs(salaryTransactions[0].amount);
+        // Also compute average for comparison
         const salaryAmounts = salaryTransactions.map(t => Math.abs(t.amount));
         const averageSalary = salaryAmounts.reduce((sum, amt) => sum + amt, 0) / salaryAmounts.length;
         
-        // Round to nearest 100
-        const calculatedIncome = Math.round(averageSalary / 100) * 100;
+        // Use latest salary as the primary value (captures raises), round to nearest 100
+        const calculatedIncome = Math.round(latestSalary / 100) * 100;
         
         // Update profile if the calculated income differs significantly from stored value
-        if (!profile.monthlyIncome || Math.abs(profile.monthlyIncome - calculatedIncome) > 1000) {
-          profile.monthlyIncome = calculatedIncome;
-          profile.incomeSource = 'auto-detected';
-          profile.lastIncomeUpdate = new Date();
-          await profile.save();
-          
-          logger.info(`Auto-updated monthly income for user ${userId}: ₹${calculatedIncome}`);
+        if (!profile?.monthlyIncome || Math.abs(profile.monthlyIncome - calculatedIncome) > 1000) {
+          if (profile) {
+            profile.monthlyIncome = calculatedIncome;
+            profile.incomeSource = 'auto-detected';
+            profile.lastIncomeUpdate = new Date();
+            await profile.save();
+            
+            logger.info(`Auto-updated monthly income for user ${userId}: ₹${calculatedIncome}`);
+          }
         }
         
         return {

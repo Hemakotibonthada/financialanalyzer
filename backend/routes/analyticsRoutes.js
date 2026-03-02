@@ -18,7 +18,7 @@ router.get('/test', (req, res) => {
  * GET /api/analytics/dashboard
  * Get comprehensive financial dashboard
  */
-router.get('/dashboard', authenticate, cacheMiddleware(300), async (req, res) => {
+router.get('/dashboard', authenticate, cacheMiddleware(60), async (req, res) => {
   try {
     logger.info(`Dashboard request from user: ${req.user._id}`);
     

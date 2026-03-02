@@ -13,6 +13,7 @@ const BreakdownTooltip = ({ breakdown, prefix = '₹' }) => {
     newPurchases: 'New Purchases',
     sipContributions: 'SIP Contributions',
     salary: 'Salary / Income',
+    otherCredits: 'Other Credits',
     loanRepayments: 'Loan Repayments',
     dividends: 'Dividends'
   };

@@ -14,6 +14,12 @@ const cacheMiddleware = (ttl = 300, keyGenerator = null) => {
       return next();
     }
 
+    // Skip cache when refresh=true query param is set
+    if (req.query.refresh === 'true' || req.query.nocache === 'true') {
+      logger.debug('Cache bypass requested via query param');
+      return next();
+    }
+
     try {
       // Generate cache key
       const cacheKey = keyGenerator 

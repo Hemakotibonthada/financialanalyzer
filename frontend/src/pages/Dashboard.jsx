@@ -28,7 +28,7 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(true); // Always fetch fresh data on page load
   }, []);
 
   const handleLogout = () => {
@@ -39,18 +39,20 @@ const Dashboard = () => {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      await fetchDashboardData();
+      await fetchDashboardData(true);
     } finally {
       setRefreshing(false);
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError('');
       
-      const response = await api.get('/analytics/dashboard');
+      const response = await api.get('/analytics/dashboard', {
+        params: forceRefresh ? { refresh: 'true' } : {}
+      });
       // Debug: log response shape to help diagnose empty/zero charts
       if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.MODE === 'development')) {
         // eslint-disable-next-line no-console

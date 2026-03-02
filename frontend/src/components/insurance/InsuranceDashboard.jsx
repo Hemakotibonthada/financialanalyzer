@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Shield, Heart, Car, Home, Briefcase, AlertTriangle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '@/services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
 
@@ -20,12 +20,13 @@ const InsuranceDashboard = () => {
   const fetchInsuranceData = async () => {
     try {
       const [policiesRes, gapsRes] = await Promise.all([
-        axios.get('/api/insurance'),
-        axios.get('/api/insurance/coverage-gaps')
+        api.get('/insurance').catch(() => ({ data: [] })),
+        api.get('/insurance/analysis/coverage').catch(() => ({ data: {} }))
       ]);
 
-      setPolicies(policiesRes.data);
-      setCoverageGaps(gapsRes.data.gaps || []);
+      const policiesData = policiesRes.data;
+      setPolicies(Array.isArray(policiesData) ? policiesData : (policiesData?.policies || []));
+      setCoverageGaps(gapsRes.data?.gaps || gapsRes.data?.recommendations || []);
     } catch (error) {
       console.error('Error fetching insurance data:', error);
     } finally {
@@ -121,7 +122,7 @@ const InsuranceDashboard = () => {
                 <p className="text-sm font-semibold">Coverage Gaps Detected</p>
                 <ul className="text-xs mt-1 list-disc list-inside">
                   {coverageGaps.slice(0, 3).map((gap, idx) => (
-                    <li key={idx}>{gap}</li>
+                    <li key={idx}>{typeof gap === 'string' ? gap : (gap.recommendation || gap.type || JSON.stringify(gap))}</li>
                   ))}
                 </ul>
               </div>
@@ -433,7 +434,10 @@ const InsuranceDashboard = () => {
                     <div key={idx} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                        <p className="text-sm">{gap}</p>
+                        <div className="text-sm">
+                          <p>{typeof gap === 'string' ? gap : (gap.recommendation || gap.type || '')}</p>
+                          {gap.priority && <span className={`text-xs mt-1 inline-block px-1.5 py-0.5 rounded ${gap.priority === 'high' ? 'bg-red-100 text-red-700' : gap.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>{gap.priority}</span>}
+                        </div>
                       </div>
                     </div>
                   ))}

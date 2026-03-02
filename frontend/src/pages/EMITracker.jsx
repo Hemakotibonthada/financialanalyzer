@@ -7795,9 +7795,9 @@ const EMITracker = () => {
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
                       <CardContent>
-                        <Typography variant="body2" sx={{ opacity: 0.9 }}>Upcoming (7 days)</Typography>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>Upcoming (30 days)</Typography>
                         <Typography variant="h4" fontWeight="bold">
-                          {ccBillsSummary.upcomingBills || 0}
+                          {Array.isArray(ccBillsSummary.upcomingBills) ? ccBillsSummary.upcomingBills.length : (ccBillsSummary.upcomingBills || 0)}
                         </Typography>
                       </CardContent>
                     </Card>
