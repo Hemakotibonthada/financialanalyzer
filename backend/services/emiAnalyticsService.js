@@ -713,6 +713,17 @@ class EMIAnalyticsService {
       emi.totalTenure
     );
     
+    // Calculate correct next due date based on time elapsed
+    // nextDueDate should be the next FUTURE installment date
+    let actualNextDueDate = emi.nextDueDate;
+    if (actualPaidInstallments < emi.totalTenure) {
+      const nextDue = new Date(startDate);
+      nextDue.setMonth(nextDue.getMonth() + actualPaidInstallments + 1);
+      actualNextDueDate = nextDue;
+    } else {
+      actualNextDueDate = null; // All installments complete
+    }
+    
     return {
       id: emi._id,
       merchantName: emi.merchantName,
@@ -727,11 +738,12 @@ class EMIAnalyticsService {
       completionPercentage: actualCompletionPercentage, // Time-based calculation
       interestRate: calculatedInterestRate, // Calculated from financial terms
       principalAmount: emi.principalAmount,
-      nextDueDate: emi.nextDueDate,
+      nextDueDate: actualNextDueDate, // Time-based next due date
       startDate: emi.startDate,
       endDate: emi.endDate,
       status: actualStatus, // Time-based status
       repaymentType: emi.repaymentType,
+      interestType: emi.interestType,
       notes: emi.notes,
       createdAt: emi.createdAt
     };

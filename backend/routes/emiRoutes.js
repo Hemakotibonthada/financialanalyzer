@@ -2028,10 +2028,27 @@ router.post('/manual', authenticate, async (req, res) => {
     // For ON_REQUEST, end date is not applicable (no fixed tenure)
     
     const nextDueDate = repaymentType === 'MONTHLY' ? (() => {
+      const now = new Date();
+      // Calculate months elapsed from start to determine next future due date
+      const monthsFromStart = Math.max(0, Math.floor(
+        (now.getFullYear() - emiStartDate.getFullYear()) * 12 +
+        (now.getMonth() - emiStartDate.getMonth())
+      ));
+      // Next due = start + (elapsed + 1) months, capped at tenure
+      const nextInstallment = Math.min(monthsFromStart + 1, finalTotalTenure);
       const date = new Date(emiStartDate);
-      date.setMonth(date.getMonth() + 1);
+      date.setMonth(date.getMonth() + nextInstallment);
       return date;
     })() : null; // No next due date for ON_REQUEST type
+    
+    // For older EMIs, calculate how many installments are already past
+    const now = new Date();
+    const monthsElapsedSinceStart = repaymentType === 'MONTHLY' ? Math.max(0, Math.floor(
+      (now.getFullYear() - emiStartDate.getFullYear()) * 12 +
+      (now.getMonth() - emiStartDate.getMonth())
+    )) : 0;
+    const autoPaidInstallments = Math.min(monthsElapsedSinceStart, finalTotalTenure);
+    const autoRemainingInstallments = finalTotalTenure - autoPaidInstallments;
     
     // Calculate payment schedule (only for MONTHLY type)
     const paymentHistory = [];
@@ -2051,13 +2068,17 @@ router.post('/manual', authenticate, async (req, res) => {
         const interestPaid = finalInterestType === 'flat' ? flatInterestPerMonth : (outstandingPrincipal * monthlyInterest);
         const principalPaid = finalEmiAmount - interestPaid;
         
+        // Auto-mark past installments as paid for older EMIs
+        const isPast = i <= autoPaidInstallments;
+        
         paymentHistory.push({
           installmentNumber: i,
           dueDate: dueDate,
           amount: finalEmiAmount,
           principalPaid: Math.max(0, principalPaid),
           interestPaid: Math.max(0, interestPaid),
-          status: 'upcoming'
+          status: isPast ? 'paid' : 'upcoming',
+          ...(isPast ? { paidDate: dueDate } : {})
         });
       }
     } else {
@@ -2102,8 +2123,8 @@ router.post('/manual', authenticate, async (req, res) => {
       emiAmount: finalEmiAmount,
       emiAmountInINR: finalEmiAmount * exchangeRate,
       totalTenure: finalTotalTenure,
-      paidInstallments: 0,
-      remainingInstallments: finalTotalTenure,
+      paidInstallments: autoPaidInstallments,
+      remainingInstallments: autoRemainingInstallments,
       repaymentType: repaymentType || 'MONTHLY',
       startDate: emiStartDate,
       endDate: repaymentType === 'MONTHLY' ? endDate : null,
