@@ -120,7 +120,7 @@ const loanGivenSchema = new mongoose.Schema({
   },
   interestType: {
     type: String,
-    enum: ['none', 'percentage', 'flat'],
+    enum: ['none', 'percentage', 'flat', 'rupee_per_100'],
     default: 'none'
   },
   hasInterest: {
@@ -189,8 +189,68 @@ loanGivenSchema.virtual('daysOverdue').get(function() {
 
 // Virtual for repayment percentage
 loanGivenSchema.virtual('repaymentPercentage').get(function() {
-  if (this.amount === 0) return 0;
-  return ((this.totalRepaid / this.amount) * 100).toFixed(2);
+  const totalOwed = this.amount + (this.currentInterest || 0);
+  if (totalOwed === 0) return 0;
+  return ((this.totalRepaid / totalOwed) * 100).toFixed(2);
+});
+
+// Virtual field: Calculate current accrued interest
+loanGivenSchema.virtual('currentInterest').get(function() {
+  if (!this.hasInterest || this.interestType === 'none' || this.interestRate === 0) {
+    return 0;
+  }
+
+  // Flat interest: fixed rupee amount
+  if (this.interestType === 'flat') {
+    return this.interestRate;
+  }
+
+  const startDate = new Date(this.loanDate);
+  const endDate = this.status === 'fully_paid' && this.actualRepaymentDate
+    ? new Date(this.actualRepaymentDate)
+    : new Date();
+
+  const daysElapsed = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+  // Rupee per 100 per month: (amount × rate × months) / 100
+  if (this.interestType === 'rupee_per_100') {
+    const monthsElapsed = daysElapsed / 30.44;
+    const interest = (this.amount * this.interestRate * monthsElapsed) / 100;
+    return Math.round(interest * 100) / 100;
+  }
+
+  // Percentage (annual rate): (P × R × days) / (100 × 365)
+  if (this.interestType === 'percentage') {
+    const interest = (this.amount * this.interestRate * daysElapsed) / (100 * 365);
+    return Math.round(interest * 100) / 100;
+  }
+
+  return 0;
+});
+
+// Virtual field: Monthly interest amount
+loanGivenSchema.virtual('monthlyInterest').get(function() {
+  if (this.interestType === 'rupee_per_100') {
+    return Math.round((this.amount * this.interestRate) / 100 * 100) / 100;
+  }
+  if (this.interestType === 'percentage') {
+    return Math.round((this.amount * this.interestRate) / (100 * 12) * 100) / 100;
+  }
+  if (this.interestType === 'flat') {
+    return this.interestRate;
+  }
+  return 0;
+});
+
+// Virtual field: Equivalent annual rate
+loanGivenSchema.virtual('annualEquivalentRate').get(function() {
+  if (this.interestType === 'rupee_per_100') {
+    return Math.round(this.interestRate * 12 * 100) / 100;
+  }
+  if (this.interestType === 'percentage') {
+    return this.interestRate;
+  }
+  return 0;
 });
 
 // Enable virtuals in JSON
@@ -204,8 +264,9 @@ loanGivenSchema.pre('save', function(next) {
     this.totalRepaid = this.repayments.reduce((sum, payment) => sum + payment.amount, 0);
   }
   
-  // Calculate remaining amount
-  this.remainingAmount = this.amount - this.totalRepaid;
+  // Calculate remaining amount (principal + interest - repaid)
+  const accruedInterest = this.currentInterest || 0;
+  this.remainingAmount = this.amount + accruedInterest - this.totalRepaid;
   
   // Update status based on repayment
   if (this.remainingAmount <= 0) {
@@ -240,9 +301,14 @@ loanGivenSchema.statics.getUserLoans = function(userId, filters = {}) {
 loanGivenSchema.statics.getSummary = async function(userId) {
   const loans = await this.find({ userId });
   
+  let totalInterest = 0;
+  loans.forEach(loan => {
+    totalInterest += loan.currentInterest || 0;
+  });
+
   const totalLent = loans.reduce((sum, loan) => sum + loan.amount, 0);
   const totalRepaid = loans.reduce((sum, loan) => sum + loan.totalRepaid, 0);
-  const totalOutstanding = loans.reduce((sum, loan) => sum + loan.remainingAmount, 0);
+  const totalOutstanding = loans.reduce((sum, loan) => sum + (loan.amount + (loan.currentInterest || 0) - loan.totalRepaid), 0);
   
   const activeLoans = loans.filter(l => l.status !== 'fully_paid' && l.status !== 'written_off');
   const overdueLoans = loans.filter(l => l.status === 'overdue');
@@ -251,7 +317,8 @@ loanGivenSchema.statics.getSummary = async function(userId) {
   return {
     totalLent,
     totalRepaid,
-    totalOutstanding,
+    totalOutstanding: Math.max(0, totalOutstanding),
+    totalInterest,
     activeLoansCount: activeLoans.length,
     overdueLoansCount: overdueLoans.length,
     fullyPaidCount: fullyPaidLoans.length,

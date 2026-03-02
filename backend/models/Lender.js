@@ -91,7 +91,7 @@ const lenderSchema = new mongoose.Schema({
   },
   defaultInterestType: {
     type: String,
-    enum: ['Simple', 'Compound', 'Flat'],
+    enum: ['Simple', 'Compound', 'Flat', 'Rupee_per_100'],
     default: 'Simple'
   },
   

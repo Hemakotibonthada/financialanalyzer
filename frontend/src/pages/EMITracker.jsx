@@ -1962,7 +1962,7 @@ const EMITracker = () => {
 
                 <Typography variant="subtitle2">Interest Rate</Typography>
                 <Typography variant="body1" gutterBottom>
-                  {selectedEMI.interestType === 'flat' ? `${formatCurrency(selectedEMI.interestRate)} (Flat)` : `${selectedEMI.interestRate}% p.a.`}
+                  {selectedEMI.interestType === 'flat' ? `${formatCurrency(selectedEMI.interestRate)} (Flat)` : selectedEMI.interestType === 'rupee_per_100' ? `${selectedEMI.interestRate} ₹/100/month` : `${selectedEMI.interestRate}% p.a.`}
                 </Typography>
 
                 <Typography variant="subtitle2">Repayment Type</Typography>
@@ -2185,6 +2185,8 @@ const EMITracker = () => {
                     <Typography variant="body1" fontWeight="bold" color="error">
                       {selectedEMIForEarlyPayment.interestType === 'flat' 
                         ? `${formatCurrency(selectedEMIForEarlyPayment.interestRate)} Flat` 
+                        : selectedEMIForEarlyPayment.interestType === 'rupee_per_100'
+                        ? `${selectedEMIForEarlyPayment.interestRate} ₹/100/mo`
                         : `${selectedEMIForEarlyPayment.interestRate}%`}
                     </Typography>
                   </Box>
@@ -4288,7 +4290,7 @@ const EMITracker = () => {
                         </IconButton>
                       </Tooltip>
                       <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 1 }}>
-                        {emi.interestType === 'flat' ? `${formatCurrency(emi.interestRate)} Flat Interest` : `${emi.interestRate}% Interest`}
+                        {emi.interestType === 'flat' ? `${formatCurrency(emi.interestRate)} Flat Interest` : emi.interestType === 'rupee_per_100' ? `${emi.interestRate} ₹/100/mo` : `${emi.interestRate}% Interest`}
                       </Typography>
                     </Box>
                   </Box>
@@ -4310,7 +4312,7 @@ const EMITracker = () => {
                         {formatCurrency(emi.accruedInterest)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {emi.daysElapsed} days @ {emi.interestRate}% p.a.
+                        {emi.daysElapsed} days @ {emi.interestType === 'rupee_per_100' ? `${emi.interestRate} ₹/100/mo` : `${emi.interestRate}% p.a.`}
                       </Typography>
                       <Box mt={1} display="flex" justifyContent="space-between" alignItems="center">
                         <Typography variant="body2" color="text.secondary">
@@ -4448,7 +4450,7 @@ const EMITracker = () => {
                           />
                         </Box>
                         <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 1 }}>
-                          {emi.interestType === 'flat' ? `${formatCurrency(emi.interestRate)} Flat Interest` : `${emi.interestRate}% Interest`}
+                          {emi.interestType === 'flat' ? `${formatCurrency(emi.interestRate)} Flat Interest` : emi.interestType === 'rupee_per_100' ? `${emi.interestRate} ₹/100/mo` : `${emi.interestRate}% Interest`}
                         </Typography>
                       </Box>
 
@@ -4523,7 +4525,7 @@ const EMITracker = () => {
           {/* Summary Cards */}
           {loansGivenSummary && (
             <Grid container spacing={3} mb={4}>
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2.4}>
                 <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Lent</Typography>
@@ -4531,7 +4533,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2.4}>
                 <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Outstanding</Typography>
@@ -4539,7 +4541,15 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2.4}>
+                <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Interest Earned</Typography>
+                    <Typography variant="h4">₹{(loansGivenSummary.totalInterest || 0).toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={2.4}>
                 <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Repaid</Typography>
@@ -4547,8 +4557,8 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
+              <Grid item xs={12} md={2.4}>
+                <Card sx={{ background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', color: '#333' }}>
                   <CardContent>
                     <Typography variant="h6">Active Loans</Typography>
                     <Typography variant="h4">{loansGivenSummary.activeLoansCount}</Typography>
@@ -4627,6 +4637,37 @@ const EMITracker = () => {
                         ₹{loan.amount.toLocaleString()}
                       </Typography>
 
+                      {/* Interest info */}
+                      {loan.hasInterest && loan.interestType !== 'none' && (loan.currentInterest > 0 || loan.interestRate > 0) && (
+                        <Box mb={2} sx={{
+                          background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                          borderRadius: 2,
+                          p: 2,
+                          border: '1px solid #a5d6a7'
+                        }}>
+                          <Typography variant="body2" color="success.dark" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            💰 Interest Earning
+                            {loan.interestType === 'rupee_per_100' && (
+                              <Chip label={`${loan.interestRate} ₹/100/mo`} size="small" sx={{ ml: 1, bgcolor: '#2e7d32', color: 'white', fontWeight: 700, fontSize: '0.7rem' }} />
+                            )}
+                            {loan.interestType === 'percentage' && (
+                              <Chip label={`${loan.interestRate}% p.a.`} size="small" sx={{ ml: 1 }} />
+                            )}
+                            {loan.interestType === 'flat' && (
+                              <Chip label={`₹${loan.interestRate.toLocaleString()} Flat`} size="small" sx={{ ml: 1 }} />
+                            )}
+                          </Typography>
+                          <Typography variant="h6" color="success.dark" fontWeight="bold">
+                            + ₹{(loan.currentInterest || 0).toLocaleString()}
+                          </Typography>
+                          {loan.interestType === 'rupee_per_100' && loan.monthlyInterest > 0 && (
+                            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                              ₹{loan.monthlyInterest.toLocaleString()}/month • {loan.annualEquivalentRate}% p.a. equivalent
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+
                       {loan.totalRepaid > 0 && (
                         <Box my={2}>
                           <Box display="flex" justifyContent="space-between" mb={1}>
@@ -4646,6 +4687,11 @@ const EMITracker = () => {
                       <Box mt={2}>
                         <Typography variant="body2" color="text.secondary">
                           Outstanding: ₹{loan.remainingAmount.toLocaleString()}
+                          {loan.hasInterest && loan.currentInterest > 0 && (
+                            <Typography component="span" variant="caption" color="success.main" sx={{ ml: 1 }}>
+                              (incl. ₹{(loan.currentInterest || 0).toLocaleString()} interest)
+                            </Typography>
+                          )}
                         </Typography>
                         {loan.expectedRepaymentDate && (
                           <Typography variant="body2" color="text.secondary">
@@ -7059,13 +7105,32 @@ const EMITracker = () => {
                         </Typography>
 
                         {loan.currentInterest > 0 && (
-                          <Box mb={2}>
-                            <Typography variant="body2" color="warning.main" gutterBottom>
-                              Current Interest ({loan.interestType === 'flat' ? `₹${loan.interestRate.toLocaleString()} Flat` : `${loan.interestRate}% p.a.`})
+                          <Box mb={2} sx={{
+                            background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                            borderRadius: 2,
+                            p: 2,
+                            border: '1px solid #ffcc80'
+                          }}>
+                            <Typography variant="body2" color="warning.main" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              💰 Interest Accrued
+                              {loan.interestType === 'rupee_per_100' && (
+                                <Chip label={`${loan.interestRate} ₹/100/mo`} size="small" sx={{ ml: 1, bgcolor: '#ff9800', color: 'white', fontWeight: 700, fontSize: '0.7rem' }} />
+                              )}
+                              {loan.interestType === 'flat' && (
+                                <Chip label={`₹${loan.interestRate.toLocaleString()} Flat`} size="small" sx={{ ml: 1 }} />
+                              )}
+                              {loan.interestType === 'simple' && (
+                                <Chip label={`${loan.interestRate}% p.a.`} size="small" sx={{ ml: 1 }} />
+                              )}
                             </Typography>
-                            <Typography variant="h6" color="warning.dark">
+                            <Typography variant="h6" color="warning.dark" fontWeight="bold">
                               + ₹{loan.currentInterest.toLocaleString()}
                             </Typography>
+                            {loan.interestType === 'rupee_per_100' && loan.monthlyInterest > 0 && (
+                              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                                ₹{loan.monthlyInterest.toLocaleString()}/month • {loan.annualEquivalentRate}% p.a. equivalent
+                              </Typography>
+                            )}
                           </Box>
                         )}
 
@@ -7704,6 +7769,7 @@ const EMITracker = () => {
                   label="Interest Type"
                 >
                   <MenuItem value="percentage">Percentage (% p.a.)</MenuItem>
+                  <MenuItem value="rupee_per_100">₹ per 100/month (Rupee Interest)</MenuItem>
                   <MenuItem value="flat">Flat Amount (₹)</MenuItem>
                 </Select>
               </FormControl>
@@ -7712,12 +7778,20 @@ const EMITracker = () => {
             <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
-                label={manualEMIData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (%)'}
+                label={
+                  manualEMIData.interestType === 'rupee_per_100' ? 'Rupees per ₹100/month' :
+                  manualEMIData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (%)'
+                }
                 type="number"
                 value={manualEMIData.interestRate}
                 onChange={(e) => handleManualEMIChange('interestRate', e.target.value)}
-                placeholder={manualEMIData.interestType === 'flat' ? '5000' : '12'}
-                InputProps={{ endAdornment: manualEMIData.interestType === 'flat' ? '₹' : '%' }}
+                placeholder={manualEMIData.interestType === 'rupee_per_100' ? '2' : manualEMIData.interestType === 'flat' ? '5000' : '12'}
+                InputProps={{ endAdornment: manualEMIData.interestType === 'flat' ? '₹' : manualEMIData.interestType === 'rupee_per_100' ? '₹/100' : '%' }}
+                helperText={
+                  manualEMIData.interestType === 'rupee_per_100' && manualEMIData.interestRate
+                    ? `= ${(parseFloat(manualEMIData.interestRate) * 12).toFixed(1)}% p.a. equivalent`
+                    : ''
+                }
               />
             </Grid>
 
@@ -7834,7 +7908,7 @@ const EMITracker = () => {
                             }
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {manualEMIData.interestType === 'flat' ? '(Flat)' : `(${manualEMIData.interestRate || 0}% p.a.)`}
+                            {manualEMIData.interestType === 'flat' ? '(Flat)' : manualEMIData.interestType === 'rupee_per_100' ? `(${manualEMIData.interestRate || 0} ₹/100/mo)` : `(${manualEMIData.interestRate || 0}% p.a.)`}
                           </Typography>
                         </Grid>
                       </Grid>
@@ -8424,6 +8498,7 @@ const EMITracker = () => {
                 label="Interest Type"
               >
                 <MenuItem value="none">No Interest</MenuItem>
+                <MenuItem value="rupee_per_100">₹ per 100/month (Rupee Interest)</MenuItem>
                 <MenuItem value="percentage">Percentage (% p.a.)</MenuItem>
                 <MenuItem value="flat">Flat Amount (₹)</MenuItem>
               </Select>
@@ -8431,12 +8506,21 @@ const EMITracker = () => {
 
             {loanGivenFormData.interestType !== 'none' && (
               <TextField
-                label={loanGivenFormData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (% per annum)'}
+                label={
+                  loanGivenFormData.interestType === 'rupee_per_100' ? 'Rupees per ₹100 per month' :
+                  loanGivenFormData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (% per annum)'
+                }
                 type="number"
                 fullWidth
                 value={loanGivenFormData.interestRate}
                 onChange={(e) => setLoanGivenFormData({ ...loanGivenFormData, interestRate: parseFloat(e.target.value) || 0 })}
-                InputProps={{ endAdornment: loanGivenFormData.interestType === 'flat' ? '₹' : '%' }}
+                InputProps={{ endAdornment: loanGivenFormData.interestType === 'flat' ? '₹' : loanGivenFormData.interestType === 'rupee_per_100' ? '₹/100' : '%' }}
+                helperText={
+                  loanGivenFormData.interestType === 'rupee_per_100' && loanGivenFormData.interestRate > 0 && loanGivenFormData.amount
+                    ? `Monthly interest: ₹${((parseFloat(loanGivenFormData.amount) || 0) * loanGivenFormData.interestRate / 100).toLocaleString()} | Equiv. ${(loanGivenFormData.interestRate * 12).toFixed(1)}% p.a.`
+                    : loanGivenFormData.interestType === 'rupee_per_100' ? 'e.g. "2" means ₹2 interest on every ₹100 per month'
+                    : ''
+                }
               />
             )}
 
@@ -8644,6 +8728,7 @@ const EMITracker = () => {
                 label="Interest Type"
               >
                 <MenuItem value="none">No Interest</MenuItem>
+                <MenuItem value="rupee_per_100">₹ per 100/month (Rupee Interest)</MenuItem>
                 <MenuItem value="simple">Simple Interest (% p.a.)</MenuItem>
                 <MenuItem value="flat">Flat Amount (₹)</MenuItem>
               </Select>
@@ -8651,12 +8736,21 @@ const EMITracker = () => {
 
             {personalLoanFormData.interestType !== 'none' && (
               <TextField
-                label={personalLoanFormData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (% per annum)'}
+                label={
+                  personalLoanFormData.interestType === 'rupee_per_100' ? 'Rupees per ₹100 per month' :
+                  personalLoanFormData.interestType === 'flat' ? 'Interest Amount (₹)' : 'Interest Rate (% per annum)'
+                }
                 type="number"
                 fullWidth
                 value={personalLoanFormData.interestRate}
                 onChange={(e) => setPersonalLoanFormData({ ...personalLoanFormData, interestRate: parseFloat(e.target.value) || 0 })}
-                InputProps={{ endAdornment: personalLoanFormData.interestType === 'flat' ? '₹' : '%' }}
+                InputProps={{ endAdornment: personalLoanFormData.interestType === 'flat' ? '₹' : personalLoanFormData.interestType === 'rupee_per_100' ? '₹/100' : '%' }}
+                helperText={
+                  personalLoanFormData.interestType === 'rupee_per_100' && personalLoanFormData.interestRate > 0 && personalLoanFormData.principalAmount
+                    ? `Monthly interest: ₹${((parseFloat(personalLoanFormData.principalAmount) || 0) * personalLoanFormData.interestRate / 100).toLocaleString()} | Equiv. ${(personalLoanFormData.interestRate * 12).toFixed(1)}% p.a.`
+                    : personalLoanFormData.interestType === 'rupee_per_100' ? 'e.g. "2" means ₹2 interest on every ₹100 per month'
+                    : ''
+                }
               />
             )}
 

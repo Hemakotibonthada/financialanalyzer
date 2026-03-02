@@ -38,7 +38,7 @@ const personalLoanSchema = new mongoose.Schema({
   },
   interestType: {
     type: String,
-    enum: ['simple', 'flat', 'none'],
+    enum: ['simple', 'flat', 'none', 'rupee_per_100'],
     default: 'none'
   },
   purpose: {
@@ -95,11 +95,44 @@ personalLoanSchema.virtual('currentInterest').get(function() {
   // Calculate days elapsed
   const daysElapsed = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
   
+  // Rupee per 100 per month: (P × rate × months) / 100
+  // rate = n means ₹n interest per ₹100 principal per month
+  if (this.interestType === 'rupee_per_100') {
+    const monthsElapsed = daysElapsed / 30.44; // average days per month
+    const interest = (this.principalAmount * this.interestRate * monthsElapsed) / 100;
+    return Math.round(interest * 100) / 100;
+  }
+
   // Simple interest calculation: (P × R × T) / (100 × 365)
   // T in days, R is annual rate
   const interest = (this.principalAmount * this.interestRate * daysElapsed) / (100 * 365);
   
   return Math.round(interest * 100) / 100; // Round to 2 decimal places
+});
+
+// Virtual field: Monthly interest amount (useful for rupee_per_100)
+personalLoanSchema.virtual('monthlyInterest').get(function() {
+  if (this.interestType === 'rupee_per_100') {
+    return Math.round((this.principalAmount * this.interestRate) / 100 * 100) / 100;
+  }
+  if (this.interestType === 'simple') {
+    return Math.round((this.principalAmount * this.interestRate) / (100 * 12) * 100) / 100;
+  }
+  if (this.interestType === 'flat') {
+    return this.interestRate;
+  }
+  return 0;
+});
+
+// Virtual field: Equivalent annual rate
+personalLoanSchema.virtual('annualEquivalentRate').get(function() {
+  if (this.interestType === 'rupee_per_100') {
+    return Math.round(this.interestRate * 12 * 100) / 100; // n rupee/100/month = n*12 % p.a.
+  }
+  if (this.interestType === 'simple') {
+    return this.interestRate;
+  }
+  return 0;
 });
 
 // Virtual field: Calculate total outstanding (principal + interest)

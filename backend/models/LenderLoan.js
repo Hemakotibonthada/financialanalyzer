@@ -58,7 +58,7 @@ const lenderLoanSchema = new mongoose.Schema({
   },
   interestType: {
     type: String,
-    enum: ['Simple', 'Compound', 'Flat'],
+    enum: ['Simple', 'Compound', 'Flat', 'Rupee_per_100'],
     default: 'Simple'
   },
   tenure: {
@@ -260,7 +260,13 @@ lenderLoanSchema.methods.calculateEMI = function() {
   const ratePerMonth = this.interestRate / (12 * 100);
   const tenure = this.tenure;
   
-  if (this.interestType === 'Flat') {
+  if (this.interestType === 'Rupee_per_100') {
+    // Rupee per 100 per month: monthly interest = (P × rate) / 100
+    const monthlyInterest = (principal * this.interestRate) / 100;
+    this.totalInterest = monthlyInterest * tenure;
+    this.totalPayable = principal + this.totalInterest;
+    this.emi = Math.round((principal / tenure) + monthlyInterest); // principal portion + fixed monthly interest
+  } else if (this.interestType === 'Flat') {
     const totalInterest = (principal * this.interestRate * (tenure / 12)) / 100;
     this.totalInterest = totalInterest;
     this.totalPayable = principal + totalInterest;

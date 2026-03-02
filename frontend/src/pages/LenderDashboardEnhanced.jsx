@@ -1420,6 +1420,7 @@ const LenderDashboardEnhanced = () => {
                 <MenuItem value="Simple">Simple</MenuItem>
                 <MenuItem value="Reducing">Reducing (EMI)</MenuItem>
                 <MenuItem value="Flat">Flat</MenuItem>
+                <MenuItem value="Rupee_per_100">₹ per 100/month (Rupee Interest)</MenuItem>
               </Select>
             </FormControl>
             <TextField
