@@ -339,7 +339,7 @@ function App() {
               <Route path="/notifications" element={<ProtectedRoute><NotificationCenter /></ProtectedRoute>} />
               
               {/* ========== SETTINGS & SECURITY ========== */}
-              <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/appearance" element={<ProtectedRoute><DarkModeSettings /></ProtectedRoute>} />
               <Route path="/security" element={<ProtectedRoute><SecurityCenter /></ProtectedRoute>} />
               

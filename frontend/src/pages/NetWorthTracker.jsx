@@ -54,11 +54,13 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 import { API_URL } from '../services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 function NetWorthTracker() {
+  const { isCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState(0);
   const [latestSnapshot, setLatestSnapshot] = useState(null);
   const [history, setHistory] = useState([]);
@@ -223,7 +225,7 @@ function NetWorthTracker() {
     return (
       <>
         <Sidebar />
-        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
           <Typography>Loading net worth data...</Typography>
         </Box>
       </>
@@ -234,7 +236,7 @@ function NetWorthTracker() {
     return (
       <>
         <Sidebar />
-        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
           <Container maxWidth="md" sx={{ textAlign: 'center', py: 8 }}>
             <AccountBalanceIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h4" gutterBottom>
@@ -282,7 +284,7 @@ function NetWorthTracker() {
   return (
     <>
       <Sidebar />
-      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 pb-8 transition-all duration-300`}>
         {/* Enhanced Header with Gradient */}
         <Box
           sx={{

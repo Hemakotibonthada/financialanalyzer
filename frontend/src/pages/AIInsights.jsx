@@ -19,8 +19,10 @@ import {
   TrendingDown
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 
 const AIInsights = () => {
+  const { isCollapsed } = useSidebar();
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState(null);
   const [error, setError] = useState(null);
@@ -48,7 +50,7 @@ const AIInsights = () => {
     return (
       <>
         <Sidebar />
-        <div className="lg:ml-72 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center transition-all duration-300`}>
           <div className="text-center">
             <RefreshCw className="w-16 h-16 text-indigo-600 animate-spin mx-auto mb-4" />
             <p className="text-gray-600 dark:text-slate-400 font-medium">Analyzing your financial data...</p>
@@ -62,7 +64,7 @@ const AIInsights = () => {
     return (
       <>
         <Sidebar />
-        <div className="lg:ml-72 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-8">
+        <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-3 sm:p-8 transition-all duration-300`}>
           <div className="max-w-4xl mx-auto">
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
               <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-3" />
@@ -114,11 +116,11 @@ const AIInsights = () => {
   return (
     <>
       <Sidebar />
-      <div className="lg:ml-72 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
+      <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-3 sm:p-6 transition-all duration-300`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
               <div>
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
                   <Zap className="w-10 h-10 text-indigo-600 mr-3" />
@@ -126,7 +128,7 @@ const AIInsights = () => {
                 </h1>
                 <p className="text-gray-600 dark:text-slate-400">Personalized recommendations based on your financial behavior</p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <select
                   value={period}
                   onChange={(e) => setPeriod(e.target.value)}

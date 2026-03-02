@@ -45,6 +45,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 import { API_URL } from '../services/api';
 
 const GOAL_CATEGORIES = [
@@ -65,6 +66,7 @@ const PRIORITIES = ['low', 'medium', 'high', 'critical'];
 const SAVINGS_STRATEGIES = ['lump_sum', 'monthly', 'weekly', 'variable'];
 
 function FinancialGoals() {
+  const { isCollapsed } = useSidebar();
   const [goals, setGoals] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -268,7 +270,7 @@ function FinancialGoals() {
     return (
       <>
         <Sidebar />
-        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
           <Typography>Loading goals...</Typography>
         </Box>
       </>
@@ -282,7 +284,7 @@ function FinancialGoals() {
   return (
     <>
       <Sidebar />
-      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 pb-8 transition-all duration-300`}>
         {/* Enhanced Header with Gradient */}
         <Box
           sx={{

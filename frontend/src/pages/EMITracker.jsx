@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 import EMIMonthlyTrends from '../components/EMIMonthlyTrends';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -131,6 +132,7 @@ const getTableHeader = (isDark) => isDark ? 'rgba(30, 41, 59, 0.8)' : '#fafafa';
 
 const EMITracker = () => {
   const { isDark, mode, accent } = useTheme();
+  const { isCollapsed } = useSidebar();
 
   // Memoized theme-aware styles
   const chartCardHoverEffect = useMemo(() => getChartCardStyle(isDark), [isDark]);
@@ -400,6 +402,35 @@ const EMITracker = () => {
   // Message shown inside Personal Loans tab (instead of alert())
   const [personalLoanMessage, setPersonalLoanMessage] = useState(null);
 
+  // ===== Credit Card Bills State =====
+  const [ccBills, setCcBills] = useState([]);
+  const [ccBillsSummary, setCcBillsSummary] = useState(null);
+  const [ccBillsLoading, setCcBillsLoading] = useState(false);
+  const [ccBillSyncing, setCcBillSyncing] = useState(false);
+  const [ccBillDialogOpen, setCcBillDialogOpen] = useState(false);
+  const [ccBillPayDialogOpen, setCcBillPayDialogOpen] = useState(false);
+  const [selectedCcBill, setSelectedCcBill] = useState(null);
+  const [ccBillFormData, setCcBillFormData] = useState({
+    cardProvider: '',
+    cardLastFourDigits: '',
+    cardHolderName: '',
+    cardNetwork: '',
+    statementDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    totalAmount: '',
+    minimumDue: '',
+    creditLimit: '',
+    interestCharged: '',
+    feesAndCharges: '',
+    newCharges: '',
+    previousBalance: '',
+    paymentsReceived: '',
+    notes: '',
+    spendingByCategory: []
+  });
+  const [ccPayAmount, setCcPayAmount] = useState('');
+  const [ccPayMethod, setCcPayMethod] = useState('');
+
   // Confirmation Dialog State
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,
@@ -438,6 +469,10 @@ const EMITracker = () => {
     // Fetch personal loans when tab 8 is active
     if (activeTab === 8) {
       fetchPersonalLoans();
+    }
+    // Fetch CC bills when tab 9 is active
+    if (activeTab === 9) {
+      fetchCCBills();
     }
   }, [activeTab]);
 
@@ -1231,6 +1266,111 @@ const EMITracker = () => {
     }
   };
 
+  // ===== Credit Card Bills Functions =====
+  const fetchCCBills = async () => {
+    setCcBillsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const [billsRes, summaryRes] = await Promise.all([
+        axios.get(`${API_URL}/cc-bills?months=12`, config),
+        axios.get(`${API_URL}/cc-bills/summary`, config)
+      ]);
+      setCcBills(billsRes.data.data?.bills || []);
+      setCcBillsSummary(summaryRes.data.data || null);
+    } catch (err) {
+      console.error('Error fetching CC bills:', err);
+    } finally {
+      setCcBillsLoading(false);
+    }
+  };
+
+  const handleSaveCCBill = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const payload = {
+        ...ccBillFormData,
+        totalAmount: Number(ccBillFormData.totalAmount),
+        minimumDue: Number(ccBillFormData.minimumDue || 0),
+        creditLimit: Number(ccBillFormData.creditLimit || 0),
+        interestCharged: Number(ccBillFormData.interestCharged || 0),
+        feesAndCharges: Number(ccBillFormData.feesAndCharges || 0),
+        newCharges: Number(ccBillFormData.newCharges || 0),
+        previousBalance: Number(ccBillFormData.previousBalance || 0),
+        paymentsReceived: Number(ccBillFormData.paymentsReceived || 0)
+      };
+
+      if (selectedCcBill) {
+        await axios.put(`${API_URL}/cc-bills/${selectedCcBill._id}`, payload, config);
+        showSnackbar('Credit card bill updated!');
+      } else {
+        await axios.post(`${API_URL}/cc-bills`, payload, config);
+        showSnackbar('Credit card bill added!');
+      }
+      setCcBillDialogOpen(false);
+      setSelectedCcBill(null);
+      setCcBillFormData({
+        cardProvider: '', cardLastFourDigits: '', cardHolderName: '', cardNetwork: '',
+        statementDate: new Date().toISOString().split('T')[0], dueDate: '',
+        totalAmount: '', minimumDue: '', creditLimit: '', interestCharged: '',
+        feesAndCharges: '', newCharges: '', previousBalance: '', paymentsReceived: '', notes: '',
+        spendingByCategory: []
+      });
+      fetchCCBills();
+    } catch (err) {
+      console.error('Error saving CC bill:', err);
+      showSnackbar(err.response?.data?.message || 'Failed to save credit card bill', 'error');
+    }
+  };
+
+  const handlePayCCBill = async () => {
+    if (!selectedCcBill || !ccPayAmount) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/cc-bills/${selectedCcBill._id}/pay`,
+        { amount: Number(ccPayAmount), paymentMethod: ccPayMethod },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showSnackbar('Payment recorded!');
+      setCcBillPayDialogOpen(false);
+      setCcPayAmount('');
+      setCcPayMethod('');
+      setSelectedCcBill(null);
+      fetchCCBills();
+    } catch (err) {
+      showSnackbar(err.response?.data?.message || 'Payment failed', 'error');
+    }
+  };
+
+  const handleDeleteCCBill = async (billId) => {
+    if (!confirm('Delete this credit card bill?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/cc-bills/${billId}`, { headers: { Authorization: `Bearer ${token}` } });
+      showSnackbar('Bill deleted');
+      fetchCCBills();
+    } catch (err) {
+      showSnackbar('Failed to delete bill', 'error');
+    }
+  };
+
+  const handleSyncCCBillsGmail = async () => {
+    setCcBillSyncing(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${API_URL}/cc-bills/sync-gmail`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const data = res.data.data;
+      showSnackbar(`Gmail sync: ${data.created} bills imported, ${data.skipped} skipped`);
+      fetchCCBills();
+    } catch (err) {
+      showSnackbar(err.response?.data?.message || 'Gmail sync failed', 'error');
+    } finally {
+      setCcBillSyncing(false);
+    }
+  };
+
   const handleExportReport = async () => {
     setExportLoading(true);
     try {
@@ -1803,7 +1943,7 @@ const EMITracker = () => {
   return (
     <>
       <Sidebar />
-      <Box className={`lg:ml-72 min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen transition-all duration-300 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
       {/* Enhanced Header with Gradient Background */}
       <Box 
@@ -3207,6 +3347,11 @@ const EMITracker = () => {
             icon={<MoneyIcon />} 
             iconPosition="start"
           />
+          <Tab 
+            label="Credit Card Bills" 
+            icon={<CreditCardIcon />} 
+            iconPosition="start"
+          />
         </Tabs>
       </Box>
 
@@ -3377,7 +3522,7 @@ const EMITracker = () => {
               />
               <Button variant="text" size="small">Clear</Button>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               <Chip 
                 label="Show Investments" 
                 icon={<CheckCircleIcon />}
@@ -7605,6 +7750,358 @@ const EMITracker = () => {
         </Box>
       )}
 
+      {/* ===== Credit Card Bills Tab ===== */}
+      {activeTab === 9 && (
+        <Box>
+          {ccBillsLoading ? (
+            <Box display="flex" justifyContent="center" py={8}>
+              <CircularProgress size={48} />
+            </Box>
+          ) : (
+            <>
+              {/* Summary Cards */}
+              {ccBillsSummary && (
+                <Grid container spacing={3} mb={4}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+                      <CardContent>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>Total Outstanding</Typography>
+                        <Typography variant="h4" fontWeight="bold">
+                          ₹{(ccBillsSummary.totalOutstanding || 0).toLocaleString()}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
+                      <CardContent>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>Total Minimum Due</Typography>
+                        <Typography variant="h4" fontWeight="bold">
+                          ₹{(ccBillsSummary.totalMinimumDue || 0).toLocaleString()}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white' }}>
+                      <CardContent>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>Overdue Bills</Typography>
+                        <Typography variant="h4" fontWeight="bold">
+                          {ccBillsSummary.overdueCount || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
+                      <CardContent>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>Upcoming (7 days)</Typography>
+                        <Typography variant="h4" fontWeight="bold">
+                          {ccBillsSummary.upcomingBills || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Action Buttons */}
+              <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setSelectedCcBill(null);
+                    setCcBillFormData({
+                      cardProvider: '', cardLastFourDigits: '', cardHolderName: '', cardNetwork: '',
+                      statementDate: new Date().toISOString().split('T')[0], dueDate: '',
+                      totalAmount: '', minimumDue: '', creditLimit: '', interestCharged: '',
+                      feesAndCharges: '', newCharges: '', previousBalance: '', paymentsReceived: '', notes: '',
+                      spendingByCategory: []
+                    });
+                    setCcBillDialogOpen(true);
+                  }}
+                  sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                >
+                  Add Bill Manually
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={ccBillSyncing ? <CircularProgress size={16} /> : <RefreshIcon />}
+                  onClick={handleSyncCCBillsGmail}
+                  disabled={ccBillSyncing}
+                >
+                  {ccBillSyncing ? 'Syncing...' : 'Sync from Gmail'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={fetchCCBills}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              {/* Bills Table */}
+              {ccBills.length === 0 ? (
+                <Card sx={{ p: 4, textAlign: 'center', bgcolor: isDark ? 'rgba(30,41,59,0.8)' : 'white' }}>
+                  <CreditCardIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary">No credit card bills found</Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Add bills manually or sync from Gmail to get started
+                  </Typography>
+                </Card>
+              ) : (
+                <Card sx={{ mb: 4, borderRadius: 3, overflow: 'hidden', bgcolor: isDark ? 'rgba(30,41,59,0.8)' : 'white' }}>
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)' }}>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Card</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Statement Date</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }} align="right">Total Amount</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }} align="right">Min Due</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Due Date</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }} align="right">Paid</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Source</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }} align="center">Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {ccBills.map((bill) => {
+                          const statusColors = {
+                            unpaid: 'error',
+                            minimum_paid: 'warning',
+                            partial_paid: 'info',
+                            full_paid: 'success',
+                            overdue: 'error'
+                          };
+                          return (
+                            <TableRow key={bill._id} hover>
+                              <TableCell>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <CreditCardIcon fontSize="small" color="primary" />
+                                  <Box>
+                                    <Typography variant="body2" fontWeight="bold">
+                                      {bill.cardProvider}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      ****{bill.cardLastFourDigits || '----'}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(bill.statementDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography fontWeight="bold" color="error.main">
+                                  ₹{bill.totalAmount?.toLocaleString()}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                ₹{(bill.minimumDue || 0).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                {bill.dueDate
+                                  ? new Date(bill.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+                                  : '—'}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={bill.paymentStatus?.replace('_', ' ').toUpperCase() || 'UNPAID'}
+                                  color={statusColors[bill.paymentStatus] || 'default'}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </TableCell>
+                              <TableCell align="right">
+                                ₹{(bill.amountPaid || 0).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={bill.source === 'gmail' ? 'Gmail' : bill.source === 'statement_pdf' ? 'PDF' : 'Manual'}
+                                  size="small"
+                                  variant="filled"
+                                  sx={{
+                                    bgcolor: bill.source === 'gmail' ? 'info.main' : bill.source === 'statement_pdf' ? 'secondary.main' : 'success.main',
+                                    color: 'white',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell align="center">
+                                <Box display="flex" justifyContent="center" gap={0.5}>
+                                  {bill.paymentStatus !== 'full_paid' && (
+                                    <Tooltip title="Pay Bill">
+                                      <IconButton
+                                        size="small"
+                                        color="success"
+                                        onClick={() => {
+                                          setSelectedCcBill(bill);
+                                          setCcPayAmount('');
+                                          setCcPayMethod('');
+                                          setCcBillPayDialogOpen(true);
+                                        }}
+                                      >
+                                        <PaymentIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                  <Tooltip title="Edit">
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={() => {
+                                        setSelectedCcBill(bill);
+                                        setCcBillFormData({
+                                          cardProvider: bill.cardProvider || '',
+                                          cardLastFourDigits: bill.cardLastFourDigits || '',
+                                          cardHolderName: bill.cardHolderName || '',
+                                          cardNetwork: bill.cardNetwork || '',
+                                          statementDate: bill.statementDate?.split('T')[0] || '',
+                                          dueDate: bill.dueDate?.split('T')[0] || '',
+                                          totalAmount: bill.totalAmount || '',
+                                          minimumDue: bill.minimumDue || '',
+                                          creditLimit: bill.creditLimit || '',
+                                          interestCharged: bill.interestCharged || '',
+                                          feesAndCharges: bill.feesAndCharges || '',
+                                          newCharges: bill.newCharges || '',
+                                          previousBalance: bill.previousBalance || '',
+                                          paymentsReceived: bill.paymentsReceived || '',
+                                          notes: bill.notes || '',
+                                          spendingByCategory: bill.spendingByCategory || []
+                                        });
+                                        setCcBillDialogOpen(true);
+                                      }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Delete">
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => handleDeleteCCBill(bill._id)}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Card>
+              )}
+
+              {/* Spending Analytics */}
+              {ccBillsSummary && (
+                <Grid container spacing={3}>
+                  {/* Monthly Spending Trend */}
+                  {ccBillsSummary.monthlySpending?.length > 0 && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Card sx={{ ...getChartCardStyle(isDark), p: 3 }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                          Monthly Spending Trend
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={ccBillsSummary.monthlySpending}>
+                            <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.1)' : '#eee'} />
+                            <XAxis dataKey="_id" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }} />
+                            <YAxis tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }} />
+                            <RechartsTooltip
+                              contentStyle={{
+                                backgroundColor: isDark ? '#1e293b' : '#fff',
+                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                                borderRadius: 8
+                              }}
+                              formatter={(value) => [`₹${value.toLocaleString()}`, 'Amount']}
+                            />
+                            <Bar dataKey="total" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </Card>
+                    </Grid>
+                  )}
+
+                  {/* Category Breakdown */}
+                  {ccBillsSummary.categorySpending?.length > 0 && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Card sx={{ ...getChartCardStyle(isDark), p: 3 }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                          Spending by Category
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <PieChart>
+                            <Pie
+                              data={ccBillsSummary.categorySpending}
+                              dataKey="total"
+                              nameKey="_id"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              label={({ _id, percent }) => `${_id} ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {ccBillsSummary.categorySpending.map((_, idx) => (
+                                <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip
+                              contentStyle={{
+                                backgroundColor: isDark ? '#1e293b' : '#fff',
+                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                                borderRadius: 8
+                              }}
+                              formatter={(value) => [`₹${value.toLocaleString()}`, 'Amount']}
+                            />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </Card>
+                    </Grid>
+                  )}
+
+                  {/* Card-wise Breakdown */}
+                  {ccBillsSummary.cardBreakdown?.length > 0 && (
+                    <Grid size={12}>
+                      <Card sx={{ ...getChartCardStyle(isDark), p: 3 }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                          Card-wise Breakdown
+                        </Typography>
+                        <Grid container spacing={2}>
+                          {ccBillsSummary.cardBreakdown.map((card, idx) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                              <Card variant="outlined" sx={{ p: 2 }}>
+                                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                                  <CreditCardIcon color="primary" />
+                                  <Typography fontWeight="bold">{card._id?.provider || 'Unknown'}</Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    ****{card._id?.digits || '----'}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="h6">₹{(card.totalSpent || 0).toLocaleString()}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {card.count || 0} bill(s) · Avg: ₹{Math.round(card.avgBill || 0).toLocaleString()}
+                                </Typography>
+                              </Card>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Card>
+                    </Grid>
+                  )}
+                </Grid>
+              )}
+            </>
+          )}
+        </Box>
+      )}
+
       {/* Sync Dialog */}
       <Dialog 
         open={syncDialogOpen} 
@@ -9034,6 +9531,304 @@ const EMITracker = () => {
           <Button onClick={() => setPersonalLoanRepaymentDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleAddPersonalLoanRepayment} variant="contained" color="success">
             Add Repayment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add/Edit Credit Card Bill Dialog */}
+      <Dialog
+        open={ccBillDialogOpen}
+        onClose={() => { setCcBillDialogOpen(false); setSelectedCcBill(null); }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CreditCardIcon color="primary" />
+          {selectedCcBill ? 'Edit Credit Card Bill' : 'Add Credit Card Bill'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth required>
+                  <InputLabel>Card Provider</InputLabel>
+                  <Select
+                    value={ccBillFormData.cardProvider}
+                    onChange={(e) => setCcBillFormData({ ...ccBillFormData, cardProvider: e.target.value })}
+                    label="Card Provider"
+                  >
+                    {['ICICI', 'HDFC', 'SBI', 'AXIS', 'KOTAK', 'CITI', 'AMEX', 'RBL', 'YES BANK', 'INDUSIND', 'OTHER'].map(p => (
+                      <MenuItem key={p} value={p}>{p}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Last 4 Digits"
+                  fullWidth
+                  value={ccBillFormData.cardLastFourDigits}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, cardLastFourDigits: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  placeholder="1234"
+                  inputProps={{ maxLength: 4 }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Card Holder Name"
+                  fullWidth
+                  value={ccBillFormData.cardHolderName}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, cardHolderName: e.target.value })}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Card Network</InputLabel>
+                  <Select
+                    value={ccBillFormData.cardNetwork}
+                    onChange={(e) => setCcBillFormData({ ...ccBillFormData, cardNetwork: e.target.value })}
+                    label="Card Network"
+                  >
+                    {['VISA', 'MASTERCARD', 'RUPAY', 'AMEX', 'DINERS'].map(n => (
+                      <MenuItem key={n} value={n}>{n}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Statement Date"
+                  type="date"
+                  fullWidth
+                  required
+                  value={ccBillFormData.statementDate}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, statementDate: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Due Date"
+                  type="date"
+                  fullWidth
+                  value={ccBillFormData.dueDate}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, dueDate: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Total Bill Amount"
+                  type="number"
+                  fullWidth
+                  required
+                  value={ccBillFormData.totalAmount}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, totalAmount: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Minimum Due"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.minimumDue}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, minimumDue: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Credit Limit"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.creditLimit}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, creditLimit: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Interest Charged"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.interestCharged}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, interestCharged: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Fees & Charges"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.feesAndCharges}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, feesAndCharges: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="New Charges"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.newCharges}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, newCharges: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Previous Balance"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.previousBalance}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, previousBalance: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Payments Received"
+                  type="number"
+                  fullWidth
+                  value={ccBillFormData.paymentsReceived}
+                  onChange={(e) => setCcBillFormData({ ...ccBillFormData, paymentsReceived: e.target.value })}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                />
+              </Grid>
+            </Grid>
+
+            <TextField
+              label="Notes"
+              fullWidth
+              multiline
+              rows={2}
+              value={ccBillFormData.notes}
+              onChange={(e) => setCcBillFormData({ ...ccBillFormData, notes: e.target.value })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => { setCcBillDialogOpen(false); setSelectedCcBill(null); }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveCCBill}
+            variant="contained"
+            disabled={!ccBillFormData.cardProvider || !ccBillFormData.totalAmount}
+            sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+          >
+            {selectedCcBill ? 'Update Bill' : 'Add Bill'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Pay Credit Card Bill Dialog */}
+      <Dialog
+        open={ccBillPayDialogOpen}
+        onClose={() => { setCcBillPayDialogOpen(false); setSelectedCcBill(null); }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PaymentIcon color="success" />
+          Pay Credit Card Bill
+        </DialogTitle>
+        <DialogContent>
+          {selectedCcBill && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Card:</strong> {selectedCcBill.cardProvider} ****{selectedCcBill.cardLastFourDigits || '----'}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Total Amount:</strong> ₹{selectedCcBill.totalAmount?.toLocaleString()}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Already Paid:</strong> ₹{(selectedCcBill.amountPaid || 0).toLocaleString()}
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" color="error.main">
+                  <strong>Remaining:</strong> ₹{((selectedCcBill.totalAmount || 0) - (selectedCcBill.amountPaid || 0)).toLocaleString()}
+                </Typography>
+                {selectedCcBill.minimumDue > 0 && (
+                  <Typography variant="body2" color="warning.main">
+                    <strong>Minimum Due:</strong> ₹{selectedCcBill.minimumDue?.toLocaleString()}
+                  </Typography>
+                )}
+              </Alert>
+
+              <TextField
+                label="Payment Amount"
+                type="number"
+                required
+                fullWidth
+                value={ccPayAmount}
+                onChange={(e) => setCcPayAmount(e.target.value)}
+                InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>₹</Typography> }}
+                helperText={`Remaining: ₹${((selectedCcBill.totalAmount || 0) - (selectedCcBill.amountPaid || 0)).toLocaleString()}`}
+              />
+
+              <Box display="flex" gap={1} flexWrap="wrap">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setCcPayAmount(String(selectedCcBill.minimumDue || 0))}
+                >
+                  Min Due (₹{(selectedCcBill.minimumDue || 0).toLocaleString()})
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setCcPayAmount(String((selectedCcBill.totalAmount || 0) - (selectedCcBill.amountPaid || 0)))}
+                >
+                  Full (₹{((selectedCcBill.totalAmount || 0) - (selectedCcBill.amountPaid || 0)).toLocaleString()})
+                </Button>
+              </Box>
+
+              <FormControl fullWidth>
+                <InputLabel>Payment Method</InputLabel>
+                <Select
+                  value={ccPayMethod}
+                  onChange={(e) => setCcPayMethod(e.target.value)}
+                  label="Payment Method"
+                >
+                  <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
+                  <MenuItem value="upi">UPI</MenuItem>
+                  <MenuItem value="auto_debit">Auto Debit</MenuItem>
+                  <MenuItem value="cash">Cash</MenuItem>
+                  <MenuItem value="other">Other</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => { setCcBillPayDialogOpen(false); setSelectedCcBill(null); }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handlePayCCBill}
+            variant="contained"
+            color="success"
+            disabled={!ccPayAmount || Number(ccPayAmount) <= 0}
+            startIcon={<PaymentIcon />}
+          >
+            Record Payment
           </Button>
         </DialogActions>
       </Dialog>

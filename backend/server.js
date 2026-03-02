@@ -178,6 +178,7 @@ app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
 app.use('/api/emi', require('./routes/emiRoutes'));
+app.use('/api/cc-bills', require('./routes/creditCardBillRoutes'));
 app.use('/api/loans-given', require('./routes/loansGivenRoutes'));
 app.use('/api/personal-loans', require('./routes/personalLoanRoutes'));
 app.use('/api/lenders', require('./routes/lenderRoutes'));

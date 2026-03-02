@@ -44,6 +44,7 @@ import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
@@ -68,6 +69,7 @@ const CATEGORIES = ['equity', 'debt', 'hybrid', 'commodity', 'real_estate', 'cry
 const RISK_LEVELS = ['low', 'medium', 'high'];
 
 function InvestmentPortfolio() {
+  const { isCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState(0);
   const [investments, setInvestments] = useState([]);
   const [portfolio, setPortfolio] = useState(null);
@@ -256,7 +258,7 @@ function InvestmentPortfolio() {
     return (
       <>
         <Sidebar />
-        <Box className="lg:ml-72 min-h-screen bg-gray-50 flex items-center justify-center">
+        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
           <Typography>Loading portfolio...</Typography>
         </Box>
       </>
@@ -271,7 +273,7 @@ function InvestmentPortfolio() {
   return (
     <>
       <Sidebar />
-      <Box className="lg:ml-72 min-h-screen bg-gray-50 pb-8">
+      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 pb-8 transition-all duration-300`}>
         {/* Enhanced Header with Gradient */}
         <Box
           sx={{
@@ -457,7 +459,7 @@ function InvestmentPortfolio() {
       {activeTab === 0 && (
         <Paper>
           {/* Filters */}
-          <Box sx={{ p: 2, display: 'flex', gap: 2, borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ p: 2, display: 'flex', flexWrap: 'wrap', gap: 2, borderBottom: '1px solid #e0e0e0' }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Type</InputLabel>
               <Select
