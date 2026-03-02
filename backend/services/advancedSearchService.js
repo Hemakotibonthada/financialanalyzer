@@ -1,4 +1,9 @@
-const { Client } = require('@elastic/elasticsearch');
+let Client;
+try {
+  ({ Client } = require('@elastic/elasticsearch'));
+} catch (e) {
+  Client = null;
+}
 const Transaction = require('../models/Transaction');
 const Invoice = require('../models/Invoice');
 const ClientModel = require('../models/Client');
@@ -6,13 +11,17 @@ const Project = require('../models/Project');
 
 class AdvancedSearchService {
   constructor() {
-    if (process.env.ELASTICSEARCH_URL) {
+    if (Client && process.env.ELASTICSEARCH_URL) {
       this.client = new Client({
         node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200'
       });
       this.initializeIndices();
     } else {
-      console.warn('Elasticsearch URL not configured. Search will use MongoDB queries.');
+      if (!Client) {
+        console.warn('Elasticsearch package not installed. Search will use MongoDB queries.');
+      } else {
+        console.warn('Elasticsearch URL not configured. Search will use MongoDB queries.');
+      }
       this.client = null;
     }
   }
