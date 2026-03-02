@@ -73,224 +73,127 @@ const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
-    overview: true,
-    transactions: false,
-    budgeting: false,
-    investments: false,
-    wealth: false,
-    tax: false,
-    retirement: false,
+    money: false,
+    invest: false,
     debt: false,
-    goals: false,
-    reports: false,
-    ai: false,
-    education: false,
-    tools: false,
-    social: false,
-    settings: false,
-    advanced: false,
+    plan: false,
+    insights: false,
+    more: false,
   });
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
+  // — Quick-access top-level links (always visible, no collapse) —
+  const quickLinks = [
+    { label: 'Dashboard', icon: Home, path: '/dashboard', color: 'blue' },
+    { label: 'Financial Health', icon: Activity, path: '/financial-health', color: 'teal' },
+    { label: 'Notifications', icon: Bell, path: '/smart-notifications', color: 'yellow' },
+  ];
+
+  // — Consolidated navigation: 6 groups instead of 16 —
   const navigationSections = [
     {
-      id: 'overview',
-      label: 'Overview',
-      icon: LayoutDashboard,
-      items: [
-        { label: 'Dashboard', icon: Home, path: '/dashboard', color: 'blue' },
-        { label: 'Dashboard V2', icon: LayoutDashboard, path: '/dashboard-v2', color: 'indigo', badge: 'NEW' },
-        { label: 'Financial Health', icon: Activity, path: '/financial-health', color: 'teal' },
-        { label: 'Scorecard', icon: FileBarChart, path: '/scorecard', color: 'emerald' },
-      ]
-    },
-    {
-      id: 'transactions',
-      label: 'Transactions',
-      icon: ArrowLeftRight,
+      id: 'money',
+      label: 'Money',
+      icon: Banknote,
       items: [
         { label: 'Transactions', icon: ArrowLeftRight, path: '/transactions', color: 'blue' },
         { label: 'Bank Accounts', icon: Landmark, path: '/bank-accounts', color: 'green' },
         { label: 'Credit Cards', icon: CreditCard, path: '/credit-cards', color: 'purple' },
-        { label: 'Net Banking', icon: Globe, path: '/net-banking', color: 'cyan' },
-        { label: 'Currency Converter', icon: Coins, path: '/currency-converter', color: 'yellow' },
-        { label: 'Receipt Scanner', icon: ScanLine, path: '/receipt-scanner', color: 'orange' },
-      ]
-    },
-    {
-      id: 'budgeting',
-      label: 'Budgeting',
-      icon: ClipboardList,
-      items: [
-        { label: 'Budget Planner', icon: ClipboardList, path: '/budget-planner', color: 'blue' },
-        { label: 'Budget Wizard', icon: Sparkles, path: '/budget-wizard', color: 'purple', badge: 'NEW' },
-        { label: 'Cash Flow', icon: TrendingUp, path: '/cash-flow', color: 'green' },
-        { label: 'Financial Calendar', icon: CalendarDays, path: '/financial-calendar', color: 'orange' },
-        { label: 'Templates', icon: ScrollText, path: '/templates', color: 'indigo' },
-      ]
-    },
-    {
-      id: 'income',
-      label: 'Income & Expenses',
-      icon: Banknote,
-      items: [
+        { label: 'Budget Planner', icon: ClipboardList, path: '/budget-planner', color: 'indigo' },
         { label: 'Income Tracker', icon: Banknote, path: '/income-tracker', color: 'green' },
-        { label: 'Recurring Payments', icon: Repeat, path: '/recurring-payments', color: 'blue' },
-        { label: 'Split Expenses', icon: Users, path: '/split-expenses', color: 'purple' },
+        { label: 'Cash Flow', icon: TrendingUp, path: '/cash-flow', color: 'teal' },
+        { label: 'Bills & Recurring', icon: Repeat, path: '/recurring-payments', color: 'orange' },
         { label: 'Subscriptions', icon: Boxes, path: '/subscriptions', color: 'pink' },
-        { label: 'Bill Tracker', icon: Receipt, path: '/bill-tracker', color: 'orange' },
-        { label: 'Bill Reminders', icon: Bell, path: '/bill-reminders', color: 'yellow' },
+        { label: 'Split Expenses', icon: Users, path: '/split-expenses', color: 'purple' },
+        { label: 'Receipt Scanner', icon: ScanLine, path: '/receipt-scanner', color: 'amber' },
+        { label: 'Currency Converter', icon: Coins, path: '/currency-converter', color: 'yellow' },
       ]
     },
     {
-      id: 'investments',
-      label: 'Investments',
+      id: 'invest',
+      label: 'Invest & Wealth',
       icon: LineChart,
       items: [
         { label: 'Portfolio', icon: PieChart, path: '/investments', color: 'indigo' },
-        { label: 'Investment Analyzer', icon: LineChart, path: '/investment-analyzer', color: 'blue' },
         { label: 'Mutual Funds', icon: BarChart3, path: '/mutual-funds', color: 'green' },
-        { label: 'Crypto', icon: Bitcoin, path: '/crypto', color: 'orange' },
         { label: 'Fixed Deposits', icon: Landmark, path: '/fixed-deposits', color: 'teal' },
         { label: 'Gold', icon: Gem, path: '/gold', color: 'yellow' },
+        { label: 'Crypto', icon: Bitcoin, path: '/crypto', color: 'orange' },
+        { label: 'Net Worth', icon: Wallet, path: '/networth-enhanced', color: 'emerald' },
+        { label: 'Property', icon: Building2, path: '/property', color: 'orange' },
+        { label: 'Retirement', icon: Clock, path: '/retirement', color: 'blue' },
+        { label: 'PPF / EPF / NPS', icon: PiggyBank, path: '/ppf', color: 'indigo' },
         { label: 'SIP Calculator', icon: Calculator, path: '/sip-calculator', color: 'purple' },
         { label: 'Market Insights', icon: Globe, path: '/market-insights', color: 'cyan' },
-        { label: 'Watchlist', icon: Target, path: '/watchlist', color: 'red' },
-        { label: 'Portfolio Analytics', icon: BarChart3, path: '/portfolio-analytics', color: 'indigo' },
-      ]
-    },
-    {
-      id: 'wealth',
-      label: 'Wealth & Assets',
-      icon: Wallet,
-      items: [
-        { label: 'Net Worth', icon: Wallet, path: '/networth', color: 'emerald' },
-        { label: 'Net Worth V2', icon: Wallet, path: '/networth-enhanced', color: 'green', badge: 'NEW' },
-        { label: 'Property', icon: Building2, path: '/property', color: 'orange' },
-        { label: 'Company Expenses', icon: Receipt, path: '/company-expenses', color: 'amber' },
-      ]
-    },
-    {
-      id: 'tax',
-      label: 'Tax & Insurance',
-      icon: Calculator,
-      items: [
-        { label: 'Tax Planner', icon: Calculator, path: '/tax-planner', color: 'red' },
-        { label: 'Tax Estimator', icon: Calculator, path: '/tax-estimator', color: 'orange' },
-        { label: 'Insurance', icon: Shield, path: '/insurance', color: 'blue' },
-        { label: 'Insurance Planner', icon: Umbrella, path: '/insurance-planner', color: 'cyan' },
-      ]
-    },
-    {
-      id: 'retirement',
-      label: 'Retirement',
-      icon: Clock,
-      items: [
-        { label: 'Retirement Planner', icon: Clock, path: '/retirement', color: 'green' },
-        { label: 'PPF', icon: PiggyBank, path: '/ppf', color: 'blue' },
-        { label: 'EPF', icon: Landmark, path: '/epf', color: 'indigo' },
-        { label: 'NPS', icon: TrendingUp, path: '/nps', color: 'purple' },
       ]
     },
     {
       id: 'debt',
-      label: 'Debt & Loans',
+      label: 'Debt & EMI',
       icon: Scale,
       items: [
+        { label: 'EMI Tracker', icon: CreditCard, path: '/emi-tracker', color: 'yellow' },
         { label: 'Debt Management', icon: Target, path: '/debt-management', color: 'red' },
         { label: 'Debt Payoff', icon: TrendingDown, path: '/debt-payoff', color: 'orange' },
         { label: 'Loan Calculator', icon: Calculator, path: '/loan-calculator', color: 'blue' },
-        { label: 'EMI Tracker', icon: CreditCard, path: '/emi-tracker', color: 'yellow' },
         { label: 'Emergency Fund', icon: Shield, path: '/emergency-fund', color: 'green' },
       ]
     },
     {
-      id: 'goals',
-      label: 'Goals & Savings',
+      id: 'plan',
+      label: 'Plan & Goals',
       icon: Target,
       items: [
         { label: 'Financial Goals', icon: Target, path: '/goals', color: 'orange' },
         { label: 'Goal Timeline', icon: GanttChart, path: '/goal-timeline', color: 'blue' },
         { label: 'Savings Challenges', icon: Flame, path: '/savings-challenges', color: 'red' },
+        { label: 'Tax Planner', icon: Calculator, path: '/tax-planner', color: 'red' },
+        { label: 'Insurance', icon: Umbrella, path: '/insurance-planner', color: 'cyan' },
+        { label: 'Financial Calendar', icon: CalendarDays, path: '/financial-calendar', color: 'orange' },
       ]
     },
     {
-      id: 'reports',
-      label: 'Reports & Analytics',
-      icon: BarChart3,
-      items: [
-        { label: 'Reports', icon: FileText, path: '/reports', color: 'blue' },
-        { label: 'Reports Hub', icon: FileBarChart, path: '/reports-hub', color: 'indigo' },
-        { label: 'Data Lab', icon: Sparkles, path: '/data-lab', color: 'purple' },
-        { label: 'Export Center', icon: Upload, path: '/export-center', color: 'green' },
-        { label: 'Comparison Tool', icon: Scale, path: '/comparison', color: 'orange' },
-        { label: 'Risk Dashboard', icon: Activity, path: '/risk-dashboard', color: 'red' },
-        { label: 'Advanced Analytics', icon: Sparkles, path: '/advanced-analytics', color: 'purple' },
-      ]
-    },
-    {
-      id: 'ai',
-      label: 'AI & Insights',
+      id: 'insights',
+      label: 'Insights & Reports',
       icon: Brain,
       items: [
         { label: 'AI Insights', icon: Brain, path: '/ai-insights', color: 'violet', badge: 'AI' },
-        { label: 'ML Dashboard', icon: Brain, path: '/ml-dashboard', color: 'purple' },
+        { label: 'Financial Chat', icon: Bot, path: '/financial-chat', color: 'blue' },
         { label: 'Spending Insights', icon: TrendingDown, path: '/spending-insights', color: 'rose' },
-        { label: 'Financial Chat', icon: Bot, path: '/financial-chat', color: 'blue', badge: 'NEW' },
+        { label: 'Reports Hub', icon: FileBarChart, path: '/reports-hub', color: 'indigo' },
+        { label: 'Analytics', icon: Sparkles, path: '/advanced-analytics', color: 'purple' },
+        { label: 'Risk Dashboard', icon: Activity, path: '/risk-dashboard', color: 'red' },
+        { label: 'Scorecard', icon: FileBarChart, path: '/scorecard', color: 'emerald' },
       ]
     },
     {
-      id: 'education',
-      label: 'Education',
-      icon: BookOpen,
-      items: [
-        { label: 'Learning Center', icon: BookOpen, path: '/education', color: 'blue' },
-        { label: 'Financial Quiz', icon: HelpCircle, path: '/quiz', color: 'green' },
-        { label: 'Achievements', icon: Award, path: '/achievements', color: 'yellow' },
-        { label: 'Milestones', icon: Trophy, path: '/milestones', color: 'orange' },
-      ]
-    },
-    {
-      id: 'tools',
-      label: 'Tools',
+      id: 'more',
+      label: 'More',
       icon: Zap,
       items: [
         { label: 'Documents', icon: FileText, path: '/financial-documents', color: 'purple' },
         { label: 'Automation', icon: Zap, path: '/automation', color: 'blue', badge: 'NEW' },
-        { label: 'Search', icon: Search, path: '/search', color: 'gray' },
-        { label: 'Import/Export', icon: Upload, path: '/import-export', color: 'green' },
-      ]
-    },
-    {
-      id: 'social',
-      label: 'Social & Family',
-      icon: Users,
-      items: [
         { label: 'Family Finance', icon: Users, path: '/family-finance', color: 'blue' },
-        { label: 'Notifications', icon: Bell, path: '/smart-notifications', color: 'yellow' },
-      ]
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      items: [
-        { label: 'Account Settings', icon: Settings, path: '/settings', color: 'gray' },
-        { label: 'Appearance', icon: Palette, path: '/appearance', color: 'purple' },
-        { label: 'Security', icon: Lock, path: '/security', color: 'red' },
-        { label: 'Profile', icon: User, path: '/profile', color: 'blue' },
+        { label: 'Learning Center', icon: BookOpen, path: '/education', color: 'blue' },
+        { label: 'Achievements', icon: Award, path: '/achievements', color: 'yellow' },
+        { label: 'Search', icon: Search, path: '/search', color: 'gray' },
+        { label: 'Import / Export', icon: Upload, path: '/import-export', color: 'green' },
+        { label: 'Company Expenses', icon: Receipt, path: '/company-expenses', color: 'amber' },
       ]
     },
   ];
 
+  // — Bottom pinned items (always visible) —
+  const bottomLinks = [
+    { label: 'Settings', icon: Settings, path: '/settings', color: 'gray' },
+    { label: 'Profile', icon: User, path: '/profile', color: 'blue' },
+  ];
+
   const advancedItems = [
-    { label: 'Advanced Search', icon: Search, path: '/advanced-search', color: 'cyan' },
     { label: 'Lender Dashboard', icon: DollarSign, path: '/lender-dashboard', color: 'green', roles: ['lender', 'admin'] },
-    { label: 'Real Estate', icon: Building2, path: '/real-estate', color: 'orange' },
-    { label: 'Business', icon: Briefcase, path: '/business', color: 'indigo' },
     { label: 'Admin Panel', icon: Shield, path: '/admin', color: 'red', roles: ['admin'] },
   ];
 
@@ -407,6 +310,20 @@ const Sidebar = () => {
 
       {/* Scrollable Navigation */}
       <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5 scrollbar-thin">
+        {/* Quick Access Links (always visible, no collapse) */}
+        <div className="space-y-0.5 mb-2">
+          {!collapsed && (
+            <p className="px-3 pt-1 pb-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+              Quick Access
+            </p>
+          )}
+          {quickLinks.map((item) => (
+            <NavItem key={item.path} item={item} collapsed={collapsed} />
+          ))}
+        </div>
+
+        <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-1" />
+
         {/* Collapsible Navigation Sections */}
         {navigationSections.map((section) => (
           <div key={section.id} className="mb-0.5">
@@ -421,19 +338,23 @@ const Sidebar = () => {
           </div>
         ))}
 
-        {/* Advanced Section */}
-        <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-0.5">
-          {!collapsed && (
-            <p className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Advanced
-            </p>
-          )}
-          {advancedItems
-            .filter(hasAccess)
-            .map((item) => (
-              <NavItem key={item.path} item={item} collapsed={collapsed} />
-            ))}
-        </div>
+        {/* Role-based items */}
+        {advancedItems.filter(hasAccess).length > 0 && (
+          <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-0.5">
+            {advancedItems
+              .filter(hasAccess)
+              .map((item) => (
+                <NavItem key={item.path} item={item} collapsed={collapsed} />
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pinned bottom: Settings + Profile */}
+      <div className="border-t border-gray-200 dark:border-gray-700 px-2 py-2 space-y-0.5">
+        {bottomLinks.map((item) => (
+          <NavItem key={item.path} item={item} collapsed={collapsed} />
+        ))}
       </div>
 
       {/* Collapse Toggle Button (Desktop Only) */}
