@@ -15,9 +15,27 @@ router.get('/', authenticate, async (req, res) => {
     const profile = await FinancialProfile.findOne({ userId: req.user._id });
 
     if (!profile) {
-      return res.status(404).json({
-        success: false,
-        message: 'Profile not found'
+      // Return a default empty profile pre-filled with the user's name
+      // so the frontend can show the form without errors
+      return res.json({
+        success: true,
+        isNew: true,
+        data: { 
+          profile: {
+            fullName: req.user.name || '',
+            dateOfBirth: '',
+            panNumber: '',
+            phoneNumber: '',
+            monthlyIncome: '',
+            currency: 'INR',
+            preferences: {},
+            budgetLimits: {},
+            savingsGoal: {},
+            customCategories: []
+          },
+          gmailConnected: false,
+          gmailEmail: null
+        }
       });
     }
 
@@ -104,10 +122,11 @@ router.post('/', authenticate, async (req, res) => {
         data: { profile }
       });
     } else {
-      // Create new profile
+      // Create new profile — use user's name as fallback for fullName
+      const profileFullName = fullName || req.user.name || 'User';
       profile = new FinancialProfile({
         userId: req.user._id,
-        fullName,
+        fullName: profileFullName,
         dateOfBirth,
         panNumber,
         phoneNumber,
@@ -133,6 +152,16 @@ router.post('/', authenticate, async (req, res) => {
     }
   } catch (error) {
     logger.error('Create/Update profile error:', error);
+    
+    // Return proper validation error messages
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join('. ')
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Error saving profile',

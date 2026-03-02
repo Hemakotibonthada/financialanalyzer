@@ -126,21 +126,30 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
     
+    const parsedAmount = parseFloat(amount);
+    const currency = req.body.currency || 'INR';
+    const exchangeRate = parseFloat(req.body.exchangeRate) || 1;
+    const interestType = req.body.interestType || 'none';
+
     const loan = new LoanGiven({
       userId: req.user._id,
       borrowerName,
       relationship: relationship || 'Friend',
-      amount,
+      amount: parsedAmount,
+      amountInINR: parsedAmount * exchangeRate,
+      currency,
+      exchangeRate,
       loanDate: loanDate || new Date(),
       expectedRepaymentDate,
       purpose,
       contactDetails,
       interestRate: hasInterest ? interestRate : 0,
+      interestType,
       hasInterest: hasInterest || false,
       notes,
       priority: priority || 'medium',
       tags: tags || [],
-      remainingAmount: amount
+      remainingAmount: parsedAmount
     });
     
     await loan.save();

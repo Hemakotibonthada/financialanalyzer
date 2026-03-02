@@ -260,6 +260,8 @@ const EMITracker = () => {
   const [selectedEMI, setSelectedEMI] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editEMIDialogOpen, setEditEMIDialogOpen] = useState(false);
+  const [editEMIData, setEditEMIData] = useState({});
+  const [editEMILoading, setEditEMILoading] = useState(false);
   const [emiDetailOpen, setEmiDetailOpen] = useState(false);
   const [selectedEmiChartData, setSelectedEmiChartData] = useState(null);
 
@@ -502,7 +504,7 @@ const EMITracker = () => {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
       const response = await axios.get(
-        `${API_URL}/transactions?startDate=${thirtyDaysAgo.toISOString().split('T')[0]}&type=expense`,
+        `${API_URL}/financial/transactions?startDate=${thirtyDaysAgo.toISOString().split('T')[0]}&type=expense`,
         config
       );
       
@@ -2130,9 +2132,20 @@ const EMITracker = () => {
             color="primary"
             onClick={() => {
               if (!selectedEMI) return;
-              // Open edit dialog
-              setEditEMIDialogOpen(true);
+              // Populate edit form with current EMI data
+              setEditEMIData({
+                merchantName: selectedEMI.merchantName || '',
+                productDescription: selectedEMI.productDescription || '',
+                emiAmount: selectedEMI.emiAmount || '',
+                interestRate: selectedEMI.interestRate || '',
+                totalTenure: selectedEMI.totalTenure || '',
+                notes: selectedEMI.notes || '',
+                tags: selectedEMI.tags || [],
+                status: selectedEMI.status || 'active'
+              });
               setEmiDetailOpen(false);
+              // Delay opening edit dialog until detail dialog finishes closing
+              setTimeout(() => setEditEMIDialogOpen(true), 150);
             }}
           >
             Edit
@@ -2141,8 +2154,8 @@ const EMITracker = () => {
             color="error"
             onClick={() => {
               if (!selectedEMI) return;
-              setDeleteConfirmOpen(true);
               setEmiDetailOpen(false);
+              setTimeout(() => setDeleteConfirmOpen(true), 150);
             }}
           >
             Delete
@@ -2152,25 +2165,30 @@ const EMITracker = () => {
             onClick={() => {
               if (!selectedEMI) return;
               if (selectedEMI.repaymentType === 'ON_REQUEST') {
-                setConfirmationDialog({
-                  open: true,
-                  title: 'Cannot Mark as Paid',
-                  message: 'This EMI is On-Request and cannot be marked as a regular installment.',
-                  isError: true,
-                  confirmAction: () => setConfirmationDialog(prev => ({ ...prev, open: false }))
-                });
+                setEmiDetailOpen(false);
+                setTimeout(() => {
+                  setConfirmationDialog({
+                    open: true,
+                    title: 'Cannot Mark as Paid',
+                    message: 'This EMI is On-Request and cannot be marked as a regular installment.',
+                    isError: true,
+                    confirmAction: () => setConfirmationDialog(prev => ({ ...prev, open: false }))
+                  });
+                }, 150);
                 return;
               }
               const nextInstallment = (selectedEMI.paidInstallments || 0) + 1;
-              handleMarkAsPaid(
-                selectedEMI.id || selectedEMI.emiId || selectedEMI._id, 
-                nextInstallment,
-                {
-                  amount: selectedEMI.emiAmount,
-                  dueDate: selectedEMI.nextDueDate
-                }
-              );
               setEmiDetailOpen(false);
+              setTimeout(() => {
+                handleMarkAsPaid(
+                  selectedEMI.id || selectedEMI.emiId || selectedEMI._id, 
+                  nextInstallment,
+                  {
+                    amount: selectedEMI.emiAmount,
+                    dueDate: selectedEMI.nextDueDate
+                  }
+                );
+              }, 150);
             }}
           >
             Mark Next Installment Paid
@@ -4306,8 +4324,61 @@ const EMITracker = () => {
 
       {/* Active EMIs Tab */}
       {activeTab === 5 && overview && (
-        <Grid container spacing={3}>
-          {overview.activeEMIs.map((emi) => (
+        <Box>
+          {/* EMI Distribution Chart */}
+          {overview.activeEMIs && overview.activeEMIs.length > 0 && (
+            <Grid container spacing={3} sx={{ mb: 3 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card elevation={isDark ? 0 : 3} sx={{ bgcolor: surface, border: `1px solid ${borderColor}`, borderRadius: 3, p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>📊 EMI Distribution by Provider</Typography>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={(() => {
+                          const providerMap = {};
+                          overview.activeEMIs.forEach(emi => {
+                            const key = emi.cardProvider || 'Other';
+                            providerMap[key] = (providerMap[key] || 0) + (emi.emiAmount || 0);
+                          });
+                          return Object.entries(providerMap).map(([name, value]) => ({ name, value }));
+                        })()}
+                        cx="50%" cy="50%" innerRadius={60} outerRadius={100}
+                        paddingAngle={3} dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {Object.keys(
+                          overview.activeEMIs.reduce((acc, e) => { acc[e.cardProvider || 'Other'] = 1; return acc; }, {})
+                        ).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <RechartsTooltip formatter={(value) => formatCurrency(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card elevation={isDark ? 0 : 3} sx={{ bgcolor: surface, border: `1px solid ${borderColor}`, borderRadius: 3, p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>📈 EMI Amount Comparison</Typography>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={overview.activeEMIs.map(emi => ({
+                      name: emi.merchantName?.length > 12 ? emi.merchantName.substring(0, 12) + '...' : emi.merchantName,
+                      emi: emi.emiAmount || 0,
+                      remaining: emi.remainingAmount || 0
+                    }))} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
+                      <RechartsTooltip formatter={(value) => formatCurrency(value)} />
+                      <Legend />
+                      <Bar dataKey="emi" name="Monthly EMI" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="remaining" name="Remaining" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Card>
+              </Grid>
+            </Grid>
+          )}
+          <Grid container spacing={3}>
+          {(overview.activeEMIs || []).map((emi) => (
             <Grid size={{ xs: 12, md: 6, lg: 4 }} key={emi.id}>
               <Card 
                 elevation={isDark ? 0 : 3}
@@ -4459,7 +4530,8 @@ const EMITracker = () => {
               </Card>
             </Grid>
           ))}
-        </Grid>
+          </Grid>
+        </Box>
       )}
 
       {/* Tab 5: Completed EMIs */}
@@ -8962,6 +9034,116 @@ const EMITracker = () => {
           <Button onClick={() => setPersonalLoanRepaymentDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleAddPersonalLoanRepayment} variant="contained" color="success">
             Add Repayment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit EMI Dialog */}
+      <Dialog
+        open={editEMIDialogOpen}
+        onClose={() => setEditEMIDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        disableEnforceFocus
+        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+      >
+        <DialogTitle>Edit EMI — {selectedEMI?.merchantName}</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              fullWidth
+              label="Merchant / Product Name"
+              value={editEMIData.merchantName || ''}
+              onChange={(e) => setEditEMIData(prev => ({ ...prev, merchantName: e.target.value }))}
+            />
+            <TextField
+              fullWidth
+              label="Product Description"
+              value={editEMIData.productDescription || ''}
+              onChange={(e) => setEditEMIData(prev => ({ ...prev, productDescription: e.target.value }))}
+            />
+            <TextField
+              fullWidth
+              label="EMI Amount (₹)"
+              type="number"
+              value={editEMIData.emiAmount || ''}
+              onChange={(e) => setEditEMIData(prev => ({ ...prev, emiAmount: e.target.value }))}
+              InputProps={{ startAdornment: '₹' }}
+            />
+            <TextField
+              fullWidth
+              label="Interest Rate (%)"
+              type="number"
+              value={editEMIData.interestRate || ''}
+              onChange={(e) => setEditEMIData(prev => ({ ...prev, interestRate: e.target.value }))}
+              InputProps={{ endAdornment: '%' }}
+            />
+            <TextField
+              fullWidth
+              label="Total Tenure (months)"
+              type="number"
+              value={editEMIData.totalTenure || ''}
+              onChange={(e) => setEditEMIData(prev => ({ ...prev, totalTenure: e.target.value }))}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={editEMIData.status || 'active'}
+                onChange={(e) => setEditEMIData(prev => ({ ...prev, status: e.target.value }))}
+                label="Status"
+              >
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="completed">Completed</MenuItem>
+                <MenuItem value="overdue">Overdue</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="Notes"
+              multiline
+              rows={3}
+              value={editEMIData.notes || ''}
+              onChange={(e) => setEditEMIData(prev => ({ ...prev, notes: e.target.value }))}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditEMIDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            disabled={editEMILoading}
+            onClick={async () => {
+              if (!selectedEMI) return;
+              setEditEMILoading(true);
+              try {
+                const token = localStorage.getItem('token');
+                const updatePayload = {
+                  merchantName: editEMIData.merchantName,
+                  productDescription: editEMIData.productDescription,
+                  emiAmount: parseFloat(editEMIData.emiAmount) || undefined,
+                  interestRate: parseFloat(editEMIData.interestRate) || undefined,
+                  totalTenure: parseInt(editEMIData.totalTenure) || undefined,
+                  notes: editEMIData.notes,
+                  status: editEMIData.status,
+                  tags: editEMIData.tags
+                };
+                await axios.put(
+                  `${API_URL}/emi/${selectedEMI.id || selectedEMI._id}`,
+                  updatePayload,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                showSnackbar('EMI updated successfully!');
+                setEditEMIDialogOpen(false);
+                fetchAllData();
+              } catch (err) {
+                console.error('Error updating EMI:', err);
+                showSnackbar(err.response?.data?.message || 'Failed to update EMI', 'error');
+              } finally {
+                setEditEMILoading(false);
+              }
+            }}
+          >
+            {editEMILoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

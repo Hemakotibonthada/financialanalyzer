@@ -14,7 +14,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [profile, setProfile] = useState({
-    fullName: '',
+    fullName: user?.name || '',
     dateOfBirth: '',
     panNumber: '',
     phoneNumber: '',
@@ -130,22 +130,24 @@ const Profile = () => {
       const response = await api.get('/profile');
       if (response.data.success && response.data.data?.profile) {
         const profileData = response.data.data.profile;
-        setProfile({
-          ...profile,
+        setProfile(prev => ({
+          ...prev,
           ...profileData,
+          fullName: profileData.fullName || user?.name || '',
           dateOfBirth: profileData.dateOfBirth ? new Date(profileData.dateOfBirth).toISOString().split('T')[0] : '',
           savingsGoal: {
             amount: profileData.savingsGoal?.amount || '',
             deadline: profileData.savingsGoal?.deadline ? new Date(profileData.savingsGoal.deadline).toISOString().split('T')[0] : '',
             description: profileData.savingsGoal?.description || ''
           }
-        });
+        }));
       }
       // Load income info
       await loadIncomeInfo();
     } catch (error) {
       console.error('Error loading profile:', error);
-      setMessage({ type: 'error', text: 'Failed to load profile data' });
+      const errorMsg = error.response?.data?.message || 'Failed to load profile data';
+      setMessage({ type: 'error', text: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -248,6 +250,12 @@ const Profile = () => {
   };
 
   const saveProfile = async () => {
+    // Validate required fields before sending
+    if (!profile.fullName?.trim()) {
+      setMessage({ type: 'error', text: 'Full name is required' });
+      return;
+    }
+
     try {
       setSaving(true);
       const response = await api.post('/profile', profile);
@@ -258,7 +266,8 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error saving profile:', error);
-      setMessage({ type: 'error', text: 'Failed to save profile' });
+      const errorMsg = error.response?.data?.message || 'Failed to save profile';
+      setMessage({ type: 'error', text: errorMsg });
     } finally {
       setSaving(false);
     }

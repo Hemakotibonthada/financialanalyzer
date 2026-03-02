@@ -1724,6 +1724,10 @@ router.put('/:id', authenticate, async (req, res) => {
     const allowedUpdates = [
       'merchantName',
       'productDescription',
+      'emiAmount',
+      'interestRate',
+      'interestType',
+      'totalTenure',
       'notes',
       'tags',
       'status'
@@ -1734,6 +1738,15 @@ router.put('/:id', authenticate, async (req, res) => {
         emi[field] = updates[field];
       }
     });
+
+    // Recalculate INR amounts if emi amount changed
+    const exchangeRate = emi.exchangeRate || 1;
+    if (updates.emiAmount !== undefined) {
+      emi.emiAmountInINR = parseFloat(updates.emiAmount) * exchangeRate;
+    }
+    if (updates.totalTenure !== undefined) {
+      emi.remainingInstallments = parseInt(updates.totalTenure) - (emi.paidInstallments || 0);
+    }
     
     await emi.save();
     
