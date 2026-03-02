@@ -2,12 +2,16 @@
  * @fileoverview Currency Conversion Service
  * Provides exchange rate lookups, currency conversion, historical rates,
  * rate alerts, and supported currency metadata.
- * Uses mock but realistic exchange rates with INR as the primary base.
+ * 
+ * When EXCHANGE_RATE_API_KEY is set in .env, real exchange rates are fetched
+ * from exchangerate-api.com. Otherwise, reference rates with INR as the
+ * primary base are used as fallback.
  * @module services/currencyService
  */
 
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
+const axios = require('axios');
 
 /* ---------- Mongoose Schema ---------- */
 
@@ -97,6 +101,27 @@ const currencyService = {
       const base = baseCurrency.toUpperCase();
       if (!isSupported(base)) throw new Error(`Unsupported base currency: ${base}`);
 
+      // Try real API if configured
+      const apiKey = process.env.EXCHANGE_RATE_API_KEY;
+      if (apiKey) {
+        try {
+          const res = await axios.get(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${base}`, { timeout: 5000 });
+          if (res.data && res.data.result === 'success') {
+            const rates = {};
+            for (const code of Object.keys(CURRENCIES)) {
+              rates[code] = res.data.conversion_rates[code] || null;
+            }
+            return {
+              success: true,
+              data: { base, rates, timestamp: new Date(), source: 'exchangerate-api.com', disclaimer: 'Live exchange rates.' },
+            };
+          }
+        } catch (apiErr) {
+          logger.warn(`Real exchange rate API failed, using reference rates: ${apiErr.message}`);
+        }
+      }
+
+      // Fallback to reference rates
       const baseToINR = jitter(CURRENCIES[base].rateToINR);
       const rates = {};
 
@@ -106,7 +131,6 @@ const currencyService = {
           continue;
         }
         const targetToINR = jitter(info.rateToINR);
-        // 1 base = (baseToINR / targetToINR) target
         rates[code] = +(baseToINR / targetToINR).toFixed(6);
       }
 
@@ -116,7 +140,8 @@ const currencyService = {
           base,
           rates,
           timestamp: new Date(),
-          disclaimer: 'Rates are indicative and for informational purposes only.',
+          source: 'reference',
+          disclaimer: 'Reference rates for informational purposes. Set EXCHANGE_RATE_API_KEY for live rates.',
         },
       };
     } catch (error) {

@@ -39,66 +39,7 @@ const FINANCIAL_TIPS = [
   { title: 'Invest Early', desc: 'Start investing early to leverage compound growth.' },
 ];
 
-const CHART_DATA = {
-  spending: [
-    { name: 'Food', value: 8500 },
-    { name: 'Transport', value: 3200 },
-    { name: 'Shopping', value: 5600 },
-    { name: 'Bills', value: 12000 },
-    { name: 'Entertainment', value: 2800 },
-  ],
-  trend: [
-    { month: 'Oct', amount: 35000 },
-    { month: 'Nov', amount: 32000 },
-    { month: 'Dec', amount: 42000 },
-    { month: 'Jan', amount: 38000 },
-    { month: 'Feb', amount: 28500 },
-  ],
-};
-
-const generateResponse = (input) => {
-  const lower = input.toLowerCase();
-  if (lower.includes('spending') || lower.includes('spent')) {
-    return {
-      text: 'Here\'s your spending breakdown for February 2026. You\'ve spent ₹32,100 so far this month, which is 15% less than January. Your top categories are Bills (₹12,000), Food (₹8,500), and Shopping (₹5,600).',
-      chart: 'spending',
-    };
-  }
-  if (lower.includes('save') || lower.includes('saving')) {
-    return {
-      text: 'You\'ve saved ₹15,400 this month! That\'s 22% of your income. Your Emergency Fund is at 76% (₹3,80,000/₹5,00,000) and your Vacation Fund is at 72% (₹1,45,000/₹2,00,000). Keep it up! 🎉',
-      chart: null,
-    };
-  }
-  if (lower.includes('budget')) {
-    return {
-      text: 'Your budget status for February:\n• Housing: ₹25,000/₹25,000 (100%) ✅\n• Food: ₹8,500/₹10,000 (85%) ⚠️\n• Transport: ₹3,200/₹5,000 (64%) ✅\n• Shopping: ₹5,600/₹5,000 (112%) ❌\n• Entertainment: ₹2,800/₹3,000 (93%) ⚠️\n\nYou\'ve exceeded your shopping budget by ₹600.',
-      chart: null,
-    };
-  }
-  if (lower.includes('credit') || lower.includes('card')) {
-    return {
-      text: 'Your credit card summary:\n• Platinum Rewards: ₹15,200 outstanding (due Mar 5)\n• Gold Elite: ₹8,400 outstanding (due Mar 10)\n• Total available credit: ₹1,76,400\n\nI recommend paying the Platinum card first to avoid interest charges.',
-      chart: null,
-    };
-  }
-  if (lower.includes('invest')) {
-    return {
-      text: 'Your investment portfolio is valued at ₹4,52,000 (+3.2% this month). Your Growth Fund returned 4.1% and Balanced Fund returned 1.8% in February. Your SIP of ₹5,000 is scheduled for March 5th.',
-      chart: 'trend',
-    };
-  }
-  if (lower.includes('bill') || lower.includes('upcoming')) {
-    return {
-      text: 'Upcoming bills this week:\n• Electricity: ₹3,500 (due Mar 5)\n• Internet: ₹1,200 (due Mar 10)\n• School Fee: ₹5,000 (due Mar 20)\n\nTotal upcoming: ₹9,700. I\'ll remind you 2 days before each due date.',
-      chart: null,
-    };
-  }
-  return {
-    text: 'I can help you with spending analysis, savings tracking, budget management, credit card dues, investment summaries, and bill reminders. What would you like to know?',
-    chart: null,
-  };
-};
+// Chat data is fetched from backend API - no hardcoded mock data
 
 const ChatMessage = ({ message, onCopy }) => {
   const [copied, setCopied] = useState(false);
@@ -121,29 +62,42 @@ const ChatMessage = ({ message, onCopy }) => {
         <div className={`rounded-2xl px-4 py-3 ${message.role === 'user' ? 'bg-blue-600 text-white rounded-br-md' : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-bl-md'}`}>
           <p className="text-sm whitespace-pre-line">{message.text}</p>
         </div>
-        {/* Chart in response */}
-        {message.chart === 'spending' && (
+        {/* Chart in response - renders dynamic data from backend */}
+        {message.chart && message.chart.type === 'pie' && Array.isArray(message.chart.data) && (
           <div className="mt-3 bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
-                <Pie data={CHART_DATA.spending} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {CHART_DATA.spending.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                <Pie data={message.chart.data} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                  {message.chart.data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip formatter={v => `₹${v.toLocaleString()}`} contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         )}
-        {message.chart === 'trend' && (
+        {message.chart && message.chart.type === 'line' && Array.isArray(message.chart.data) && (
           <div className="mt-3 bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
             <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={CHART_DATA.trend}>
+              <LineChart data={message.chart.data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#64748b20" />
-                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <XAxis dataKey={message.chart.xKey || 'month'} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
-                <Line type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey={message.chart.yKey || 'amount'} stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {message.chart && message.chart.type === 'bar' && Array.isArray(message.chart.data) && (
+          <div className="mt-3 bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={message.chart.data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#64748b20" />
+                <XAxis dataKey={message.chart.xKey || 'name'} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <Tooltip formatter={v => `₹${v.toLocaleString()}`} contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 12, color: '#fff' }} />
+                <Bar dataKey={message.chart.yKey || 'value'} fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         )}
@@ -197,24 +151,34 @@ export default function FinancialChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const sendMessage = (text) => {
+  const sendMessage = async (text) => {
     if (!text.trim()) return;
     const userMsg = { id: Date.now(), role: 'user', text: text.trim(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), chart: null };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const response = generateResponse(text);
+    try {
+      const res = await api.post('/api/chat/message', { message: text.trim() });
+      const data = res.data;
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'assistant',
-        text: response.text,
+        text: data.reply || data.message || 'I could not generate a response. Please try again.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        chart: response.chart,
+        chart: data.chartData || null,
       }]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: 'Sorry, I\'m having trouble connecting to the AI service. Please check that the backend is running and try again.',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        chart: null,
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 1500);
+    }
   };
 
   const handleKeyPress = (e) => {

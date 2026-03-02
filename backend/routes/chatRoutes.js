@@ -2,6 +2,12 @@ const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
 const ChatMessage = require('../models/ChatMessage');
 const { v4: uuidv4 } = require('uuid');
+const axios = require('axios');
+const Transaction = require('../models/Transaction');
+const Budget = require('../models/Budget');
+const BillReminder = require('../models/BillReminder');
+const Investment = require('../models/Investment');
+const logger = require('../utils/logger');
 
 router.use(authenticate);
 
@@ -22,14 +28,17 @@ router.post('/message', async (req, res) => {
     });
     await userMessage.save();
 
-    // Generate AI response (placeholder – integrate with actual AI service)
-    const aiContent = generateFinancialResponse(content);
+    // Build financial context from user's real data
+    const financialContext = await buildUserFinancialContext(req.user._id);
+    
+    // Generate AI response using configured AI provider (Ollama or OpenAI)
+    const aiContent = await generateAIResponse(content, financialContext);
     const assistantMessage = new ChatMessage({
       userId: req.user._id,
       conversationId: convId,
       role: 'assistant',
       content: aiContent,
-      metadata: { model: 'financial-assistant-v1', tokens: aiContent.length }
+      metadata: { model: process.env.AI_PROVIDER === 'openai' ? 'openai' : (process.env.OLLAMA_MODEL || 'mistral:7b'), tokens: aiContent.length }
     });
     await assistantMessage.save();
 
@@ -94,9 +103,10 @@ router.post('/conversations/:id/export', async (req, res) => {
   }
 });
 
-// Get suggested questions
+// Get suggested questions based on user's actual data
 router.get('/suggestions', async (req, res) => {
   try {
+    // Generate dynamic suggestions based on user's data
     const suggestions = [
       'What are my top spending categories this month?',
       'How much have I saved compared to last month?',
@@ -113,22 +123,119 @@ router.get('/suggestions', async (req, res) => {
   }
 });
 
-// Simple placeholder response generator
-function generateFinancialResponse(query) {
-  const q = query.toLowerCase();
-  if (q.includes('save') || q.includes('saving')) {
-    return 'Based on your spending patterns, I recommend setting aside 20% of your income into a high-yield savings account. You could also look into automating transfers on payday to build consistency.';
+/**
+ * Build financial context from user's real data for AI prompt
+ */
+async function buildUserFinancialContext(userId) {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    
+    // Fetch real transaction data
+    const [monthlyTransactions, lastMonthTransactions, budgets, upcomingBills, investments] = await Promise.all([
+      Transaction.find({ userId, date: { $gte: startOfMonth } }).lean().catch(() => []),
+      Transaction.find({ userId, date: { $gte: startOfLastMonth, $lt: startOfMonth } }).lean().catch(() => []),
+      Budget.find({ userId, isActive: true }).lean().catch(() => []),
+      BillReminder.find({ userId, status: { $ne: 'paid' }, dueDate: { $gte: now } }).sort({ dueDate: 1 }).limit(10).lean().catch(() => []),
+      Investment.find({ userId }).lean().catch(() => [])
+    ]);
+
+    // Calculate real spending by category
+    const spendingByCategory = {};
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    monthlyTransactions.forEach(t => {
+      if (t.type === 'debit' || t.type === 'expense') {
+        totalExpenses += t.amount || 0;
+        const cat = t.category || 'Uncategorized';
+        spendingByCategory[cat] = (spendingByCategory[cat] || 0) + (t.amount || 0);
+      } else if (t.type === 'credit' || t.type === 'income') {
+        totalIncome += t.amount || 0;
+      }
+    });
+
+    let lastMonthExpenses = 0;
+    lastMonthTransactions.forEach(t => {
+      if (t.type === 'debit' || t.type === 'expense') lastMonthExpenses += t.amount || 0;
+    });
+
+    const topCategories = Object.entries(spendingByCategory)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([cat, amt]) => `${cat}: \u20b9${amt.toLocaleString('en-IN')}`);
+
+    const budgetSummary = budgets.map(b => {
+      const spent = spendingByCategory[b.category] || 0;
+      const pct = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0;
+      return `${b.category}: \u20b9${spent.toLocaleString('en-IN')}/\u20b9${b.amount.toLocaleString('en-IN')} (${pct}%)`;
+    });
+
+    const billsSummary = upcomingBills.map(b => `${b.name}: \u20b9${(b.amount || 0).toLocaleString('en-IN')} due ${new Date(b.dueDate).toLocaleDateString('en-IN')}`);
+
+    const totalInvested = investments.reduce((s, i) => s + (i.totalInvestedAmount || 0), 0);
+    const totalCurrentValue = investments.reduce((s, i) => s + (i.currentValue || 0), 0);
+
+    return [
+      `Financial Summary for ${now.toLocaleString('en-IN', { month: 'long', year: 'numeric' })}:`,
+      `Total Income: \u20b9${totalIncome.toLocaleString('en-IN')}`,
+      `Total Expenses: \u20b9${totalExpenses.toLocaleString('en-IN')}`,
+      `Net Savings: \u20b9${(totalIncome - totalExpenses).toLocaleString('en-IN')}`,
+      lastMonthExpenses > 0 ? `Last month expenses: \u20b9${lastMonthExpenses.toLocaleString('en-IN')}` : '',
+      topCategories.length > 0 ? `Top Spending Categories: ${topCategories.join(', ')}` : 'No spending data yet.',
+      budgetSummary.length > 0 ? `Budget Status: ${budgetSummary.join('; ')}` : '',
+      billsSummary.length > 0 ? `Upcoming Bills: ${billsSummary.join('; ')}` : 'No upcoming bills.',
+      investments.length > 0 ? `Investments: ${investments.length} holdings, Total Invested: \u20b9${totalInvested.toLocaleString('en-IN')}, Current Value: \u20b9${totalCurrentValue.toLocaleString('en-IN')}` : 'No investments tracked.',
+    ].filter(Boolean).join('\n');
+  } catch (error) {
+    logger.error('Error building financial context:', error);
+    return 'No financial data available yet. The user should add transactions, budgets, and other data first.';
   }
-  if (q.includes('spend') || q.includes('expense')) {
-    return 'Your top spending categories this month appear to be food, transportation, and entertainment. Consider setting budget limits for discretionary categories to optimize your cashflow.';
+}
+
+/**
+ * Generate AI response using Ollama (local) or OpenAI
+ */
+async function generateAIResponse(userMessage, financialContext) {
+  const systemPrompt = `You are a helpful financial assistant. Answer the user's question based on their actual financial data provided below. Be specific with real numbers from their data. If data is not available, suggest they add it to the app. Do not invent or fabricate numbers.\n\n${financialContext}`;
+
+  try {
+    const provider = process.env.AI_PROVIDER || 'ollama';
+
+    if (provider === 'openai' && process.env.OPENAI_API_KEY) {
+      const { default: OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      });
+      return completion.choices[0]?.message?.content || 'I could not generate a response. Please try again.';
+    }
+
+    // Default: Ollama (local AI)
+    const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    const model = process.env.OLLAMA_MODEL || 'mistral:7b';
+
+    const response = await axios.post(`${ollamaUrl}/api/chat`, {
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      stream: false
+    }, { timeout: 60000 });
+
+    return response.data?.message?.content || 'I could not generate a response. Please try again.';
+  } catch (error) {
+    logger.error('AI response generation error:', error.message);
+    // Fallback: return a helpful message based on the financial context
+    return `I'm unable to connect to the AI service right now. Here's a summary of your data:\n\n${financialContext}\n\nPlease ensure Ollama is running (ollama serve) or configure OpenAI API key for cloud AI.`;
   }
-  if (q.includes('invest')) {
-    return 'For long-term growth, consider a diversified portfolio with index funds. A typical allocation might be 60% equity, 30% debt, and 10% gold or alternatives based on your risk profile.';
-  }
-  if (q.includes('budget')) {
-    return 'I recommend the 50-30-20 rule: 50% for needs, 30% for wants, and 20% for savings and debt repayment. Would you like me to create a personalized budget plan?';
-  }
-  return 'I can help you analyze your finances. Try asking about your spending patterns, savings goals, investment options, or budget planning!';
 }
 
 module.exports = router;

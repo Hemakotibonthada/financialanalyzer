@@ -48,13 +48,8 @@ const QUESTIONS = {
   ],
 };
 
-const LEADERBOARD_DATA = [
-  { rank: 1, name: 'Amit R.', score: 4850, quizzes: 48, streak: 15 },
-  { rank: 2, name: 'Deepa K.', score: 4200, quizzes: 42, streak: 12 },
-  { rank: 3, name: 'Suresh M.', score: 3900, quizzes: 38, streak: 10 },
-  { rank: 4, name: 'You', score: 2100, quizzes: 21, streak: 5, isUser: true },
-  { rank: 5, name: 'Neha P.', score: 1800, quizzes: 18, streak: 3 },
-];
+// Leaderboard will be fetched from the backend API
+const LEADERBOARD_DATA = [];
 
 export default function FinancialQuiz() {
   const [view, setView] = useState('menu'); // menu | quiz | results | leaderboard | certificate
@@ -65,11 +60,7 @@ export default function FinancialQuiz() {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [quizHistory, setQuizHistory] = useState([
-    { date: '2026-02-20', category: 'basics', score: 80, total: 5 },
-    { date: '2026-02-18', category: 'investing', score: 60, total: 5 },
-    { date: '2026-02-15', category: 'tax', score: 100, total: 5 },
-  ]);
+  const [quizHistory, setQuizHistory] = useState([]);
   const [streak, setStreak] = useState(5);
   const timerRef = useRef(null);
 

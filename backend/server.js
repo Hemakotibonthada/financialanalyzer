@@ -172,6 +172,7 @@ app.use('/api/recurring', require('./routes/recurringRoutes')); // Recurring tra
 app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/financial', require('./routes/financialRoutes'));
 app.use('/api/gmail', require('./routes/gmailRoutes'));
+app.use('/api/drive', require('./routes/googleDriveRoutes')); // Google Drive backup/sync
 app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));

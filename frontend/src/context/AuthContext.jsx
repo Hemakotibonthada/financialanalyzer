@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { authService } from '../services/api';
 import { toast } from 'react-toastify';
 import { getStorageType, setUserId } from '../services/storage';
@@ -22,6 +22,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const fetchInProgress = useRef(false);
   // Token can be stored either in sessionStorage (session-only) or localStorage (remembered)
   const getStoredToken = () => {
     // Debug token state at runtime
@@ -143,10 +144,9 @@ export const AuthProvider = ({ children }) => {
       
       return () => unsubscribe();
     } else {
-      // Not using Firebase, proceed with normal token check
-      if (token) {
-        fetchUser();
-      } else {
+      // Not using Firebase — the [token] useEffect below handles fetchUser
+      // Only need to clear loading if there's no token at all
+      if (!token) {
         setLoading(false);
       }
     }
@@ -161,21 +161,17 @@ export const AuthProvider = ({ children }) => {
     }
     
     if (token) {
-      // Skip fetchUser if using Firebase Auth (user already set)
-      const storageType = getStorageType();
-      if (storageType === 'online' && user) {
-        setLoading(false);
-      } else if (storageType !== 'online') {
-        fetchUser();
-      } else {
-        setLoading(false);
-      }
+      fetchUser();
     } else {
       setLoading(false);
     }
   }, [token]);
 
   const fetchUser = async () => {
+    // Prevent concurrent calls (React StrictMode double-mount)
+    if (fetchInProgress.current) return;
+    fetchInProgress.current = true;
+    
     try {
       const storageType = getStorageType();
       
@@ -190,8 +186,16 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.data.user);
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      logout();
+      // Only clear token silently — don't show "Logged out" toast for stale tokens
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token_expiry');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
     } finally {
+      fetchInProgress.current = false;
       setLoading(false);
     }
   };

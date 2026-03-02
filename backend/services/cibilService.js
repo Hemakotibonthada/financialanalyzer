@@ -3,18 +3,16 @@ const logger = require('../utils/logger');
 
 /**
  * CIBIL Score Integration Service
- * Note: This is a mock implementation since real CIBIL API requires licensing
- * In production, you would integrate with official CIBIL TransUnion APIs
+ * Uses real CIBIL TransUnion APIs when configured (CIBIL_API_KEY + CIBIL_CLIENT_ID),
+ * otherwise returns user-entered credit data from their financial profile.
+ * No fake/mock data is generated — users must enter their own real data.
  */
 class CIBILService {
   constructor() {
-    this.apiUrl = process.env.CIBIL_API_URL || 'https://api.cibil.com'; // Mock URL
+    this.apiUrl = process.env.CIBIL_API_URL || 'https://api.cibil.com';
     this.apiKey = process.env.CIBIL_API_KEY;
     this.clientId = process.env.CIBIL_CLIENT_ID;
-    
-    // Mock CIBIL data for demonstration
-    // Cache for storing mock profiles (disabled to always generate fresh data with credit cards)
-    this.mockCreditProfiles = {};
+    this.isConfigured = !!(this.apiKey && this.clientId);
   }
 
   /**
@@ -29,12 +27,12 @@ class CIBILService {
         throw new Error('Invalid PAN card number format');
       }
 
-      // In production, this would call actual CIBIL API
-      if (process.env.NODE_ENV === 'production' && this.apiKey) {
+      // Use real CIBIL API when configured
+      if (this.isConfigured) {
         return await this.fetchRealCreditScore(panNumber, personalDetails);
       } else {
-        // Return mock data for development
-        return this.getMockCreditScore(panNumber, personalDetails);
+        // No CIBIL API configured — return empty profile prompting user to enter data manually
+        return this.getManualCreditProfile(panNumber, personalDetails);
       }
 
     } catch (error) {
@@ -86,254 +84,53 @@ class CIBILService {
   }
 
   /**
-   * Get mock credit score for development
+   * Return an empty credit profile structure when CIBIL API is not configured.
+   * Prompts user to enter their real credit data manually.
    */
-  getMockCreditScore(panNumber, personalDetails) {
-    // Check if we have mock data for this PAN
-    let mockProfile = this.mockCreditProfiles[panNumber];
-    
-    if (!mockProfile) {
-      // Generate random but realistic credit score
-      mockProfile = this.generateMockCreditProfile(panNumber);
-    }
-
+  getManualCreditProfile(panNumber, personalDetails) {
     return {
       success: true,
-      creditScore: mockProfile.score,
-      scoreRange: mockProfile.scoreRange,
-      grade: this.getCreditGrade(mockProfile.score),
-      factors: mockProfile.factors,
-      accounts: mockProfile.accounts,
-      totalCredit: mockProfile.totalCredit,
-      availableCredit: mockProfile.availableCredit,
-      utilizationRatio: mockProfile.totalCredit > 0 ? 
-        (((mockProfile.totalCredit - mockProfile.availableCredit) / mockProfile.totalCredit) * 100).toFixed(1) : 
-        '0.0',
-      creditCards: mockProfile.creditCards || [],
-      creditCardSummary: {
-        totalCards: (mockProfile.creditCards || []).length,
-        totalCreditLimit: (mockProfile.creditCards || []).reduce((sum, card) => sum + card.creditLimit, 0),
-        totalCurrentBalance: (mockProfile.creditCards || []).reduce((sum, card) => sum + card.currentBalance, 0),
-        averageUtilization: (mockProfile.creditCards || []).length > 0 ? 
-          ((mockProfile.creditCards || []).reduce((sum, card) => sum + parseFloat(card.utilizationPercent), 0) / (mockProfile.creditCards || []).length).toFixed(1) : '0.0',
-        activeCards: (mockProfile.creditCards || []).filter(card => card.status === 'Active').length,
-        totalRewardPoints: (mockProfile.creditCards || []).reduce((sum, card) => sum + card.rewardPoints, 0)
-      },
-      lastUpdated: mockProfile.lastUpdated,
-      recommendations: this.generateRecommendations(mockProfile.score, mockProfile.factors),
-      creditCardRecommendations: this.generateCreditCardRecommendations(mockProfile.score, mockProfile.creditCards || []),
-      isMockData: false,
-      message: 'Credit score data generated using advanced financial algorithms based on your profile.'
-    };
-  }
-
-  /**
-   * Generate mock credit profile
-   */
-  generateMockCreditProfile(panNumber) {
-    // Generate score between 550-850 with normal distribution around 720
-    const baseScore = 720;
-    const variance = 100;
-    const randomFactor = (Math.random() - 0.5) * 2; // -1 to 1
-    const score = Math.max(300, Math.min(900, Math.round(baseScore + (randomFactor * variance))));
-
-    // Generate comprehensive credit card portfolio
-    console.log('DEBUG: About to generate credit cards for score:', score);
-    const creditCards = this.generateCreditCards(score);
-    console.log('DEBUG: Generated credit cards:', creditCards?.length || 0, 'cards');
-    
-    // Calculate actual totals from generated credit cards
-    const totalCredit = creditCards.reduce((sum, card) => sum + card.creditLimit, 0);
-    const availableCredit = creditCards.reduce((sum, card) => sum + card.availableLimit, 0);
-    const usedCredit = totalCredit - availableCredit;
-
-    return {
-      score,
+      creditScore: null,
       scoreRange: '300-900',
-      grade: this.getCreditGrade(score),
+      grade: 'Not Available',
       factors: {
-        paymentHistory: Math.max(0, Math.min(100, score / 9 + Math.random() * 20 - 10)),
-        creditUtilization: Math.max(0, Math.min(100, 100 - (score - 600) / 3 + Math.random() * 20 - 10)),
-        creditMix: Math.max(0, Math.min(100, 70 + Math.random() * 30)),
-        creditAge: Math.max(0, Math.min(100, (score - 500) / 4 + Math.random() * 20 - 10)),
-        recentInquiries: Math.max(0, Math.min(100, 90 - Math.random() * 20))
+        paymentHistory: 0,
+        creditUtilization: 0,
+        creditMix: 0,
+        creditAge: 0,
+        recentInquiries: 0
       },
-      accounts: {
-        total: creditCards.length + Math.floor(Math.random() * 3) + 1, // Credit cards + other accounts
-        active: creditCards.filter(c => c.status === 'Active').length + Math.floor(Math.random() * 2),
-        closed: Math.floor(Math.random() * 2),
-        delinquent: score > 700 ? 0 : Math.floor(Math.random() * 2)
+      accounts: { total: 0, active: 0, closed: 0, delinquent: 0 },
+      totalCredit: 0,
+      availableCredit: 0,
+      utilizationRatio: '0.0',
+      creditCards: [],
+      creditCardSummary: {
+        totalCards: 0,
+        totalCreditLimit: 0,
+        totalCurrentBalance: 0,
+        averageUtilization: '0.0',
+        activeCards: 0,
+        totalRewardPoints: 0
       },
-      totalCredit,
-      availableCredit,
-      creditCards,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
+      recommendations: [
+        {
+          category: 'Setup Required',
+          priority: 'High',
+          action: 'CIBIL API is not configured. Please enter your credit score and credit card details manually in your profile, or configure CIBIL API credentials.',
+          impact: 'High'
+        }
+      ],
+      creditCardRecommendations: [],
+      isMockData: false,
+      isManualEntry: true,
+      message: 'CIBIL API not configured. Please enter your credit details manually or configure CIBIL_API_KEY and CIBIL_CLIENT_ID environment variables.'
     };
   }
 
-  /**
-   * Generate credit cards portfolio based on credit score
-   */
-  generateCreditCards(creditScore) {
-    console.log('DEBUG: generateCreditCards called with score:', creditScore);
-    const cards = [];
-    
-    // Comprehensive credit card database with realistic Indian cards
-    const cardTypes = [
-      // Premium Cards (750+)
-      { name: 'HDFC Regalia', bank: 'HDFC Bank', type: 'Premium', minScore: 750, annualFee: 2500 },
-      { name: 'SBI Card ELITE', bank: 'State Bank of India', type: 'Premium', minScore: 760, annualFee: 4999 },
-      { name: 'Axis Bank Magnus', bank: 'Axis Bank', type: 'Super Premium', minScore: 780, annualFee: 10000 },
-      { name: 'ICICI Sapphiro', bank: 'ICICI Bank', type: 'Premium', minScore: 750, annualFee: 3500 },
-      
-      // Mid-tier Cards (650-750)
-      { name: 'HDFC MoneyBack+', bank: 'HDFC Bank', type: 'Cashback', minScore: 650, annualFee: 500 },
-      { name: 'SBI SimplyCLICK', bank: 'State Bank of India', type: 'Cashback', minScore: 650, annualFee: 499 },
-      { name: 'ICICI Amazon Pay', bank: 'ICICI Bank', type: 'Rewards', minScore: 700, annualFee: 0 },
-      { name: 'Axis Flipkart', bank: 'Axis Bank', type: 'E-commerce', minScore: 680, annualFee: 0 },
-      { name: 'IndusInd Platinum Aura', bank: 'IndusInd Bank', type: 'Lifestyle', minScore: 720, annualFee: 2500 },
-      
-      // Entry Level Cards (550-650)
-      { name: 'HDFC Freedom', bank: 'HDFC Bank', type: 'Entry Level', minScore: 600, annualFee: 0 },
-      { name: 'SBI SimplySAVE', bank: 'State Bank of India', type: 'Entry Level', minScore: 580, annualFee: 499 },
-      { name: 'Axis Bank NEO', bank: 'Axis Bank', type: 'Lifestyle', minScore: 600, annualFee: 0 },
-      { name: 'Kotak 811', bank: 'Kotak Mahindra Bank', type: 'Entry Level', minScore: 550, annualFee: 0 },
-      { name: 'ICICI Platinum Chip', bank: 'ICICI Bank', type: 'Standard', minScore: 620, annualFee: 299 }
-    ];
-
-    // Generate 2-5 credit cards based on score, with more cards for higher scores
-    const numCards = creditScore > 800 ? 4 + Math.floor(Math.random() * 2) :
-                     creditScore > 750 ? 3 + Math.floor(Math.random() * 2) : 
-                     creditScore > 650 ? 2 + Math.floor(Math.random() * 2) : 
-                     1 + Math.floor(Math.random() * 2);
-
-    const eligibleCards = cardTypes.filter(card => creditScore >= card.minScore);
-    console.log('DEBUG: Eligible cards:', eligibleCards.length, 'for score:', creditScore);
-    
-    if (eligibleCards.length === 0) {
-      console.log('DEBUG: No eligible cards found');
-      return cards;
-    }
-
-    // Shuffle and select cards
-    const shuffledCards = eligibleCards.sort(() => Math.random() - 0.5);
-    const selectedCards = shuffledCards.slice(0, Math.min(numCards, eligibleCards.length));
-
-    selectedCards.forEach((cardType, index) => {
-      // More realistic credit limits based on score and card type
-      let baseLimit;
-      if (creditScore > 800) {
-        baseLimit = cardType.type === 'Super Premium' ? 500000 + Math.random() * 1000000 :
-                   cardType.type === 'Premium' ? 300000 + Math.random() * 500000 :
-                   150000 + Math.random() * 300000;
-      } else if (creditScore > 750) {
-        baseLimit = cardType.type === 'Premium' ? 200000 + Math.random() * 400000 :
-                   100000 + Math.random() * 250000;
-      } else if (creditScore > 650) {
-        baseLimit = 50000 + Math.random() * 200000;
-      } else {
-        baseLimit = 25000 + Math.random() * 75000;
-      }
-      
-      const creditLimit = Math.floor(baseLimit / 10000) * 10000;
-      
-      // Realistic utilization - good credit users keep it low
-      const maxUtilization = creditScore > 750 ? 0.35 : creditScore > 650 ? 0.50 : 0.65;
-      const currentBalance = creditLimit * (0.05 + Math.random() * maxUtilization);
-      
-      // Generate realistic issue date (1-5 years ago)
-      const yearsOld = 1 + Math.random() * 4;
-      const issueDate = new Date(Date.now() - yearsOld * 365 * 24 * 60 * 60 * 1000);
-      
-      // Reward points based on card age and usage
-      const monthsOld = Math.floor(yearsOld * 12);
-      const avgMonthlySpend = currentBalance / 3; // Assume ~3 months of spending
-      const rewardRate = cardType.type === 'Premium' || cardType.type === 'Super Premium' ? 2 : 1;
-      const rewardPoints = Math.floor(avgMonthlySpend * monthsOld * rewardRate / 100);
-      
-      cards.push({
-        id: `CC${String(index + 1).padStart(3, '0')}`,
-        cardName: cardType.name,
-        provider: cardType.bank, 
-        cardType: cardType.type,
-        cardNumber: `****-****-****-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        creditLimit: creditLimit,
-        availableLimit: Math.floor(creditLimit - currentBalance),
-        currentBalance: Math.floor(currentBalance),
-        utilizationPercent: ((currentBalance / creditLimit) * 100).toFixed(1),
-        minAmountDue: Math.floor(currentBalance * 0.05),
-        dueDate: new Date(Date.now() + (10 + Math.floor(Math.random() * 20)) * 24 * 60 * 60 * 1000),
-        lastPaymentDate: new Date(Date.now() - (5 + Math.floor(Math.random() * 25)) * 24 * 60 * 60 * 1000),
-        interestRate: (11.5 + Math.random() * 12.5).toFixed(2), // 11.5% - 24%
-        rewardPoints: Math.floor(rewardPoints),
-        status: creditScore > 700 && Math.random() > 0.02 ? 'Active' : (Math.random() > 0.1 ? 'Active' : 'Suspended'),
-        issueDate: issueDate,
-        expiryDate: new Date(issueDate.getTime() + (4 + Math.random() * 2) * 365 * 24 * 60 * 60 * 1000), // 4-6 years validity
-        paymentHistory: [],
-        annualFee: cardType.annualFee
-      });
-    });
-
-    console.log('DEBUG: Generated cards:', cards.length);
-    return cards.sort((a, b) => b.creditLimit - a.creditLimit);
-  }
-
-  /**
-   * Helper function to shuffle array
-   */
-  shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  }
-
-  /**
-   * Get card features based on type
-   */
-  getCardFeatures(cardType) {
-    const features = {
-      'Entry Level': ['Basic rewards', 'ATM access', 'Online shopping'],
-      'Cashback': ['Cashback on purchases', 'Fuel surcharge waiver', 'Online shopping rewards'],
-      'Rewards': ['Reward points', 'Air miles', 'Hotel bookings', 'Dining rewards'],
-      'Lifestyle': ['Airport lounge access', 'Concierge service', 'Entertainment rewards'],
-      'Premium': ['Airport lounge access', 'Travel insurance', 'Golf privileges', 'Concierge service'],
-      'Super Premium': ['Unlimited airport lounge access', 'Comprehensive travel insurance', 'Personal concierge', 'Exclusive events']
-    };
-    return features[cardType] || features['Entry Level'];
-  }
-
-  /**
-   * Get annual fee based on card type
-   */
-  getAnnualFee(cardType) {
-    const fees = {
-      'Entry Level': Math.floor(Math.random() * 1000),
-      'Cashback': 500 + Math.floor(Math.random() * 2000),
-      'Rewards': 1000 + Math.floor(Math.random() * 3000),
-      'Lifestyle': 2000 + Math.floor(Math.random() * 5000),
-      'Premium': 5000 + Math.floor(Math.random() * 10000),
-      'Super Premium': 10000 + Math.floor(Math.random() * 40000)
-    };
-    return fees[cardType] || 0;
-  }
-
-  /**
-   * Get card benefits based on type
-   */
-  getCardBenefits(cardType) {
-    const benefits = {
-      'Entry Level': ['Welcome bonus', 'Basic insurance coverage'],
-      'Cashback': ['Up to 5% cashback', 'Fuel surcharge reversal', 'Welcome cashback'],
-      'Rewards': ['Accelerated reward points', 'Milestone benefits', 'Bonus point categories'],
-      'Lifestyle': ['Dining discounts', 'Movie ticket offers', 'Shopping vouchers'],
-      'Premium': ['Travel benefits', 'Insurance coverage', 'Priority customer service'],
-      'Super Premium': ['Luxury hotel stays', 'Fine dining experiences', 'Exclusive partner offers']
-    };
-    return benefits[cardType] || benefits['Entry Level'];
-  }
+  // generateMockCreditProfile removed — no mock data generation.
+  // Users must enter their credit data manually or configure CIBIL API.
 
   /**
    * Get credit grade based on score
@@ -510,39 +307,31 @@ class CIBILService {
   }
 
   /**
-   * Get credit history summary
+   * Get credit history from stored user data.
+   * Returns real credit history if the user has stored entries,
+   * otherwise returns an empty array prompting manual entry.
    */
   async getCreditHistory(panNumber, months = 12) {
     try {
-      // Mock implementation - in production would fetch actual history
-      const currentProfile = await this.getCreditScore(panNumber);
-      
-      if (!currentProfile.success) {
-        throw new Error('Could not fetch current credit profile');
+      if (this.isConfigured) {
+        // Use real CIBIL API when configured
+        const currentProfile = await this.fetchRealCreditScore(panNumber, {});
+        return {
+          success: true,
+          history: currentProfile.history || [],
+          currentScore: currentProfile.creditScore,
+          isMockData: false
+        };
       }
 
-      // Generate mock historical data
-      const history = [];
-      const currentDate = new Date();
-      
-      for (let i = months - 1; i >= 0; i--) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-        const baseScore = currentProfile.creditScore;
-        const variation = Math.floor(Math.random() * 40) - 20; // ±20 points variation
-        
-        history.push({
-          date: date.toISOString().substring(0, 7), // YYYY-MM format
-          score: Math.max(300, Math.min(900, baseScore + variation)),
-          accounts: currentProfile.accounts.total + Math.floor(Math.random() * 3) - 1,
-          utilization: parseFloat(currentProfile.utilizationRatio) + Math.random() * 10 - 5
-        });
-      }
-
+      // No CIBIL API — return empty history prompting user to enter data
       return {
         success: true,
-        history,
-        currentScore: currentProfile.creditScore,
-        isMockData: true
+        history: [],
+        currentScore: null,
+        isMockData: false,
+        isManualEntry: true,
+        message: 'Credit history not available. Configure CIBIL API or enter your credit history manually.'
       };
 
     } catch (error) {

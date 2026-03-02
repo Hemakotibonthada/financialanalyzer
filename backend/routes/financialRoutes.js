@@ -2395,9 +2395,9 @@ router.get('/credit-history', authenticate, async (req, res) => {
       });
     }
 
-    // Reconstruct PAN from masked version (this is a simplified approach)
-    // In production, you'd need a more secure way to handle PAN storage
-    const panNumber = profile.creditScore.panNumber.replace('***', '1234F'); // Mock completion
+    // Use the stored (encrypted) PAN number from the user's profile
+    // The panNumber stored in creditScore should be the full PAN
+    const panNumber = profile.panNumber || profile.creditScore.panNumber;
     
     const history = await cibilService.getCreditHistory(panNumber, parseInt(months));
     
@@ -2467,39 +2467,24 @@ router.get('/credit-detail', authenticate, async (req, res) => {
       return history;
     };
 
-    // Mock loan data (will be enhanced when loan module is added)
-    const mockLoans = [
-      {
-        id: 'LOAN001',
-        type: 'Home Loan',
-        provider: 'HDFC Bank',
-        principalAmount: 5000000,
-        outstandingAmount: 3550000,
-        emi: 42500,
-        interestRate: 8.5,
-        tenure: 240, // months
-        remainingTenure: 168,
-        status: 'Active',
-        disbursementDate: new Date(2020, 3, 15),
-        lastPaymentDate: new Date(2025, 2, 5),
-        nextDueDate: new Date(2025, 3, 5)
-      },
-      {
-        id: 'LOAN002',
-        type: 'Personal Loan',
-        provider: 'ICICI Bank',
-        principalAmount: 300000,
-        outstandingAmount: 125000,
-        emi: 8500,
-        interestRate: 11.5,
-        tenure: 36,
-        remainingTenure: 15,
-        status: 'Active',
-        disbursementDate: new Date(2023, 7, 20),
-        lastPaymentDate: new Date(2025, 2, 10),
-        nextDueDate: new Date(2025, 3, 10)
-      }
-    ];
+    // Fetch real loan data from Debt model
+    const Debt = require('../models/Debt');
+    const userLoans = await Debt.find({ userId: req.user._id }).lean().catch(() => []);
+    const realLoans = userLoans.map(loan => ({
+      id: loan._id,
+      type: loan.debtType?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Loan',
+      provider: loan.creditor?.name || 'Unknown',
+      principalAmount: loan.loanDetails?.principalAmount || 0,
+      outstandingAmount: loan.loanDetails?.currentBalance || 0,
+      emi: loan.loanDetails?.emi || 0,
+      interestRate: loan.loanDetails?.interestRate || 0,
+      tenure: loan.loanDetails?.tenure || 0,
+      remainingTenure: loan.loanDetails?.remainingTenure || 0,
+      status: loan.loanDetails?.currentBalance > 0 ? 'Active' : 'Closed',
+      disbursementDate: loan.loanDetails?.startDate,
+      lastPaymentDate: loan.paymentHistory?.length > 0 ? loan.paymentHistory[loan.paymentHistory.length - 1].date : null,
+      nextDueDate: loan.loanDetails?.maturityDate
+    }));
 
     // Compile comprehensive data
     const comprehensiveData = {
@@ -2518,14 +2503,14 @@ router.get('/credit-detail', authenticate, async (req, res) => {
       creditCardSummary: profile.creditScore.creditCardSummary || {},
       creditCardRecommendations: profile.creditScore.creditCardRecommendations || [],
       
-      // Loans
-      loans: mockLoans,
+      // Loans (real data from Debt model)
+      loans: realLoans,
       loanSummary: {
-        totalLoans: mockLoans.length,
-        totalPrincipal: mockLoans.reduce((sum, loan) => sum + loan.principalAmount, 0),
-        totalOutstanding: mockLoans.reduce((sum, loan) => sum + loan.outstandingAmount, 0),
-        totalEMI: mockLoans.reduce((sum, loan) => sum + loan.emi, 0),
-        activeLoans: mockLoans.filter(loan => loan.status === 'Active').length
+        totalLoans: realLoans.length,
+        totalPrincipal: realLoans.reduce((sum, loan) => sum + loan.principalAmount, 0),
+        totalOutstanding: realLoans.reduce((sum, loan) => sum + loan.outstandingAmount, 0),
+        totalEMI: realLoans.reduce((sum, loan) => sum + loan.emi, 0),
+        activeLoans: realLoans.filter(loan => loan.status === 'Active').length
       },
       
       // Historical data
@@ -2537,8 +2522,8 @@ router.get('/credit-detail', authenticate, async (req, res) => {
       
       // Account summary
       accounts: profile.creditScore.accounts || {
-        total: (profile.creditScore.creditCards?.length || 0) + mockLoans.length,
-        open: (profile.creditScore.creditCards?.length || 0) + mockLoans.filter(l => l.status === 'Active').length,
+        total: (profile.creditScore.creditCards?.length || 0) + realLoans.length,
+        open: (profile.creditScore.creditCards?.length || 0) + realLoans.filter(l => l.status === 'Active').length,
         closed: 0
       },
       

@@ -71,7 +71,19 @@ export default function GoldTracker() {
     return Object.entries(map).map(([name, value]) => ({ name, value: Math.round(value) }));
   }, [holdings]);
 
-  const portfolioPercent = 18.5; // Gold as % of total portfolio (mock)
+  // Calculate gold as % of total portfolio from real holdings data
+  const portfolioPercent = useMemo(() => {
+    // If no holdings, return 0 instead of hardcoded value
+    if (totalCurrentValue <= 0) return 0;
+    // Estimate total portfolio from localStorage or default to gold-only
+    try {
+      const investments = JSON.parse(localStorage.getItem('investments')) || [];
+      const totalPortfolio = investments.reduce((sum, inv) => sum + (inv.currentValue || 0), 0) + totalCurrentValue;
+      return totalPortfolio > 0 ? +((totalCurrentValue / totalPortfolio) * 100).toFixed(1) : 100;
+    } catch {
+      return 100; // If only gold data available, it's 100% of tracked portfolio
+    }
+  }, [totalCurrentValue]);
 
   const handleAddHolding = () => {
     if (!form.name || !form.weight || !form.purchasePrice) return;

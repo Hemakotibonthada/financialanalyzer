@@ -3,11 +3,12 @@
 // Feature #88: Comprehensive account settings & preferences
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatedCard, AnimatedTabs, Badge, Modal, Avatar } from '../components/ui/ComponentLibrary';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useCustomHooks';
+import api from '../services/api';
 import '../styles/animations.css';
 
 const CURRENCIES = [
@@ -40,21 +41,21 @@ export default function AccountSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Profile state
+  // Profile state - populated from real user data, no hardcoded defaults
   const [profileData, setProfileData] = useState({
-    firstName: user?.name?.split(' ')[0] || 'John',
-    lastName: user?.name?.split(' ').slice(1).join(' ') || 'Doe',
-    email: user?.email || 'john.doe@example.com',
-    phone: user?.phone || '+91 9876543210',
-    dateOfBirth: '1990-05-15',
-    gender: 'male',
-    occupation: 'Software Engineer',
-    annualIncome: '1200000',
-    city: 'Bangalore',
-    state: 'Karnataka',
-    country: 'India',
+    firstName: user?.name?.split(' ')[0] || '',
+    lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    dateOfBirth: user?.dateOfBirth || '',
+    gender: user?.gender || '',
+    occupation: user?.occupation || '',
+    annualIncome: user?.annualIncome || '',
+    city: user?.city || '',
+    state: user?.state || '',
+    country: user?.country || 'India',
     profileImage: user?.profileImage || null,
-    bio: 'Passionate about financial planning and investing.',
+    bio: user?.bio || '',
   });
 
   // Preferences
@@ -497,71 +498,7 @@ export default function AccountSettings() {
 
         {/* Data Management Tab */}
         {activeTab === 'data' && (
-          <div className="space-y-6">
-            <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Data Overview</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">1,247</div>
-                  <div className="text-xs text-gray-500">Transactions</div>
-                </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">34</div>
-                  <div className="text-xs text-gray-500">Documents</div>
-                </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">12</div>
-                  <div className="text-xs text-gray-500">Budgets</div>
-                </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">18.4 MB</div>
-                  <div className="text-xs text-gray-500">Storage Used</div>
-                </div>
-              </div>
-            </AnimatedCard>
-
-            <AnimatedCard delay={100}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">⬇️ Import & Export</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 transition-colors text-left">
-                  <div className="text-lg mb-1">📥 Import Data</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Import from CSV, Excel, or other apps</div>
-                </button>
-                <button className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 transition-colors text-left">
-                  <div className="text-lg mb-1">📤 Export All Data</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Download all your data in one file</div>
-                </button>
-                <button className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 transition-colors text-left">
-                  <div className="text-lg mb-1">🔄 Sync Data</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Sync with cloud storage (Google Drive)</div>
-                </button>
-                <button className="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 transition-colors text-left">
-                  <div className="text-lg mb-1">💾 Backup</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Create a manual backup now</div>
-                </button>
-              </div>
-            </AnimatedCard>
-
-            <AnimatedCard delay={200} className="border border-red-200 dark:border-red-800">
-              <h3 className="text-lg font-semibold text-red-600 mb-4">⚠️ Danger Zone</h3>
-              <div className="space-y-3">
-                <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-red-700 dark:text-red-400">Clear All Data</div>
-                    <div className="text-xs text-red-500">Delete all transactions, budgets, and settings</div>
-                  </div>
-                  <span className="text-red-400">🗑️</span>
-                </button>
-                <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-red-700 dark:text-red-400">Delete Account</div>
-                    <div className="text-xs text-red-500">Permanently delete your account and all data</div>
-                  </div>
-                  <span className="text-red-400">❌</span>
-                </button>
-              </div>
-            </AnimatedCard>
-          </div>
+          <DataManagementTab />
         )}
       </div>
     </div>
@@ -603,6 +540,275 @@ function ToggleSetting({ label, description, value, onChange }) {
           }`}
         />
       </button>
+    </div>
+  );
+}
+
+// ======================== DATA MANAGEMENT TAB ========================
+function DataManagementTab() {
+  const [driveStatus, setDriveStatus] = useState({ configured: false, connected: false, backup: null });
+  const [dataCounts, setDataCounts] = useState({ transactions: 0, documents: 0, budgets: 0 });
+  const [loading, setLoading] = useState(true);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  // Handle OAuth callback from Google Drive
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const driveTokens = params.get('drive_tokens');
+    const driveSuccess = params.get('drive_success');
+    const driveError = params.get('drive_error');
+
+    if (driveSuccess && driveTokens) {
+      try {
+        const tokens = JSON.parse(atob(driveTokens));
+        api.post('/api/drive/save-tokens', { tokens }).then(() => {
+          setMessage({ type: 'success', text: 'Google Drive connected successfully!' });
+          loadDriveStatus();
+          // Clean URL
+          window.history.replaceState({}, '', window.location.pathname);
+        }).catch(err => {
+          setMessage({ type: 'error', text: 'Failed to save Drive tokens.' });
+        });
+      } catch (e) {
+        setMessage({ type: 'error', text: 'Invalid Drive token data.' });
+      }
+    } else if (driveError) {
+      setMessage({ type: 'error', text: `Drive connection failed: ${driveError}` });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const loadDriveStatus = useCallback(async () => {
+    try {
+      const res = await api.get('/api/drive/status');
+      setDriveStatus(res.data);
+    } catch (err) {
+      console.log('Drive status not available');
+    }
+  }, []);
+
+  const loadDataCounts = useCallback(async () => {
+    try {
+      const [txRes, budgetRes] = await Promise.allSettled([
+        api.get('/api/transactions?limit=1'),
+        api.get('/api/budgets'),
+      ]);
+      setDataCounts({
+        transactions: txRes.status === 'fulfilled' ? (txRes.value.data.total || txRes.value.data.transactions?.length || 0) : 0,
+        budgets: budgetRes.status === 'fulfilled' ? (budgetRes.value.data.length || 0) : 0,
+        documents: 0,
+      });
+    } catch (err) {
+      console.log('Data counts not available');
+    }
+  }, []);
+
+  useEffect(() => {
+    Promise.all([loadDriveStatus(), loadDataCounts()]).finally(() => setLoading(false));
+  }, [loadDriveStatus, loadDataCounts]);
+
+  const connectDrive = async () => {
+    try {
+      const res = await api.get('/api/drive/auth-url');
+      window.location.href = res.data.url;
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to start Drive connection.' });
+    }
+  };
+
+  const disconnectDrive = async () => {
+    try {
+      await api.post('/api/drive/disconnect');
+      setDriveStatus(prev => ({ ...prev, connected: false, backup: null }));
+      setMessage({ type: 'success', text: 'Google Drive disconnected.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to disconnect Drive.' });
+    }
+  };
+
+  const backupToDrive = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await api.post('/api/drive/backup');
+      if (res.data.success) {
+        setMessage({ type: 'success', text: 'Data backed up to Google Drive successfully!' });
+        loadDriveStatus();
+      } else {
+        setMessage({ type: 'error', text: res.data.error || 'Backup failed.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Backup failed.' });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const restoreFromDrive = async () => {
+    if (!window.confirm('This will restore data from your Google Drive backup. Existing data will be merged. Continue?')) return;
+    setRestoreLoading(true);
+    try {
+      const res = await api.post('/api/drive/restore');
+      if (res.data.success) {
+        setMessage({ type: 'success', text: `Data restored from backup (${res.data.backupDate}). Refreshing...` });
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setMessage({ type: 'error', text: res.data.error || 'Restore failed.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Restore failed.' });
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-500 dark:text-gray-400">Loading data management...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Status Message */}
+      {message && (
+        <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
+          {message.type === 'success' ? '✅' : '❌'} {message.text}
+        </div>
+      )}
+
+      {/* Data Overview - Real counts from API */}
+      <AnimatedCard>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Data Overview</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.transactions.toLocaleString()}</div>
+            <div className="text-xs text-gray-500">Transactions</div>
+          </div>
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.budgets}</div>
+            <div className="text-xs text-gray-500">Budgets</div>
+          </div>
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {driveStatus.connected ? '☁️' : '📱'}
+            </div>
+            <div className="text-xs text-gray-500">{driveStatus.connected ? 'Cloud Synced' : 'Local Only'}</div>
+          </div>
+        </div>
+      </AnimatedCard>
+
+      {/* Google Drive Integration */}
+      <AnimatedCard delay={100}>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">☁️ Google Drive Sync</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Backup your financial data to Google Drive and access it from any device.
+        </p>
+
+        {!driveStatus.configured ? (
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+            <p className="text-sm text-yellow-700 dark:text-yellow-400">
+              Google Drive integration requires Google OAuth credentials. Ask your administrator to set
+              GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_DRIVE_REDIRECT_URI in the server .env file.
+            </p>
+          </div>
+        ) : !driveStatus.connected ? (
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+              <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                Connect your Google Drive to enable cloud backup and cross-device data sync.
+              </p>
+              <button onClick={connectDrive}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
+                </svg>
+                Connect Google Drive
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Connected Status */}
+            <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                <div>
+                  <div className="text-sm font-medium text-green-700 dark:text-green-400">Google Drive Connected</div>
+                  {driveStatus.backup && (
+                    <div className="text-xs text-green-600 dark:text-green-500">
+                      Last backup: {new Date(driveStatus.backup.lastModified).toLocaleString()}
+                      {driveStatus.backup.size && ` (${(parseInt(driveStatus.backup.size) / 1024).toFixed(1)} KB)`}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button onClick={disconnectDrive}
+                className="text-xs text-red-500 hover:text-red-700 font-medium">
+                Disconnect
+              </button>
+            </div>
+
+            {/* Backup & Restore Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button onClick={backupToDrive} disabled={backupLoading}
+                className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-left disabled:opacity-50">
+                <div className="text-lg mb-1">{backupLoading ? '⏳' : '☁️'} Backup to Drive</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {backupLoading ? 'Backing up...' : 'Save all financial data to Google Drive'}
+                </div>
+              </button>
+              <button onClick={restoreFromDrive} disabled={restoreLoading || !driveStatus.backup}
+                className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-left disabled:opacity-50">
+                <div className="text-lg mb-1">{restoreLoading ? '⏳' : '📥'} Restore from Drive</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {restoreLoading ? 'Restoring...' : driveStatus.backup ? 'Restore data from your Drive backup' : 'No backup available yet'}
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+      </AnimatedCard>
+
+      {/* Import/Export */}
+      <AnimatedCard delay={200}>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">⬇️ Import & Export</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 transition-colors text-left">
+            <div className="text-lg mb-1">📥 Import Data</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Import from CSV, Excel, or other apps</div>
+          </button>
+          <button className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 transition-colors text-left">
+            <div className="text-lg mb-1">📤 Export All Data</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Download all your data in one file</div>
+          </button>
+        </div>
+      </AnimatedCard>
+
+      {/* Danger Zone */}
+      <AnimatedCard delay={300} className="border border-red-200 dark:border-red-800">
+        <h3 className="text-lg font-semibold text-red-600 mb-4">⚠️ Danger Zone</h3>
+        <div className="space-y-3">
+          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-between">
+            <div>
+              <div className="font-medium text-red-700 dark:text-red-400">Clear All Data</div>
+              <div className="text-xs text-red-500">Delete all transactions, budgets, and settings</div>
+            </div>
+            <span className="text-red-400">🗑️</span>
+          </button>
+          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors flex items-center justify-between">
+            <div>
+              <div className="font-medium text-red-700 dark:text-red-400">Delete Account</div>
+              <div className="text-xs text-red-500">Permanently delete your account and all data</div>
+            </div>
+            <span className="text-red-400">❌</span>
+          </button>
+        </div>
+      </AnimatedCard>
     </div>
   );
 }

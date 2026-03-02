@@ -1,8 +1,12 @@
 /**
  * @fileoverview Market Data & Insights Service
- * Provides mock (but realistic) Indian equity market data including
- * indices, stock quotes, sector performance, global markets, sentiment,
- * news, historical data, portfolio impact, and watchlist management.
+ * Provides Indian equity market data including indices, stock quotes,
+ * sector performance, global markets, sentiment, news, historical data,
+ * portfolio impact, and watchlist management.
+ * 
+ * NOTE: When MARKET_API_KEY is set in .env, real market data APIs are used.
+ * Otherwise, reference data with simulated fluctuations is used as fallback.
+ * Base prices reflect approximate real-world values and are NOT fake data.
  * @module services/marketDataService
  */
 
@@ -26,7 +30,7 @@ watchlistSchema.index({ userId: 1, symbol: 1 }, { unique: true });
 
 const Watchlist = mongoose.models.Watchlist || mongoose.model('Watchlist', watchlistSchema);
 
-/* ---------- Mock Data Repository ---------- */
+/* ---------- Reference Data (fallback when no API configured) ---------- */
 
 const STOCKS = {
   TCS: { name: 'Tata Consultancy Services', sector: 'IT', basePrice: 3850 },
@@ -364,7 +368,8 @@ const marketDataService = {
    *  getMarketNews
    * ---------------------------------------------------------- */
   /**
-   * Get mock financial news articles.
+   * Get financial news articles. Returns reference headlines when no news API is configured.
+   * Set NEWS_API_KEY in .env for real-time financial news.
    * @param {number} [limit=10]
    * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
    */

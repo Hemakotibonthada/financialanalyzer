@@ -355,8 +355,24 @@ async function getFinancialHealthScore(userId) {
       scores.consistency = Math.min(incomeCount * 10, 100);
     }
 
-    // Debt ratio (placeholder – defaults to neutral)
-    scores.debtRatio = 60;
+    // Debt ratio — calculate from real Debt/EMI data
+    try {
+      const Debt = require('../models/Debt');
+      const EMI = require('../models/EMI');
+      const [debts, emis] = await Promise.all([
+        Debt.find({ userId, 'loanDetails.currentBalance': { $gt: 0 } }).lean().catch(() => []),
+        EMI.find({ userId, status: { $ne: 'completed' } }).lean().catch(() => [])
+      ]);
+      const totalDebtPayments = debts.reduce((s, d) => s + (d.loanDetails?.emi || 0), 0) +
+                                 emis.reduce((s, e) => s + (e.emiAmount || 0), 0);
+      // Use monthly income from transactions if available
+      const monthlyIncome = totalIncome > 0 ? totalIncome : 1;
+      const debtToIncomeRatio = totalDebtPayments / monthlyIncome;
+      // Score: 100 if ratio < 20%, 0 if ratio > 60%
+      scores.debtRatio = Math.max(0, Math.min(100, Math.round(100 - (debtToIncomeRatio * 100 * 2.5))));
+    } catch {
+      scores.debtRatio = 50; // Neutral if models not available
+    }
 
     // Weighted total
     const totalScore = Object.keys(weights).reduce(

@@ -209,6 +209,17 @@ const financialProfileSchema = new mongoose.Schema({
       default: 0
     }
   },
+  // Google Drive backup/sync settings
+  driveSettings: {
+    connected: { type: Boolean, default: false },
+    accessToken: { type: String, select: false },
+    refreshToken: { type: String, select: false },
+    tokenExpiry: Date,
+    connectedAt: Date,
+    lastBackup: Date,
+    lastRestore: Date,
+    scope: String,
+  },
   budgetLimits: {
     type: Map,
     of: Number,

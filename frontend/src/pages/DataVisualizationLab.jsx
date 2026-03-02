@@ -495,24 +495,24 @@ function CompareView({ presets, colorTheme, timeRange }) {
         )}
       </div>
 
-      {/* Comparison Insights */}
+      {/* Comparison Insights - computed when user selects charts to compare */}
       <AnimatedCard className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3">📊 Comparison Insights</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="text-xs text-gray-500 mb-1">Correlation</div>
-            <div className="text-2xl font-bold text-blue-600">0.82</div>
-            <div className="text-xs text-gray-400">Strong positive</div>
+            <div className="text-2xl font-bold text-blue-600">{leftPreset && rightPreset ? '—' : 'N/A'}</div>
+            <div className="text-xs text-gray-400">{leftPreset && rightPreset ? 'Select data to analyze' : 'Select two charts'}</div>
           </div>
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="text-xs text-gray-500 mb-1">Variance</div>
-            <div className="text-2xl font-bold text-purple-600">±15.3%</div>
-            <div className="text-xs text-gray-400">Moderate spread</div>
+            <div className="text-2xl font-bold text-purple-600">{leftPreset && rightPreset ? '—' : 'N/A'}</div>
+            <div className="text-xs text-gray-400">{leftPreset && rightPreset ? 'Requires real data' : 'Select two charts'}</div>
           </div>
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="text-xs text-gray-500 mb-1">Trend Match</div>
-            <div className="text-2xl font-bold text-green-600">78%</div>
-            <div className="text-xs text-gray-400">Similar pattern</div>
+            <div className="text-2xl font-bold text-green-600">{leftPreset && rightPreset ? '—' : 'N/A'}</div>
+            <div className="text-xs text-gray-400">{leftPreset && rightPreset ? 'Requires real data' : 'Select two charts'}</div>
           </div>
         </div>
       </AnimatedCard>
@@ -544,73 +544,59 @@ function CompareChartRenderer({ preset }) {
 
 // ======================== AI INSIGHTS VIEW ========================
 function AIInsightsView({ colorTheme }) {
-  const [insights, setInsights] = useState([
-    {
-      id: 1,
-      type: 'anomaly',
-      icon: '⚠️',
-      title: 'Unusual Spending Detected',
-      description: 'Your shopping expenses in the last week are 45% higher than your monthly average. This could impact your savings goal.',
-      severity: 'warning',
-      chart: 'bar',
-      data: [3200, 2800, 3100, 5800, 2900, 3000],
-      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-      recommendation: 'Consider reducing discretionary spending next week to maintain your budget.',
-    },
-    {
-      id: 2,
-      type: 'trend',
-      icon: '📈',
-      title: 'Rising Food Expenses',
-      description: 'Food expenses have increased by 12% over the past 3 months. At this rate, you\'ll exceed your food budget by ₹3,500 this month.',
-      severity: 'info',
-      chart: 'line',
-      data: [8500, 9200, 9800, 10500, 11200, 12000],
-      labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      recommendation: 'Try meal planning and cooking at home more to control food costs.',
-    },
-    {
-      id: 3,
-      type: 'opportunity',
-      icon: '💡',
-      title: 'Savings Opportunity',
-      description: 'You have 3 subscriptions you haven\'t used in the last 30 days. Cancelling them would save ₹2,640/month.',
-      severity: 'success',
-      chart: 'doughnut',
-      data: [800, 1200, 640],
-      labels: ['App 1', 'App 2', 'App 3'],
-      recommendation: 'Review unused subscriptions and cancel or downgrade as needed.',
-    },
-    {
-      id: 4,
-      type: 'milestone',
-      icon: '🎉',
-      title: 'Emergency Fund Milestone',
-      description: 'Your emergency fund has reached 4.2 months of expenses. You\'re well on track to hit your 6-month target by March.',
-      severity: 'success',
-      chart: 'gauge',
-      recommendation: 'Keep building your emergency fund. Consider a high-yield savings account.',
-    },
-    {
-      id: 5,
-      type: 'prediction',
-      icon: '🔮',
-      title: 'Cash Flow Forecast',
-      description: 'Based on your patterns, you\'ll likely have a ₹15,200 surplus this month. Consider directing it to your home down payment goal.',
-      severity: 'info',
-      chart: 'waterfall',
-      data: [85000, -32000, -15000, -8500, -10000, -4300, 15200],
-      labels: ['Income', 'Housing', 'Loans', 'Food', 'Bills', 'Others', 'Surplus'],
-      recommendation: 'Automate ₹10,000 to your investment portfolio on salary day.',
-    },
-  ]);
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch real AI insights from backend
+    const fetchInsights = async () => {
+      try {
+        const { default: api } = await import('../services/api');
+        const res = await api.get('/api/insights');
+        if (res.data && Array.isArray(res.data.insights)) {
+          setInsights(res.data.insights);
+        }
+      } catch (err) {
+        // No insights available - show empty state
+        console.log('AI insights not available:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInsights();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-500 dark:text-gray-400">Analyzing your financial data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (insights.length === 0) {
+    return (
+      <div className="space-y-6">
+        <AnimatedCard className="text-center py-12">
+          <span className="text-4xl mb-4 block">🤖</span>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">No AI Insights Yet</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Add transactions and financial data to get personalized AI-powered insights about your spending patterns, savings opportunities, and financial health.</p>
+        </AnimatedCard>
+      </div>
+    );
+  }
+
+  const savingsFound = insights.filter(i => i.type === 'opportunity').reduce((sum, i) => sum + (i.savingsAmount || 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Insights Generated" value={insights.length} color="#3B82F6" icon="🤖" />
         <StatCard title="Anomalies Found" value={insights.filter(i => i.type === 'anomaly').length} color="#F59E0B" icon="⚠️" />
-        <StatCard title="Savings Found" value={2640} format="currency" color="#10B981" icon="💰" />
+        <StatCard title="Savings Found" value={savingsFound} format="currency" color="#10B981" icon="💰" />
       </div>
 
       {insights.map((insight, i) => (
