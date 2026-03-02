@@ -146,7 +146,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
 
       <Grid container spacing={2}>
         {/* Search */}
-        <Grid item xs={12}>
+        <Grid size={12}>
           <TextField
             fullWidth
             label="Search"
@@ -160,7 +160,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
         </Grid>
 
         {/* Date Range Preset */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth>
             <InputLabel>Date Range</InputLabel>
             <Select
@@ -181,7 +181,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
         {/* Custom Date Range */}
         {showCustomDateRange && (
           <>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 fullWidth
                 label="Start Date"
@@ -191,7 +191,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 fullWidth
                 label="End Date"
@@ -205,7 +205,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
         )}
 
         {/* Transaction Type */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth>
             <InputLabel>Transaction Type</InputLabel>
             <Select
@@ -237,7 +237,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
 
         {/* Categories */}
         {availableFilters.categories && availableFilters.categories.length > 0 && (
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel>Categories</InputLabel>
               <Select
@@ -265,7 +265,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
         )}
 
         {/* Payment Methods */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth>
             <InputLabel>Payment Method</InputLabel>
             <Select
@@ -296,7 +296,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
         </Grid>
 
         {/* Amount Range */}
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Amount Range</Typography>
@@ -330,14 +330,14 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
         </Grid>
 
         {/* Advanced Filters */}
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Advanced Filters</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth>
                     <InputLabel>Recurring</InputLabel>
                     <Select
@@ -352,7 +352,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth>
                     <InputLabel>Verified</InputLabel>
                     <Select
@@ -367,7 +367,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Merchant Name"
@@ -376,7 +376,7 @@ const TransactionFilters = ({ filters, onFilterChange, availableFilters = {} }) 
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Location"

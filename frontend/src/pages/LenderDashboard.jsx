@@ -343,7 +343,7 @@ const LenderDashboard = () => {
 
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -364,7 +364,7 @@ const LenderDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -385,7 +385,7 @@ const LenderDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -406,7 +406,7 @@ const LenderDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -431,7 +431,7 @@ const LenderDashboard = () => {
       {/* Charts Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Monthly Collection Trends - Line Chart */}
-        <Grid xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card elevation={0} sx={chartCardHoverEffect}>
             <CardContent>
               <Box 
@@ -522,7 +522,7 @@ const LenderDashboard = () => {
         </Grid>
 
         {/* Lender Portfolio Distribution - Bar Chart */}
-        <Grid xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Card elevation={0} sx={chartCardHoverEffect}>
             <CardContent>
               <Box 
@@ -601,7 +601,7 @@ const LenderDashboard = () => {
         </Grid>
 
         {/* Loan Status Distribution - Pie Chart */}
-        <Grid xs={12} md={6} lg={4}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <Card elevation={0} sx={chartCardHoverEffect}>
             <CardContent>
               <Box 
@@ -677,7 +677,7 @@ const LenderDashboard = () => {
         </Grid>
 
         {/* Lenders Overview Table */}
-        <Grid xs={12} md={6} lg={8}>
+        <Grid size={{ xs: 12, md: 6, lg: 8 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -950,7 +950,7 @@ const LenderDashboard = () => {
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <FormControl fullWidth>
                   <InputLabel>Select Lender</InputLabel>
                   <Select
@@ -967,7 +967,7 @@ const LenderDashboard = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Borrower Name"
@@ -976,7 +976,7 @@ const LenderDashboard = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Borrower Phone"
@@ -985,7 +985,7 @@ const LenderDashboard = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Principal Amount (₹)"
@@ -995,7 +995,7 @@ const LenderDashboard = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Interest Rate (%)"
@@ -1005,7 +1005,7 @@ const LenderDashboard = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Tenure (months)"
@@ -1015,7 +1015,7 @@ const LenderDashboard = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControl fullWidth>
                   <InputLabel>Interest Type</InputLabel>
                   <Select
@@ -1029,7 +1029,7 @@ const LenderDashboard = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Disbursement Date"
@@ -1040,7 +1040,7 @@ const LenderDashboard = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="First EMI Date"

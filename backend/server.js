@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const helmet = require('helmet');
+const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./utils/logger');
@@ -89,7 +90,7 @@ app.use(generalLimiter);
 
 // Build allowed origins list once at startup (avoid rebuilding per-request)
 const buildAllowedOrigins = () => {
-  const frontendPorts = [3000, 3001, 3002, 3003, 3004, 3005];
+  const frontendPorts = [3000, 3001, 3002, 3003, 3004, 3005, 5173, 5174, 5175];
   const origins = new Set();
   for (const port of frontendPorts) {
     origins.add(`http://localhost:${port}`);
@@ -349,9 +350,48 @@ io.on('connection', (socket) => {
 app.set('io', io);
 websocketService.initialize(io);
 
-// Start backup scheduler
+// Start backup scheduler after MongoDB is connected
 const backupScheduler = require('./services/backupScheduler');
-backupScheduler.start();
+mongoose.connection.once('open', () => {
+  backupScheduler.start();
+});
+
+// Handle EADDRINUSE: kill stale process and retry once
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    logger.warn(`⚠️ Port ${PORT} is in use. Attempting to free it...`);
+    
+    const { execSync } = require('child_process');
+    try {
+      // Try to find and kill the process using the port
+      if (process.platform === 'win32') {
+        const result = execSync(`netstat -ano | findstr :${PORT} | findstr LISTENING`, { encoding: 'utf8', timeout: 5000 });
+        const lines = result.trim().split('\n');
+        for (const line of lines) {
+          const pid = line.trim().split(/\s+/).pop();
+          if (pid && pid !== '0' && parseInt(pid) !== process.pid) {
+            logger.info(`Killing stale process PID ${pid} on port ${PORT}`);
+            try { execSync(`taskkill /F /PID ${pid}`, { timeout: 5000 }); } catch (e) { /* ignore */ }
+          }
+        }
+      } else {
+        execSync(`fuser -k ${PORT}/tcp 2>/dev/null || true`, { timeout: 5000 });
+      }
+      
+      // Wait and retry
+      logger.info(`Retrying server start on port ${PORT} in 2 seconds...`);
+      setTimeout(() => {
+        server.listen(PORT, '0.0.0.0');
+      }, 2000);
+    } catch (killErr) {
+      logger.error(`Could not free port ${PORT}. Try manually: taskkill /F /PID <pid>`);
+      process.exit(1);
+    }
+  } else {
+    logger.error('Server error:', err);
+    process.exit(1);
+  }
+});
 
 server.listen(PORT, '0.0.0.0', () => {
   const networkIPs = getNetworkIPs();
@@ -362,11 +402,11 @@ server.listen(PORT, '0.0.0.0', () => {
   
   if (networkIPs.length > 0) {
     networkIPs.forEach(ip => {
-      logger.info(`� Network: http://${ip}:${PORT}`);
+      logger.info(`🌐 Network: http://${ip}:${PORT}`);
     });
   }
   
-  logger.info(`�📊 Environment: ${process.env.NODE_ENV}`);
+  logger.info(`📊 Environment: ${process.env.NODE_ENV}`);
   logger.info(`🤖 AI Provider: ${process.env.AI_PROVIDER || 'Not configured'}`);
   logger.info(`🔌 WebSocket: Enabled`);
 });
@@ -381,7 +421,6 @@ const gracefulShutdown = (signal) => {
   server.close(() => {
     logger.info('HTTP server closed.');
     
-    const mongoose = require('mongoose');
     mongoose.connection.close(false, () => {
       logger.info('MongoDB connection closed.');
       process.exit(0);
@@ -400,6 +439,8 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
+  // EADDRINUSE is handled by server.on('error') — don't double-handle
+  if (err.code === 'EADDRINUSE') return;
   logger.error('Uncaught Exception:', err);
   gracefulShutdown('uncaughtException');
 });

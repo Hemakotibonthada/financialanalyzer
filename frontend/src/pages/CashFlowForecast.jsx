@@ -236,7 +236,7 @@ const CashFlowForecast = () => {
           { label: 'Net Savings', value: formatCurrency(totals.totalSavings), icon: <TrendingUp />, color: '#2196F3', change: `${totals.avgSavingsRate}% rate` },
           { label: 'End Balance', value: formatCurrency(totals.endBalance), icon: <AccountBalance />, color: '#9C27B0', change: `+${totals.growthRate}%` },
         ].map((stat, idx) => (
-          <Grid item xs={12} sm={6} md={3} key={idx}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
             <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: `${stat.color}15`, color: stat.color, width: 48, height: 48 }}>
@@ -378,7 +378,7 @@ const CashFlowForecast = () => {
         <Box>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {SCENARIOS.map(scenario => (
-              <Grid item xs={12} sm={6} md={3} key={scenario.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={scenario.id}>
                 <Card
                   onClick={() => {
                     setSelectedScenario(scenario.id);
@@ -411,7 +411,7 @@ const CashFlowForecast = () => {
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Custom Scenario Builder</Typography>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" gutterBottom>Annual Income Growth: {incomeGrowth}%</Typography>
                   <Slider
                     value={incomeGrowth}
@@ -428,7 +428,7 @@ const CashFlowForecast = () => {
                     color="success"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" gutterBottom>Annual Expense Growth: {expenseGrowth}%</Typography>
                   <Slider
                     value={expenseGrowth}
@@ -461,7 +461,7 @@ const CashFlowForecast = () => {
                     const projExpense = monthlyExpense * 12 * yearlyFactor * (1 + expenseGrowth / 200);
                     const projSavings = projIncome - projExpense;
                     return (
-                      <Grid item xs={12} md={4} key={idx}>
+                      <Grid size={{ xs: 12, md: 4 }} key={idx}>
                         <Paper sx={{ p: 2, textAlign: 'center' }}>
                           <Typography variant="subtitle2" color="text.secondary">{period.label}</Typography>
                           <Typography variant="h5" fontWeight={700} color={projSavings > 0 ? 'success.main' : 'error.main'}>
@@ -519,7 +519,7 @@ const CashFlowForecast = () => {
         <Box>
           <Grid container spacing={2}>
             {expenseCategories.map((cat, idx) => (
-              <Grid item xs={12} sm={6} md={4} key={idx}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                 <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -598,7 +598,7 @@ const CashFlowForecast = () => {
             {milestones.map((milestone, idx) => {
               const progress = (milestone.current / milestone.target) * 100;
               return (
-                <Grid item xs={12} md={6} key={idx}>
+                <Grid size={{ xs: 12, md: 6 }} key={idx}>
                   <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -614,15 +614,15 @@ const CashFlowForecast = () => {
                         />
                       </Box>
                       <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={4}>
+                        <Grid size={4}>
                           <Typography variant="caption" color="text.secondary">Current</Typography>
                           <Typography variant="subtitle2" fontWeight={600}>{formatCurrency(milestone.current)}</Typography>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid size={4}>
                           <Typography variant="caption" color="text.secondary">Target</Typography>
                           <Typography variant="subtitle2" fontWeight={600}>{formatCurrency(milestone.target)}</Typography>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid size={4}>
                           <Typography variant="caption" color="text.secondary">Target Date</Typography>
                           <Typography variant="subtitle2" fontWeight={600}>{milestone.date}</Typography>
                         </Grid>

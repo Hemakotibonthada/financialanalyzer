@@ -355,7 +355,7 @@ const CSVImportExport = () => {
           </FormControl>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Button
                 variant="outlined"
                 startIcon={<TemplateIcon />}
@@ -366,7 +366,7 @@ const CSVImportExport = () => {
                 Download Template
               </Button>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Button
                 variant="contained"
                 startIcon={<PreviewIcon />}
@@ -430,7 +430,7 @@ const CSVImportExport = () => {
           </TableContainer>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Button
                 variant="outlined"
                 onClick={() => setImportStep(0)}
@@ -441,7 +441,7 @@ const CSVImportExport = () => {
                 Back
               </Button>
             </Grid>
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <Button
                 variant="contained"
                 onClick={handleValidate}
@@ -460,7 +460,7 @@ const CSVImportExport = () => {
       {importStep === 2 && validationResult && (
         <Box>
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={6} md={3}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
                   {validationResult.total}
@@ -468,7 +468,7 @@ const CSVImportExport = () => {
                 <Typography variant="caption">Total Rows</Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} md={3}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main">
                   {validationResult.valid}
@@ -476,7 +476,7 @@ const CSVImportExport = () => {
                 <Typography variant="caption">Valid</Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} md={3}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main">
                   {validationResult.invalid}
@@ -484,7 +484,7 @@ const CSVImportExport = () => {
                 <Typography variant="caption">Invalid</Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} md={3}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="info.main">
                   {Math.round((validationResult.valid / validationResult.total) * 100)}%
@@ -577,7 +577,7 @@ const CSVImportExport = () => {
         </Typography>
         
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Start Date"
@@ -587,7 +587,7 @@ const CSVImportExport = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="End Date"
@@ -597,7 +597,7 @@ const CSVImportExport = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel>Transaction Type</InputLabel>
               <Select
@@ -612,7 +612,7 @@ const CSVImportExport = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Category Filter"
@@ -708,7 +708,7 @@ const CSVImportExport = () => {
         {/* Info Section */}
         <Paper sx={{ mt: 3, p: 3, borderRadius: 2, bgcolor: 'info.50' }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <FileUploadIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
                 <Typography variant="h6" gutterBottom>
@@ -719,7 +719,7 @@ const CSVImportExport = () => {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <CheckCircle sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
                 <Typography variant="h6" gutterBottom>
@@ -730,7 +730,7 @@ const CSVImportExport = () => {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <FileIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
                 <Typography variant="h6" gutterBottom>

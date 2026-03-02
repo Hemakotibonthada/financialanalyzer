@@ -23,7 +23,12 @@ const notificationSchema = new mongoose.Schema({
       'cibil_update',
       'gmail_sync',
       'security_alert',
-      'system_notification'
+      'system_notification',
+      'goal_milestone',
+      'weekly_summary',
+      'transaction',
+      'system',
+      'custom'
     ],
     required: true,
     index: true

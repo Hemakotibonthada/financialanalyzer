@@ -345,7 +345,7 @@ const TaxPlanner = () => {
 
       {/* Income & Regime Selection */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>Annual Gross Income</Typography>
@@ -376,7 +376,7 @@ const TaxPlanner = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>Tax Regime</Typography>
@@ -418,7 +418,7 @@ const TaxPlanner = () => {
           { label: 'Total Tax', value: formatCurrency(currentTax.totalTax), color: '#F44336', icon: <Receipt /> },
           { label: 'Monthly Take Home', value: formatCurrency(currentTax.monthlySalary), color: '#4CAF50', icon: <Savings /> },
         ].map((card, idx) => (
-          <Grid item xs={6} md={3} key={idx}>
+          <Grid size={{ xs: 6, md: 3 }} key={idx}>
             <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: `${card.color}15`, color: card.color }}>{card.icon}</Avatar>
@@ -444,7 +444,7 @@ const TaxPlanner = () => {
       {/* Tax Breakdown Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Slab-wise Tax Breakdown ({regime === 'new' ? 'New' : 'Old'} Regime)</Typography>
@@ -490,7 +490,7 @@ const TaxPlanner = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Income Distribution</Typography>
@@ -559,7 +559,7 @@ const TaxPlanner = () => {
               <AccordionDetails>
                 <Grid container spacing={2}>
                   {section.items.map((item, idx) => (
-                    <Grid item xs={12} sm={6} md={4} key={idx}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                       <Paper
                         sx={{
                           p: 2,
@@ -604,7 +604,7 @@ const TaxPlanner = () => {
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>HRA Exemption Calculator</Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -615,7 +615,7 @@ const TaxPlanner = () => {
                       InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -626,7 +626,7 @@ const TaxPlanner = () => {
                       InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -637,7 +637,7 @@ const TaxPlanner = () => {
                       InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -664,7 +664,7 @@ const TaxPlanner = () => {
       {activeTab === 2 && (
         <Box>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card sx={{
                 border: betterRegime === 'old' ? '2px solid' : '1px solid',
                 borderColor: betterRegime === 'old' ? 'success.main' : 'divider',
@@ -701,7 +701,7 @@ const TaxPlanner = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card sx={{
                 border: betterRegime === 'new' ? '2px solid' : '1px solid',
                 borderColor: betterRegime === 'new' ? 'success.main' : 'divider',
@@ -823,7 +823,7 @@ const TaxPlanner = () => {
 
               <Grid container spacing={2}>
                 {suggestions.map((suggestion, idx) => (
-                  <Grid item xs={12} md={6} key={idx}>
+                  <Grid size={{ xs: 12, md: 6 }} key={idx}>
                     <Card sx={{
                       border: '1px solid',
                       borderColor: suggestion.priority === 'high' ? 'success.main' : suggestion.priority === 'medium' ? 'warning.main' : 'divider',
@@ -881,7 +881,7 @@ const TaxPlanner = () => {
           <Typography variant="h6" fontWeight={600} gutterBottom>Important Tax Dates (FY 2024-25)</Typography>
           <Grid container spacing={2}>
             {TAX_CALENDAR.map((event, idx) => (
-              <Grid item xs={12} sm={6} md={4} key={idx}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                 <Card sx={{
                   transition: 'all 0.3s',
                   '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },

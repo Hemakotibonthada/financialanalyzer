@@ -337,7 +337,7 @@ function InvestmentPortfolio() {
         <Container maxWidth="xl">
           {/* Enhanced Summary Cards with Gradients */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -360,7 +360,7 @@ function InvestmentPortfolio() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -383,7 +383,7 @@ function InvestmentPortfolio() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: totalReturns >= 0 
@@ -415,7 +415,7 @@ function InvestmentPortfolio() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
@@ -600,7 +600,7 @@ function InvestmentPortfolio() {
 
       {activeTab === 1 && allocation && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 By Investment Type
@@ -630,7 +630,7 @@ function InvestmentPortfolio() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 By Risk Level
@@ -664,7 +664,7 @@ function InvestmentPortfolio() {
 
       {activeTab === 2 && portfolio && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="success.main">
                 Top Performers
@@ -694,7 +694,7 @@ function InvestmentPortfolio() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="error.main">
                 Underperformers
@@ -797,28 +797,28 @@ function InvestmentPortfolio() {
               Advanced algorithms to optimize your portfolio allocation and maximize returns
             </Typography>
             <Grid container spacing={3} sx={{ mt: 2 }}>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" sx={{ opacity: 0.9 }}>Optimization Score</Typography>
                   <Typography variant="h3" fontWeight="bold">87</Typography>
                   <Typography variant="caption">/ 100</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" sx={{ opacity: 0.9 }}>Potential Gain</Typography>
                   <Typography variant="h5" fontWeight="bold">+₹2.4L</Typography>
                   <Typography variant="caption">Annual</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" sx={{ opacity: 0.9 }}>Risk Reduction</Typography>
                   <Typography variant="h5" fontWeight="bold">-15%</Typography>
                   <Typography variant="caption">Volatility</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" sx={{ opacity: 0.9 }}>Rebalancing</Typography>
                   <Typography variant="h5" fontWeight="bold">Every</Typography>
@@ -830,7 +830,7 @@ function InvestmentPortfolio() {
 
           <Grid container spacing={3}>
             {/* Current vs Optimal Allocation */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper sx={{ p: 3, height: '100%' }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   📊 Current vs Optimal Allocation
@@ -896,7 +896,7 @@ function InvestmentPortfolio() {
             </Grid>
 
             {/* Risk-Return Analysis */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper sx={{ p: 3, height: '100%' }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   📈 Risk-Return Analysis
@@ -937,7 +937,7 @@ function InvestmentPortfolio() {
             </Grid>
 
             {/* Rebalancing Recommendations */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   ⚖️ Rebalancing Recommendations
@@ -980,7 +980,7 @@ function InvestmentPortfolio() {
                       color: 'info'
                     }
                   ].map((rec, index) => (
-                    <Grid item xs={12} md={6} key={index}>
+                    <Grid size={{ xs: 12, md: 6 }} key={index}>
                       <Card
                         sx={{
                           p: 2,
@@ -1022,7 +1022,7 @@ function InvestmentPortfolio() {
             </Grid>
 
             {/* Tax Optimization */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   💰 Tax Optimization
@@ -1065,7 +1065,7 @@ function InvestmentPortfolio() {
             </Grid>
 
             {/* Performance Projections */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   🔮 Performance Projections
@@ -1104,7 +1104,7 @@ function InvestmentPortfolio() {
             </Grid>
 
             {/* Auto-Rebalance Settings */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   ⚙️ Auto-Rebalancing Settings
@@ -1113,7 +1113,7 @@ function InvestmentPortfolio() {
                   Configure automatic portfolio rebalancing
                 </Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <FormControl fullWidth>
                       <InputLabel>Rebalancing Frequency</InputLabel>
                       <Select value="quarterly" label="Rebalancing Frequency">
@@ -1124,7 +1124,7 @@ function InvestmentPortfolio() {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <FormControl fullWidth>
                       <InputLabel>Threshold (%)</InputLabel>
                       <Select value="5" label="Threshold (%)">
@@ -1134,7 +1134,7 @@ function InvestmentPortfolio() {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <FormControl fullWidth>
                       <InputLabel>Risk Profile</InputLabel>
                       <Select value="moderate" label="Risk Profile">
@@ -1144,7 +1144,7 @@ function InvestmentPortfolio() {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <Button variant="contained" size="large" fullWidth startIcon={<AddIcon />}>
                       Enable Auto-Rebalancing
                     </Button>
@@ -1171,7 +1171,7 @@ function InvestmentPortfolio() {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Investment Type *</InputLabel>
                 <Select
@@ -1186,7 +1186,7 @@ function InvestmentPortfolio() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Name *"
@@ -1195,7 +1195,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Symbol/Code"
@@ -1204,7 +1204,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -1214,7 +1214,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -1224,7 +1224,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -1234,7 +1234,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -1245,7 +1245,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -1262,7 +1262,7 @@ function InvestmentPortfolio() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Risk Level</InputLabel>
                 <Select
@@ -1279,7 +1279,7 @@ function InvestmentPortfolio() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -1290,13 +1290,13 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="subtitle2" gutterBottom>
                 SIP Details (Optional)
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -1306,7 +1306,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>SIP Frequency</InputLabel>
                 <Select
@@ -1321,7 +1321,7 @@ function InvestmentPortfolio() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -1332,7 +1332,7 @@ function InvestmentPortfolio() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 multiline

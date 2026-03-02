@@ -201,7 +201,7 @@ const contractSchema = new mongoose.Schema({
 });
 
 contractSchema.index({ userId: 1, status: 1 });
-contractSchema.index({ contractNumber: 1 });
+// contractNumber already has unique: true on the field definition — no duplicate index needed
 contractSchema.index({ 'duration.endDate': 1 });
 contractSchema.index({ 'duration.renewalDate': 1 });
 

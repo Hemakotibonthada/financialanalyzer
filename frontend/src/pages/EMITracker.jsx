@@ -37,7 +37,8 @@ import {
   InputLabel,
   Tooltip,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Snackbar
 } from '@mui/material';
 import {
   PieChart,
@@ -143,6 +144,15 @@ const EMITracker = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
   const [activeTab, setActiveTab] = useState(0);
   const [overview, setOverview] = useState(null);
   const [upcomingPayments, setUpcomingPayments] = useState(null);
@@ -180,6 +190,71 @@ const EMITracker = () => {
     tags: []
   });
   const [manualEMIErrors, setManualEMIErrors] = useState({});
+  const [autoCalculatedRate, setAutoCalculatedRate] = useState(null);
+
+  // Auto-calculate interest rate when Principal, EMI, and Tenure are provided
+  useEffect(() => {
+    if (manualEMIData.repaymentType !== 'MONTHLY') return;
+    if (manualEMIData.interestType !== 'percentage') {
+      setAutoCalculatedRate(null);
+      return;
+    }
+
+    const P = parseFloat(manualEMIData.principalAmount);
+    const EMI = parseFloat(manualEMIData.emiAmount);
+    const n = parseInt(manualEMIData.totalTenure);
+
+    if (!P || !EMI || !n || P <= 0 || EMI <= 0 || n <= 0) {
+      setAutoCalculatedRate(null);
+      return;
+    }
+
+    // If EMI * n == P, interest is 0
+    const totalPayable = EMI * n;
+    if (Math.abs(totalPayable - P) < 1) {
+      setAutoCalculatedRate(0);
+      if (!manualEMIData.interestRate) {
+        setManualEMIData(prev => ({ ...prev, interestRate: '0' }));
+      }
+      return;
+    }
+
+    // If EMI * n < P, EMI is too low (invalid)
+    if (totalPayable < P) {
+      setAutoCalculatedRate(null);
+      return;
+    }
+
+    // Newton-Raphson to solve: EMI = P * r * (1+r)^n / ((1+r)^n - 1) for r
+    let r = 0.01; // initial guess: 1% monthly
+    for (let i = 0; i < 100; i++) {
+      const rn = Math.pow(1 + r, n);
+      const f = P * r * rn / (rn - 1) - EMI;
+      // derivative of f w.r.t. r
+      const df = P * (rn * (rn - 1) - r * n * Math.pow(1 + r, n - 1) * (rn - 1) + r * rn * n * Math.pow(1 + r, n - 1)) / ((rn - 1) * (rn - 1));
+      // simplified derivative
+      const numerator = rn * (1 + r) * (rn - 1) - r * n * rn * (rn - 1) / (1 + r) + r * rn * n * rn / (1 + r);
+      // Use numerical derivative for stability
+      const r2 = r + 0.0001;
+      const rn2 = Math.pow(1 + r2, n);
+      const f2 = P * r2 * rn2 / (rn2 - 1) - EMI;
+      const dfNum = (f2 - f) / 0.0001;
+
+      if (Math.abs(dfNum) < 1e-10) break;
+      const rNew = r - f / dfNum;
+      if (rNew <= 0) { r = r / 2; continue; }
+      if (Math.abs(rNew - r) < 1e-10) { r = rNew; break; }
+      r = rNew;
+    }
+
+    const annualRate = parseFloat((r * 12 * 100).toFixed(2));
+    if (annualRate >= 0 && annualRate < 200 && isFinite(annualRate)) {
+      setAutoCalculatedRate(annualRate);
+      setManualEMIData(prev => ({ ...prev, interestRate: String(annualRate) }));
+    } else {
+      setAutoCalculatedRate(null);
+    }
+  }, [manualEMIData.principalAmount, manualEMIData.emiAmount, manualEMIData.totalTenure, manualEMIData.repaymentType, manualEMIData.interestType]);
   
   // Edit/Delete EMI State
   const [selectedEMI, setSelectedEMI] = useState(null);
@@ -868,11 +943,12 @@ const EMITracker = () => {
       
       // Show success message
       setError(null);
-      alert(`Monthly Trends report exported successfully as ${format.toUpperCase()}!`);
+      showSnackbar(`Monthly Trends report exported successfully as ${format.toUpperCase()}!`);
     } catch (err) {
       console.error('Error exporting monthly trends:', err);
-      setError(err.response?.data?.message || 'Failed to export monthly trends');
-      alert('Failed to export report. Please try again.');
+      const errMsg = err.response?.data?.message || 'Failed to export monthly trends';
+      setError(errMsg);
+      showSnackbar('Failed to export report. Please try again.', 'error');
     }
   };
 
@@ -911,11 +987,11 @@ const EMITracker = () => {
       if (selectedLoanGiven) {
         // Update existing loan
         await axios.put(`${API_URL}/loans-given/${selectedLoanGiven._id}`, loanGivenFormData, config);
-        alert('Loan updated successfully!');
+        showSnackbar('Loan updated successfully!');
       } else {
         // Create new loan
         await axios.post(`${API_URL}/loans-given`, loanGivenFormData, config);
-        alert('Loan recorded successfully!');
+        showSnackbar('Loan recorded successfully!');
       }
       
       setLoanGivenDialogOpen(false);
@@ -938,7 +1014,7 @@ const EMITracker = () => {
       fetchLoansGiven();
     } catch (err) {
       console.error('Error saving loan:', err);
-      alert(err.response?.data?.message || 'Failed to save loan');
+      showSnackbar(err.response?.data?.message || 'Failed to save loan', 'error');
     }
   };
 
@@ -951,7 +1027,7 @@ const EMITracker = () => {
       };
       
       await axios.post(`${API_URL}/loans-given/${selectedLoanGiven._id}/repayment`, repaymentData, config);
-      alert('Repayment added successfully!');
+      showSnackbar('Repayment added successfully!');
       
       setRepaymentDialogOpen(false);
       setRepaymentData({
@@ -964,7 +1040,7 @@ const EMITracker = () => {
       fetchLoansGiven();
     } catch (err) {
       console.error('Error adding repayment:', err);
-      alert(err.response?.data?.message || 'Failed to add repayment');
+      showSnackbar(err.response?.data?.message || 'Failed to add repayment', 'error');
     }
   };
 
@@ -979,11 +1055,11 @@ const EMITracker = () => {
       };
       
       await axios.delete(`${API_URL}/loans-given/${loanId}`, config);
-      alert('Loan deleted successfully!');
+      showSnackbar('Loan deleted successfully!');
       fetchLoansGiven();
     } catch (err) {
       console.error('Error deleting loan:', err);
-      alert(err.response?.data?.message || 'Failed to delete loan');
+      showSnackbar(err.response?.data?.message || 'Failed to delete loan', 'error');
     }
   };
 
@@ -998,11 +1074,11 @@ const EMITracker = () => {
       };
       
       await axios.put(`${API_URL}/loans-given/${loanId}/write-off`, {}, config);
-      alert('Loan written off successfully!');
+      showSnackbar('Loan written off successfully!');
       fetchLoansGiven();
     } catch (err) {
       console.error('Error writing off loan:', err);
-      alert(err.response?.data?.message || 'Failed to write off loan');
+      showSnackbar(err.response?.data?.message || 'Failed to write off loan', 'error');
     }
   };
 
@@ -1081,7 +1157,7 @@ const EMITracker = () => {
       }
     } catch (err) {
       console.error('Error saving personal loan:', err);
-      alert(err.response?.data?.message || 'Failed to save personal loan');
+      showSnackbar(err.response?.data?.message || 'Failed to save personal loan', 'error');
     }
   };
 
@@ -1101,7 +1177,7 @@ const EMITracker = () => {
         config
       );
       
-      alert('Repayment added successfully!');
+      showSnackbar('Repayment added successfully!');
       setPersonalLoanRepaymentDialogOpen(false);
       setSelectedPersonalLoan(null);
       setPersonalLoanRepaymentData({
@@ -1111,7 +1187,7 @@ const EMITracker = () => {
       fetchPersonalLoans();
     } catch (err) {
       console.error('Error adding repayment:', err);
-      alert(err.response?.data?.message || 'Failed to add repayment');
+      showSnackbar(err.response?.data?.message || 'Failed to add repayment', 'error');
     }
   };
 
@@ -1126,11 +1202,11 @@ const EMITracker = () => {
       };
       
       await axios.put(`${API_URL}/personal-loans/${loanId}/mark-repaid`, {}, config);
-      alert('Loan marked as repaid successfully!');
+      showSnackbar('Loan marked as repaid successfully!');
       fetchPersonalLoans();
     } catch (err) {
       console.error('Error marking loan as repaid:', err);
-      alert(err.response?.data?.message || 'Failed to mark loan as repaid');
+      showSnackbar(err.response?.data?.message || 'Failed to mark loan as repaid', 'error');
     }
   };
 
@@ -1145,11 +1221,11 @@ const EMITracker = () => {
       };
       
       await axios.delete(`${API_URL}/personal-loans/${loanId}`, config);
-      alert('Personal loan deleted successfully!');
+      showSnackbar('Personal loan deleted successfully!');
       fetchPersonalLoans();
     } catch (err) {
       console.error('Error deleting personal loan:', err);
-      alert(err.response?.data?.message || 'Failed to delete personal loan');
+      showSnackbar(err.response?.data?.message || 'Failed to delete personal loan', 'error');
     }
   };
 
@@ -1212,10 +1288,10 @@ const EMITracker = () => {
       
       setExportDialogOpen(false);
       // Show success message
-      alert('Report exported successfully!');
+      showSnackbar('Report exported successfully!');
     } catch (err) {
       console.error('Error exporting report:', err);
-      alert(err.response?.data?.message || 'Failed to export report');
+      showSnackbar(err.response?.data?.message || 'Failed to export report', 'error');
     } finally {
       setExportLoading(false);
     }
@@ -1229,7 +1305,7 @@ const EMITracker = () => {
     if (!userProfile?.gmailConnected) {
       const errorMsg = 'Gmail not connected. Please connect Gmail in your Profile settings first.';
       setError(errorMsg);
-      alert(errorMsg);
+      showSnackbar(errorMsg, 'error');
       setSyncDialogOpen(false);
       return;
     }
@@ -1250,12 +1326,12 @@ const EMITracker = () => {
       setSyncDialogOpen(false);
       fetchAllData(); // Refresh data after sync
       
-      alert(response.data.message || 'Statements synced successfully!');
+      showSnackbar(response.data.message || 'Statements synced successfully!');
     } catch (err) {
       console.error('Error syncing statements:', err);
       const errorMessage = err.response?.data?.message || 'Failed to sync statements. Please ensure Gmail is connected.';
       setError(errorMessage);
-      alert(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setSyncing(false);
     }
@@ -1277,10 +1353,10 @@ const EMITracker = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(`Offer request sent to ${offer.provider} for ${candidate.merchantName}. We will follow up.`);
+      showSnackbar(`Offer request sent to ${offer.provider} for ${candidate.merchantName}. We will follow up.`);
     } catch (err) {
       console.error('Balance transfer request failed', err);
-      alert(err.response?.data?.message || 'Could not send balance transfer request. Please try again.');
+      showSnackbar(err.response?.data?.message || 'Could not send balance transfer request. Please try again.', 'error');
     }
   };
 
@@ -1293,11 +1369,11 @@ const EMITracker = () => {
         { emiId: emi.id || emi._id, amount: Math.min(emi.remainingAmount, emi.emiAmount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Prepayment scheduled. Great move!');
+      showSnackbar('Prepayment scheduled. Great move!');
       fetchAllData();
     } catch (err) {
       console.error('One-click prepay failed', err);
-      alert(err.response?.data?.message || 'Could not schedule prepayment.');
+      showSnackbar(err.response?.data?.message || 'Could not schedule prepayment.', 'error');
     }
   };
 
@@ -1309,10 +1385,10 @@ const EMITracker = () => {
         { sweepPercentage: 20 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Auto-sweep set to divert 20% surplus to highest-APR EMI.');
+      showSnackbar('Auto-sweep set to divert 20% surplus to highest-APR EMI.');
     } catch (err) {
       console.error('Auto-sweep setup failed', err);
-      alert(err.response?.data?.message || 'Could not set auto-sweep.');
+      showSnackbar(err.response?.data?.message || 'Could not set auto-sweep.', 'error');
     }
   };
 
@@ -1324,17 +1400,17 @@ const EMITracker = () => {
         { notifyDaysBefore: 5 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Late-fee shield armed: you will get alerts and auto-pay nudges 5 days before due.');
+      showSnackbar('Late-fee shield armed: you will get alerts and auto-pay nudges 5 days before due.');
     } catch (err) {
       console.error('Late fee shield failed', err);
-      alert(err.response?.data?.message || 'Could not enable late-fee shield.');
+      showSnackbar(err.response?.data?.message || 'Could not enable late-fee shield.', 'error');
     }
   };
 
   // Manual EMI Dialog Handlers
   const handleOpenManualEMIDialog = () => {
     if (isNewEmiLocked) {
-      alert('New EMI creation is locked (DTI > 50% or Hardship Mode on). Reduce EMI burden, increase income, or disable Hardship Mode to unlock.');
+      showSnackbar('New EMI creation is locked (DTI > 50% or Hardship Mode on). Reduce EMI burden, increase income, or disable Hardship Mode to unlock.', 'warning');
       return;
     }
     setManualEMIDialogOpen(true);
@@ -1429,14 +1505,14 @@ const EMITracker = () => {
         }
       );
 
-      alert('EMI created successfully!');
+      showSnackbar('EMI created successfully!');
       handleCloseManualEMIDialog();
       fetchAllData(); // Refresh data
     } catch (err) {
       console.error('Error creating manual EMI:', err);
       const errorMessage = err.response?.data?.message || 'Failed to create EMI';
       setError(errorMessage);
-      alert(errorMessage);
+      showSnackbar(errorMessage, 'error');
     } finally {
       setManualEMILoading(false);
     }
@@ -1474,13 +1550,13 @@ const EMITracker = () => {
         });
       }
 
-      alert('EMI deleted successfully!');
+      showSnackbar('EMI deleted successfully!');
       setDeleteConfirmOpen(false);
       setSelectedEMI(null);
       fetchAllData(); // Refresh all data from backend
     } catch (err) {
       console.error('Error deleting EMI:', err);
-      alert('Failed to delete EMI');
+      showSnackbar('Failed to delete EMI', 'error');
     }
   };
 
@@ -1941,7 +2017,7 @@ const EMITracker = () => {
           {selectedEMI ? (
             <Grid container spacing={2} alignItems="flex-start">
               {/* Left column: Start / End / Next EMI Day first, then provider info */}
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Typography variant="subtitle2">Start Date</Typography>
                 <Typography variant="body1" gutterBottom>{selectedEMI.startDate ? formatDate(selectedEMI.startDate) : '—'}</Typography>
 
@@ -1970,7 +2046,7 @@ const EMITracker = () => {
               </Grid>
 
               {/* Right column: tenure, completion, remaining, next due + chart */}
-              <Grid item xs={12} md={8}>
+              <Grid size={{ xs: 12, md: 8 }}>
                 <Typography variant="subtitle2">Tenure</Typography>
                 <Typography variant="body1" gutterBottom>{selectedEMI.paidInstallments} paid of {selectedEMI.totalTenure}</Typography>
 
@@ -2017,7 +2093,7 @@ const EMITracker = () => {
 
               {/* If backend provides transaction history or schedule, show it */}
               {selectedEMI.schedule && selectedEMI.schedule.length > 0 && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Typography variant="subtitle2" gutterBottom>Payment Schedule</Typography>
                   <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
                     <Table size="small" stickyHeader>
@@ -2286,7 +2362,7 @@ const EMITracker = () => {
       {/* Enhanced Overview Cards */}
       {overview && (
         <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               elevation={0}
               sx={{ 
@@ -2362,7 +2438,7 @@ const EMITracker = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               elevation={0}
               sx={{ 
@@ -2444,7 +2520,7 @@ const EMITracker = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               elevation={0}
               sx={{ 
@@ -2521,7 +2597,7 @@ const EMITracker = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card 
               elevation={0}
               sx={{ 
@@ -2679,19 +2755,19 @@ const EMITracker = () => {
                   {/* Summary Overview Section */}
                   <Box sx={{ mb: 3, p: 2.5, bgcolor: surfaceMuted, borderRadius: 3, border: `1px solid ${borderColor}` }}>
                     <Grid container spacing={2}>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600}>Active EMIs</Typography>
                         <Typography variant="h5" fontWeight={800} color="primary">{overview.overview?.totalActiveEMIs || 0}</Typography>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600}>Outstanding</Typography>
                         <Typography variant="h5" fontWeight={800} color="error">{formatCurrency(overview.overview?.totalOutstanding || 0)}</Typography>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600}>Monthly Burden</Typography>
                         <Typography variant="h5" fontWeight={800} color="warning.main">{formatCurrency(overview.overview?.monthlyBurden || 0)}</Typography>
                       </Grid>
-                      <Grid item xs={6} sm={3}>
+                      <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600}>Total Paid</Typography>
                         <Typography variant="h5" fontWeight={800} color="success.main">{formatCurrency(overview.overview?.totalAmountPaid || 0)}</Typography>
                       </Grid>
@@ -2700,7 +2776,7 @@ const EMITracker = () => {
 
                   {/* Quick Stats Row */}
                   <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Card sx={{ bgcolor: isDark ? 'rgba(76, 175, 80, 0.12)' : '#e8f5e9', border: '2px solid', borderColor: isDark ? 'rgba(76, 175, 80, 0.4)' : '#4caf50', borderRadius: 3 }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="caption" fontWeight={700} color="#2e7d32">🛡️ EMERGENCY FUND</Typography>
@@ -2718,7 +2794,7 @@ const EMITracker = () => {
                         </CardContent>
                       </Card>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Card sx={{ bgcolor: isDark ? 'rgba(33, 150, 243, 0.12)' : '#e3f2fd', border: '2px solid', borderColor: isDark ? 'rgba(33, 150, 243, 0.4)' : '#2196f3', borderRadius: 3 }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="caption" fontWeight={700} color="#1565c0">📅 NEXT MONTH DUE</Typography>
@@ -2733,7 +2809,7 @@ const EMITracker = () => {
                         </CardContent>
                       </Card>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Card sx={{ bgcolor: isDark ? 'rgba(156, 39, 176, 0.12)' : '#f3e5f5', border: '2px solid', borderColor: isDark ? 'rgba(156, 39, 176, 0.4)' : '#9c27b0', borderRadius: 3 }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="caption" fontWeight={700} color="#6a1b9a">🎉 DEBT-FREE PROGRESS</Typography>
@@ -2774,7 +2850,7 @@ const EMITracker = () => {
                   </Box>
 
                   <Grid container spacing={2.5}>
-                    <Grid item xs={12} md={7}>
+                    <Grid size={{ xs: 12, md: 7 }}>
                       <Box
                         sx={{
                           p: 2.5,
@@ -2847,7 +2923,7 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
 
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                       <Box
                         sx={{
                           p: 2.5,
@@ -2978,7 +3054,7 @@ const EMITracker = () => {
           </Box>
           <Grid container spacing={3}>
             {insights.map((insight, index) => (
-              <Grid item xs={12} md={6} key={index}>
+              <Grid size={{ xs: 12, md: 6 }} key={index}>
                 <Alert
                   severity={getSeverityColor(insight.severity)}
                   icon={<InfoIcon sx={{ fontSize: 24 }} />}
@@ -3120,7 +3196,7 @@ const EMITracker = () => {
       {activeTab === 0 && chartData && (
         <Grid container spacing={3} direction="column">
           {/* Pie Chart - Distribution by Provider */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={0} sx={chartCardHoverEffect}>
               <CardContent>
                 <Box 
@@ -3209,7 +3285,7 @@ const EMITracker = () => {
 
           {/* Radar Chart - Card Provider Analysis */}
           {chartData.pieChart && chartData.pieChart.length > 0 && chartData.pieChart.length <= 8 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3237,7 +3313,7 @@ const EMITracker = () => {
 
           {/* EMI Monthly Trends Chart */}
           {upcomingPayments && upcomingPayments.monthlyBreakdown && upcomingPayments.monthlyBreakdown.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <EMIMonthlyTrends monthlyData={upcomingPayments.monthlyBreakdown} />
             </Grid>
           )}
@@ -3318,7 +3394,7 @@ const EMITracker = () => {
 
           {/* Summary Cards Row */}
           <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#d4f4dd',
                 borderRadius: 2,
@@ -3340,7 +3416,7 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: isDark ? 'rgba(239,68,68,0.12)' : '#fde8e8',
                 borderRadius: 2,
@@ -3362,7 +3438,7 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: isDark ? 'rgba(139,92,246,0.12)' : '#f0e6f6',
                 borderRadius: 2,
@@ -3384,7 +3460,7 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd',
                 borderRadius: 2,
@@ -3416,7 +3492,7 @@ const EMITracker = () => {
           }}>
             <CardContent sx={{ p: 2 }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                     Month-over-Month Change
                   </Typography>
@@ -3424,7 +3500,7 @@ const EMITracker = () => {
                     Comparing {monthlyTrends.monthlyTrends[monthlyTrends.monthlyTrends.length - 1]?.monthName} vs {monthlyTrends.monthlyTrends[monthlyTrends.monthlyTrends.length - 2]?.monthName}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 3 }}>
                     <Box>
                       <Typography variant="h6" sx={{ color: '#c62828', fontWeight: 700 }}>
@@ -3557,7 +3633,7 @@ const EMITracker = () => {
 
           {/* Bottom Summary Cards */}
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: tableHeaderBg,
                 borderRadius: 2,
@@ -3574,7 +3650,7 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: tableHeaderBg,
                 borderRadius: 2,
@@ -3591,7 +3667,7 @@ const EMITracker = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card elevation={0} sx={{ 
                 bgcolor: tableHeaderBg,
                 borderRadius: 2,
@@ -3686,7 +3762,7 @@ const EMITracker = () => {
       {activeTab === 3 && chartData && (
         <Grid container spacing={3} direction="column">
           {/* Bar Chart - Monthly EMI Burden */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={0} sx={chartCardHoverEffect}>
               <CardContent>
                 <Box 
@@ -3792,7 +3868,7 @@ const EMITracker = () => {
 
           {/* Area Chart - Payment Trend Analysis */}
           {chartData.barChart && chartData.barChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3826,7 +3902,7 @@ const EMITracker = () => {
 
           {/* Composed Chart - Monthly Burden with EMI Count */}
           {chartData.barChart && chartData.barChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3861,7 +3937,7 @@ const EMITracker = () => {
 
           {/* Stacked Bar Chart - Principal vs Interest */}
           {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3890,7 +3966,7 @@ const EMITracker = () => {
 
           {/* Line Chart - EMI Completion Timeline */}
           {chartData.lineChart && chartData.lineChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3924,7 +4000,7 @@ const EMITracker = () => {
 
           {/* Scatter Chart - EMI Distribution Analysis */}
           {chartData.stackedBarChart && chartData.stackedBarChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3960,7 +4036,7 @@ const EMITracker = () => {
 
           {/* Merchant Comparison Chart */}
           {chartData.merchantChart && chartData.merchantChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -3996,7 +4072,7 @@ const EMITracker = () => {
 
           {/* Interest Rate Distribution */}
           {chartData.rateDistribution && chartData.rateDistribution.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -4028,7 +4104,7 @@ const EMITracker = () => {
 
           {/* EMI Progress Funnel */}
           {chartData.lineChart && chartData.lineChart.length > 0 && (
-            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+            <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
               <Card elevation={3} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom fontWeight="bold" className="chart-title" sx={{ 
@@ -4071,12 +4147,12 @@ const EMITracker = () => {
           {/* Time Period Selector */}
           <Card elevation={isDark ? 0 : 2} sx={{ mb: 3, p: 2, bgcolor: surface, border: `1px solid ${borderColor}` }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   View Upcoming Payments For:
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={6} md={9}>
+              <Grid size={{ xs: 12, sm: 6, md: 9 }}>
                 <Box display="flex" gap={1} flexWrap="wrap">
                   <Chip
                     label="Next Month"
@@ -4122,7 +4198,7 @@ const EMITracker = () => {
           {/* Monthly Breakdown */}
           <Grid container spacing={3}>
             {getDisplayedMonths().map((month, index) => (
-              <Grid item xs={12} md={6} key={index}>
+              <Grid size={{ xs: 12, md: 6 }} key={index}>
                 <Card
                   elevation={isDark ? 0 : 3}
                   sx={{
@@ -4232,7 +4308,7 @@ const EMITracker = () => {
       {activeTab === 5 && overview && (
         <Grid container spacing={3}>
           {overview.activeEMIs.map((emi) => (
-            <Grid item xs={12} md={6} lg={4} key={emi.id}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={emi.id}>
               <Card 
                 elevation={isDark ? 0 : 3}
                 onClick={() => {
@@ -4411,7 +4487,7 @@ const EMITracker = () => {
           ) : (
             <Grid container spacing={3}>
               {overview.completedEMIs.map((emi) => (
-                <Grid item xs={12} md={6} lg={4} key={emi.id}>
+                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={emi.id}>
                   <Card 
                     elevation={isDark ? 0 : 3}
                     sx={{
@@ -4525,7 +4601,7 @@ const EMITracker = () => {
           {/* Summary Cards */}
           {loansGivenSummary && (
             <Grid container spacing={3} mb={4}>
-              <Grid item xs={12} md={2.4}>
+              <Grid size={{ xs: 12, md: 2.4 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Lent</Typography>
@@ -4533,7 +4609,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={2.4}>
+              <Grid size={{ xs: 12, md: 2.4 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Outstanding</Typography>
@@ -4541,7 +4617,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={2.4}>
+              <Grid size={{ xs: 12, md: 2.4 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Interest Earned</Typography>
@@ -4549,7 +4625,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={2.4}>
+              <Grid size={{ xs: 12, md: 2.4 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Repaid</Typography>
@@ -4557,7 +4633,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={2.4}>
+              <Grid size={{ xs: 12, md: 2.4 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', color: '#333' }}>
                   <CardContent>
                     <Typography variant="h6">Active Loans</Typography>
@@ -4614,7 +4690,7 @@ const EMITracker = () => {
           ) : (
             <Grid container spacing={3}>
               {loansGiven.map((loan) => (
-                <Grid item xs={12} md={6} lg={4} key={loan._id}>
+                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={loan._id}>
                   <Card elevation={isDark ? 0 : 3} sx={{ bgcolor: surface, border: `1px solid ${borderColor}`, '&:hover': { boxShadow: isDark ? '0 6px 20px rgba(0,0,0,0.4)' : 6 } }}>
                     <CardContent>
                       <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
@@ -4789,7 +4865,7 @@ const EMITracker = () => {
           ) : (
             <Grid container spacing={3}>
             {/* Debt Health Status Card */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={{
                 ...chartCardHoverEffect,
                 background: debtAnalysis.debtTrapStatus === 'danger' 
@@ -4823,7 +4899,7 @@ const EMITracker = () => {
                     {debtAnalysis.debtTrapMessage}
                   </Typography>
                   <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 2, borderRadius: 2 }}>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>Debt-to-Income Ratio</Typography>
                         <Typography variant="h3" fontWeight="bold">{debtAnalysis.debtToIncomeRatio.toFixed(1)}%</Typography>
@@ -4840,14 +4916,14 @@ const EMITracker = () => {
                         />
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 2, borderRadius: 2 }}>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>Monthly Income</Typography>
                         <Typography variant="h3" fontWeight="bold">{formatCurrency(debtAnalysis.monthlyIncome)}</Typography>
                         <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>After EMI: {formatCurrency(debtAnalysis.availableIncome)}</Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', p: 2, borderRadius: 2 }}>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>Avg. Months to Freedom</Typography>
                         <Typography variant="h3" fontWeight="bold">{Math.round(debtAnalysis.avgMonthsRemaining)}</Typography>
@@ -4876,7 +4952,7 @@ const EMITracker = () => {
                           {offers.map((offer) => {
                             const saving = Math.max(0, (candidate.interestRate - offer.rate) / (candidate.interestRate || 1)) * candidate.emiAmount * 0.35;
                             return (
-                              <Grid item xs={12} md={4} key={offer.provider}>
+                              <Grid size={{ xs: 12, md: 4 }} key={offer.provider}>
                                 <Box sx={{ p: 2, border: `1px solid ${borderColor}`, borderRadius: 2, bgcolor: surface, height: '100%' }}>
                                   <Typography variant="subtitle1" fontWeight="bold">{offer.provider}</Typography>
                                   <Typography variant="body2" color="text.secondary">New rate: {offer.rate}%</Typography>
@@ -4909,7 +4985,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Salary vs EMI Breakdown */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Box className="chart-header" sx={{ pb: 2, mb: 3, borderBottom: '2px solid', borderColor: 'divider' }}>
@@ -4997,7 +5073,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Emergency Fund Status */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Box className="chart-header" sx={{ pb: 2, mb: 3, borderBottom: '2px solid', borderColor: 'divider' }}>
@@ -5064,7 +5140,7 @@ const EMITracker = () => {
                       </Alert>
                     )}
                     <Grid container spacing={1.5}>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="Current Emergency Fund"
                           type="number"
@@ -5075,7 +5151,7 @@ const EMITracker = () => {
                           size="small"
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="Emergency Fund Goal (Auto-Calculated)"
                           type="number"
@@ -5087,7 +5163,7 @@ const EMITracker = () => {
                           helperText="Auto-adjusts based on your EMIs & expenses"
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           label="Add This Month"
                           type="number"
@@ -5098,14 +5174,14 @@ const EMITracker = () => {
                           size="small"
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           {lastContribution
                             ? `Last add: ₹${(lastContribution.amount || 0).toLocaleString()} on ${new Date(lastContribution.date).toLocaleDateString()}`
                             : 'No contributions recorded yet.'}
                         </Typography>
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Button
                           variant="contained"
                           startIcon={<SaveIcon />}
@@ -5139,7 +5215,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Repayment Strategy Selector */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>🎯 Smart Repayment Strategies</Typography>
@@ -5245,7 +5321,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Interest Savings Calculator */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>📊 Total Interest Analysis</Typography>
@@ -5282,7 +5358,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Action Plan */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>🚀 Your Action Plan</Typography>
@@ -5336,7 +5412,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Debt-Free Accelerator */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               {(() => {
                 const extraMonthly = Math.max(0, (debtAnalysis.availableIncome || 0) * (acceleratorBoostPct / 100));
                 const baseProjection = projectDebtFreedom(debtAnalysis.avgMonthsRemaining, 0, debtAnalysis.monthlyBurden);
@@ -5356,7 +5432,7 @@ const EMITracker = () => {
                       </Typography>
 
                       <Grid container spacing={3}>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                           <FormControl fullWidth>
                             <InputLabel>Extra allocation %</InputLabel>
                             <Select
@@ -5379,16 +5455,16 @@ const EMITracker = () => {
                           </Alert>
                         </Grid>
 
-                        <Grid item xs={12} md={8}>
+                        <Grid size={{ xs: 12, md: 8 }}>
                           <Grid container spacing={2}>
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <Box sx={{ p: 2, bgcolor: surfaceMuted, borderRadius: 2 }}>
                                 <Typography variant="subtitle2" fontWeight="bold">Baseline</Typography>
                                 <Typography variant="h4" fontWeight="bold">{Math.round(baseProjection.months)} mo</Typography>
                                 <Typography variant="body2" color="text.secondary">Target: {baseProjection.targetDate}</Typography>
                               </Box>
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(76,175,80,0.3)' : '#c8e6c9'}` }}>
                                 <Typography variant="subtitle2" fontWeight="bold">Current Boost</Typography>
                                 <Typography variant="h4" fontWeight="bold" color="success.main">
@@ -5400,7 +5476,7 @@ const EMITracker = () => {
                                 <Chip label={`Freedom by ${boostedProjection.targetDate}`} color="success" size="small" sx={{ mt: 1 }} />
                               </Box>
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(255,193,7,0.12)' : '#fff8e1', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(255,152,0,0.3)' : '#ffe0b2'}` }}>
                                 <Typography variant="subtitle2" fontWeight="bold">Max Push (adds recommended extra)</Typography>
                                 <Typography variant="h4" fontWeight="bold" color="warning.main">
@@ -5425,12 +5501,12 @@ const EMITracker = () => {
             </Grid>
 
             {/* Spending Patterns Analysis */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>💳 Monthly Commitments Breakdown</Typography>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ textAlign: 'center', p: 3, bgcolor: surfaceMuted, borderRadius: 2 }}>
                         <Typography variant="h2" fontWeight="bold" color="primary">
                           {formatCurrency(debtAnalysis.monthlyBurden)}
@@ -5438,7 +5514,7 @@ const EMITracker = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Monthly EMI Burden</Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ textAlign: 'center', p: 3, bgcolor: surfaceMuted, borderRadius: 2 }}>
                         <Typography variant="h2" fontWeight="bold" color="success.main">
                           {formatCurrency(debtAnalysis.availableIncome)}
@@ -5446,7 +5522,7 @@ const EMITracker = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Available After EMIs</Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ textAlign: 'center', p: 3, bgcolor: surfaceMuted, borderRadius: 2 }}>
                         <Typography variant="h2" fontWeight="bold" color="warning.main">
                           {formatCurrency(debtAnalysis.recommendedMonthlyExtra)}
@@ -5459,13 +5535,13 @@ const EMITracker = () => {
                   <Box sx={{ mt: 3, p: 3, bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd', borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>💡 Smart Spending Tips to Close EMIs Faster:</Typography>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Cut unnecessary subscriptions</strong> - Review all monthly subscriptions</Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Cook at home more</strong> - Save 30-40% on food expenses</Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Use public transport</strong> - Reduce fuel and maintenance costs</Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Bundle insurance policies</strong> - Get discounts on multiple policies</Typography>
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Sell unused items</strong> - Generate extra cash from clutter</Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Negotiate bills</strong> - Call providers for better rates</Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>✅ <strong>Avoid new EMIs</strong> - Break the debt cycle immediately</Typography>
@@ -5478,7 +5554,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* NEW: Quick Prepayment Calculator */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -5489,7 +5565,7 @@ const EMITracker = () => {
                   </Typography>
                   
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <TextField
                         label="Extra Payment Amount"
                         type="number"
@@ -5502,7 +5578,7 @@ const EMITracker = () => {
                         helperText="How much extra can you pay?"
                       />
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <FormControl fullWidth>
                         <InputLabel>Apply To</InputLabel>
                         <Select
@@ -5528,7 +5604,7 @@ const EMITracker = () => {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12} md={4} display="flex" alignItems="center">
+                    <Grid size={{ xs: 12, md: 4 }} display="flex" alignItems="center">
                       <Button
                         variant="contained"
                         fullWidth
@@ -5544,14 +5620,13 @@ const EMITracker = () => {
                             const savings = debtAnalysis.calculateEarlyRepaymentSavings(selectedEMIForEarlyPayment);
                             const monthsReduced = Math.floor(amount / selectedEMIForEarlyPayment.emiAmount);
                             
-                            alert(
-                              `💰 Prepayment Impact:\n\n` +
-                              `Extra Payment: ₹${amount.toLocaleString()}\n` +
-                              `EMI: ${selectedEMIForEarlyPayment.merchantName}\n\n` +
-                              `✅ Months Reduced: ${monthsReduced}\n` +
-                              `✅ Interest Saved: ₹${Math.min(savings, amount * 0.15).toLocaleString()}\n` +
-                              `✅ New Completion: ${selectedEMIForEarlyPayment.remainingInstallments - monthsReduced} months\n\n` +
-                              `Tip: Contact ${selectedEMIForEarlyPayment.cardProvider} to make this payment!`
+                            showSnackbar(
+                              `💰 Prepayment Impact: Extra Payment ₹${amount.toLocaleString()} on ${selectedEMIForEarlyPayment.merchantName} — ` +
+                              `Months Reduced: ${monthsReduced}, ` +
+                              `Interest Saved: ₹${Math.min(savings, amount * 0.15).toLocaleString()}, ` +
+                              `New Completion: ${selectedEMIForEarlyPayment.remainingInstallments - monthsReduced} months. ` +
+                              `Tip: Contact ${selectedEMIForEarlyPayment.cardProvider} to make this payment!`,
+                              'info'
                             );
                           }
                         }}
@@ -5579,7 +5654,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* NEW: Payment Reminders & Quick Actions */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -5612,7 +5687,7 @@ const EMITracker = () => {
                           }}
                         >
                           <Grid container spacing={2} alignItems="center">
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                               <Box display="flex" alignItems="center" gap={1}>
                                 {isUrgent && <WarningIcon sx={{ color: '#f44336' }} />}
                                 <Box>
@@ -5625,7 +5700,7 @@ const EMITracker = () => {
                                 </Box>
                               </Box>
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid size={{ xs: 12, sm: 3 }}>
                               <Typography variant="body2" color="text.secondary">Due Date</Typography>
                               <Typography variant="h6">{formatDate(emi.nextDueDate)}</Typography>
                               <Typography 
@@ -5638,13 +5713,13 @@ const EMITracker = () => {
                                 {daysUntilDue} days away {isUrgent && '- URGENT!'}
                               </Typography>
                             </Grid>
-                            <Grid item xs={12} sm={2}>
+                            <Grid size={{ xs: 12, sm: 2 }}>
                               <Typography variant="body2" color="text.secondary">Amount</Typography>
                               <Typography variant="h6" color="primary">
                                 {formatCurrency(emi.emiAmount)}
                               </Typography>
                             </Grid>
-                            <Grid item xs={12} sm={3}>
+                            <Grid size={{ xs: 12, sm: 3 }}>
                               <Button
                                 variant={isUrgent ? "contained" : "outlined"}
                                 color={isUrgent ? "error" : "primary"}
@@ -5668,7 +5743,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* NEW: Overall Repayment Progress Tracker */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -5683,7 +5758,7 @@ const EMITracker = () => {
                         : emi.remainingAmount <= 10000;
                       
                       return (
-                        <Grid item xs={12} md={6} key={emi.id}>
+                        <Grid size={{ xs: 12, md: 6 }} key={emi.id}>
                           <Box sx={{ 
                             p: 2, 
                             borderRadius: 2, 
@@ -5719,19 +5794,19 @@ const EMITracker = () => {
                             />
                             
                             <Grid container spacing={2}>
-                              <Grid item xs={4}>
+                              <Grid size={4}>
                                 <Typography variant="caption" color="text.secondary">Paid</Typography>
                                 <Typography variant="body2" fontWeight="bold">
                                   {emi.paidInstallments}/{emi.totalTenure}
                                 </Typography>
                               </Grid>
-                              <Grid item xs={4}>
+                              <Grid size={4}>
                                 <Typography variant="caption" color="text.secondary">Remaining</Typography>
                                 <Typography variant="body2" fontWeight="bold">
                                   {formatCurrency(emi.remainingAmount)}
                                 </Typography>
                               </Grid>
-                              <Grid item xs={4}>
+                              <Grid size={4}>
                                 <Typography variant="caption" color="text.secondary">Monthly</Typography>
                                 <Typography variant="body2" fontWeight="bold">
                                   {formatCurrency(emi.emiAmount)}
@@ -5763,7 +5838,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* NEW: Smart Payment Allocator */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -5786,7 +5861,7 @@ const EMITracker = () => {
                   
                   <Grid container spacing={2}>
                     {/* Allocation 1: Emergency Fund */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: 2, 
@@ -5812,7 +5887,7 @@ const EMITracker = () => {
                     </Grid>
                     
                     {/* Allocation 2: Priority EMI */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: 2, 
@@ -5838,7 +5913,7 @@ const EMITracker = () => {
                     </Grid>
                     
                     {/* Allocation 3: Lifestyle/Savings */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: 2, 
@@ -5877,7 +5952,7 @@ const EMITracker = () => {
             {/* NEW FEATURES */}
 
             {/* Slim & Sleek Debt-Free Date Projector */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={{
                 ...chartCardHoverEffect,
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -5935,7 +6010,7 @@ const EMITracker = () => {
                   
                   {/* Compact 3-Column Comparison */}
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ 
                         p: 2, 
                         borderRadius: 2, 
@@ -5965,7 +6040,7 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ 
                         p: 2, 
                         borderRadius: 2, 
@@ -6015,7 +6090,7 @@ const EMITracker = () => {
                       </Box>
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ 
                         p: 2, 
                         borderRadius: 2, 
@@ -6176,7 +6251,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Sleek Interactive Debt Payoff Simulator */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={{
                 ...chartCardHoverEffect,
                 background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -6259,7 +6334,7 @@ const EMITracker = () => {
 
                   <Grid container spacing={2}>
                     {/* Chart Section */}
-                    <Grid item xs={12} md={7}>
+                    <Grid size={{ xs: 12, md: 7 }}>
                       <Box sx={{ 
                         bgcolor: 'rgba(255,255,255,0.1)', 
                         borderRadius: 2, 
@@ -6305,7 +6380,7 @@ const EMITracker = () => {
                     </Grid>
 
                     {/* Stats Cards */}
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {/* Time Saved */}
                         <Box sx={{ 
@@ -6403,7 +6478,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Interest vs Principal Breakdown */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -6465,7 +6540,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Savings Milestones */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -6547,7 +6622,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Debt Trap Escape Toolkit */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -6559,7 +6634,7 @@ const EMITracker = () => {
 
                   <Grid container spacing={3}>
                     {/* DTI Target Planner */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ p: 3, bgcolor: isDark ? 'rgba(255,152,0,0.12)' : '#fff3e0', borderRadius: 2, border: `2px solid ${isDark ? 'rgba(255,152,0,0.5)' : '#ff9800'}`, height: '100%' }}>
                         <Typography variant="h6" fontWeight="bold" color="#ef6c00" gutterBottom>
                           🎯 Safe DTI Target (≤ 50%)
@@ -6577,7 +6652,7 @@ const EMITracker = () => {
                     </Grid>
 
                     {/* Consolidation Opportunity */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ p: 3, bgcolor: isDark ? 'rgba(33,150,243,0.12)' : '#e3f2fd', borderRadius: 2, border: `2px solid ${isDark ? 'rgba(33,150,243,0.5)' : '#2196f3'}`, height: '100%' }}>
                         <Typography variant="h6" fontWeight="bold" color="#1565c0" gutterBottom>
                           🔄 Consolidation Check
@@ -6608,7 +6683,7 @@ const EMITracker = () => {
                     </Grid>
 
                     {/* Income Lift Playbook */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Box sx={{ p: 3, bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `2px solid ${isDark ? 'rgba(76,175,80,0.5)' : '#4caf50'}`, height: '100%' }}>
                         <Typography variant="h6" fontWeight="bold" color="#2e7d32" gutterBottom>
                           💼 Income Lift Playbook
@@ -6630,7 +6705,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Risk Radar & Auto-Guardrails */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>
@@ -6652,7 +6727,7 @@ const EMITracker = () => {
                   )}
 
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={7}>
+                    <Grid size={{ xs: 12, md: 7 }}>
                       <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)', bgcolor: surface }}>
                         <Table size="small">
                           <TableHead>
@@ -6710,7 +6785,7 @@ const EMITracker = () => {
                       </TableContainer>
                     </Grid>
 
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                       <Box sx={{ p: 3, bgcolor: surfaceMuted, borderRadius: 2, height: '100%' }}>
                         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                           Auto-Guardrails
@@ -6784,7 +6859,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Relief & Negotiation Planner */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>🤝 Relief & Negotiation Planner</Typography>
@@ -6821,7 +6896,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Income Boost Sprint */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={3}>⚡ Income Boost Sprint (30 days)</Typography>
@@ -6831,7 +6906,7 @@ const EMITracker = () => {
                   <Grid container spacing={2}>
                     {[{title: 'Sell 3 idle items', impact: 3000, eta: '1 week'}, {title: 'Weekend gig (8 hrs)', impact: 2500, eta: 'This week'}, {title: 'Renegotiate 2 subscriptions', impact: 800, eta: '2 days'}]
                       .map((item, idx) => (
-                        <Grid item xs={12} key={idx}>
+                        <Grid size={12} key={idx}>
                           <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
                               <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
@@ -6850,7 +6925,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Hardship Mode & Safety Net */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -6864,13 +6939,13 @@ const EMITracker = () => {
                     Temporarily prioritize survival: minimum payments, freeze new EMIs, and direct surplus to essentials.
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Box p={2} sx={{ bgcolor: isDark ? 'rgba(255,152,0,0.12)' : '#fff3e0', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(255,152,0,0.3)' : '#ffe0b2'}` }}>
                         <Typography variant="subtitle2" fontWeight="bold">Min-pay envelope</Typography>
                         <Typography variant="body2" color="text.secondary">Allocate ₹{Math.round(debtAnalysis.monthlyBurden * 0.6).toLocaleString()} to keep EMIs current.</Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Box p={2} sx={{ bgcolor: isDark ? 'rgba(76,175,80,0.12)' : '#e8f5e9', borderRadius: 2, border: `1px solid ${isDark ? 'rgba(76,175,80,0.3)' : '#c8e6c9'}` }}>
                         <Typography variant="subtitle2" fontWeight="bold">Essential spend cap</Typography>
                         <Typography variant="body2" color="text.secondary">Target monthly essentials ≤ {Math.max(0, debtAnalysis.availableIncome).toLocaleString()}.</Typography>
@@ -6885,7 +6960,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* 6-Month Payoff Calendar */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={2}>📅 6-Month Payoff Calendar</Typography>
@@ -6898,7 +6973,7 @@ const EMITracker = () => {
                         const paid = monthlyPrincipal * (idx + 1);
                         const remaining = Math.max(0, debtAnalysis.totalOutstanding - paid);
                         return (
-                          <Grid item xs={12} sm={6} key={idx}>
+                          <Grid size={{ xs: 12, sm: 6 }} key={idx}>
                             <Box p={2} sx={{ border: `1px solid ${borderColor}`, borderRadius: 2 }}>
                               <Typography variant="subtitle2" fontWeight="bold">Month {idx + 1}</Typography>
                               <Typography variant="caption" color="text.secondary">Projected remaining</Typography>
@@ -6914,7 +6989,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Automation Cockpit */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={2}>🤖 Automation Cockpit</Typography>
@@ -6959,7 +7034,7 @@ const EMITracker = () => {
             </Grid>
 
             {/* Behavioral Nudges & Streaks */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card elevation={0} sx={chartCardHoverEffect}>
                 <CardContent>
                   <Typography variant="h5" fontWeight="bold" mb={2}>🏅 Behavioral Nudges & Streaks</Typography>
@@ -6991,7 +7066,7 @@ const EMITracker = () => {
           {/* Summary Cards */}
           {personalLoansSummary && (
             <Grid container spacing={3} mb={4}>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Borrowed</Typography>
@@ -6999,7 +7074,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Total Outstanding</Typography>
@@ -7008,7 +7083,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Current Interest</Typography>
@@ -7016,7 +7091,7 @@ const EMITracker = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
                   <CardContent>
                     <Typography variant="h6">Active Loans</Typography>
@@ -7073,7 +7148,7 @@ const EMITracker = () => {
               {personalLoans.filter(loan => loan.status === 'active').map((loan) => {
                 const daysSinceTaken = Math.floor((new Date() - new Date(loan.loanTakenDate)) / (1000 * 60 * 60 * 24));
                 return (
-                  <Grid item xs={12} md={6} lg={4} key={loan._id}>
+                  <Grid size={{ xs: 12, md: 6, lg: 4 }} key={loan._id}>
                     <Card elevation={isDark ? 0 : 3} sx={{ 
                       bgcolor: surface,
                       '&:hover': { boxShadow: isDark ? '0 6px 20px rgba(0,0,0,0.4)' : 6 },
@@ -7224,7 +7299,7 @@ const EMITracker = () => {
               </Typography>
               <Grid container spacing={2} mt={1}>
                 {personalLoans.filter(loan => loan.status === 'repaid').map((loan) => (
-                  <Grid item xs={12} md={6} key={loan._id}>
+                  <Grid size={{ xs: 12, md: 6 }} key={loan._id}>
                     <Card elevation={1} sx={{ opacity: 0.8 }}>
                       <CardContent>
                         <Box display="flex" justifyContent="space-between">
@@ -7253,7 +7328,7 @@ const EMITracker = () => {
           )}
 
           {/* NEW: Smart Income Suggestions */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={0} sx={{
               ...chartCardHoverEffect,
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -7281,7 +7356,7 @@ const EMITracker = () => {
 
                 <Grid container spacing={3}>
                   {/* Quick Wins - Under 1 Month */}
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
                       <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                         🚀 Quick Wins (Start This Week)
@@ -7324,7 +7399,7 @@ const EMITracker = () => {
                   </Grid>
 
                   {/* Medium-Term - 1-3 Months */}
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
                       <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                         📈 Medium-Term Growth (1-3 Months)
@@ -7367,13 +7442,13 @@ const EMITracker = () => {
                   </Grid>
 
                   {/* Passive Income Streams */}
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', p: 3, borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
                       <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                         💰 Passive Income Opportunities
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                           <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
                             <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Stock Photography</Typography>
                             <Typography variant="caption" display="block">Upload photos to Shutterstock, Adobe Stock</Typography>
@@ -7382,7 +7457,7 @@ const EMITracker = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                           <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
                             <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Create Digital Products</Typography>
                             <Typography variant="caption" display="block">Sell templates, courses, ebooks</Typography>
@@ -7391,7 +7466,7 @@ const EMITracker = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                           <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
                             <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Affiliate Marketing</Typography>
                             <Typography variant="caption" display="block">Promote products, earn commission</Typography>
@@ -7400,7 +7475,7 @@ const EMITracker = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                           <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 2, borderRadius: 1 }}>
                             <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>App/Website Testing</Typography>
                             <Typography variant="caption" display="block">Test apps on UserTesting, TryMyUI</Typography>
@@ -7414,7 +7489,7 @@ const EMITracker = () => {
                   </Grid>
 
                   {/* Action Plan */}
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <Alert severity="success" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', '& .MuiAlert-icon': { color: 'white' } }}>
                       <Typography variant="h6" fontWeight="bold" gutterBottom>🎯 Your Personalized Action Plan</Typography>
                       <Box component="ol" sx={{ pl: 2, '& li': { mb: 1 } }}>
@@ -7589,13 +7664,13 @@ const EMITracker = () => {
         <DialogContent sx={{ mt: 2 }}>
           <Grid container spacing={3}>
             {/* Card Details Section */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
                 💳 Card Details
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth error={!!manualEMIErrors.cardProvider}>
                 <InputLabel>Card Provider *</InputLabel>
                 <Select
@@ -7623,7 +7698,7 @@ const EMITracker = () => {
 
             {/* Custom Provider Name - Shows only when OTHER is selected */}
             {manualEMIData.cardProvider === 'OTHER' && (
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Provider Name *"
@@ -7636,7 +7711,7 @@ const EMITracker = () => {
               </Grid>
             )}
 
-            <Grid item xs={12} sm={manualEMIData.cardProvider === 'OTHER' ? 12 : 6}>
+            <Grid size={{ xs: 12, sm: manualEMIData.cardProvider === 'OTHER' ? 12 : 6 }}>
               <TextField
                 fullWidth
                 label="Card Last 4 Digits *"
@@ -7649,7 +7724,7 @@ const EMITracker = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Card Holder Name *"
@@ -7662,13 +7737,13 @@ const EMITracker = () => {
             </Grid>
 
             {/* EMI Details Section */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
                 🛍️ Purchase Details
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Merchant Name *"
@@ -7680,7 +7755,7 @@ const EMITracker = () => {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Product Description"
@@ -7691,14 +7766,14 @@ const EMITracker = () => {
             </Grid>
 
             {/* Financial Details Section */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
                 💰 Financial Details
               </Typography>
             </Grid>
 
             {/* Repayment Type Selection */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControl fullWidth>
                 <InputLabel>Repayment Type *</InputLabel>
                 <Select
@@ -7726,7 +7801,7 @@ const EMITracker = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Principal Amount *"
@@ -7742,7 +7817,7 @@ const EMITracker = () => {
 
             {/* Only show EMI Amount for MONTHLY repayment type */}
             {manualEMIData.repaymentType === 'MONTHLY' && (
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="EMI Amount (Monthly) *"
@@ -7757,7 +7832,7 @@ const EMITracker = () => {
               </Grid>
             )}
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Interest Type</InputLabel>
                 <Select
@@ -7775,7 +7850,7 @@ const EMITracker = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label={
@@ -7786,16 +7861,30 @@ const EMITracker = () => {
                 value={manualEMIData.interestRate}
                 onChange={(e) => handleManualEMIChange('interestRate', e.target.value)}
                 placeholder={manualEMIData.interestType === 'rupee_per_100' ? '2' : manualEMIData.interestType === 'flat' ? '5000' : '12'}
-                InputProps={{ endAdornment: manualEMIData.interestType === 'flat' ? '₹' : manualEMIData.interestType === 'rupee_per_100' ? '₹/100' : '%' }}
+                InputProps={{ 
+                  endAdornment: manualEMIData.interestType === 'flat' ? '₹' : manualEMIData.interestType === 'rupee_per_100' ? '₹/100' : '%',
+                  readOnly: manualEMIData.interestType === 'percentage' && autoCalculatedRate !== null
+                }}
                 helperText={
-                  manualEMIData.interestType === 'rupee_per_100' && manualEMIData.interestRate
+                  manualEMIData.interestType === 'percentage' && autoCalculatedRate !== null
+                    ? '✅ Auto-calculated from Principal, EMI & Tenure'
+                    : manualEMIData.interestType === 'rupee_per_100' && manualEMIData.interestRate
                     ? `= ${(parseFloat(manualEMIData.interestRate) * 12).toFixed(1)}% p.a. equivalent`
+                    : manualEMIData.interestType === 'percentage'
+                    ? 'Enter Principal, EMI & Tenure to auto-calculate'
                     : ''
                 }
+                sx={{
+                  ...(manualEMIData.interestType === 'percentage' && autoCalculatedRate !== null ? {
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'action.hover'
+                    }
+                  } : {})
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Processing Fee"
@@ -7809,7 +7898,7 @@ const EMITracker = () => {
 
             {/* Only show Tenure for MONTHLY repayment type */}
             {manualEMIData.repaymentType === 'MONTHLY' && (
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
                   label="Tenure (Months) *"
@@ -7825,13 +7914,13 @@ const EMITracker = () => {
             )}
 
             {/* Date Section */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
                 📅 Date Information
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="EMI Start Date *"
@@ -7845,13 +7934,13 @@ const EMITracker = () => {
             </Grid>
 
             {/* Additional Information */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
                 📝 Additional Information
               </Typography>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Notes"
@@ -7868,7 +7957,7 @@ const EMITracker = () => {
               (manualEMIData.repaymentType === 'MONTHLY' && manualEMIData.emiAmount && manualEMIData.totalTenure) ||
               manualEMIData.repaymentType === 'ON_REQUEST'
             ) && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Card sx={{ 
                   background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
                   border: '2px solid',
@@ -7881,25 +7970,25 @@ const EMITracker = () => {
                     
                     {manualEMIData.repaymentType === 'MONTHLY' ? (
                       <Grid container spacing={2}>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="caption" color="text.secondary">Principal</Typography>
                           <Typography variant="h6" color="primary">
                             {formatCurrency(parseFloat(manualEMIData.principalAmount))}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="caption" color="text.secondary">Monthly EMI</Typography>
                           <Typography variant="h6" color="primary">
                             {formatCurrency(parseFloat(manualEMIData.emiAmount))}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="caption" color="text.secondary">Total Payable</Typography>
                           <Typography variant="h6" color="secondary">
                             {formatCurrency(parseFloat(manualEMIData.emiAmount) * parseInt(manualEMIData.totalTenure))}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="caption" color="text.secondary">Total Interest</Typography>
                           <Typography variant="h6" color="error">
                             {manualEMIData.interestType === 'flat' 
@@ -7908,25 +7997,30 @@ const EMITracker = () => {
                             }
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {manualEMIData.interestType === 'flat' ? '(Flat)' : manualEMIData.interestType === 'rupee_per_100' ? `(${manualEMIData.interestRate || 0} ₹/100/mo)` : `(${manualEMIData.interestRate || 0}% p.a.)`}
+                            {manualEMIData.interestType === 'flat' 
+                              ? '(Flat)' 
+                              : manualEMIData.interestType === 'rupee_per_100' 
+                              ? `(${manualEMIData.interestRate || 0} ₹/100/mo)` 
+                              : `(${manualEMIData.interestRate || 0}% p.a.${autoCalculatedRate !== null ? ' - auto' : ''})`
+                            }
                           </Typography>
                         </Grid>
                       </Grid>
                     ) : (
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Typography variant="caption" color="text.secondary">Total Loan Amount</Typography>
                           <Typography variant="h6" color="primary">
                             {formatCurrency(parseFloat(manualEMIData.principalAmount))}
                           </Typography>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Typography variant="caption" color="text.secondary">Repayment Type</Typography>
                           <Typography variant="h6" color="secondary">
                             🤝 On Request (Pay Anytime)
                           </Typography>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <Box sx={{ 
                             p: 2, 
                             backgroundColor: 'info.light', 
@@ -8089,7 +8183,7 @@ const EMITracker = () => {
               📅 Date Range
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Start Date"
@@ -8100,7 +8194,7 @@ const EMITracker = () => {
                   helperText="EMIs started from this date"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="End Date"
@@ -8871,6 +8965,23 @@ const EMITracker = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for in-tab notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%', boxShadow: 6 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
       </Box>
     </>

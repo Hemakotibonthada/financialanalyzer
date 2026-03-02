@@ -8,42 +8,10 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
-/* ---------- Mongoose Schemas ---------- */
+// Import the canonical Notification model (with static methods) from models/
+const Notification = require('../models/Notification');
 
-const notificationSchema = new mongoose.Schema(
-  {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    type: {
-      type: String,
-      enum: [
-        'budget_alert',
-        'bill_reminder',
-        'goal_milestone',
-        'weekly_summary',
-        'security_alert',
-        'transaction',
-        'system',
-        'custom',
-      ],
-      required: true,
-    },
-    title: { type: String, required: true },
-    message: { type: String, required: true },
-    priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
-    metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
-    isRead: { type: Boolean, default: false },
-    readAt: { type: Date, default: null },
-    isDeleted: { type: Boolean, default: false },
-    scheduledAt: { type: Date, default: null },
-    deliveredAt: { type: Date, default: null },
-    channels: [{ type: String, enum: ['in_app', 'email', 'push', 'sms'] }],
-  },
-  { timestamps: true }
-);
-
-notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
-notificationSchema.index({ scheduledAt: 1, deliveredAt: 1 });
-
+// NotificationPrefs schema — only defined here (no separate model file)
 const notificationPrefsSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
@@ -73,8 +41,6 @@ const notificationPrefsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Notification =
-  mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
 const NotificationPrefs =
   mongoose.models.NotificationPrefs ||
   mongoose.model('NotificationPrefs', notificationPrefsSchema);
@@ -127,9 +93,8 @@ const notificationService = {
         title,
         message,
         priority,
-        metadata,
+        data: metadata,
         channels: activeChannels,
-        deliveredAt: new Date(),
       });
 
       await notification.save();
@@ -657,8 +622,8 @@ const notificationService = {
         title: data.title,
         message: data.message,
         priority: data.priority || 'medium',
-        metadata: { ...(data.metadata || {}), scheduled: true },
-        scheduledAt: scheduleDate,
+        data: { ...(data.metadata || {}), scheduled: true },
+        scheduledFor: scheduleDate,
         channels: ['in_app'],
       });
 

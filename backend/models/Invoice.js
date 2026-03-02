@@ -143,7 +143,7 @@ const invoiceSchema = new mongoose.Schema({
 
 // Indexes
 invoiceSchema.index({ userId: 1, status: 1 });
-invoiceSchema.index({ invoiceNumber: 1 }, { unique: true });
+// invoiceNumber already has unique: true on the field definition — no duplicate index needed
 invoiceSchema.index({ 'client.clientId': 1 });
 invoiceSchema.index({ dueDate: 1 });
 invoiceSchema.index({ status: 1, dueDate: 1 });

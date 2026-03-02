@@ -170,7 +170,7 @@ const RiskDashboard = () => {
       <Card sx={{ mb: 3, background: `linear-gradient(135deg, ${getScoreColor(overallScore)}15, ${getScoreColor(overallScore)}05)`, border: '1px solid', borderColor: `${getScoreColor(overallScore)}40` }}>
         <CardContent>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={3} sx={{ textAlign: 'center' }}>
+            <Grid size={{ xs: 12, md: 3 }} sx={{ textAlign: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-flex' }}>
                 <CircularProgress variant="determinate" value={overallScore} size={120}
                   sx={{ color: getScoreColor(overallScore), '& .MuiCircularProgress-circle': { strokeLinecap: 'round' } }} />
@@ -181,10 +181,10 @@ const RiskDashboard = () => {
               </Box>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 1, color: getScoreColor(overallScore) }}>{getScoreLabel(overallScore)}</Typography>
             </Grid>
-            <Grid item xs={12} md={9}>
+            <Grid size={{ xs: 12, md: 9 }}>
               <Grid container spacing={2}>
                 {computedFactors.slice(0, 6).map(f => (
-                  <Grid item xs={6} md={4} key={f.id}>
+                  <Grid size={{ xs: 6, md: 4 }} key={f.id}>
                     <Box sx={{ mb: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" color="text.secondary">{f.icon} {f.name}</Typography>
@@ -210,7 +210,7 @@ const RiskDashboard = () => {
       {/* Risk Factors Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Risk Profile Radar</Typography>
@@ -227,7 +227,7 @@ const RiskDashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Factor Details</Typography>
@@ -265,7 +265,7 @@ const RiskDashboard = () => {
       {activeTab === 1 && (
         <Grid container spacing={3}>
           {stressResults.map(scenario => (
-            <Grid item xs={12} md={6} key={scenario.id}>
+            <Grid size={{ xs: 12, md: 6 }} key={scenario.id}>
               <Card sx={{ border: '1px solid', borderColor: scenario.resilience === 'Strong' ? '#10b98140' : scenario.resilience === 'Moderate' ? '#f59e0b40' : '#ef444440' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -354,7 +354,7 @@ const RiskDashboard = () => {
           ) : (
             <Grid container spacing={2}>
               {actionItems.map((item, i) => (
-                <Grid item xs={12} md={6} key={i}>
+                <Grid size={{ xs: 12, md: 6 }} key={i}>
                   <Card sx={{ borderLeft: 4, borderColor: item.priority === 'High' ? 'error.main' : item.priority === 'Medium' ? 'warning.main' : 'info.main' }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

@@ -335,7 +335,7 @@ function FinancialGoals() {
         <Container maxWidth="xl">
           {/* Enhanced Summary Cards with Gradients */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -358,7 +358,7 @@ function FinancialGoals() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
@@ -384,7 +384,7 @@ function FinancialGoals() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -407,7 +407,7 @@ function FinancialGoals() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
@@ -458,7 +458,7 @@ function FinancialGoals() {
       ) : (
         <Grid container spacing={3}>
           {goals.map((goal) => (
-            <Grid item xs={12} md={6} lg={4} key={goal.id}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={goal.id}>
               <Card 
                 sx={{ 
                   height: '100%',
@@ -527,7 +527,7 @@ function FinancialGoals() {
 
                   {/* Metrics */}
                   <Grid container spacing={1} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Paper variant="outlined" sx={{ p: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Shortfall
@@ -537,7 +537,7 @@ function FinancialGoals() {
                         </Typography>
                       </Paper>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Paper variant="outlined" sx={{ p: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Days Left
@@ -547,7 +547,7 @@ function FinancialGoals() {
                         </Typography>
                       </Paper>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Paper variant="outlined" sx={{ p: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Monthly Target
@@ -627,7 +627,7 @@ function FinancialGoals() {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Goal Name *"
@@ -636,7 +636,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 multiline
@@ -647,7 +647,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Category *</InputLabel>
                 <Select
@@ -664,7 +664,7 @@ function FinancialGoals() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Priority *</InputLabel>
                 <Select
@@ -681,7 +681,7 @@ function FinancialGoals() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -691,7 +691,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -701,7 +701,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -712,7 +712,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Savings Strategy</InputLabel>
                 <Select
@@ -729,7 +729,7 @@ function FinancialGoals() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -767,7 +767,7 @@ function FinancialGoals() {
         <DialogTitle>Add Contribution</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 type="number"
@@ -777,7 +777,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Source"
@@ -787,7 +787,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 multiline
@@ -821,7 +821,7 @@ function FinancialGoals() {
         <DialogTitle>Add Milestone</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label="Milestone Name *"
@@ -831,7 +831,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -841,7 +841,7 @@ function FinancialGoals() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="date"

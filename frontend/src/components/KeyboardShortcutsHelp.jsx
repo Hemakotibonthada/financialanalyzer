@@ -64,7 +64,7 @@ const KeyboardShortcutsHelp = () => {
               
               <Grid container spacing={2}>
                 {shortcuts.map(([key, shortcut]) => (
-                  <Grid item xs={12} key={key}>
+                  <Grid size={12} key={key}>
                     <Box
                       display="flex"
                       justifyContent="space-between"

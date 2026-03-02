@@ -2065,6 +2065,12 @@ router.post('/manual', authenticate, async (req, res) => {
       ? customProviderName.toUpperCase() 
       : cardProvider.toUpperCase();
     
+    // Currency conversion: default to INR with exchange rate 1
+    const currency = req.body.currency || 'INR';
+    const exchangeRate = parseFloat(req.body.exchangeRate) || 1;
+    const parsedPrincipal = parseFloat(principalAmount);
+    const parsedProcessingFee = parseFloat(processingFee) || 0;
+
     const emi = new EMI({
       userId: req.user._id,
       cardProvider: finalCardProvider,
@@ -2072,15 +2078,20 @@ router.post('/manual', authenticate, async (req, res) => {
       cardHolderName,
       merchantName,
       productDescription: productDescription || (repaymentType === 'ON_REQUEST' ? 'Personal Loan' : 'Manual Entry'),
-      principalAmount: parseFloat(principalAmount),
+      principalAmount: parsedPrincipal,
+      principalAmountInINR: parsedPrincipal * exchangeRate,
+      currency,
+      exchangeRate,
       interestRate: parseFloat(interestRate) || 0,
       interestType: finalInterestType,
-      processingFee: parseFloat(processingFee) || 0,
+      processingFee: parsedProcessingFee,
+      processingFeeInINR: parsedProcessingFee * exchangeRate,
       emiAmount: finalEmiAmount,
+      emiAmountInINR: finalEmiAmount * exchangeRate,
       totalTenure: finalTotalTenure,
       paidInstallments: 0,
       remainingInstallments: finalTotalTenure,
-      repaymentType: repaymentType || 'MONTHLY', // Add repayment type field
+      repaymentType: repaymentType || 'MONTHLY',
       startDate: emiStartDate,
       endDate: repaymentType === 'MONTHLY' ? endDate : null,
       nextDueDate: nextDueDate,

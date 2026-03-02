@@ -71,7 +71,8 @@ api.interceptors.response.use(undefined, async (error) => {
     RETRY_CONFIG.retryStatusCodes.includes(error.response.status);
   
   // Don't retry auth endpoints or mutations
-  const isSafe = config.method === 'get' || config.method === 'head';
+  const isAuthEndpoint = /\/auth\//.test(config.url);
+  const isSafe = (config.method === 'get' || config.method === 'head') && !isAuthEndpoint;
   
   if (shouldRetry && isSafe) {
     config.__retryCount = (config.__retryCount || 0) + 1;
@@ -207,7 +208,7 @@ api.interceptors.response.use(
 export const authService = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
-  getMe: () => api.get('/auth/me'),
+  getMe: () => api.get('/auth/me', { timeout: 5000 }),
   logout: () => api.post('/auth/logout'),
   changePassword: (data) => api.put('/auth/password', data),
 };

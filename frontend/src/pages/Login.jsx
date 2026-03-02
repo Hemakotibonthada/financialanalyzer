@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { DollarSign, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { DollarSign, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +9,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMonth, setRememberMonth] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -22,16 +23,20 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-  const result = await login(email, password, { rememberThisMonth: rememberMonth });
+      const result = await login(email, password, { rememberThisMonth: rememberMonth });
       
       if (result.success) {
         // Redirect to dashboard after successful login
         navigate('/dashboard', { replace: true });
+      } else {
+        setError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error('Login error:', error);
+      setError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -55,6 +60,13 @@ const Login = () => {
             Sign in to your Financial Analyzer account
           </p>
 
+          {error && (
+            <div className="flex items-start gap-2 p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl text-red-700 dark:text-red-400 text-sm mb-4 animate-shake">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 sm:mb-2">
@@ -69,8 +81,8 @@ const Login = () => {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-3 py-2.5 bg-white dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base"
+                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                  className={`block w-full pl-9 sm:pl-10 pr-3 py-2.5 bg-white dark:bg-slate-700/50 border ${error ? 'border-red-300 dark:border-red-600' : 'border-slate-300 dark:border-slate-600'} rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base`}
                   placeholder="you@example.com"
                 />
               </div>
@@ -89,8 +101,8 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-9 sm:pl-10 pr-10 py-2.5 bg-white dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base"
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  className={`block w-full pl-9 sm:pl-10 pr-10 py-2.5 bg-white dark:bg-slate-700/50 border ${error ? 'border-red-300 dark:border-red-600' : 'border-slate-300 dark:border-slate-600'} rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm sm:text-base`}
                   placeholder="••••••••"
                 />
                 <button

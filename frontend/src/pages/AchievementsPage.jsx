@@ -208,7 +208,7 @@ const AchievementsPage = () => {
       <Card sx={{ mb: 3, background: `linear-gradient(135deg, ${currentLevel.color}20, ${currentLevel.color}05)`, border: '1px solid', borderColor: `${currentLevel.color}40` }}>
         <CardContent>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{
                   width: 80, height: 80, borderRadius: '50%',
@@ -226,7 +226,7 @@ const AchievementsPage = () => {
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                   <Typography variant="caption" color="text.secondary">Level Progress</Typography>
@@ -242,17 +242,17 @@ const AchievementsPage = () => {
                 )}
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Grid container spacing={1}>
-                <Grid item xs={4} sx={{ textAlign: 'center' }}>
+                <Grid size={4} sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" fontWeight={700} color={currentLevel.color}>{unlockedCount}</Typography>
                   <Typography variant="caption" color="text.secondary">Unlocked</Typography>
                 </Grid>
-                <Grid item xs={4} sx={{ textAlign: 'center' }}>
+                <Grid size={4} sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" fontWeight={700}>{totalCount}</Typography>
                   <Typography variant="caption" color="text.secondary">Total</Typography>
                 </Grid>
-                <Grid item xs={4} sx={{ textAlign: 'center' }}>
+                <Grid size={4} sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" fontWeight={700} color="error.main">{streak}</Typography>
                   <Typography variant="caption" color="text.secondary">Streak</Typography>
                 </Grid>
@@ -283,7 +283,7 @@ const AchievementsPage = () => {
             {filteredAchievements.map(achievement => {
               const rarity = RARITY_COLORS[achievement.rarity];
               return (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={achievement.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={achievement.id}>
                   <Card onClick={() => setSelectedAchievement(achievement)} sx={{ cursor: 'pointer', transition: 'all 0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }, opacity: achievement.unlocked ? 1 : 0.7, position: 'relative', overflow: 'visible' }}>
                     {achievement.unlocked && <Chip label="✓ Unlocked" size="small" color="success" sx={{ position: 'absolute', top: -10, right: 8, fontSize: '0.65rem' }} />}
                     <CardContent sx={{ textAlign: 'center' }}>
@@ -318,7 +318,7 @@ const AchievementsPage = () => {
           ) : (
             <Grid container spacing={2}>
               {dailyQuests.map(quest => (
-                <Grid item xs={12} sm={6} key={quest.id}>
+                <Grid size={{ xs: 12, sm: 6 }} key={quest.id}>
                   <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }, borderLeft: 4, borderColor: quest.completed ? 'success.main' : quest.progress > 0 ? 'warning.main' : 'divider' }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -366,7 +366,7 @@ const AchievementsPage = () => {
             <>
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 {leaderboard.slice(0, 3).map((user, idx) => (
-                  <Grid item xs={12} sm={4} key={user.rank}>
+                  <Grid size={{ xs: 12, sm: 4 }} key={user.rank}>
                     <Card sx={{ textAlign: 'center', transition: 'all 0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }, border: idx === 0 ? '2px solid #FFD700' : idx === 1 ? '2px solid #C0C0C0' : '2px solid #CD7F32', order: idx === 0 ? 2 : idx === 1 ? 1 : 3 }}>
                       <CardContent>
                         <Typography variant="h2" component="span">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</Typography>
@@ -419,7 +419,7 @@ const AchievementsPage = () => {
               const earned = badge.required.filter(id => allAchievements.find(a => a.id === id)?.unlocked).length;
               const total = badge.required.length;
               return (
-                <Grid item xs={12} sm={6} md={4} key={idx}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                   <Card sx={{ textAlign: 'center', transition: 'all 0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }, border: earned === total ? '2px solid' : 'none', borderColor: badge.color }}>
                     <CardContent>
                       <Box sx={{ width: 80, height: 80, borderRadius: '50%', mx: 'auto', mb: 2, background: earned === total ? `linear-gradient(135deg, ${badge.color}30, ${badge.color}10)` : '#f5f5f5', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', filter: earned === total ? 'none' : 'grayscale(50%)' }}>{badge.icon}</Box>
@@ -450,15 +450,15 @@ const AchievementsPage = () => {
               <Typography variant="body1" textAlign="center" color="text.secondary" gutterBottom>{selectedAchievement.description}</Typography>
               <Divider sx={{ my: 2 }} />
               <Grid container spacing={2} sx={{ textAlign: 'center' }}>
-                <Grid item xs={4}>
+                <Grid size={4}>
                   <Typography variant="caption" color="text.secondary">Points</Typography>
                   <Typography variant="h6" fontWeight={700} color="primary.main">{selectedAchievement.points} XP</Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid size={4}>
                   <Typography variant="caption" color="text.secondary">Rarity</Typography>
                   <Chip label={RARITY_COLORS[selectedAchievement.rarity].label} size="small" sx={{ mt: 0.5, bgcolor: RARITY_COLORS[selectedAchievement.rarity].bg, color: RARITY_COLORS[selectedAchievement.rarity].text }} />
                 </Grid>
-                <Grid item xs={4}>
+                <Grid size={4}>
                   <Typography variant="caption" color="text.secondary">Status</Typography>
                   <Chip icon={selectedAchievement.unlocked ? <CheckCircle /> : <Lock />} label={selectedAchievement.unlocked ? 'Unlocked' : 'Locked'} size="small" color={selectedAchievement.unlocked ? 'success' : 'default'} sx={{ mt: 0.5 }} />
                 </Grid>

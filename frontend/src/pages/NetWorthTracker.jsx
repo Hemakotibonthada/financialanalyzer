@@ -346,7 +346,7 @@ function NetWorthTracker() {
         <Container maxWidth="xl">
           {/* Enhanced Summary Cards with Gradients */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -372,7 +372,7 @@ function NetWorthTracker() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
@@ -395,7 +395,7 @@ function NetWorthTracker() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
@@ -418,7 +418,7 @@ function NetWorthTracker() {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
                 height: '100%',
                 background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
@@ -455,7 +455,7 @@ function NetWorthTracker() {
           {activeTab === 0 && (
             <Grid container spacing={3}>
               {/* Assets Breakdown */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="success.main">
                 Assets
@@ -608,7 +608,7 @@ function NetWorthTracker() {
           </Grid>
 
           {/* Liabilities Breakdown */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="error.main">
                 Liabilities
@@ -692,7 +692,7 @@ function NetWorthTracker() {
 
           {/* Asset Allocation Chart */}
           {allocationData.length > 0 && (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   Asset Allocation
@@ -829,7 +829,7 @@ function NetWorthTracker() {
           <Typography variant="h6" sx={{ mt: 2, mb: 2 }}>Assets</Typography>
           <Grid container spacing={2}>
             {Object.keys(snapshotData.assets).map((key) => (
-              <Grid item xs={12} sm={6} md={4} key={key}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={key}>
                 <TextField
                   fullWidth
                   type="number"
@@ -848,7 +848,7 @@ function NetWorthTracker() {
           <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>Liabilities</Typography>
           <Grid container spacing={2}>
             {Object.keys(snapshotData.liabilities).map((key) => (
-              <Grid item xs={12} sm={6} md={4} key={key}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={key}>
                 <TextField
                   fullWidth
                   type="number"

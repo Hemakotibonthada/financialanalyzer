@@ -243,7 +243,7 @@ const CacheManagementPanel = () => {
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -261,7 +261,7 @@ const CacheManagementPanel = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -279,7 +279,7 @@ const CacheManagementPanel = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -300,7 +300,7 @@ const CacheManagementPanel = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -408,7 +408,7 @@ const CacheManagementPanel = () => {
             Quick Actions
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Button
                 fullWidth
                 variant="outlined"
@@ -420,7 +420,7 @@ const CacheManagementPanel = () => {
                 Clear All Cache
               </Button>
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Button
                 fullWidth
                 variant="outlined"
@@ -432,7 +432,7 @@ const CacheManagementPanel = () => {
                 Clear User Caches
               </Button>
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Button
                 fullWidth
                 variant="outlined"
@@ -443,7 +443,7 @@ const CacheManagementPanel = () => {
                 Clear Dashboard Cache
               </Button>
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Button
                 fullWidth
                 variant="outlined"
@@ -454,7 +454,7 @@ const CacheManagementPanel = () => {
                 Clear Budget Cache
               </Button>
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <Button
                 fullWidth
                 variant="outlined"

@@ -23,6 +23,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const fetchInProgress = useRef(false);
+
+  // Safety timeout: force loading to false if auth check takes too long
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      if (loading) {
+        console.warn('[auth] Loading safety timeout reached (10s) — forcing loading to false');
+        setLoading(false);
+      }
+    }, 10000);
+    return () => clearTimeout(safetyTimer);
+  }, [loading]);
   // Token can be stored either in sessionStorage (session-only) or localStorage (remembered)
   const getStoredToken = () => {
     // Debug token state at runtime

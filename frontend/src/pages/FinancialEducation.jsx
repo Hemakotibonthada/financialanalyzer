@@ -322,7 +322,7 @@ const FinancialEducation = () => {
           {/* Tips Grid */}
           <Grid container spacing={2}>
             {filteredTips.map(tip => (
-              <Grid item xs={12} sm={6} md={4} key={tip.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={tip.id}>
                 <Card
                   sx={{
                     cursor: 'pointer',
@@ -391,7 +391,7 @@ const FinancialEducation = () => {
       {activeTab === 1 && (
         <Grid container spacing={3}>
           {LEARNING_MODULES.map(module => (
-            <Grid item xs={12} sm={6} md={4} key={module.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={module.id}>
               <Card sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }, height: '100%' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -433,7 +433,7 @@ const FinancialEducation = () => {
           {!activeQuiz ? (
             <Grid container spacing={3}>
               {QUIZZES.map(quiz => (
-                <Grid item xs={12} sm={6} key={quiz.id}>
+                <Grid size={{ xs: 12, sm: 6 }} key={quiz.id}>
                   <Card sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -500,7 +500,7 @@ const FinancialEducation = () => {
                         </Typography>
                         <Grid container spacing={1}>
                           {question.options.map((option, oi) => (
-                            <Grid item xs={12} sm={6} key={oi}>
+                            <Grid size={{ xs: 12, sm: 6 }} key={oi}>
                               <Button
                                 fullWidth
                                 variant={quizAnswers[qi] === oi ? 'contained' : 'outlined'}
@@ -543,7 +543,7 @@ const FinancialEducation = () => {
             { title: 'Zerodha Varsity', url: 'https://zerodha.com/varsity', icon: '📖', description: 'Free stock market education modules' },
             { title: 'CIBIL Score Check', url: 'https://www.cibil.com', icon: '💳', description: 'Check and monitor your credit score' },
           ].map((resource, idx) => (
-            <Grid item xs={12} sm={6} md={4} key={idx}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
               <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
                 <CardContent>
                   <Typography variant="h2" component="span">{resource.icon}</Typography>
