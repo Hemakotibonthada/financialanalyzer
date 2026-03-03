@@ -114,10 +114,10 @@ import {
   RadialBarChart,
   RadialBar,
 } from 'recharts';
-import axios from 'axios';
 import { format, addMonths, differenceInDays } from 'date-fns';
 
-import { API_URL as API_BASE_URL } from '../services/api';
+import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 // Color palette
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1'];
@@ -197,11 +197,8 @@ const LenderDashboardEnhanced = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.get(`${API_BASE_URL}/lenders/dashboard`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/lenders/dashboard');
       
       setDashboardData(response.data.data);
       setError(null);
@@ -219,14 +216,11 @@ const LenderDashboardEnhanced = () => {
 
   const handleRecordPayment = async () => {
     try {
-      const token = localStorage.getItem('token');
       console.log('Recording payment...');
       console.log('Payment form data:', paymentForm);
       
       // Get lender ID (same logic as handleAddLoan)
-      const lendersResponse = await axios.get(`${API_BASE_URL}/lenders`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const lendersResponse = await api.get('/lenders');
       
       const lender = lendersResponse.data.data[0]; // Get first lender for this user
       
@@ -245,9 +239,7 @@ const LenderDashboardEnhanced = () => {
       
       console.log('Creating payment with data:', paymentData);
       
-      await axios.post(`${API_BASE_URL}/lender-payments`, paymentData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/lender-payments', paymentData);
       
       console.log('Payment recorded successfully');
       setOpenPaymentDialog(false);
@@ -265,7 +257,6 @@ const LenderDashboardEnhanced = () => {
 
   const handleAddLoan = async () => {
     try {
-      const token = localStorage.getItem('token');
       console.log('Starting loan creation process...');
       console.log('Loan form data:', loanForm);
       
@@ -274,9 +265,7 @@ const LenderDashboardEnhanced = () => {
       
       // Check if lender exists
       console.log('Fetching existing lenders...');
-      const lendersResponse = await axios.get(`${API_BASE_URL}/lenders`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const lendersResponse = await api.get('/lenders');
       
       console.log('Lenders response:', lendersResponse.data);
       
@@ -290,7 +279,7 @@ const LenderDashboardEnhanced = () => {
       } else {
         // Create new lender
         console.log('Creating new lender...');
-        const lenderResponse = await axios.post(`${API_BASE_URL}/lenders`, {
+        const lenderResponse = await api.post('/lenders', {
           lenderName: loanForm.lenderName,
           lenderType: 'Individual',
           contactEmail: '',
@@ -298,8 +287,6 @@ const LenderDashboardEnhanced = () => {
           defaultInterestRate: loanForm.interestRate,
           defaultInterestType: loanForm.interestType,
           status: 'Active'
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
         });
         lenderId = lenderResponse.data.data._id;
         console.log('Created new lender:', lenderId);
@@ -321,9 +308,7 @@ const LenderDashboardEnhanced = () => {
       
       console.log('Creating loan with data:', loanData);
       
-      const loanResponse = await axios.post(`${API_BASE_URL}/lender-loans`, loanData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const loanResponse = await api.post('/lender-loans', loanData);
       
       console.log('Loan created successfully:', loanResponse.data);
       
@@ -371,15 +356,18 @@ const LenderDashboardEnhanced = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress size={60} />
-      </Box>
+      <MainLayout title="Lender Dashboard">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+          <CircularProgress size={60} />
+        </Box>
+      </MainLayout>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="xl" sx={{ mt: 4 }}>
+      <MainLayout title="Lender Dashboard">
+        <Container maxWidth="xl" sx={{ mt: 4 }}>
         <Alert severity="error" action={
           <Button color="inherit" size="small" onClick={fetchDashboardData}>
             Retry
@@ -388,6 +376,7 @@ const LenderDashboardEnhanced = () => {
           {error}
         </Alert>
       </Container>
+      </MainLayout>
     );
   }
 
@@ -436,6 +425,7 @@ const LenderDashboardEnhanced = () => {
     });
 
   return (
+    <MainLayout title="Lender Dashboard">
     <Box sx={{ pb: isMobile ? 10 : 4 }}>
       <Container maxWidth="xl" sx={{ mt: isMobile ? 2 : 4 }}>
         {/* Mobile Header */}
@@ -1544,6 +1534,7 @@ const LenderDashboardEnhanced = () => {
         </DialogActions>
       </Dialog>
     </Box>
+    </MainLayout>
   );
 };
 

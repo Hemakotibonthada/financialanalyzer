@@ -16,8 +16,7 @@ import {
   Eye, EyeOff, Lock, Globe, Zap, Link, XCircle, Database
 } from 'lucide-react';
 import '../styles/animations.css';
-import Sidebar from '../components/Sidebar';
-import { useSidebar } from '../context/SidebarContext';
+import MainLayout from '../components/MainLayout';
 
 // ======================== CONSTANTS ========================
 
@@ -453,24 +452,22 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center transition-all duration-300`}>
+      <MainLayout title="Profile & Settings">
+        <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-slate-400 font-medium">Loading your settings...</p>
         </div>
       </div>
-      </>
+      </MainLayout>
     );
   }
 
   // ======================== RENDER ========================
 
   return (
-    <>
-      <Sidebar />
-      <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-all duration-300`}>
+    <MainLayout title="Profile & Settings">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ===== HEADER ===== */}
         <div className="mb-6 sm:mb-8">
@@ -1545,7 +1542,7 @@ const Profile = () => {
         </div>
       </div>
     </div>
-    </>
+    </MainLayout>
   );
 };
 

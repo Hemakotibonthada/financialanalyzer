@@ -5,11 +5,9 @@ import {
   Phone, Mail, MessageCircle, Video, FileText, Zap,
   DollarSign, CreditCard, Target, PieChart, Shield, Users
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import { useSidebar } from '../context/SidebarContext';
+import MainLayout from '../components/MainLayout';
 
 const HelpCenter = () => {
-  const { isCollapsed } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState(null);
 
@@ -137,9 +135,8 @@ const HelpCenter = () => {
   };
 
   return (
-    <>
-      <Sidebar />
-      <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 dark:bg-slate-950 transition-all duration-300`}>
+    <MainLayout title="Help Center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -282,7 +279,7 @@ const HelpCenter = () => {
           </div>
         </div>
       </div>
-    </>
+    </MainLayout>
   );
 };
 

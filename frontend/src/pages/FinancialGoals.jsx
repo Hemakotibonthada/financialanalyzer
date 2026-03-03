@@ -43,11 +43,9 @@ import {
   CheckCircle as CheckCircleIcon,
   EmojiEvents as TrophyIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../services/api';
 import MainLayout from '../components/MainLayout';
-import { useSidebar } from '../context/SidebarContext';
 import { useTheme } from '../context/ThemeContext';
-import { API_URL } from '../services/api';
 import '../styles/animations.css';
 
 const GOAL_CATEGORIES = [
@@ -68,7 +66,6 @@ const PRIORITIES = ['low', 'medium', 'high', 'critical'];
 const SAVINGS_STRATEGIES = ['lump_sum', 'monthly', 'weekly', 'variable'];
 
 function FinancialGoals() {
-  const { isCollapsed } = useSidebar();
   const { isDark } = useTheme();
   const [goals, setGoals] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -111,12 +108,10 @@ function FinancialGoals() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
 
       const [goalsRes, summaryRes] = await Promise.all([
-  axios.get(`${API_URL}/goals`, { headers }),
-  axios.get(`${API_URL}/goals/summary`, { headers })
+  api.get('/goals'),
+  api.get('/goals/summary')
       ]);
 
       setGoals(goalsRes.data.data || []);
@@ -130,20 +125,16 @@ function FinancialGoals() {
 
   const handleSaveGoal = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
 
       if (editingGoal) {
-        await axios.put(
-          `${API_URL}/goals/${editingGoal.id}`,
-          formData,
-          { headers }
+        await api.put(
+          `/goals/${editingGoal.id}`,
+          formData
         );
       } else {
-        await axios.post(
-          `${API_URL}/goals`,
-          formData,
-          { headers }
+        await api.post(
+          '/goals',
+          formData
         );
       }
 
@@ -160,10 +151,7 @@ function FinancialGoals() {
     if (!window.confirm('Are you sure you want to delete this goal?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/goals/${goalId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/goals/${goalId}`);
       fetchData();
     } catch (error) {
       console.error('Error deleting goal:', error);
@@ -172,11 +160,9 @@ function FinancialGoals() {
 
   const handleAddContribution = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/goals/${selectedGoal.id}/contribute`,
-        contributionData,
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        `/goals/${selectedGoal.id}/contribute`,
+        contributionData
       );
 
       setOpenContributeDialog(false);
@@ -189,11 +175,9 @@ function FinancialGoals() {
 
   const handleAddMilestone = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/goals/${selectedGoal.id}/milestone`,
-        milestoneData,
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        `/goals/${selectedGoal.id}/milestone`,
+        milestoneData
       );
 
       setOpenMilestoneDialog(false);

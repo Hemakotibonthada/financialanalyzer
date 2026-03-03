@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import Sidebar from '../components/Sidebar';
-import { useSidebar } from '../context/SidebarContext';
+import MainLayout from '../components/MainLayout';
 import EMIMonthlyTrends from '../components/EMIMonthlyTrends';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -86,9 +84,7 @@ import {
   AttachMoney as MoneyIcon
 } from '@mui/icons-material';
 
-import { API_URL as API_BASE } from '../services/api';
-// use API_BASE which includes the /api path, e.g. http://host:5001/api
-const API_URL = API_BASE;
+import api from '../services/api';
 
 // Color palette for charts
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
@@ -132,7 +128,6 @@ const getTableHeader = (isDark) => isDark ? 'rgba(30, 41, 59, 0.8)' : '#fafafa';
 
 const EMITracker = () => {
   const { isDark, mode, accent } = useTheme();
-  const { isCollapsed } = useSidebar();
 
   // Memoized theme-aware styles
   const chartCardHoverEffect = useMemo(() => getChartCardStyle(isDark), [isDark]);
@@ -478,10 +473,7 @@ const EMITracker = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/profile');
       console.log('✅ Profile API Full Response:', response.data);
       
       // API returns: { success: true, data: { profile: {...}, gmailConnected, gmailEmail } }
@@ -531,16 +523,12 @@ const EMITracker = () => {
 
   const fetchMonthlyExpenses = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      
       // Get last 30 days of expenses from transactions
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const response = await axios.get(
-        `${API_URL}/financial/transactions?startDate=${thirtyDaysAgo.toISOString().split('T')[0]}&type=expense`,
-        config
+      const response = await api.get(
+        `/financial/transactions?startDate=${thirtyDaysAgo.toISOString().split('T')[0]}&type=expense`
       );
       
       if (response.data?.success && response.data?.data?.transactions) {
@@ -562,15 +550,11 @@ const EMITracker = () => {
     setEmergencyFundSaving(true);
     setEmergencyFundMessage(null);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(
-        `${API_URL}/profile/debt-freedom/emergency-fund`,
+      const response = await api.put(
+        '/profile/debt-freedom/emergency-fund',
         {
           currentAmount: Number(currentEmergencyFund) || 0,
           goalAmount: Number(emergencyFundGoal) || 0
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
@@ -605,11 +589,9 @@ const EMITracker = () => {
         return;
       }
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/profile/debt-freedom/emergency-fund/contribution`,
-        { amount },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        '/profile/debt-freedom/emergency-fund/contribution',
+        { amount }
       );
 
       const saved = response.data?.data?.emergencyFund;
@@ -638,17 +620,12 @@ const EMITracker = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-
       // Fetch all data in parallel - fetch max 36 months for upcoming payments
       const [overviewRes, upcomingRes, chartsRes, insightsRes] = await Promise.all([
-        axios.get(`${API_URL}/emi/overview`, config),
-        axios.get(`${API_URL}/emi/upcoming?months=36`, config), // Fetch 36 months, filter on frontend
-        axios.get(`${API_URL}/emi/charts`, config),
-        axios.get(`${API_URL}/emi/insights`, config)
+        api.get('/emi/overview'),
+        api.get('/emi/upcoming?months=36'),
+        api.get('/emi/charts'),
+        api.get('/emi/insights')
       ]);
 
       setOverview(overviewRes.data.data);
@@ -658,7 +635,7 @@ const EMITracker = () => {
 
       // Debug: log fetched data shapes to help diagnose blank charts on remote clients
       // eslint-disable-next-line no-console
-      console.debug('EMI fetchAllData - API_URL:', API_URL, {
+      console.debug('EMI fetchAllData', {
         overviewCount: overviewRes.data?.data ? Object.keys(overviewRes.data.data).length : 0,
         upcomingMonths: upcomingRes.data?.data?.monthlyBreakdown?.length ?? 0,
         chartsKeys: chartsRes.data?.data ? Object.keys(chartsRes.data.data) : [],
@@ -675,17 +652,12 @@ const EMITracker = () => {
   const fetchMonthlyTrends = async (months = 6) => {
     setTrendsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      const response = await axios.get(`${API_URL}/emi/monthly-trends?months=${months}`, config);
+      const response = await api.get(`/emi/monthly-trends?months=${months}`);
       setMonthlyTrends(response.data.data);
 
       // Debug: log monthly trends shape
       // eslint-disable-next-line no-console
-      console.debug('EMI fetchMonthlyTrends - API_URL:', API_URL, 'months:', months, 'items:', response.data?.data?.monthlyTrends?.length ?? 0);
+      console.debug('EMI fetchMonthlyTrends', 'months:', months, 'items:', response.data?.data?.monthlyTrends?.length ?? 0);
     } catch (err) {
       console.error('Error fetching monthly trends:', err);
       setError(err.response?.data?.message || 'Failed to fetch monthly trends');
@@ -935,15 +907,13 @@ const EMITracker = () => {
     const emiId = emi.id || emi._id;
     if (!emiId || lastReminderEmiId === emiId) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/emi/reminders/pre-due`,
+      await api.post(
+        '/emi/reminders/pre-due',
         {
           emiId,
           merchantName: emi.merchantName,
           daysUntilDue: emi.daysUntilDue || 7
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
       setLastReminderEmiId(emiId);
     } catch (err) {
@@ -953,14 +923,12 @@ const EMITracker = () => {
 
   const handleExportMonthlyTrends = async (format) => {
     try {
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams({
         months: trendsMonths,
         format: format
       });
       
-      const response = await axios.get(`${API_URL}/emi/monthly-trends/export?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get(`/emi/monthly-trends/export?${params}`, {
         responseType: 'blob'
       });
       
@@ -993,14 +961,9 @@ const EMITracker = () => {
   const fetchLoansGiven = async () => {
     setLoansGivenLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
       const [loansResponse, summaryResponse] = await Promise.all([
-        axios.get(`${API_URL}/loans-given`, config),
-        axios.get(`${API_URL}/loans-given/summary`, config)
+        api.get('/loans-given'),
+        api.get('/loans-given/summary')
       ]);
       
       setLoansGiven(loansResponse.data.data);
@@ -1016,18 +979,13 @@ const EMITracker = () => {
   // Add or update loan given
   const handleSaveLoanGiven = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
       if (selectedLoanGiven) {
         // Update existing loan
-        await axios.put(`${API_URL}/loans-given/${selectedLoanGiven._id}`, loanGivenFormData, config);
+        await api.put(`/loans-given/${selectedLoanGiven._id}`, loanGivenFormData);
         showSnackbar('Loan updated successfully!');
       } else {
         // Create new loan
-        await axios.post(`${API_URL}/loans-given`, loanGivenFormData, config);
+        await api.post('/loans-given', loanGivenFormData);
         showSnackbar('Loan recorded successfully!');
       }
       
@@ -1058,12 +1016,7 @@ const EMITracker = () => {
   // Add repayment to loan
   const handleAddRepayment = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      await axios.post(`${API_URL}/loans-given/${selectedLoanGiven._id}/repayment`, repaymentData, config);
+      await api.post(`/loans-given/${selectedLoanGiven._id}/repayment`, repaymentData);
       showSnackbar('Repayment added successfully!');
       
       setRepaymentDialogOpen(false);
@@ -1086,12 +1039,7 @@ const EMITracker = () => {
     if (!confirm('Are you sure you want to delete this loan record?')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      await axios.delete(`${API_URL}/loans-given/${loanId}`, config);
+      await api.delete(`/loans-given/${loanId}`);
       showSnackbar('Loan deleted successfully!');
       fetchLoansGiven();
     } catch (err) {
@@ -1105,12 +1053,7 @@ const EMITracker = () => {
     if (!confirm('Are you sure you want to write off this loan? This action marks it as unrecoverable.')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      await axios.put(`${API_URL}/loans-given/${loanId}/write-off`, {}, config);
+      await api.put(`/loans-given/${loanId}/write-off`, {});
       showSnackbar('Loan written off successfully!');
       fetchLoansGiven();
     } catch (err) {
@@ -1124,14 +1067,9 @@ const EMITracker = () => {
   const fetchPersonalLoans = async () => {
     try {
       setPersonalLoansLoading(true);
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
       const [loansRes, summaryRes] = await Promise.all([
-        axios.get(`${API_URL}/personal-loans`, config),
-        axios.get(`${API_URL}/personal-loans/summary`, config)
+        api.get('/personal-loans'),
+        api.get('/personal-loans/summary')
       ]);
       
       setPersonalLoans(loansRes.data.loans || []);
@@ -1147,18 +1085,13 @@ const EMITracker = () => {
   // Save personal loan (create or update)
   const handleSavePersonalLoan = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
       if (selectedPersonalLoan) {
         // Update existing loan
-        await axios.put(`${API_URL}/personal-loans/${selectedPersonalLoan._id}`, personalLoanFormData, config);
+        await api.put(`/personal-loans/${selectedPersonalLoan._id}`, personalLoanFormData);
         setPersonalLoanMessage({ type: 'success', text: 'Personal loan updated successfully!' });
       } else {
         // Create new loan
-        await axios.post(`${API_URL}/personal-loans`, personalLoanFormData, config);
+        await api.post('/personal-loans', personalLoanFormData);
         setPersonalLoanMessage({ type: 'success', text: 'Personal loan added successfully!' });
       }
       
@@ -1203,15 +1136,9 @@ const EMITracker = () => {
     if (!selectedPersonalLoan) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      await axios.post(
-        `${API_URL}/personal-loans/${selectedPersonalLoan._id}/repayment`, 
-        { amount: parseFloat(personalLoanRepaymentData.amount) },
-        config
+      await api.post(
+        `/personal-loans/${selectedPersonalLoan._id}/repayment`, 
+        { amount: parseFloat(personalLoanRepaymentData.amount) }
       );
       
       showSnackbar('Repayment added successfully!');
@@ -1233,12 +1160,7 @@ const EMITracker = () => {
     if (!confirm('Mark this loan as fully repaid?')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      await axios.put(`${API_URL}/personal-loans/${loanId}/mark-repaid`, {}, config);
+      await api.put(`/personal-loans/${loanId}/mark-repaid`, {});
       showSnackbar('Loan marked as repaid successfully!');
       fetchPersonalLoans();
     } catch (err) {
@@ -1252,12 +1174,7 @@ const EMITracker = () => {
     if (!confirm('Are you sure you want to delete this personal loan record?')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
-      
-      await axios.delete(`${API_URL}/personal-loans/${loanId}`, config);
+      await api.delete(`/personal-loans/${loanId}`);
       showSnackbar('Personal loan deleted successfully!');
       fetchPersonalLoans();
     } catch (err) {
@@ -1270,11 +1187,9 @@ const EMITracker = () => {
   const fetchCCBills = async () => {
     setCcBillsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       const [billsRes, summaryRes] = await Promise.all([
-        axios.get(`${API_URL}/cc-bills?months=12`, config),
-        axios.get(`${API_URL}/cc-bills/summary`, config)
+        api.get('/cc-bills?months=12'),
+        api.get('/cc-bills/summary')
       ]);
       setCcBills(billsRes.data.data?.bills || []);
       setCcBillsSummary(summaryRes.data.data || null);
@@ -1287,8 +1202,6 @@ const EMITracker = () => {
 
   const handleSaveCCBill = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       const payload = {
         ...ccBillFormData,
         totalAmount: Number(ccBillFormData.totalAmount),
@@ -1302,10 +1215,10 @@ const EMITracker = () => {
       };
 
       if (selectedCcBill) {
-        await axios.put(`${API_URL}/cc-bills/${selectedCcBill._id}`, payload, config);
+        await api.put(`/cc-bills/${selectedCcBill._id}`, payload);
         showSnackbar('Credit card bill updated!');
       } else {
-        await axios.post(`${API_URL}/cc-bills`, payload, config);
+        await api.post('/cc-bills', payload);
         showSnackbar('Credit card bill added!');
       }
       setCcBillDialogOpen(false);
@@ -1327,11 +1240,9 @@ const EMITracker = () => {
   const handlePayCCBill = async () => {
     if (!selectedCcBill || !ccPayAmount) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/cc-bills/${selectedCcBill._id}/pay`,
-        { amount: Number(ccPayAmount), paymentMethod: ccPayMethod },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        `/cc-bills/${selectedCcBill._id}/pay`,
+        { amount: Number(ccPayAmount), paymentMethod: ccPayMethod }
       );
       showSnackbar('Payment recorded!');
       setCcBillPayDialogOpen(false);
@@ -1347,8 +1258,7 @@ const EMITracker = () => {
   const handleDeleteCCBill = async (billId) => {
     if (!confirm('Delete this credit card bill?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/cc-bills/${billId}`, { headers: { Authorization: `Bearer ${token}` } });
+      await api.delete(`/cc-bills/${billId}`);
       showSnackbar('Bill deleted');
       fetchCCBills();
     } catch (err) {
@@ -1359,8 +1269,7 @@ const EMITracker = () => {
   const handleSyncCCBillsGmail = async () => {
     setCcBillSyncing(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(`${API_URL}/cc-bills/sync-gmail`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await api.post('/cc-bills/sync-gmail', {});
       const data = res.data.data;
       showSnackbar(`Gmail sync: ${data.created} bills imported, ${data.skipped} skipped`);
       fetchCCBills();
@@ -1374,7 +1283,6 @@ const EMITracker = () => {
   const handleExportReport = async () => {
     setExportLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams({
         startDate: exportDateRange.startDate,
         endDate: exportDateRange.endDate
@@ -1382,8 +1290,7 @@ const EMITracker = () => {
       
       if (exportFormat === 'pdf') {
         // Generate PDF report
-        const response = await axios.get(`${API_URL}/emi/export/pdf?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(`/emi/export/pdf?${params}`, {
           responseType: 'blob'
         });
         
@@ -1398,8 +1305,7 @@ const EMITracker = () => {
         window.URL.revokeObjectURL(url);
       } else if (exportFormat === 'excel') {
         // Generate Excel report
-        const response = await axios.get(`${API_URL}/emi/export/excel?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(`/emi/export/excel?${params}`, {
           responseType: 'blob'
         });
         
@@ -1413,8 +1319,7 @@ const EMITracker = () => {
         window.URL.revokeObjectURL(url);
       } else if (exportFormat === 'csv') {
         // Generate CSV report
-        const response = await axios.get(`${API_URL}/emi/export/csv?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(`/emi/export/csv?${params}`, {
           responseType: 'blob'
         });
         
@@ -1456,13 +1361,9 @@ const EMITracker = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/emi/sync-statements`,
-        { maxResults: 50 },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      const response = await api.post(
+        '/emi/sync-statements',
+        { maxResults: 50 }
       );
 
       setSyncDialogOpen(false);
@@ -1481,9 +1382,8 @@ const EMITracker = () => {
 
   const handleRequestBalanceTransfer = async (offer, candidate) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/emi/balance-transfer-request`,
+      await api.post(
+        '/emi/balance-transfer-request',
         {
           emiId: candidate.id || candidate._id,
           provider: offer.provider,
@@ -1492,8 +1392,7 @@ const EMITracker = () => {
           currentRate: candidate.interestRate,
           remainingAmount: candidate.remainingAmount,
           remainingInstallments: candidate.remainingInstallments
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
       showSnackbar(`Offer request sent to ${offer.provider} for ${candidate.merchantName}. We will follow up.`);
     } catch (err) {
@@ -1505,11 +1404,9 @@ const EMITracker = () => {
   const handleOneClickPrepay = async (emi) => {
     if (!emi) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/emi/one-click-prepay`,
-        { emiId: emi.id || emi._id, amount: Math.min(emi.remainingAmount, emi.emiAmount) },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        '/emi/one-click-prepay',
+        { emiId: emi.id || emi._id, amount: Math.min(emi.remainingAmount, emi.emiAmount) }
       );
       showSnackbar('Prepayment scheduled. Great move!');
       fetchAllData();
@@ -1521,11 +1418,9 @@ const EMITracker = () => {
 
   const handleSetupAutoSweep = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/emi/auto-sweep`,
-        { sweepPercentage: 20 },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        '/emi/auto-sweep',
+        { sweepPercentage: 20 }
       );
       showSnackbar('Auto-sweep set to divert 20% surplus to highest-APR EMI.');
     } catch (err) {
@@ -1536,11 +1431,9 @@ const EMITracker = () => {
 
   const handleEnableLateFeeShield = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/emi/late-fee-shield`,
-        { notifyDaysBefore: 5 },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.post(
+        '/emi/late-fee-shield',
+        { notifyDaysBefore: 5 }
       );
       showSnackbar('Late-fee shield armed: you will get alerts and auto-pay nudges 5 days before due.');
     } catch (err) {
@@ -1638,13 +1531,9 @@ const EMITracker = () => {
     setManualEMILoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/emi/manual`,
-        manualEMIData,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      const response = await api.post(
+        '/emi/manual',
+        manualEMIData
       );
 
       showSnackbar('EMI created successfully!');
@@ -1665,14 +1554,9 @@ const EMITracker = () => {
     if (!selectedEMI) return;
 
     try {
-      const token = localStorage.getItem('token');
       const deletedEmiId = selectedEMI.id;
-      
-      await axios.delete(
-        `${API_URL}/emi/${deletedEmiId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      await api.delete(
+        `/emi/${deletedEmiId}`
       );
 
       // Immediately filter out deleted EMI from upcoming payments
@@ -1711,8 +1595,6 @@ const EMITracker = () => {
       message: `Are you sure you want to mark this EMI payment of ${formatCurrency(emiDetails.amount)} as paid?`,
       confirmAction: async () => {
         try {
-          const token = localStorage.getItem('token');
-          
           // First, optimistically update the UI BEFORE the API call
           let updatedActiveEMIs = null;
           if (overview && overview.activeEMIs) {
@@ -1739,12 +1621,9 @@ const EMITracker = () => {
           }
 
           // Then make the API call
-          await axios.post(
-            `${API_URL}/emi/${emiId}/mark-paid`,
-            { installmentNumber, paidDate: new Date().toISOString() },
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
+          await api.post(
+            `/emi/${emiId}/mark-paid`,
+            { installmentNumber, paidDate: new Date().toISOString() }
           );
 
           // Immediately update the UI by removing the paid EMI from upcomingPayments
@@ -1920,6 +1799,7 @@ const EMITracker = () => {
 
   if (loading && !overview) {
     return (
+      <MainLayout title="EMI Tracker">
       <Box 
         display="flex" 
         justifyContent="center" 
@@ -1937,13 +1817,13 @@ const EMITracker = () => {
       >
         <CircularProgress size={60} thickness={4} />
       </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <>
-      <Sidebar />
-      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen transition-all duration-300 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+    <MainLayout title="EMI Tracker">
+      <Box className={`min-h-screen transition-all duration-300 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
       {/* Enhanced Header with Gradient Background */}
       <Box 
@@ -9911,7 +9791,6 @@ const EMITracker = () => {
               if (!selectedEMI) return;
               setEditEMILoading(true);
               try {
-                const token = localStorage.getItem('token');
                 const updatePayload = {
                   merchantName: editEMIData.merchantName,
                   productDescription: editEMIData.productDescription,
@@ -9922,10 +9801,9 @@ const EMITracker = () => {
                   status: editEMIData.status,
                   tags: editEMIData.tags
                 };
-                await axios.put(
-                  `${API_URL}/emi/${selectedEMI.id || selectedEMI._id}`,
-                  updatePayload,
-                  { headers: { Authorization: `Bearer ${token}` } }
+                await api.put(
+                  `/emi/${selectedEMI.id || selectedEMI._id}`,
+                  updatePayload
                 );
                 showSnackbar('EMI updated successfully!');
                 setEditEMIDialogOpen(false);
@@ -9961,7 +9839,7 @@ const EMITracker = () => {
       </Snackbar>
     </Container>
       </Box>
-    </>
+    </MainLayout>
   );
 };
 

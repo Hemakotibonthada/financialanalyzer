@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 import { 
   Phone, Mail, MessageCircle, MapPin, Clock, Send,
   CheckCircle, Building2, Globe, Headphones
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import { useSidebar } from '../context/SidebarContext';
 
 const ContactSupport = () => {
-  const { isCollapsed } = useSidebar();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -81,9 +79,8 @@ const ContactSupport = () => {
   ];
 
   return (
-    <>
-      <Sidebar />
-      <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 dark:bg-slate-950 transition-all duration-300`}>
+    <MainLayout title="Contact Support">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -304,7 +301,7 @@ const ContactSupport = () => {
           </div>
         </div>
       </div>
-    </>
+    </MainLayout>
   );
 };
 

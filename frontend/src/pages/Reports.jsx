@@ -26,8 +26,9 @@ ChartJS.register(
   ArcElement
 );
 
-import api, { API_URL as API_BASE_URL } from '../services/api';
+import api from '../services/api';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
+import MainLayout from '../components/MainLayout';
 
 const Reports = () => {
   const [loading, setLoading] = useState(true);
@@ -48,16 +49,14 @@ const Reports = () => {
       setLoading(true);
       const range = customRange || dateRange;
       
-      let url = `${API_BASE_URL}/financial/monthly-trends-report?`;
+      let url = '/financial/monthly-trends-report?';
       if (range.startDate && range.endDate) {
         url += `startDate=${range.startDate}&endDate=${range.endDate}`;
       } else {
         url += `months=${range.months}`;
       }
 
-      // Use shared api instance so the request interceptor attaches the
-      // correct token (from localStorage or sessionStorage) automatically.
-      const response = await api.get(url.replace(API_BASE_URL, ''));
+      const response = await api.get(url);
 
       if (response.data.success) {
         setReportData(response.data.data);
@@ -81,15 +80,14 @@ const Reports = () => {
     try {
       setExporting(true);
       
-      let url = `${API_BASE_URL}/financial/monthly-trends-report/export/${format}?`;
+      let url = `/financial/monthly-trends-report/export/${format}?`;
       if (dateRange.startDate && dateRange.endDate) {
         url += `startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
       } else {
         url += `months=${dateRange.months}`;
       }
 
-      // Use shared api instance so auth headers are handled by interceptor.
-      const response = await api.get(url.replace(API_BASE_URL, ''), {
+      const response = await api.get(url, {
         responseType: 'blob'
       });
 
@@ -114,12 +112,14 @@ const Reports = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-slate-400">Loading report...</p>
+      <MainLayout title="Reports">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-slate-400">Loading report...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
@@ -176,6 +176,7 @@ const Reports = () => {
   } : null;
 
   return (
+    <MainLayout title="Reports">
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -434,6 +435,7 @@ const Reports = () => {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 };
 
