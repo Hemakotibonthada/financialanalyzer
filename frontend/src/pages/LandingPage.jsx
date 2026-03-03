@@ -3,9 +3,10 @@
    Full-featured showcase with scroll-reveal animations, SVG illustrations,
    glassmorphism cards, interactive feature deep-dives, and premium UI/UX.
    ============================================================================= */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import '../styles/landing.css';
 
 import {
@@ -16,7 +17,8 @@ import {
   Sparkles, Zap, Star, Play, Menu, X,
   BarChart3, Lock, Bell,
   BadgeCheck, Quote,
-  MousePointerClick
+  MousePointerClick,
+  Sun, Moon, Monitor
 } from 'lucide-react';
 
 // ─── Typewriter Hook ─────────────────────────────────────────────────────────
@@ -201,39 +203,49 @@ const FAQ_DATA = [
   { q: 'Can I cancel anytime?',                      a: 'Yes, you can cancel your Pro subscription at any time with no questions asked. Your data remains accessible on the Free plan. We also offer a 14-day free trial for Pro.' },
 ];
 
-// ─── SVG ILLUSTRATIONS ───────────────────────────────────────────────────────
+// ─── SVG ILLUSTRATIONS (theme-aware) ─────────────────────────────────────────
 
-const DashboardMockupSVG = () => (
+const DashboardMockupSVG = ({ isDark }) => {
+  const bg = isDark ? '#0f172a' : '#f1f5f9';
+  const surface = isDark ? '#1e293b' : '#ffffff';
+  const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
+  const border = isDark ? '#1e293b' : '#cbd5e1';
+  const muted = isDark ? '#334155' : '#94a3b8';
+  const label = isDark ? '#64748b' : '#94a3b8';
+  const textBright = isDark ? '#e2e8f0' : '#1e293b';
+  const barBg = isDark ? '#1e3a5f' : '#dbeafe';
+
+  return (
   <svg viewBox="0 0 480 320" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-    <rect x="0" y="0" width="480" height="320" rx="16" fill="#0f172a" stroke="#1e293b" strokeWidth="1"/>
+    <rect x="0" y="0" width="480" height="320" rx="16" fill={bg} stroke={border} strokeWidth="1"/>
     <circle cx="20" cy="16" r="5" fill="#ef4444"/>
     <circle cx="36" cy="16" r="5" fill="#eab308"/>
     <circle cx="52" cy="16" r="5" fill="#22c55e"/>
-    <rect x="0" y="30" width="480" height="1" fill="#1e293b"/>
+    <rect x="0" y="30" width="480" height="1" fill={border}/>
     {/* Sidebar */}
-    <rect x="0" y="31" width="72" height="289" fill="#0c1322"/>
+    <rect x="0" y="31" width="72" height="289" fill={surfaceDeep}/>
     <rect x="16" y="48" width="40" height="6" rx="3" fill="#3b82f6" opacity="0.8"/>
-    <rect x="20" y="68" width="32" height="4" rx="2" fill="#334155"/>
-    <rect x="20" y="82" width="32" height="4" rx="2" fill="#334155"/>
+    <rect x="20" y="68" width="32" height="4" rx="2" fill={muted}/>
+    <rect x="20" y="82" width="32" height="4" rx="2" fill={muted}/>
     <rect x="20" y="96" width="32" height="4" rx="2" fill="#3b82f6" opacity="0.4"/>
-    <rect x="20" y="110" width="32" height="4" rx="2" fill="#334155"/>
-    <rect x="20" y="124" width="32" height="4" rx="2" fill="#334155"/>
+    <rect x="20" y="110" width="32" height="4" rx="2" fill={muted}/>
+    <rect x="20" y="124" width="32" height="4" rx="2" fill={muted}/>
     {/* Stat cards */}
-    <rect x="88" y="46" width="90" height="52" rx="10" fill="#1e293b"/>
-    <rect x="96" y="54" width="36" height="4" rx="2" fill="#64748b"/>
+    <rect x="88" y="46" width="90" height="52" rx="10" fill={surface}/>
+    <rect x="96" y="54" width="36" height="4" rx="2" fill={label}/>
     <text x="96" y="82" fill="#22c55e" fontSize="16" fontWeight="700" fontFamily="monospace">₹4.2L</text>
-    <rect x="190" y="46" width="90" height="52" rx="10" fill="#1e293b"/>
-    <rect x="198" y="54" width="36" height="4" rx="2" fill="#64748b"/>
+    <rect x="190" y="46" width="90" height="52" rx="10" fill={surface}/>
+    <rect x="198" y="54" width="36" height="4" rx="2" fill={label}/>
     <text x="198" y="82" fill="#3b82f6" fontSize="16" fontWeight="700" fontFamily="monospace">₹1.8L</text>
-    <rect x="292" y="46" width="90" height="52" rx="10" fill="#1e293b"/>
-    <rect x="300" y="54" width="36" height="4" rx="2" fill="#64748b"/>
+    <rect x="292" y="46" width="90" height="52" rx="10" fill={surface}/>
+    <rect x="300" y="54" width="36" height="4" rx="2" fill={label}/>
     <text x="300" y="82" fill="#f97316" fontSize="16" fontWeight="700" fontFamily="monospace">₹62K</text>
-    <rect x="394" y="46" width="72" height="52" rx="10" fill="#1e293b"/>
-    <rect x="402" y="54" width="28" height="4" rx="2" fill="#64748b"/>
+    <rect x="394" y="46" width="72" height="52" rx="10" fill={surface}/>
+    <rect x="402" y="54" width="28" height="4" rx="2" fill={label}/>
     <text x="402" y="82" fill="#8b5cf6" fontSize="14" fontWeight="700" fontFamily="monospace">780</text>
     {/* Bar chart */}
-    <rect x="88" y="112" width="196" height="120" rx="10" fill="#1e293b"/>
-    <rect x="100" y="120" width="52" height="4" rx="2" fill="#64748b"/>
+    <rect x="88" y="112" width="196" height="120" rx="10" fill={surface}/>
+    <rect x="100" y="120" width="52" height="4" rx="2" fill={label}/>
     <rect x="108" y="190" width="14" height="28" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.1s'}}/>
     <rect x="128" y="172" width="14" height="46" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.2s'}}/>
     <rect x="148" y="180" width="14" height="38" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.3s'}}/>
@@ -243,42 +255,47 @@ const DashboardMockupSVG = () => (
     <rect x="228" y="162" width="14" height="56" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.7s'}}/>
     <rect x="248" y="142" width="14" height="76" rx="3" fill="#8b5cf6" className="land-chart-bar" style={{animationDelay:'0.8s'}}/>
     {/* Donut chart */}
-    <rect x="296" y="112" width="170" height="120" rx="10" fill="#1e293b"/>
-    <rect x="308" y="120" width="52" height="4" rx="2" fill="#64748b"/>
-    <circle cx="381" cy="180" r="36" fill="none" stroke="#1e293b" strokeWidth="12"/>
+    <rect x="296" y="112" width="170" height="120" rx="10" fill={surface}/>
+    <rect x="308" y="120" width="52" height="4" rx="2" fill={label}/>
+    <circle cx="381" cy="180" r="36" fill="none" stroke={surface} strokeWidth="12"/>
     <circle cx="381" cy="180" r="36" fill="none" stroke="#3b82f6" strokeWidth="12" strokeDasharray="90 226" strokeLinecap="round" transform="rotate(-90 381 180)"/>
     <circle cx="381" cy="180" r="36" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeDasharray="56 226" strokeDashoffset="-90" strokeLinecap="round" transform="rotate(-90 381 180)"/>
     <circle cx="381" cy="180" r="36" fill="none" stroke="#22c55e" strokeWidth="12" strokeDasharray="40 226" strokeDashoffset="-146" strokeLinecap="round" transform="rotate(-90 381 180)"/>
     <circle cx="381" cy="180" r="36" fill="none" stroke="#f97316" strokeWidth="12" strokeDasharray="30 226" strokeDashoffset="-186" strokeLinecap="round" transform="rotate(-90 381 180)"/>
     {/* Transaction list */}
-    <rect x="88" y="244" width="378" height="64" rx="10" fill="#1e293b"/>
-    <rect x="100" y="252" width="64" height="4" rx="2" fill="#64748b"/>
-    <rect x="100" y="266" width="280" height="6" rx="3" fill="#1e3a5f"/>
+    <rect x="88" y="244" width="378" height="64" rx="10" fill={surface}/>
+    <rect x="100" y="252" width="64" height="4" rx="2" fill={label}/>
+    <rect x="100" y="266" width="280" height="6" rx="3" fill={barBg}/>
     <rect x="100" y="266" width="180" height="6" rx="3" fill="#3b82f6" opacity="0.7"/>
-    <rect x="100" y="282" width="280" height="6" rx="3" fill="#1e3a5f"/>
+    <rect x="100" y="282" width="280" height="6" rx="3" fill={barBg}/>
     <rect x="100" y="282" width="220" height="6" rx="3" fill="#22c55e" opacity="0.7"/>
-    <rect x="100" y="298" width="280" height="6" rx="3" fill="#1e3a5f"/>
+    <rect x="100" y="298" width="280" height="6" rx="3" fill={barBg}/>
     <rect x="100" y="298" width="140" height="6" rx="3" fill="#8b5cf6" opacity="0.7"/>
   </svg>
-);
+  );
+};
 
-const AIBrainSVG = () => (
+const AIBrainSVG = ({ isDark }) => {
+  const nodeBg = isDark ? '#1e293b' : '#f8fafc';
+  const label = isDark ? '#64748b' : '#94a3b8';
+
+  return (
   <svg viewBox="0 0 280 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
     {/* Neural network nodes — Input layer */}
-    <circle cx="40" cy="50"  r="12" fill="#1e293b" stroke="#3b82f6" strokeWidth="2"/><circle cx="40" cy="50" r="4" fill="#3b82f6"/>
-    <circle cx="40" cy="110" r="12" fill="#1e293b" stroke="#3b82f6" strokeWidth="2"/><circle cx="40" cy="110" r="4" fill="#3b82f6"/>
-    <circle cx="40" cy="170" r="12" fill="#1e293b" stroke="#3b82f6" strokeWidth="2"/><circle cx="40" cy="170" r="4" fill="#3b82f6"/>
+    <circle cx="40" cy="50"  r="12" fill={nodeBg} stroke="#3b82f6" strokeWidth="2"/><circle cx="40" cy="50" r="4" fill="#3b82f6"/>
+    <circle cx="40" cy="110" r="12" fill={nodeBg} stroke="#3b82f6" strokeWidth="2"/><circle cx="40" cy="110" r="4" fill="#3b82f6"/>
+    <circle cx="40" cy="170" r="12" fill={nodeBg} stroke="#3b82f6" strokeWidth="2"/><circle cx="40" cy="170" r="4" fill="#3b82f6"/>
     {/* Hidden layer 1 */}
-    <circle cx="120" cy="40"  r="14" fill="#1e293b" stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="40" r="5" fill="#8b5cf6"/>
-    <circle cx="120" cy="90"  r="14" fill="#1e293b" stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="90" r="5" fill="#8b5cf6"/>
-    <circle cx="120" cy="140" r="14" fill="#1e293b" stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="140" r="5" fill="#8b5cf6"/>
-    <circle cx="120" cy="185" r="14" fill="#1e293b" stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="185" r="5" fill="#8b5cf6"/>
+    <circle cx="120" cy="40"  r="14" fill={nodeBg} stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="40" r="5" fill="#8b5cf6"/>
+    <circle cx="120" cy="90"  r="14" fill={nodeBg} stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="90" r="5" fill="#8b5cf6"/>
+    <circle cx="120" cy="140" r="14" fill={nodeBg} stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="140" r="5" fill="#8b5cf6"/>
+    <circle cx="120" cy="185" r="14" fill={nodeBg} stroke="#8b5cf6" strokeWidth="2"/><circle cx="120" cy="185" r="5" fill="#8b5cf6"/>
     {/* Hidden layer 2 */}
-    <circle cx="200" cy="60"  r="14" fill="#1e293b" stroke="#ec4899" strokeWidth="2"/><circle cx="200" cy="60" r="5" fill="#ec4899"/>
-    <circle cx="200" cy="120" r="14" fill="#1e293b" stroke="#ec4899" strokeWidth="2"/><circle cx="200" cy="120" r="5" fill="#ec4899"/>
-    <circle cx="200" cy="175" r="14" fill="#1e293b" stroke="#ec4899" strokeWidth="2"/><circle cx="200" cy="175" r="5" fill="#ec4899"/>
+    <circle cx="200" cy="60"  r="14" fill={nodeBg} stroke="#ec4899" strokeWidth="2"/><circle cx="200" cy="60" r="5" fill="#ec4899"/>
+    <circle cx="200" cy="120" r="14" fill={nodeBg} stroke="#ec4899" strokeWidth="2"/><circle cx="200" cy="120" r="5" fill="#ec4899"/>
+    <circle cx="200" cy="175" r="14" fill={nodeBg} stroke="#ec4899" strokeWidth="2"/><circle cx="200" cy="175" r="5" fill="#ec4899"/>
     {/* Output */}
-    <circle cx="260" cy="110" r="16" fill="#1e293b" stroke="#22c55e" strokeWidth="2.5"/><circle cx="260" cy="110" r="6" fill="#22c55e"/>
+    <circle cx="260" cy="110" r="16" fill={nodeBg} stroke="#22c55e" strokeWidth="2.5"/><circle cx="260" cy="110" r="6" fill="#22c55e"/>
     {/* Connections */}
     <line x1="52" y1="50" x2="106" y2="40" stroke="#3b82f6" strokeWidth="1" opacity="0.3"/>
     <line x1="52" y1="50" x2="106" y2="90" stroke="#3b82f6" strokeWidth="1" opacity="0.3"/>
@@ -300,32 +317,41 @@ const AIBrainSVG = () => (
     <circle r="3" fill="#8b5cf6"><animateMotion dur="2.5s" repeatCount="indefinite" path="M134,90 L186,120"/></circle>
     <circle r="3" fill="#ec4899"><animateMotion dur="1.8s" repeatCount="indefinite" path="M214,120 L244,110"/></circle>
     {/* Labels */}
-    <text x="20" y="212" fill="#64748b" fontSize="9" fontFamily="monospace">INPUT</text>
-    <text x="96" y="212" fill="#64748b" fontSize="9" fontFamily="monospace">LAYER 1</text>
-    <text x="176" y="212" fill="#64748b" fontSize="9" fontFamily="monospace">LAYER 2</text>
-    <text x="235" y="145" fill="#64748b" fontSize="9" fontFamily="monospace">OUTPUT</text>
+    <text x="20" y="212" fill={label} fontSize="9" fontFamily="monospace">INPUT</text>
+    <text x="96" y="212" fill={label} fontSize="9" fontFamily="monospace">LAYER 1</text>
+    <text x="176" y="212" fill={label} fontSize="9" fontFamily="monospace">LAYER 2</text>
+    <text x="235" y="145" fill={label} fontSize="9" fontFamily="monospace">OUTPUT</text>
   </svg>
-);
+  );
+};
 
-const GmailFlowSVG = () => (
+const GmailFlowSVG = ({ isDark }) => {
+  const surface = isDark ? '#1e293b' : '#ffffff';
+  const bg = isDark ? '#0f172a' : '#f1f5f9';
+  const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
+  const muted = isDark ? '#334155' : '#94a3b8';
+  const label = isDark ? '#94a3b8' : '#64748b';
+  const labelDim = isDark ? '#64748b' : '#94a3b8';
+
+  return (
   <svg viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
     {/* Envelope */}
-    <rect x="20" y="40" width="70" height="50" rx="6" fill="#1e293b" stroke="#06b6d4" strokeWidth="1.5"/>
+    <rect x="20" y="40" width="70" height="50" rx="6" fill={surface} stroke="#06b6d4" strokeWidth="1.5"/>
     <path d="M20 46 L55 70 L90 46" stroke="#06b6d4" strokeWidth="1.5" fill="none"/>
-    <text x="36" y="82" fill="#64748b" fontSize="8" fontFamily="monospace">GMAIL</text>
+    <text x="36" y="82" fill={labelDim} fontSize="8" fontFamily="monospace">GMAIL</text>
     {/* Arrow 1 */}
     <path d="M100 65 L130 65" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="4 3">
       <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.5s" repeatCount="indefinite"/>
     </path>
     <polygon points="130,60 140,65 130,70" fill="#06b6d4"/>
     {/* Parser box */}
-    <rect x="145" y="40" width="70" height="50" rx="6" fill="#1e293b" stroke="#8b5cf6" strokeWidth="1.5"/>
+    <rect x="145" y="40" width="70" height="50" rx="6" fill={surface} stroke="#8b5cf6" strokeWidth="1.5"/>
     <text x="150" y="60" fill="#8b5cf6" fontSize="8" fontWeight="600" fontFamily="monospace">AI PARSER</text>
-    <rect x="155" y="66" width="50" height="3" rx="1" fill="#334155"/>
+    <rect x="155" y="66" width="50" height="3" rx="1" fill={muted}/>
     <rect x="155" y="66" width="32" height="3" rx="1" fill="#8b5cf6" opacity="0.7"/>
-    <rect x="155" y="73" width="50" height="3" rx="1" fill="#334155"/>
+    <rect x="155" y="73" width="50" height="3" rx="1" fill={muted}/>
     <rect x="155" y="73" width="44" height="3" rx="1" fill="#8b5cf6" opacity="0.5"/>
-    <rect x="155" y="80" width="50" height="3" rx="1" fill="#334155"/>
+    <rect x="155" y="80" width="50" height="3" rx="1" fill={muted}/>
     <rect x="155" y="80" width="26" height="3" rx="1" fill="#8b5cf6" opacity="0.6"/>
     {/* Arrow 2 */}
     <path d="M225 65 L255 65" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="4 3">
@@ -333,21 +359,21 @@ const GmailFlowSVG = () => (
     </path>
     <polygon points="255,60 265,65 255,70" fill="#22c55e"/>
     {/* Dashboard mini */}
-    <rect x="270" y="30" width="25" height="70" rx="4" fill="#1e293b" stroke="#22c55e" strokeWidth="1.5"/>
+    <rect x="270" y="30" width="25" height="70" rx="4" fill={surface} stroke="#22c55e" strokeWidth="1.5"/>
     <rect x="274" y="38" width="17" height="4" rx="1" fill="#22c55e" opacity="0.4"/>
-    <rect x="274" y="48" width="17" height="18" rx="2" fill="#0c1322"/>
+    <rect x="274" y="48" width="17" height="18" rx="2" fill={surfaceDeep}/>
     <rect x="276" y="60" width="4" height="6" rx="1" fill="#3b82f6"/>
     <rect x="282" y="56" width="4" height="10" rx="1" fill="#22c55e"/>
-    <rect x="274" y="72" width="17" height="3" rx="1" fill="#334155"/>
-    <rect x="274" y="78" width="17" height="3" rx="1" fill="#334155"/>
-    <rect x="274" y="84" width="17" height="3" rx="1" fill="#334155"/>
+    <rect x="274" y="72" width="17" height="3" rx="1" fill={muted}/>
+    <rect x="274" y="78" width="17" height="3" rx="1" fill={muted}/>
+    <rect x="274" y="84" width="17" height="3" rx="1" fill={muted}/>
     {/* Labels */}
-    <text x="24" y="110" fill="#94a3b8" fontSize="7.5" fontFamily="sans-serif">Your Inbox</text>
-    <text x="145" y="110" fill="#94a3b8" fontSize="7.5" fontFamily="sans-serif">Smart Extraction</text>
-    <text x="262" y="110" fill="#94a3b8" fontSize="7.5" fontFamily="sans-serif">Dashboard</text>
+    <text x="24" y="110" fill={label} fontSize="7.5" fontFamily="sans-serif">Your Inbox</text>
+    <text x="145" y="110" fill={label} fontSize="7.5" fontFamily="sans-serif">Smart Extraction</text>
+    <text x="262" y="110" fill={label} fontSize="7.5" fontFamily="sans-serif">Dashboard</text>
     {/* Transaction type badges */}
-    <rect x="20" y="125" width="265" height="60" rx="8" fill="#0f172a" stroke="#1e293b" strokeWidth="1"/>
-    <text x="30" y="142" fill="#64748b" fontSize="8" fontFamily="monospace">Detected Transactions:</text>
+    <rect x="20" y="125" width="265" height="60" rx="8" fill={bg} stroke={isDark ? '#1e293b' : '#e2e8f0'} strokeWidth="1"/>
+    <text x="30" y="142" fill={labelDim} fontSize="8" fontFamily="monospace">Detected Transactions:</text>
     {[
       {x:30, y:150, label:'UPI', color:'#06b6d4'},
       {x:86, y:150, label:'NEFT', color:'#3b82f6'},
@@ -364,9 +390,17 @@ const GmailFlowSVG = () => (
       </g>
     ))}
   </svg>
-);
+  );
+};
 
-const GoalsSVG = () => (
+const GoalsSVG = ({ isDark }) => {
+  const surface = isDark ? '#1e293b' : '#ffffff';
+  const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
+  const textBright = isDark ? '#e2e8f0' : '#1e293b';
+  const label = isDark ? '#64748b' : '#94a3b8';
+  const barBg = isDark ? '#1e3a5f' : '#dbeafe';
+
+  return (
   <svg viewBox="0 0 260 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
     {[
       { y: 10, label: 'Emergency Fund', amount: '₹4,20,000 / ₹5,00,000', pct: '84%', width: 142, color: '#22c55e', emoji: '₹' },
@@ -374,12 +408,12 @@ const GoalsSVG = () => (
       { y: 134, label: 'New Car Down Payment', amount: '₹90,000 / ₹3,00,000', pct: '30%', width: 51, color: '#8b5cf6', emoji: '🚗' },
     ].map((g, i) => (
       <g key={i}>
-        <rect x="10" y={g.y} width="240" height="52" rx="10" fill="#1e293b" stroke={g.color} strokeWidth="1" opacity="0.8"/>
-        <circle cx="36" cy={g.y + 26} r="16" fill="#0c1322" stroke={g.color} strokeWidth="2"/>
+        <rect x="10" y={g.y} width="240" height="52" rx="10" fill={surface} stroke={g.color} strokeWidth="1" opacity="0.8"/>
+        <circle cx="36" cy={g.y + 26} r="16" fill={surfaceDeep} stroke={g.color} strokeWidth="2"/>
         <text x="30" y={g.y + 30} fill={g.color} fontSize="10" fontWeight="700" fontFamily="monospace">{g.emoji}</text>
-        <text x="60" y={g.y + 20} fill="#e2e8f0" fontSize="10" fontWeight="600">{g.label}</text>
-        <text x="60" y={g.y + 34} fill="#64748b" fontSize="8">{g.amount}</text>
-        <rect x="60" y={g.y + 40} width="170" height="5" rx="2.5" fill="#1e3a5f"/>
+        <text x="60" y={g.y + 20} fill={textBright} fontSize="10" fontWeight="600">{g.label}</text>
+        <text x="60" y={g.y + 34} fill={label} fontSize="8">{g.amount}</text>
+        <rect x="60" y={g.y + 40} width="170" height="5" rx="2.5" fill={barBg}/>
         <rect x="60" y={g.y + 40} width={g.width} height="5" rx="2.5" fill={g.color}>
           <animate attributeName="width" from="0" to={g.width} dur="1.5s" fill="freeze"/>
         </rect>
@@ -387,25 +421,32 @@ const GoalsSVG = () => (
       </g>
     ))}
   </svg>
-);
+  );
+};
 
-const DebtSVG = () => (
+const DebtSVG = ({ isDark }) => {
+  const surface = isDark ? '#1e293b' : '#ffffff';
+  const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
+  const textBright = isDark ? '#e2e8f0' : '#1e293b';
+  const label = isDark ? '#94a3b8' : '#64748b';
+
+  return (
   <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
     {/* Portfolio pie */}
-    <rect x="10" y="10" width="120" height="90" rx="10" fill="#1e293b" stroke="#f97316" strokeWidth="1"/>
+    <rect x="10" y="10" width="120" height="90" rx="10" fill={surface} stroke="#f97316" strokeWidth="1"/>
     <text x="20" y="28" fill="#f97316" fontSize="8" fontWeight="600" fontFamily="monospace">PORTFOLIO</text>
-    <circle cx="70" cy="62" r="25" fill="none" stroke="#1e293b" strokeWidth="8"/>
+    <circle cx="70" cy="62" r="25" fill="none" stroke={surface} strokeWidth="8"/>
     <circle cx="70" cy="62" r="25" fill="none" stroke="#f97316" strokeWidth="8" strokeDasharray="62 157" strokeLinecap="round" transform="rotate(-90 70 62)"/>
     <circle cx="70" cy="62" r="25" fill="none" stroke="#3b82f6" strokeWidth="8" strokeDasharray="40 157" strokeDashoffset="-62" strokeLinecap="round" transform="rotate(-90 70 62)"/>
     <circle cx="70" cy="62" r="25" fill="none" stroke="#22c55e" strokeWidth="8" strokeDasharray="30 157" strokeDashoffset="-102" strokeLinecap="round" transform="rotate(-90 70 62)"/>
-    <text x="58" y="66" fill="#e2e8f0" fontSize="10" fontWeight="700">₹18L</text>
+    <text x="58" y="66" fill={textBright} fontSize="10" fontWeight="700">₹18L</text>
     {/* Net worth trend */}
-    <rect x="140" y="10" width="130" height="90" rx="10" fill="#1e293b" stroke="#22c55e" strokeWidth="1"/>
+    <rect x="140" y="10" width="130" height="90" rx="10" fill={surface} stroke="#22c55e" strokeWidth="1"/>
     <text x="150" y="28" fill="#22c55e" fontSize="8" fontWeight="600" fontFamily="monospace">NET WORTH</text>
     <polyline points="155,75 175,68 195,55 215,60 235,45 255,35" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
     <text x="230" y="30" fill="#22c55e" fontSize="9" fontWeight="700">↑ 12%</text>
     {/* EMI Schedule */}
-    <rect x="10" y="110" width="260" height="80" rx="10" fill="#1e293b" stroke="#8b5cf6" strokeWidth="1"/>
+    <rect x="10" y="110" width="260" height="80" rx="10" fill={surface} stroke="#8b5cf6" strokeWidth="1"/>
     <text x="20" y="128" fill="#8b5cf6" fontSize="8" fontWeight="600" fontFamily="monospace">EMI SCHEDULE</text>
     {[
       { y: 138, name: 'Home Loan', amount: '₹42,500/mo', color: '#f97316' },
@@ -413,18 +454,23 @@ const DebtSVG = () => (
       { y: 174, name: 'Personal Loan', amount: '₹12,800/mo', color: '#8b5cf6' },
     ].map((row, i) => (
       <g key={i}>
-        <rect x="20" y={row.y} width="240" height="14" rx="4" fill="#0c1322"/>
-        <text x="25" y={row.y + 11} fill="#94a3b8" fontSize="7" fontFamily="monospace">{row.name}</text>
+        <rect x="20" y={row.y} width="240" height="14" rx="4" fill={surfaceDeep}/>
+        <text x="25" y={row.y + 11} fill={label} fontSize="7" fontFamily="monospace">{row.name}</text>
         <text x="180" y={row.y + 11} fill={row.color} fontSize="7" fontWeight="600" fontFamily="monospace">{row.amount}</text>
       </g>
     ))}
   </svg>
-);
+  );
+};
 
-const SecurityShieldSVG = () => (
+const SecurityShieldSVG = ({ isDark }) => {
+  const shieldBg = isDark ? '#0f172a' : '#f1f5f9';
+  const shieldInner = isDark ? '#1e293b' : '#e2e8f0';
+
+  return (
   <svg viewBox="0 0 220 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-    <path d="M110 20 L190 55 L190 130 Q190 190 110 220 Q30 190 30 130 L30 55 Z" fill="#0f172a" stroke="#3b82f6" strokeWidth="2"/>
-    <path d="M110 40 L170 65 L170 125 Q170 175 110 200 Q50 175 50 125 L50 65 Z" fill="#1e293b" stroke="#3b82f6" strokeWidth="1" opacity="0.5"/>
+    <path d="M110 20 L190 55 L190 130 Q190 190 110 220 Q30 190 30 130 L30 55 Z" fill={shieldBg} stroke="#3b82f6" strokeWidth="2"/>
+    <path d="M110 40 L170 65 L170 125 Q170 175 110 200 Q50 175 50 125 L50 65 Z" fill={shieldInner} stroke="#3b82f6" strokeWidth="1" opacity="0.5"/>
     {/* Lock */}
     <rect x="90" y="105" width="40" height="30" rx="4" fill="#3b82f6" opacity="0.3" stroke="#3b82f6" strokeWidth="1.5"/>
     <path d="M98 105 L98 92 Q98 78 110 78 Q122 78 122 92 L122 105" stroke="#3b82f6" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
@@ -444,17 +490,18 @@ const SecurityShieldSVG = () => (
     <rect x="70" y="155" width="80" height="20" rx="10" fill="#3b82f620" stroke="#3b82f6" strokeWidth="0.5"/>
     <text x="82" y="169" fill="#3b82f6" fontSize="9" fontWeight="600" fontFamily="monospace">AES-256</text>
   </svg>
-);
+  );
+};
 
-// ─── Mockup Renderer ─────────────────────────────────────────────────────────
-const FeatureMockup = ({ type }) => {
+// ─── Mockup Renderer (passes theme state) ────────────────────────────────────
+const FeatureMockup = ({ type, isDark }) => {
   switch (type) {
-    case 'ai':        return <AIBrainSVG />;
-    case 'gmail':     return <GmailFlowSVG />;
-    case 'dashboard': return <DashboardMockupSVG />;
-    case 'goals':     return <GoalsSVG />;
-    case 'debt':      return <DebtSVG />;
-    case 'security':  return <SecurityShieldSVG />;
+    case 'ai':        return <AIBrainSVG isDark={isDark} />;
+    case 'gmail':     return <GmailFlowSVG isDark={isDark} />;
+    case 'dashboard': return <DashboardMockupSVG isDark={isDark} />;
+    case 'goals':     return <GoalsSVG isDark={isDark} />;
+    case 'debt':      return <DebtSVG isDark={isDark} />;
+    case 'security':  return <SecurityShieldSVG isDark={isDark} />;
     default:          return null;
   }
 };
@@ -465,13 +512,35 @@ const FeatureMockup = ({ type }) => {
 const LandingPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { mode, isDark, isBlack, toggleTheme, accent, resetToSystemTheme, userExplicit } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
+  const [themeTransition, setThemeTransition] = useState(false);
   const heroTyped = useTypewriter(
     ['Financial Future', 'Spending Habits', 'Investment Portfolio', 'Savings Goals', 'Credit Score'],
     90, 2200
   );
+
+  // Theme icon for toggle button
+  const ThemeIcon = useMemo(() => {
+    if (mode === 'light') return Sun;
+    if (mode === 'dark') return Moon;
+    return Monitor; // black mode
+  }, [mode]);
+
+  const themeLabel = useMemo(() => {
+    if (mode === 'light') return 'Light';
+    if (mode === 'dark') return 'Dark';
+    return 'Black';
+  }, [mode]);
+
+  // Smooth theme transition handler
+  const handleThemeToggle = useCallback(() => {
+    setThemeTransition(true);
+    toggleTheme();
+    setTimeout(() => setThemeTransition(false), 500);
+  }, [toggleTheme]);
 
   // Counters
   const [userCount, userRef]   = useCounter(50000, 2200);
@@ -511,14 +580,16 @@ const LandingPage = () => {
 
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 overflow-x-hidden land-grain">
+    <div className={`min-h-screen overflow-x-hidden land-grain ${themeTransition ? 'land-theme-transition' : ''}`}
+      style={{ backgroundColor: 'var(--theme-bg)', color: 'var(--theme-text)' }}>
 
       {/* ═══════════ HEADER ═══════════ */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/80 dark:bg-[#020617]/80 backdrop-blur-xl shadow-lg shadow-black/5 border-b border-gray-200/50 dark:border-white/5'
+          ? 'land-header-blur shadow-lg shadow-black/5'
           : 'bg-transparent'
-      }`}>
+      }`}
+        style={scrolled ? { borderBottom: '1px solid var(--theme-border)' } : {}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
@@ -526,7 +597,7 @@ const LandingPage = () => {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-lg font-bold land-hero-gradient">
                 FinancialAnalyzer
               </span>
             </div>
@@ -534,15 +605,22 @@ const LandingPage = () => {
             <nav className="hidden lg:flex items-center gap-8">
               {['features','how-it-works','testimonials','pricing','faq'].map(id => (
                 <button key={id} onClick={() => scrollTo(id)}
-                  className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors capitalize">
+                  className="text-sm font-medium transition-colors capitalize land-text-secondary hover:text-blue-600 dark:hover:text-blue-400">
                   {id.replace(/-/g, ' ')}
                 </button>
               ))}
             </nav>
-            {/* CTA */}
+            {/* CTA + Theme Toggle */}
             <div className="hidden lg:flex items-center gap-3">
+              {/* Theme Toggle */}
+              <button onClick={handleThemeToggle}
+                className="land-theme-toggle"
+                title={`Theme: ${themeLabel} (click to cycle)`}>
+                <ThemeIcon className="w-4 h-4" style={{ color: 'var(--theme-text-secondary)' }} />
+                <span className="land-theme-indicator" />
+              </button>
               <button onClick={() => navigate('/login')}
-                className="text-sm font-medium px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                className="text-sm font-medium px-4 py-2 transition-colors land-text-secondary hover:text-blue-600 dark:hover:text-blue-400">
                 Sign In
               </button>
               <button onClick={() => navigate('/register')}
@@ -551,23 +629,32 @@ const LandingPage = () => {
               </button>
             </div>
             {/* Mobile toggle */}
-            <button className="lg:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <button onClick={handleThemeToggle}
+                className="land-theme-toggle"
+                title={`Theme: ${themeLabel}`}>
+                <ThemeIcon className="w-4 h-4" style={{ color: 'var(--theme-text-secondary)' }} />
+                <span className="land-theme-indicator" />
+              </button>
+              <button className="p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/5">
+          <div className="lg:hidden backdrop-blur-xl"
+            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-bg) 95%, transparent)', borderTop: '1px solid var(--theme-border)' }}>
             <div className="px-4 py-4 space-y-2">
               {['features','how-it-works','testimonials','pricing','faq'].map(id => (
                 <button key={id} onClick={() => scrollTo(id)}
-                  className="block w-full text-left px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors capitalize">
+                  className="block w-full text-left px-4 py-2.5 rounded-lg transition-colors capitalize land-text-secondary hover:bg-gray-100 dark:hover:bg-white/5">
                   {id.replace(/-/g, ' ')}
                 </button>
               ))}
               <div className="pt-2 flex gap-2">
-                <button onClick={() => navigate('/login')} className="flex-1 py-2.5 text-sm font-medium border border-gray-300 dark:border-gray-700 rounded-xl">Sign In</button>
+                <button onClick={() => navigate('/login')} className="flex-1 py-2.5 text-sm font-medium rounded-xl" style={{ border: '1px solid var(--theme-border)' }}>Sign In</button>
                 <button onClick={() => navigate('/register')} className="flex-1 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl">Start Free</button>
               </div>
             </div>
@@ -579,9 +666,9 @@ const LandingPage = () => {
       <section id="hero" className="relative pt-28 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
         {/* Mesh gradient blobs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="land-mesh-blob w-[600px] h-[600px] bg-blue-500/20 dark:bg-blue-500/10 -top-40 -left-40" style={{'--mesh-dur':'12s'}} />
-          <div className="land-mesh-blob w-[500px] h-[500px] bg-purple-500/20 dark:bg-purple-500/10 top-20 right-0" style={{'--mesh-dur':'15s', animationDelay:'-4s'}} />
-          <div className="land-mesh-blob w-[400px] h-[400px] bg-cyan-500/15 dark:bg-cyan-500/[0.08] bottom-0 left-1/3" style={{'--mesh-dur':'10s', animationDelay:'-7s'}} />
+          <div className={`land-mesh-blob w-[600px] h-[600px] -top-40 -left-40 ${isDark ? 'bg-blue-500/10' : 'bg-blue-500/20'}`} style={{'--mesh-dur':'12s'}} />
+          <div className={`land-mesh-blob w-[500px] h-[500px] top-20 right-0 ${isDark ? 'bg-purple-500/10' : 'bg-purple-500/20'}`} style={{'--mesh-dur':'15s', animationDelay:'-4s'}} />
+          <div className={`land-mesh-blob w-[400px] h-[400px] bottom-0 left-1/3 ${isDark ? 'bg-cyan-500/[0.08]' : 'bg-cyan-500/15'}`} style={{'--mesh-dur':'10s', animationDelay:'-7s'}} />
         </div>
 
         {/* Floating particles */}
@@ -602,20 +689,20 @@ const LandingPage = () => {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left — Text */}
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 mb-6 land-badge-pop">
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 land-badge-pop ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
                 <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 tracking-wide">AI-POWERED FINANCE PLATFORM</span>
+                <span className={`text-xs font-semibold tracking-wide ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>AI-POWERED FINANCE PLATFORM</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-                <span className="text-gray-900 dark:text-white">Take Control of</span><br />
-                <span className="text-gray-900 dark:text-white">Your </span>
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent land-gradient-morph bg-[length:300%_300%] land-cursor">
+                <span className="land-text-primary">Take Control of</span><br />
+                <span className="land-text-primary">Your </span>
+                <span className="land-hero-gradient land-gradient-morph bg-[length:300%_300%] land-cursor">
                   {heroTyped}
                 </span>
               </h1>
 
-              <p className="mt-6 text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="mt-6 text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 leading-relaxed land-text-secondary">
                 The all-in-one platform that connects your Gmail, analyzes every transaction with AI, and gives you beautiful dashboards, budgets, goals, and predictions — all in real time.
               </p>
 
@@ -626,13 +713,14 @@ const LandingPage = () => {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button onClick={() => scrollTo('features')}
-                  className="group w-full sm:w-auto px-8 py-4 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:bg-gray-200 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                  className="group w-full sm:w-auto px-8 py-4 font-semibold rounded-2xl transition-all flex items-center justify-center gap-2 land-text-secondary"
+                  style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}` }}>
                   <Play className="w-5 h-5" />
                   See How It Works
                 </button>
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-gray-500 dark:text-gray-500">
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 justify-center lg:justify-start text-sm land-text-tertiary">
                 {['No credit card required', '14-day free trial', 'Cancel anytime'].map((t, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -646,7 +734,7 @@ const LandingPage = () => {
             <div className="relative land-float-slow">
               <div className="land-border-glow p-1">
                 <div className="rounded-[18px] overflow-hidden shadow-2xl shadow-blue-500/10">
-                  <DashboardMockupSVG />
+                  <DashboardMockupSVG isDark={isDark} />
                 </div>
               </div>
               {/* Floating badges */}
@@ -720,9 +808,9 @@ const LandingPage = () => {
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               Everything You Need to<br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Master Your Finances</span>
+              <span className="land-hero-gradient">Master Your Finances</span>
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg max-w-2xl mx-auto land-text-secondary">
               Six powerful modules that work together to give you complete financial control — from AI insights to bank-grade security.
             </p>
           </div>
@@ -745,7 +833,7 @@ const LandingPage = () => {
                     </div>
                     <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">{feat.title}</h3>
                     <p className="mt-2 text-lg font-medium" style={{color: feat.accent}}>{feat.tagline}</p>
-                    <p className="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">{feat.description}</p>
+                    <p className="mt-4 leading-relaxed land-text-secondary">{feat.description}</p>
                     <ul className="mt-6 space-y-3">
                       {feat.bullets.map((b, bi) => (
                         <li key={bi} className="flex items-start gap-3">
@@ -753,13 +841,13 @@ const LandingPage = () => {
                             style={{background: `${feat.accent}20`}}>
                             <CheckCircle2 className="w-3.5 h-3.5" style={{color: feat.accent}} />
                           </div>
-                          <span className="text-gray-700 dark:text-gray-300">{b}</span>
+                          <span className="land-text-primary">{b}</span>
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-8 inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+                    <div className="mt-8 inline-flex items-center gap-3 px-5 py-3 rounded-2xl" style={{ backgroundColor: 'var(--theme-gradient-subtle)', border: '1px solid var(--theme-border)' }}>
                       <span className="text-2xl font-black" style={{color: feat.accent}}>{feat.stat.value}</span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{feat.stat.label}</span>
+                      <span className="text-sm land-text-secondary">{feat.stat.label}</span>
                     </div>
                   </div>
                   {/* Illustration side */}
@@ -768,7 +856,7 @@ const LandingPage = () => {
                       <div className="absolute inset-0 rounded-3xl opacity-30 blur-3xl"
                         style={{background: `radial-gradient(circle, ${feat.accent}40, transparent 70%)`}} />
                       <div className="relative land-glass-light dark:land-glass p-6 sm:p-8 rounded-3xl">
-                        <FeatureMockup type={feat.mockup} />
+                        <FeatureMockup type={feat.mockup} isDark={isDark} />
                       </div>
                     </div>
                   </div>
@@ -780,13 +868,13 @@ const LandingPage = () => {
       </section>
 
       {/* ═══════════ ALL FEATURES GRID ═══════════ */}
-      <section className="py-20 lg:py-28 bg-gray-50 dark:bg-[#0c1322]">
+      <section className="py-20 lg:py-28 land-section-alt">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 land-reveal">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              16+ Features, <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">One Platform</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight land-text-primary">
+              16+ Features, <span className="land-hero-gradient">One Platform</span>
             </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            <p className="mt-4 max-w-xl mx-auto land-text-secondary">
               Every tool you need to manage personal or business finances, all working together seamlessly.
             </p>
           </div>
@@ -800,7 +888,7 @@ const LandingPage = () => {
                     <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <h4 className="font-semibold text-sm sm:text-base">{f.title}</h4>
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">{f.desc}</p>
+                  <p className="text-xs sm:text-sm mt-1 land-text-secondary">{f.desc}</p>
                 </div>
               );
             })}
@@ -819,7 +907,7 @@ const LandingPage = () => {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               Get Started in <span className="bg-gradient-to-r from-green-500 to-cyan-500 bg-clip-text text-transparent">3 Simple Steps</span>
             </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            <p className="mt-4 max-w-xl mx-auto land-text-secondary">
               From sign-up to AI insights in under 5 minutes. No complex setup, no learning curve.
             </p>
           </div>
@@ -837,7 +925,7 @@ const LandingPage = () => {
                       </div>
                       <div className="text-xs font-bold text-gray-400 tracking-widest mb-2">STEP {s.num}</div>
                       <h3 className="text-xl font-bold mb-2">{s.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-400">{s.desc}</p>
+                      <p className="land-text-secondary">{s.desc}</p>
                     </div>
                   </div>
                 );
@@ -848,7 +936,7 @@ const LandingPage = () => {
       </section>
 
       {/* ═══════════ TESTIMONIALS ═══════════ */}
-      <section id="testimonials" className="py-20 lg:py-28 bg-gray-50 dark:bg-[#0c1322]">
+      <section id="testimonials" className="py-20 lg:py-28 land-section-alt">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 land-reveal">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 mb-4">
@@ -864,19 +952,19 @@ const LandingPage = () => {
               <div key={i} className="land-reveal land-feature-card land-glass-light dark:land-glass p-6 rounded-3xl flex flex-col"
                 style={{transitionDelay: `${i * 0.1}s`}}>
                 <Quote className="w-8 h-8 text-blue-500/20 dark:text-blue-400/20 mb-3" />
-                <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed flex-1">{t.text}</p>
+                <p className="text-sm leading-relaxed flex-1 land-text-primary">{t.text}</p>
                 <div className="flex items-center gap-1 mt-4 mb-3">
                   {Array(t.rating).fill(0).map((_, si) => (
                     <Star key={si} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                   ))}
                 </div>
-                <div className="flex items-center gap-3 pt-3 border-t border-gray-200 dark:border-white/10">
+                <div className="flex items-center gap-3 pt-3" style={{ borderTop: '1px solid var(--theme-border)' }}>
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
                     {t.avatar}
                   </div>
                   <div>
                     <div className="font-semibold text-sm">{t.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{t.role}</div>
+                    <div className="text-xs land-text-secondary">{t.role}</div>
                   </div>
                 </div>
               </div>
@@ -896,7 +984,7 @@ const LandingPage = () => {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               Plans That <span className="bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">Grow With You</span>
             </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            <p className="mt-4 max-w-xl mx-auto land-text-secondary">
               Start free, upgrade when you need more power. No hidden fees, cancel anytime.
             </p>
           </div>
@@ -915,13 +1003,13 @@ const LandingPage = () => {
                   <h3 className="text-xl font-bold">{plan.name}</h3>
                   <div className="mt-4 flex items-baseline gap-1">
                     <span className="text-4xl font-black">{plan.price}</span>
-                    <span className={`text-sm ${plan.featured ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'}`}>{plan.period}</span>
+                    <span className={`text-sm ${plan.featured ? 'text-blue-200' : 'land-text-secondary'}`}>{plan.period}</span>
                   </div>
                   <ul className="mt-6 space-y-3">
                     {plan.features.map((f, fi) => (
                       <li key={fi} className="flex items-center gap-2.5">
                         <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.featured ? 'text-blue-200' : 'text-green-500'}`} />
-                        <span className={`text-sm ${plan.featured ? 'text-blue-100' : 'text-gray-700 dark:text-gray-300'}`}>{f}</span>
+                        <span className={`text-sm ${plan.featured ? 'text-blue-100' : 'land-text-primary'}`}>{f}</span>
                       </li>
                     ))}
                   </ul>
@@ -941,11 +1029,11 @@ const LandingPage = () => {
       </section>
 
       {/* ═══════════ FAQ ═══════════ */}
-      <section id="faq" className="py-20 lg:py-28 bg-gray-50 dark:bg-[#0c1322]">
+      <section id="faq" className="py-20 lg:py-28 land-section-alt">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 land-reveal">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Frequently Asked <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Questions</span>
+              Frequently Asked <span className="land-hero-gradient">Questions</span>
             </h2>
           </div>
           <div className="space-y-3">
@@ -958,7 +1046,7 @@ const LandingPage = () => {
                   <ChevronDown className={`w-5 h-5 flex-shrink-0 text-gray-400 transition-transform duration-300 ${activeFaq === i ? 'rotate-180' : ''}`} />
                 </button>
                 <div className={`overflow-hidden transition-all duration-300 ${activeFaq === i ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="px-6 pb-5 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item.a}</p>
+                  <p className="px-6 pb-5 text-sm leading-relaxed land-text-secondary">{item.a}</p>
                 </div>
               </div>
             ))}
@@ -1001,7 +1089,7 @@ const LandingPage = () => {
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="bg-white dark:bg-[#020617] border-t border-gray-200 dark:border-white/5 pt-16 pb-8">
+      <footer className="pt-16 pb-8" style={{ backgroundColor: 'var(--theme-bg)', borderTop: '1px solid var(--theme-border)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div className="col-span-2 md:col-span-1">
@@ -1009,11 +1097,11 @@ const LandingPage = () => {
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-lg font-bold land-hero-gradient">
                   FinancialAnalyzer
                 </span>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+              <p className="text-sm max-w-xs land-text-secondary">
                 AI-powered financial management platform trusted by 50,000+ users across India.
               </p>
             </div>
@@ -1027,7 +1115,7 @@ const LandingPage = () => {
                 <ul className="space-y-2.5">
                   {col.links.map((link, li) => (
                     <li key={li}>
-                      <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      <a href="#" className="text-sm transition-colors land-text-secondary hover:text-blue-600 dark:hover:text-blue-400">
                         {link}
                       </a>
                     </li>
@@ -1036,13 +1124,13 @@ const LandingPage = () => {
               </div>
             ))}
           </div>
-          <div className="pt-8 border-t border-gray-200 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: '1px solid var(--theme-border)' }}>
+            <p className="text-sm land-text-secondary">
               © {new Date().getFullYear()} FinancialAnalyzer. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               {['X', 'In', 'GH', 'YT'].map((label, si) => (
-                <a key={si} href="#" className="w-9 h-9 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
+                <a key={si} href="#" className="w-9 h-9 rounded-full flex items-center justify-center transition-colors land-text-secondary hover:text-blue-600 dark:hover:text-blue-400" style={{ backgroundColor: 'var(--theme-gradient-subtle)' }}>
                   <span className="text-xs font-bold">{label}</span>
                 </a>
               ))}

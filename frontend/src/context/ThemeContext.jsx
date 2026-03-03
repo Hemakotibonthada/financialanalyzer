@@ -29,6 +29,11 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
+  // Track whether the user explicitly chose a theme (vs. system auto-detection)
+  const [userExplicit, setUserExplicit] = useState(() => {
+    return localStorage.getItem('themeMode') !== null;
+  });
+
   // Get initial theme from localStorage, then OS preference, then default to light
   const [mode, setMode] = useState(() => {
     const savedMode = localStorage.getItem('themeMode');
@@ -43,9 +48,57 @@ export const ThemeProvider = ({ children }) => {
     return localStorage.getItem('themeAccent') || 'blue';
   });
 
+  // Override setMode to track explicit user choice
+  const setModeExplicit = useCallback((newMode) => {
+    setUserExplicit(true);
+    setMode(newMode);
+  }, []);
+
+  // ── System theme auto-sync: listen for OS prefers-color-scheme changes ──
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const handleSystemThemeChange = (e) => {
+      // Only auto-sync when the user has NOT explicitly chosen a theme
+      if (!userExplicit) {
+        setMode(e.matches ? 'dark' : 'light');
+      }
+    };
+
+    // Modern browsers
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+    } else if (mediaQuery.addListener) {
+      // Safari < 14
+      mediaQuery.addListener(handleSystemThemeChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleSystemThemeChange);
+      } else if (mediaQuery.removeListener) {
+        mediaQuery.removeListener(handleSystemThemeChange);
+      }
+    };
+  }, [userExplicit]);
+
+  // Allow user to reset to system preference
+  const resetToSystemTheme = useCallback(() => {
+    setUserExplicit(false);
+    localStorage.removeItem('themeMode');
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      setMode('dark');
+    } else {
+      setMode('light');
+    }
+  }, []);
+
   // Sync mode → localStorage + DOM classes + data-theme attribute
   useEffect(() => {
-    localStorage.setItem('themeMode', mode);
+    if (userExplicit) {
+      localStorage.setItem('themeMode', mode);
+    }
     const root = document.documentElement;
 
     // Tailwind dark class
@@ -66,6 +119,11 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty('--theme-text-secondary', '#475569');
       root.style.setProperty('--theme-border', 'rgba(0,0,0,0.06)');
       root.style.setProperty('--theme-shadow-color', '0 0% 0%');
+      root.style.setProperty('--theme-surface-hover', '#f1f5f9');
+      root.style.setProperty('--theme-text-tertiary', '#64748b');
+      root.style.setProperty('--theme-glass-bg', 'rgba(255,255,255,0.75)');
+      root.style.setProperty('--theme-glass-border', 'rgba(255,255,255,0.6)');
+      root.style.setProperty('--theme-gradient-subtle', 'rgba(59,130,246,0.04)');
     } else if (mode === 'dark') {
       root.style.setProperty('--theme-bg', '#0f172a');
       root.style.setProperty('--theme-surface', '#1e293b');
@@ -73,6 +131,11 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty('--theme-text-secondary', '#94a3b8');
       root.style.setProperty('--theme-border', 'rgba(255,255,255,0.06)');
       root.style.setProperty('--theme-shadow-color', '215 28% 6%');
+      root.style.setProperty('--theme-surface-hover', '#273548');
+      root.style.setProperty('--theme-text-tertiary', '#64748b');
+      root.style.setProperty('--theme-glass-bg', 'rgba(255,255,255,0.08)');
+      root.style.setProperty('--theme-glass-border', 'rgba(255,255,255,0.12)');
+      root.style.setProperty('--theme-gradient-subtle', 'rgba(59,130,246,0.08)');
     } else {
       root.style.setProperty('--theme-bg', '#000000');
       root.style.setProperty('--theme-surface', '#0a0a0a');
@@ -80,8 +143,13 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty('--theme-text-secondary', '#a1a1aa');
       root.style.setProperty('--theme-border', 'rgba(255,255,255,0.05)');
       root.style.setProperty('--theme-shadow-color', '0 0% 0%');
+      root.style.setProperty('--theme-surface-hover', '#141414');
+      root.style.setProperty('--theme-text-tertiary', '#71717a');
+      root.style.setProperty('--theme-glass-bg', 'rgba(10,10,10,0.85)');
+      root.style.setProperty('--theme-glass-border', 'rgba(255,255,255,0.06)');
+      root.style.setProperty('--theme-gradient-subtle', 'rgba(59,130,246,0.06)');
     }
-  }, [mode]);
+  }, [mode, userExplicit]);
 
   // Sync accent → localStorage + CSS custom property
   useEffect(() => {
@@ -93,6 +161,7 @@ export const ThemeProvider = ({ children }) => {
 
   // Toggle between light, dark, and black mode
   const toggleTheme = useCallback(() => {
+    setUserExplicit(true);
     setMode((prevMode) => {
       if (prevMode === 'light') return 'dark';
       if (prevMode === 'dark') return 'black';
@@ -112,14 +181,16 @@ export const ThemeProvider = ({ children }) => {
   const value = useMemo(() => ({
     mode,
     toggleTheme,
-    setMode,
+    setMode: setModeExplicit,
     isDark: mode === 'dark' || mode === 'black',
     isLight: mode === 'light',
     isBlack: mode === 'black',
     accentColor,
     setAccentColor,
     accent,
-  }), [mode, toggleTheme, accentColor, accent]);
+    userExplicit,
+    resetToSystemTheme,
+  }), [mode, toggleTheme, setModeExplicit, accentColor, accent, userExplicit, resetToSystemTheme]);
 
   return (
     <ThemeContext.Provider value={value}>

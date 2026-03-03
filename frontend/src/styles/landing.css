@@ -2,6 +2,7 @@
    FINANCIAL ANALYZER — PREMIUM LANDING PAGE STYLES
    Scroll-triggered reveals, floating elements, gradient morphing, parallax,
    typewriter, counter animations, glassmorphism, grain texture, etc.
+   Auto-syncs with system theme via ThemeContext CSS custom properties.
    ============================================================================ */
 
 /* ── ROOT VARIABLES ────────────────────────────────────────────────────────── */
@@ -14,7 +15,92 @@
   --land-orange: #f97316;
   --land-dark:   #0f172a;
   --land-darker: #020617;
+  /* Use accent from ThemeContext */
+  --land-accent: var(--accent-primary, #3b82f6);
 }
+
+/* ── SMOOTH THEME TRANSITION ───────────────────────────────────────────────── */
+.land-theme-transition,
+.land-theme-transition *,
+.land-theme-transition *::before,
+.land-theme-transition *::after {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ── THEME-AWARE TEXT UTILITIES ─────────────────────────────────────────────── */
+.land-text-primary   { color: var(--theme-text); }
+.land-text-secondary { color: var(--theme-text-secondary); }
+.land-text-tertiary  { color: var(--theme-text-tertiary, #64748b); }
+.land-bg-primary     { background-color: var(--theme-bg); }
+.land-bg-surface     { background-color: var(--theme-surface); }
+.land-border-theme   { border-color: var(--theme-border); }
+
+/* ── ACCENT-AWARE GRADIENT ─────────────────────────────────────────────────── */
+.land-accent-gradient {
+  background: linear-gradient(135deg, var(--land-accent), var(--land-purple));
+}
+.land-accent-text {
+  color: var(--land-accent);
+}
+.land-accent-glow {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--land-accent) 30%, transparent),
+              0 0 60px color-mix(in srgb, var(--land-accent) 10%, transparent);
+}
+
+/* ── THEME-AWARE HEADER BLUR ───────────────────────────────────────────────── */
+.land-header-blur {
+  background: color-mix(in srgb, var(--theme-bg) 80%, transparent);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+}
+
+/* ── THEME TOGGLE BUTTON ───────────────────────────────────────────────────── */
+.land-theme-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--theme-gradient-subtle, rgba(59,130,246,0.05));
+  border: 1px solid var(--theme-border);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+.land-theme-toggle:hover {
+  background: color-mix(in srgb, var(--land-accent) 15%, transparent);
+  transform: scale(1.05);
+}
+.land-theme-toggle:active {
+  transform: scale(0.95);
+}
+.land-theme-toggle svg {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.3s ease;
+}
+.land-theme-toggle:hover svg {
+  transform: rotate(15deg);
+}
+
+/* ── THEME INDICATOR DOT ───────────────────────────────────────────────────── */
+.land-theme-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+}
+[data-theme="light"] .land-theme-indicator { background: #f59e0b; }
+[data-theme="dark"]  .land-theme-indicator { background: #818cf8; }
+[data-theme="black"] .land-theme-indicator { background: #ef4444; }
 
 /* ── SCROLL-REVEAL ANIMATIONS ──────────────────────────────────────────────── */
 .land-reveal {
@@ -105,7 +191,7 @@
 .land-cursor::after {
   content: '|';
   animation: land-blink 0.8s step-end infinite;
-  color: var(--land-blue);
+  color: var(--land-accent, var(--land-blue));
   font-weight: 300;
   margin-left: 2px;
 }
@@ -159,17 +245,17 @@
 
 /* ── GLASSMORPHISM CARD ────────────────────────────────────────────────────── */
 .land-glass {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--theme-glass-bg, rgba(255, 255, 255, 0.08));
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.12));
   border-radius: 20px;
 }
 .land-glass-light {
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--theme-glass-bg, rgba(255, 255, 255, 0.75));
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.6));
   border-radius: 20px;
 }
 
@@ -239,14 +325,17 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--land-accent) 5%, transparent),
+    color-mix(in srgb, var(--land-purple) 5%, transparent));
   opacity: 0;
   transition: opacity 0.4s;
 }
 .land-feature-card:hover::before { opacity: 1; }
 .land-feature-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(59,130,246,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12),
+              0 8px 20px color-mix(in srgb, var(--land-accent) 8%, transparent);
 }
 
 /* ── WAVE DIVIDER ──────────────────────────────────────────────────────────── */
@@ -272,6 +361,37 @@
 .dark .land-wave-divider::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%230f172a' d='M0,48L60,42.7C120,37,240,27,360,32C480,37,600,59,720,64C840,69,960,59,1080,48C1200,37,1320,27,1380,21.3L1440,16L1440,80L1380,80C1320,80,1200,80,1080,80C960,80,840,80,720,80C600,80,480,80,360,80C240,80,120,80,60,80L0,80Z'%3E%3C/path%3E%3C/svg%3E");
 }
+
+/* ── BLACK MODE OVERRIDES (OLED-friendly true blacks) ──────────────────────── */
+[data-theme="black"] .land-glass-light {
+  background: rgba(10, 10, 10, 0.85);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="black"] .land-glass {
+  background: rgba(10, 10, 10, 0.9);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="black"] .land-wave-divider::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%23000000' d='M0,48L60,42.7C120,37,240,27,360,32C480,37,600,59,720,64C840,69,960,59,1080,48C1200,37,1320,27,1380,21.3L1440,16L1440,80L1380,80C1320,80,1200,80,1080,80C960,80,840,80,720,80C600,80,480,80,360,80C240,80,120,80,60,80L0,80Z'%3E%3C/path%3E%3C/svg%3E");
+}
+[data-theme="black"] .land-feature-card:hover {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6),
+              0 8px 20px color-mix(in srgb, var(--land-accent) 12%, transparent);
+}
+[data-theme="black"] .land-mesh-blob {
+  opacity: 0.3;
+}
+[data-theme="black"] .land-grain::after {
+  opacity: 0.02;
+}
+
+/* ── THEME-AWARE SVG BACKGROUNDS ───────────────────────────────────────────── */
+.land-svg-bg      { fill: var(--theme-surface, #1e293b); }
+.land-svg-bg-deep { fill: color-mix(in srgb, var(--theme-bg) 90%, black); }
+.land-svg-stroke  { stroke: var(--theme-border); }
+.land-svg-text    { fill: var(--theme-text-secondary); }
+
+/* ── TYPEWRITER CURSOR — ACCENT AWARE ──────────────────────────────────────── */
 
 /* ── SMOOTH SCROLL ─────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
@@ -354,10 +474,69 @@ html { scroll-behavior: smooth; }
   position: absolute;
   inset: -4px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--land-accent) 20%, transparent),
+    color-mix(in srgb, var(--land-purple) 20%, transparent));
   z-index: -1;
   filter: blur(12px);
   opacity: 0;
   transition: opacity 0.4s;
 }
 .land-price-glow:hover::after { opacity: 1; }
+
+/* ── THEME-ENHANCED SECTION BACKGROUNDS ────────────────────────────────────── */
+.land-section-alt {
+  background-color: color-mix(in srgb, var(--theme-bg) 95%, var(--theme-surface));
+}
+[data-theme="light"] .land-section-alt {
+  background-color: #f8fafc;
+}
+[data-theme="dark"] .land-section-alt {
+  background-color: #0c1322;
+}
+[data-theme="black"] .land-section-alt {
+  background-color: #050505;
+}
+
+/* ── ENHANCED TEXT GRADIENTS PER THEME ─────────────────────────────────────── */
+[data-theme="light"] .land-hero-gradient {
+  background: linear-gradient(135deg, #1e40af, #7c3aed, #0891b2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 300% 300%;
+  animation: land-gradient-shift 8s ease infinite;
+}
+[data-theme="dark"] .land-hero-gradient {
+  background: linear-gradient(135deg, #60a5fa, #a78bfa, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 300% 300%;
+  animation: land-gradient-shift 8s ease infinite;
+}
+[data-theme="black"] .land-hero-gradient {
+  background: linear-gradient(135deg, #93c5fd, #c4b5fd, #67e8f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 300% 300%;
+  animation: land-gradient-shift 8s ease infinite;
+}
+
+/* ── ENHANCED BORDER GLOW — PER THEME ─────────────────────────────────────── */
+[data-theme="light"] .land-border-glow::before {
+  opacity: 0.6;
+}
+[data-theme="black"] .land-border-glow::before {
+  opacity: 1;
+}
+
+/* ── ACCENT-AWARE GLOW PULSE ───────────────────────────────────────────────── */
+@keyframes land-accent-glow {
+  0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--land-accent) 30%, transparent),
+                          0 0 60px color-mix(in srgb, var(--land-accent) 10%, transparent); }
+  50%      { box-shadow: 0 0 40px color-mix(in srgb, var(--land-accent) 50%, transparent),
+                          0 0 100px color-mix(in srgb, var(--land-accent) 25%, transparent); }
+}
+.land-accent-glow-pulse { animation: land-accent-glow 3s ease-in-out infinite; }
