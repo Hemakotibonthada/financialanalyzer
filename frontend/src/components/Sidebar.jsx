@@ -172,6 +172,13 @@ const Sidebar = () => {
         { label: 'Analytics', icon: Sparkles, path: '/advanced-analytics', color: 'purple' },
         { label: 'Risk Dashboard', icon: Activity, path: '/risk-dashboard', color: 'red' },
         { label: 'Scorecard', icon: FileBarChart, path: '/scorecard', color: 'emerald' },
+        { label: 'Merchant Intel', icon: Activity, path: '/merchant-intelligence', color: 'blue', badge: 'AI' },
+        { label: 'Lifestyle', icon: Sparkles, path: '/lifestyle-analytics', color: 'pink', badge: 'AI' },
+        { label: 'Spend Forecast', icon: TrendingDown, path: '/spending-forecast', color: 'cyan', badge: 'AI' },
+        { label: 'Sentiment', icon: Brain, path: '/sentiment', color: 'rose', badge: 'AI' },
+        { label: 'Income Forecast', icon: Sparkles, path: '/income-forecast', color: 'green', badge: 'AI' },
+        { label: 'Goal Forecaster', icon: Target, path: '/goal-forecaster', color: 'orange', badge: 'AI' },
+        { label: 'Anomaly Detector', icon: Shield, path: '/anomaly-detector', color: 'red', badge: 'AI' },
       ]
     },
     {

@@ -179,6 +179,15 @@ const SecurityCenter = lazy(() => import('./pages/SecurityCenter'));
 const RiskDashboard = lazy(() => import('./pages/RiskDashboard'));
 const EnhancedDashboard = lazy(() => import('./pages/EnhancedDashboard'));
 
+// AI-Powered Feature Pages
+const MerchantIntelligence = lazy(() => import('./pages/MerchantIntelligence'));
+const LifestyleAnalytics = lazy(() => import('./pages/LifestyleAnalytics'));
+const SpendingForecast = lazy(() => import('./pages/SpendingForecast'));
+const SentimentDashboard = lazy(() => import('./pages/SentimentDashboard'));
+const IncomeForecast = lazy(() => import('./pages/IncomeForecast'));
+const GoalForecaster = lazy(() => import('./pages/GoalForecaster'));
+const AnomalyDetector = lazy(() => import('./pages/AnomalyDetector'));
+
 // Loading component with accessibility
 const LoadingFallback = () => (
   <Box
@@ -368,6 +377,15 @@ function App() {
               <Route path="/contact" element={<ProtectedRoute><ContactSupport /></ProtectedRoute>} />
               <Route path="/docs" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+              
+              {/* ========== AI-POWERED FEATURE ROUTES ========== */}
+              <Route path="/merchant-intelligence" element={<ProtectedRoute><MerchantIntelligence /></ProtectedRoute>} />
+              <Route path="/lifestyle-analytics" element={<ProtectedRoute><LifestyleAnalytics /></ProtectedRoute>} />
+              <Route path="/spending-forecast" element={<ProtectedRoute><SpendingForecast /></ProtectedRoute>} />
+              <Route path="/sentiment" element={<ProtectedRoute><SentimentDashboard /></ProtectedRoute>} />
+              <Route path="/income-forecast" element={<ProtectedRoute><IncomeForecast /></ProtectedRoute>} />
+              <Route path="/goal-forecaster" element={<ProtectedRoute><GoalForecaster /></ProtectedRoute>} />
+              <Route path="/anomaly-detector" element={<ProtectedRoute><AnomalyDetector /></ProtectedRoute>} />
               
               {/* ========== 404 CATCH-ALL ========== */}
               <Route path="*" element={<NotFound />} />
