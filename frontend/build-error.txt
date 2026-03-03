@@ -1,0 +1,9 @@
+npm warn Unknown user config "email". This will stop working in the next major version of npm.
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/node_modules/firebase/firestore/dist/esm/index.esm.js is dynamically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/context/AuthContext.jsx but also statically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebase.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebaseAuth.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/storage.js, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebase.js is dynamically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/context/AuthContext.jsx but also statically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebaseAuth.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/storage.js, dynamic import will not move module into another chunk.
+
