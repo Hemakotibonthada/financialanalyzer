@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { DollarSign, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { DollarSign, Mail, Lock, Eye, EyeOff, AlertCircle, Play } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +9,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMonth, setRememberMonth] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState('');
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -39,6 +40,24 @@ const Login = () => {
       setError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    setError('');
+    try {
+      const result = await login('demo@financialanalyzer.com', 'Demo@123456', { rememberThisMonth: false });
+      if (result.success) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError(result.message || 'Demo login failed. Please ensure the demo account is set up.');
+      }
+    } catch (error) {
+      console.error('Demo login error:', error);
+      setError('Demo account not available. Please contact the administrator.');
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -131,12 +150,38 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || demoLoading}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 sm:py-3 px-4 rounded-xl font-semibold text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          {/* Demo Login Divider */}
+          <div className="relative my-5 sm:my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+            </div>
+            <div className="relative flex justify-center text-xs sm:text-sm">
+              <span className="px-3 bg-white dark:bg-slate-800/80 text-slate-400 dark:text-slate-500">
+                or
+              </span>
+            </div>
+          </div>
+
+          {/* Demo Login Button */}
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            disabled={loading || demoLoading}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-2.5 sm:py-3 px-4 rounded-xl font-semibold text-sm sm:text-base shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            {demoLoading ? 'Loading Demo...' : 'Try Demo Account'}
+          </button>
+          <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2">
+            Explore with pre-loaded financial data — no sign-up needed
+          </p>
 
           <div className="mt-5 sm:mt-6 text-center space-y-2">
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
