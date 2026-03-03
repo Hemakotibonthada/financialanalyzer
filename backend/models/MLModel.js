@@ -20,7 +20,10 @@ const mlModelSchema = new mongoose.Schema({
       'income_prediction',
       'savings_optimizer',
       'debt_repayment',
-      'financial_health'
+      'financial_health',
+      'categorization',
+      'spending_forecast',
+      'pattern_recognition'
     ],
     required: true
   },

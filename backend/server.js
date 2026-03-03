@@ -249,6 +249,8 @@ app.use('/api/debt', require('./routes/debt'));
 app.use('/api/insurance', require('./routes/insurance'));
 // Machine Learning Models & Predictions
 app.use('/api/ml', require('./routes/ml'));
+// Local AI Engine
+app.use('/api/ai', require('./routes/aiRoutes'));
 // Portfolio Analytics
 app.use('/api/portfolio', require('./routes/portfolio'));
 // Real Estate Management
