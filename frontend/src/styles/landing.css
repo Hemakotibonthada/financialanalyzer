@@ -1,0 +1,363 @@
+/* ============================================================================
+   FINANCIAL ANALYZER — PREMIUM LANDING PAGE STYLES
+   Scroll-triggered reveals, floating elements, gradient morphing, parallax,
+   typewriter, counter animations, glassmorphism, grain texture, etc.
+   ============================================================================ */
+
+/* ── ROOT VARIABLES ────────────────────────────────────────────────────────── */
+:root {
+  --land-blue:   #3b82f6;
+  --land-purple: #8b5cf6;
+  --land-cyan:   #06b6d4;
+  --land-pink:   #ec4899;
+  --land-green:  #22c55e;
+  --land-orange: #f97316;
+  --land-dark:   #0f172a;
+  --land-darker: #020617;
+}
+
+/* ── SCROLL-REVEAL ANIMATIONS ──────────────────────────────────────────────── */
+.land-reveal {
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.land-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.land-reveal-left {
+  opacity: 0;
+  transform: translateX(-80px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.land-reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.land-reveal-right {
+  opacity: 0;
+  transform: translateX(80px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.land-reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.land-reveal-scale {
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.land-reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger children */
+.land-stagger > * { transition-delay: calc(var(--i, 0) * 0.1s); }
+
+/* ── FLOATING ANIMATION ───────────────────────────────────────────────────── */
+@keyframes land-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-12px) rotate(1deg); }
+  50%      { transform: translateY(-6px) rotate(-0.5deg); }
+  75%      { transform: translateY(-15px) rotate(0.5deg); }
+}
+@keyframes land-float-slow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-20px); }
+}
+@keyframes land-float-reverse {
+  0%, 100% { transform: translateY(-10px); }
+  50%      { transform: translateY(10px); }
+}
+.land-float     { animation: land-float 6s ease-in-out infinite; }
+.land-float-slow { animation: land-float-slow 8s ease-in-out infinite; }
+.land-float-rev  { animation: land-float-reverse 7s ease-in-out infinite; }
+
+/* ── GRADIENT MORPH ────────────────────────────────────────────────────────── */
+@keyframes land-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.land-gradient-morph {
+  background-size: 300% 300%;
+  animation: land-gradient-shift 8s ease infinite;
+}
+
+/* ── GLOW PULSE ────────────────────────────────────────────────────────────── */
+@keyframes land-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3), 0 0 60px rgba(139,92,246,0.1); }
+  50%      { box-shadow: 0 0 40px rgba(59,130,246,0.5), 0 0 100px rgba(139,92,246,0.25); }
+}
+.land-glow { animation: land-glow 3s ease-in-out infinite; }
+
+/* ── TYPEWRITER CURSOR ─────────────────────────────────────────────────────── */
+@keyframes land-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+.land-cursor::after {
+  content: '|';
+  animation: land-blink 0.8s step-end infinite;
+  color: var(--land-blue);
+  font-weight: 300;
+  margin-left: 2px;
+}
+
+/* ── PARTICLE DOTS ─────────────────────────────────────────────────────────── */
+@keyframes land-drift {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { transform: translate(var(--dx, 40px), var(--dy, -60px)) scale(0.4); opacity: 0; }
+}
+.land-particle {
+  position: absolute;
+  width: var(--size, 6px);
+  height: var(--size, 6px);
+  border-radius: 50%;
+  background: var(--pcolor, rgba(59,130,246,0.5));
+  animation: land-drift var(--dur, 4s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* ── ROTATING BORDER ───────────────────────────────────────────────────────── */
+@keyframes land-border-rotate {
+  0%   { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+.land-border-glow {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.land-border-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, var(--land-blue), var(--land-purple), var(--land-pink), var(--land-cyan), var(--land-blue));
+  animation: land-spin 4s linear infinite;
+  z-index: -1;
+}
+@keyframes land-spin { to { transform: rotate(360deg); } }
+
+/* ── COUNTER ROLL ──────────────────────────────────────────────────────────── */
+@keyframes land-count-roll {
+  0%   { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.land-count-anim {
+  display: inline-block;
+  animation: land-count-roll 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── GLASSMORPHISM CARD ────────────────────────────────────────────────────── */
+.land-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+}
+.land-glass-light {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+}
+
+/* ── GRAIN OVERLAY ─────────────────────────────────────────────────────────── */
+.land-grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ── INTERACTIVE TILT CARD ─────────────────────────────────────────────────── */
+.land-tilt {
+  transition: transform 0.4s cubic-bezier(0.03, 0.98, 0.52, 0.99);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+.land-tilt:hover {
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+
+/* ── SHIMMER HIGHLIGHT ─────────────────────────────────────────────────────── */
+@keyframes land-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.land-shimmer-text {
+  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.4) 50%, #fff 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: land-shimmer 3s ease-in-out infinite;
+}
+
+/* ── BADGE BOUNCE ──────────────────────────────────────────────────────────── */
+@keyframes land-badge-pop {
+  0%   { transform: scale(0) rotate(-10deg); }
+  60%  { transform: scale(1.15) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.land-badge-pop {
+  animation: land-badge-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* ── MARQUEE ───────────────────────────────────────────────────────────────── */
+@keyframes land-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.land-marquee {
+  animation: land-marquee 30s linear infinite;
+}
+.land-marquee:hover { animation-play-state: paused; }
+
+/* ── FEATURE CARD HOVER ────────────────────────────────────────────────────── */
+.land-feature-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.land-feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.land-feature-card:hover::before { opacity: 1; }
+.land-feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(59,130,246,0.08);
+}
+
+/* ── WAVE DIVIDER ──────────────────────────────────────────────────────────── */
+.land-wave-divider {
+  position: relative;
+}
+.land-wave-divider::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%23ffffff' d='M0,48L60,42.7C120,37,240,27,360,32C480,37,600,59,720,64C840,69,960,59,1080,48C1200,37,1320,27,1380,21.3L1440,16L1440,80L1380,80C1320,80,1200,80,1080,80C960,80,840,80,720,80C600,80,480,80,360,80C240,80,120,80,60,80L0,80Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+  background-size: cover;
+}
+
+/* ── DARK MODE OVERRIDES ───────────────────────────────────────────────────── */
+.dark .land-glass-light {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.dark .land-wave-divider::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%230f172a' d='M0,48L60,42.7C120,37,240,27,360,32C480,37,600,59,720,64C840,69,960,59,1080,48C1200,37,1320,27,1380,21.3L1440,16L1440,80L1380,80C1320,80,1200,80,1080,80C960,80,840,80,720,80C600,80,480,80,360,80C240,80,120,80,60,80L0,80Z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* ── SMOOTH SCROLL ─────────────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+/* ── RESPONSIVE HELPERS ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .land-reveal      { transform: translateY(40px); }
+  .land-reveal-left { transform: translateX(-40px); }
+  .land-reveal-right{ transform: translateX(40px); }
+}
+
+/* ── ORBIT ANIMATION ───────────────────────────────────────────────────────── */
+@keyframes land-orbit {
+  0%   { transform: rotate(0deg) translateX(var(--orbit-r, 100px)) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(var(--orbit-r, 100px)) rotate(-360deg); }
+}
+.land-orbit {
+  animation: land-orbit var(--orbit-dur, 12s) linear infinite;
+}
+
+/* ── BREATHING RING ────────────────────────────────────────────────────────── */
+@keyframes land-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50%      { transform: scale(1.2); opacity: 0.1; }
+}
+.land-breathe {
+  animation: land-breathe 4s ease-in-out infinite;
+}
+
+/* ── HERO MESH GRADIENT ────────────────────────────────────────────────────── */
+@keyframes land-mesh-move {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -40px) scale(1.1); }
+  66%  { transform: translate(-20px, 20px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.land-mesh-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: land-mesh-move var(--mesh-dur, 10s) ease-in-out infinite;
+  opacity: 0.5;
+}
+
+/* ── DASHBOARD MOCKUP ANIMATION ────────────────────────────────────────────── */
+@keyframes land-chart-grow {
+  0%   { transform: scaleY(0); }
+  100% { transform: scaleY(1); }
+}
+.land-chart-bar {
+  transform-origin: bottom;
+  animation: land-chart-grow 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes land-line-draw {
+  0%   { stroke-dashoffset: var(--dash-len, 500); }
+  100% { stroke-dashoffset: 0; }
+}
+.land-line-draw {
+  stroke-dasharray: var(--dash-len, 500);
+  stroke-dashoffset: var(--dash-len, 500);
+  animation: land-line-draw 2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── NUMBER TICKER ─────────────────────────────────────────────────────────── */
+@keyframes land-tick-up {
+  0%   { transform: translateY(40px); opacity: 0; filter: blur(4px); }
+  100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+.land-tick-up {
+  animation: land-tick-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── PRICE TAG HIGHLIGHT ───────────────────────────────────────────────────── */
+.land-price-glow {
+  position: relative;
+}
+.land-price-glow::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
+  z-index: -1;
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.land-price-glow:hover::after { opacity: 1; }
