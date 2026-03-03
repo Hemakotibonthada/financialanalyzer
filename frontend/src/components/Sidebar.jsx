@@ -73,6 +73,7 @@ const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
+    enterprise: true,
     money: false,
     invest: false,
     debt: false,
@@ -92,8 +93,28 @@ const Sidebar = () => {
     { label: 'Notifications', icon: Bell, path: '/smart-notifications', color: 'yellow' },
   ];
 
-  // — Consolidated navigation: 6 groups instead of 16 —
+  // — Consolidated navigation: 7 groups —
   const navigationSections = [
+    {
+      id: 'enterprise',
+      label: '✨ Enterprise V2',
+      icon: Zap,
+      items: [
+        { label: 'Dashboard V2', icon: LayoutDashboard, path: '/dashboard-v2', color: 'blue' },
+        { label: 'Health V2', icon: Activity, path: '/financial-health-v2', color: 'teal' },
+        { label: 'Spending V2', icon: BarChart3, path: '/spending-insights-v2', color: 'red' },
+        { label: 'Portfolio V2', icon: Briefcase, path: '/investment-portfolio-v2', color: 'indigo' },
+        { label: 'Budget V2', icon: Calculator, path: '/budget-planner-v2', color: 'green' },
+        { label: 'Debt V2', icon: Shield, path: '/debt-management-v2', color: 'rose' },
+        { label: 'Goals V2', icon: Target, path: '/goals-v2', color: 'amber' },
+        { label: 'Transactions V2', icon: ArrowLeftRight, path: '/transactions-v2', color: 'blue' },
+        { label: 'AI Chat V2', icon: MessageSquare, path: '/financial-chat-v2', color: 'purple' },
+        { label: 'AI Command', icon: Brain, path: '/ai-command-center', color: 'violet' },
+        { label: 'Planning V2', icon: Calculator, path: '/planning-v2', color: 'sky' },
+        { label: 'Reports V2', icon: BarChart3, path: '/reports-v2', color: 'orange' },
+        { label: 'Settings V2', icon: Settings, path: '/settings-v2', color: 'gray' },
+      ]
+    },
     {
       id: 'money',
       label: 'Money',

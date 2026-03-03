@@ -153,6 +153,23 @@ app.use(activityLogger({
   logRequestBody: false
 }));
 
+// Enterprise middleware suite (request IDs, perf monitoring, audit, response helpers)
+const {
+  requestIdMiddleware,
+  performanceMiddleware,
+  auditMiddleware,
+  responseFormatterMiddleware,
+  apiVersionMiddleware,
+  globalErrorHandler,
+  healthCheckHandler,
+  adminAnalyticsHandler,
+} = require('./middleware/enterpriseMiddleware');
+app.use(requestIdMiddleware);
+app.use(apiVersionMiddleware('2.0.0'));
+app.use(performanceMiddleware);
+app.use(responseFormatterMiddleware);
+app.use(auditMiddleware);
+
 // Static files for uploads (protected with auth - financial docs should not be public)
 const { authenticate } = require('./middleware/auth');
 app.use('/uploads', authenticate, express.static('uploads'));
@@ -277,6 +294,16 @@ app.use('/api/data-export', require('./routes/dataExportRoutes'));
 app.use('/api/jobs', require('./routes/scheduledJobsRoutes'));
 // Financial Insights — trends, ratios, velocity, merchant analysis
 app.use('/api/financial-insights', require('./routes/financialInsightsRoutes'));
+// Enterprise Notification Engine — Smart alerts & AI-driven notifications
+app.use('/api/enterprise-notifications', require('./routes/enterpriseNotificationRoutes'));
+// Financial Planning — Retirement, SIP, Tax, Insurance, Wealth Projection
+app.use('/api/planning', require('./routes/financialPlanningRoutes'));
+// Data Export Engine — CSV/JSON export with templates & aggregation
+const { createExportRoutes, exportEngine } = require('./services/dataExportEngine');
+app.use('/api/export-engine', createExportRoutes(exportEngine));
+// Enterprise Health & Admin Analytics
+app.get('/api/enterprise-health', healthCheckHandler);
+app.get('/api/admin/system-analytics', adminAnalyticsHandler);
 
 // 404 handler
 app.use((req, res) => {
@@ -286,16 +313,8 @@ app.use((req, res) => {
   });
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-  logger.error('Server Error:', err);
-  
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
+// Error handler (Enterprise)
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5001;
 
@@ -362,6 +381,11 @@ io.on('connection', (socket) => {
 // Make io available to routes and initialize WebSocket service
 app.set('io', io);
 websocketService.initialize(io);
+
+// Initialize Enterprise WebSocket Engine
+const { wsEngine } = require('./services/websocketEngine');
+wsEngine.initialize(io);
+app.set('wsEngine', wsEngine);
 
 // Start backup scheduler after MongoDB is connected
 const backupScheduler = require('./services/backupScheduler');

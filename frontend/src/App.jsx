@@ -14,12 +14,15 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { FeatureFlagProvider } from './context/FeatureFlagContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import { EnterpriseErrorBoundary } from './components/enterprise/ErrorBoundary';
+import { ToastProvider } from './components/notifications/EnterpriseNotifications';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import { initializeStorage } from './services/storage';
 
 // Import enhanced styles
 import './styles/theme-variables.css';
 import './styles/advanced-animations.css';
+import './styles/enterprise-animations.css';
 
 // Retry wrapper for lazy imports - handles Vite HMR "Failed to fetch dynamically imported module" errors
 const lazyRetry = (importFn, retries = 3, delay = 1000) =>
@@ -179,6 +182,19 @@ const SecurityCenter = lazy(() => import('./pages/SecurityCenter'));
 const RiskDashboard = lazy(() => import('./pages/RiskDashboard'));
 const EnhancedDashboard = lazy(() => import('./pages/EnhancedDashboard'));
 
+// Enhanced V2 Pages (Enterprise)
+const EnhancedFinancialHealthV2 = lazy(() => import('./pages/EnhancedFinancialHealthV2'));
+const EnhancedFinancialChat = lazy(() => import('./pages/EnhancedFinancialChat'));
+const EnhancedSpendingInsightsV2 = lazy(() => import('./pages/EnhancedSpendingInsightsV2'));
+const EnhancedInvestmentPortfolioV2 = lazy(() => import('./pages/EnhancedInvestmentPortfolioV2'));
+const EnhancedBudgetPlannerV2 = lazy(() => import('./pages/EnhancedBudgetPlannerV2'));
+const EnhancedDebtManagementV2 = lazy(() => import('./pages/EnhancedDebtManagementV2'));
+const EnhancedTransactionManagerV2 = lazy(() => import('./pages/EnhancedTransactionManagerV2'));
+const EnhancedFinancialGoalsV2 = lazy(() => import('./pages/EnhancedFinancialGoalsV2'));
+const EnhancedFinancialPlanningV2 = lazy(() => import('./pages/EnhancedFinancialPlanningV2'));
+const EnhancedSettingsV2 = lazy(() => import('./pages/EnhancedSettingsV2'));
+const EnhancedReportsV2 = lazy(() => import('./pages/EnhancedReportsV2'));
+
 // AI-Powered Feature Pages
 const MerchantIntelligence = lazy(() => import('./pages/MerchantIntelligence'));
 const LifestyleAnalytics = lazy(() => import('./pages/LifestyleAnalytics'));
@@ -217,8 +233,10 @@ function App() {
   }, []);
 
   return (
+    <EnterpriseErrorBoundary>
     <ErrorBoundary>
     <ThemeProvider>
+      <ToastProvider>
       <AuthProvider>
         <WebSocketProvider>
           <NotificationProvider>
@@ -340,6 +358,19 @@ function App() {
               <Route path="/smart-budget-optimizer" element={<ProtectedRoute><SmartBudgetOptimizer /></ProtectedRoute>} />
               <Route path="/risk-assessment" element={<ProtectedRoute><RiskAssessment /></ProtectedRoute>} />
               
+              {/* ========== ENHANCED V2 PAGES ========== */}
+              <Route path="/financial-health-v2" element={<ProtectedRoute><EnhancedFinancialHealthV2 /></ProtectedRoute>} />
+              <Route path="/financial-chat-v2" element={<ProtectedRoute><EnhancedFinancialChat /></ProtectedRoute>} />
+              <Route path="/spending-insights-v2" element={<ProtectedRoute><EnhancedSpendingInsightsV2 /></ProtectedRoute>} />
+              <Route path="/investment-portfolio-v2" element={<ProtectedRoute><EnhancedInvestmentPortfolioV2 /></ProtectedRoute>} />
+              <Route path="/budget-planner-v2" element={<ProtectedRoute><EnhancedBudgetPlannerV2 /></ProtectedRoute>} />
+              <Route path="/debt-management-v2" element={<ProtectedRoute><EnhancedDebtManagementV2 /></ProtectedRoute>} />
+              <Route path="/transactions-v2" element={<ProtectedRoute><EnhancedTransactionManagerV2 /></ProtectedRoute>} />
+              <Route path="/goals-v2" element={<ProtectedRoute><EnhancedFinancialGoalsV2 /></ProtectedRoute>} />
+              <Route path="/planning-v2" element={<ProtectedRoute><EnhancedFinancialPlanningV2 /></ProtectedRoute>} />
+              <Route path="/settings-v2" element={<ProtectedRoute><EnhancedSettingsV2 /></ProtectedRoute>} />
+              <Route path="/reports-v2" element={<ProtectedRoute><EnhancedReportsV2 /></ProtectedRoute>} />
+              
               {/* ========== SYSTEM & ADMIN ========== */}
               <Route path="/system-dashboard" element={<ProtectedRoute><SystemDashboard /></ProtectedRoute>} />
               
@@ -414,8 +445,10 @@ function App() {
         </NotificationProvider>
       </WebSocketProvider>
     </AuthProvider>
+    </ToastProvider>
     </ThemeProvider>
     </ErrorBoundary>
+    </EnterpriseErrorBoundary>
   );
 }
 

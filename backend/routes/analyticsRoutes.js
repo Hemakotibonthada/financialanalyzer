@@ -613,4 +613,40 @@ router.get('/advanced/complete-dashboard', authenticate, async (req, res) => {
   }
 });
 
+// ============================================================================
+// ENTERPRISE V2 ANALYTICS ENDPOINTS (powered by AnalyticsEngine)
+// ============================================================================
+
+const analyticsController = require('../controllers/analyticsController');
+
+// GET /api/analytics/v2/comprehensive — Full enterprise dashboard
+router.get('/v2/comprehensive', authenticate, analyticsController.getComprehensiveDashboard);
+
+// GET /api/analytics/v2/spending — Deep spending analysis
+router.get('/v2/spending', authenticate, analyticsController.getSpendingAnalytics);
+
+// GET /api/analytics/v2/income — Income analytics with stability score
+router.get('/v2/income', authenticate, analyticsController.getIncomeAnalytics);
+
+// GET /api/analytics/v2/ratios — Financial health ratios
+router.get('/v2/ratios', authenticate, analyticsController.getFinancialRatios);
+
+// GET /api/analytics/v2/monthly — Month-over-month comparison
+router.get('/v2/monthly', authenticate, analyticsController.getMonthlyComparison);
+
+// GET /api/analytics/v2/merchants — Merchant-level analytics
+router.get('/v2/merchants', authenticate, analyticsController.getMerchantAnalytics);
+
+// GET /api/analytics/v2/networth — Net worth calculation
+router.get('/v2/networth', authenticate, analyticsController.getNetWorth);
+
+// GET /api/analytics/v2/budget-status — Real-time budget utilization
+router.get('/v2/budget-status', authenticate, analyticsController.getBudgetStatus);
+
+// GET /api/analytics/v2/cashflow — Forward-looking cashflow projection
+router.get('/v2/cashflow', authenticate, analyticsController.getCashflowProjection);
+
+// GET /api/analytics/v2/goals — Goal progress analytics
+router.get('/v2/goals', authenticate, analyticsController.getGoalAnalytics);
+
 module.exports = router;
