@@ -4,10 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, DollarSign, Calendar, Target, AlertCircle, CheckCircle } from 'lucide-react';
 import axios from 'axios';
+import { useTheme } from '../../context/ThemeContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
 const RetirementPlanner = () => {
+  const { isDark } = useTheme();
   const [plans, setPlans] = useState([]);
   const [projection, setProjection] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -50,7 +52,7 @@ const RetirementPlanner = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading Retirement Planner...</div>;
+    return <div className={`flex justify-center items-center h-64 ${isDark ? 'text-gray-300' : ''}`}>Loading Retirement Planner...</div>;
   }
 
   const totalSaved = plans.reduce((sum, p) => sum + (p.currentBalance || 0), 0);
@@ -72,9 +74,9 @@ const RetirementPlanner = () => {
   }));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className={`min-h-screen p-6 space-y-6 ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
+        <h1 className={`text-3xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           <Target className="w-8 h-8" />
           Retirement Planning
         </h1>
@@ -93,7 +95,7 @@ const RetirementPlanner = () => {
             <div className="text-2xl font-bold">
               ₹{(totalSaved / 100000).toFixed(2)}L
             </div>
-            <p className="text-xs text-gray-500 mt-1">Current Balance</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Current Balance</p>
           </CardContent>
         </Card>
 
@@ -105,7 +107,7 @@ const RetirementPlanner = () => {
             <div className="text-2xl font-bold text-blue-600">
               ₹{(totalTarget / 10000000).toFixed(2)}Cr
             </div>
-            <p className="text-xs text-gray-500 mt-1">Target Corpus</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Target Corpus</p>
           </CardContent>
         </Card>
 
@@ -117,7 +119,7 @@ const RetirementPlanner = () => {
             <div className="text-2xl font-bold text-green-600">
               ₹{monthlyContributions.toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500 mt-1">Across all plans</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Across all plans</p>
           </CardContent>
         </Card>
 
@@ -129,7 +131,7 @@ const RetirementPlanner = () => {
             <div className="text-2xl font-bold">
               {totalTarget > 0 ? ((totalSaved / totalTarget) * 100).toFixed(1) : 0}%
             </div>
-            <p className="text-xs text-gray-500 mt-1">Of total goal</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Of total goal</p>
           </CardContent>
         </Card>
       </div>
@@ -138,9 +140,9 @@ const RetirementPlanner = () => {
       {plans.length > 1 && (
         <Card>
           <CardContent className="p-4">
-            <label className="text-sm font-medium">Select Plan:</label>
+            <label className={`text-sm font-medium ${isDark ? 'text-gray-300' : ''}`}>Select Plan:</label>
             <select 
-              className="ml-3 px-3 py-2 border rounded-lg"
+              className={`ml-3 px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
               value={selectedPlan?._id || ''}
               onChange={(e) => handlePlanChange(e.target.value)}
             >
@@ -218,29 +220,29 @@ const RetirementPlanner = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Current Age</p>
-                    <p className="text-2xl font-bold">{selectedPlan.currentAge}</p>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Current Age</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : ''}`}>{selectedPlan.currentAge}</p>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Retirement Age</p>
-                    <p className="text-2xl font-bold">{selectedPlan.retirementAge}</p>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Retirement Age</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : ''}`}>{selectedPlan.retirementAge}</p>
                   </div>
-                  <div className="p-4 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Years to Retirement</p>
-                    <p className="text-2xl font-bold">{selectedPlan.retirementAge - selectedPlan.currentAge}</p>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Years to Retirement</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : ''}`}>{selectedPlan.retirementAge - selectedPlan.currentAge}</p>
                   </div>
-                  <div className="p-4 bg-orange-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Expected Return</p>
-                    <p className="text-2xl font-bold">{selectedPlan.expectedReturn}%</p>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-orange-900/20' : 'bg-orange-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Expected Return</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : ''}`}>{selectedPlan.expectedReturn}%</p>
                   </div>
-                  <div className="p-4 bg-yellow-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Inflation Rate</p>
-                    <p className="text-2xl font-bold">{selectedPlan.inflationRate}%</p>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Inflation Rate</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : ''}`}>{selectedPlan.inflationRate}%</p>
                   </div>
-                  <div className="p-4 bg-red-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Life Expectancy</p>
-                    <p className="text-2xl font-bold">{selectedPlan.lifeExpectancy}</p>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-red-900/20' : 'bg-red-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Life Expectancy</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : ''}`}>{selectedPlan.lifeExpectancy}</p>
                   </div>
                 </div>
               </CardContent>
@@ -285,7 +287,7 @@ const RetirementPlanner = () => {
                     <div className="text-2xl font-bold text-blue-600">
                       ₹{(projection.projectedCorpus / 10000000).toFixed(2)}Cr
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">At age {selectedPlan?.retirementAge}</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>At age {selectedPlan?.retirementAge}</p>
                   </CardContent>
                 </Card>
 
@@ -297,7 +299,7 @@ const RetirementPlanner = () => {
                     <div className="text-2xl font-bold text-green-600">
                       ₹{(projection.monthlyIncomePostRetirement || 0).toLocaleString()}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Inflation adjusted</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Inflation adjusted</p>
                   </CardContent>
                 </Card>
 
@@ -311,7 +313,7 @@ const RetirementPlanner = () => {
                     }`}>
                       {projection.surplus >= 0 ? '+' : ''}₹{(Math.abs(projection.surplus) / 100000).toFixed(2)}L
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       {projection.surplus >= 0 ? 'On track!' : 'Needs adjustment'}
                     </p>
                   </CardContent>
@@ -327,17 +329,17 @@ const RetirementPlanner = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2">Year</th>
-                          <th className="text-right py-2">Age</th>
-                          <th className="text-right py-2">Contribution</th>
-                          <th className="text-right py-2">Returns</th>
-                          <th className="text-right py-2">Balance</th>
+                        <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                          <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Year</th>
+                          <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Age</th>
+                          <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Contribution</th>
+                          <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Returns</th>
+                          <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Balance</th>
                         </tr>
                       </thead>
                       <tbody>
                         {growthData.slice(0, 10).map((row, idx) => (
-                          <tr key={idx} className="border-b">
+                          <tr key={idx} className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                             <td className="py-2">{row.year}</td>
                             <td className="text-right py-2">{row.age}</td>
                             <td className="text-right py-2 text-green-600">
@@ -354,7 +356,7 @@ const RetirementPlanner = () => {
                       </tbody>
                     </table>
                     {growthData.length > 10 && (
-                      <p className="text-xs text-gray-500 mt-2 text-center">
+                      <p className={`text-xs mt-2 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                         Showing first 10 years. Full projection available in detailed view.
                       </p>
                     )}
@@ -378,11 +380,11 @@ const RetirementPlanner = () => {
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-xl font-bold">{plan.planName}</h3>
-                        <p className="text-sm text-gray-600">{plan.planType}</p>
+                        <h3 className={`text-xl font-bold ${isDark ? 'text-white' : ''}`}>{plan.planName}</h3>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{plan.planType}</p>
                       </div>
                       <button 
-                        className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50"
+                        className={`px-3 py-1 text-sm border rounded-lg ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'hover:bg-gray-50'}`}
                         onClick={() => handlePlanChange(plan._id)}
                       >
                         View Details
@@ -391,22 +393,22 @@ const RetirementPlanner = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div>
-                        <p className="text-xs text-gray-600">Current Balance</p>
-                        <p className="text-lg font-semibold">₹{(plan.currentBalance / 100000).toFixed(2)}L</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Current Balance</p>
+                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : ''}`}>₹{(plan.currentBalance / 100000).toFixed(2)}L</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Target Amount</p>
-                        <p className="text-lg font-semibold">₹{(plan.targetAmount / 100000).toFixed(2)}L</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Target Amount</p>
+                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : ''}`}>₹{(plan.targetAmount / 100000).toFixed(2)}L</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Monthly SIP</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Monthly SIP</p>
                         <p className="text-lg font-semibold text-green-600">
                           ₹{plan.monthlyContribution.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Years to Retirement</p>
-                        <p className="text-lg font-semibold">{yearsToRetirement}</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Years to Retirement</p>
+                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : ''}`}>{yearsToRetirement}</p>
                       </div>
                     </div>
 
@@ -416,7 +418,7 @@ const RetirementPlanner = () => {
                         <span>Progress to Goal</span>
                         <span className="font-semibold">{progress.toFixed(1)}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className={`w-full rounded-full h-2 ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
                         <div 
                           className="bg-blue-600 h-2 rounded-full transition-all"
                           style={{ width: `${Math.min(progress, 100)}%` }}
@@ -430,7 +432,7 @@ const RetirementPlanner = () => {
                         <p className="text-sm font-medium mb-2">Investment Allocation</p>
                         <div className="flex gap-2 flex-wrap">
                           {plan.investmentAllocation.map((alloc, idx) => (
-                            <span key={idx} className="text-xs bg-blue-100 px-2 py-1 rounded">
+                            <span key={idx} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
                               {alloc.assetType}: {alloc.percentage}%
                             </span>
                           ))}
@@ -453,12 +455,12 @@ const RetirementPlanner = () => {
               <CardContent>
                 <div className="space-y-4">
                   {projection && projection.surplus < 0 && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className={`p-4 rounded-lg border ${isDark ? 'bg-red-900/20 border-red-800' : 'bg-red-50 border-red-200'}`}>
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-red-900">Shortfall Alert</p>
-                          <p className="text-sm text-red-800 mt-1">
+                          <p className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-900'}`}>Shortfall Alert</p>
+                          <p className={`text-sm mt-1 ${isDark ? 'text-red-300' : 'text-red-800'}`}>
                             Your current savings plan falls short by ₹{(Math.abs(projection.surplus) / 100000).toFixed(2)}L. 
                             Consider increasing your monthly contribution.
                           </p>
@@ -468,12 +470,12 @@ const RetirementPlanner = () => {
                   )}
 
                   {projection && projection.surplus >= 0 && (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className={`p-4 rounded-lg border ${isDark ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200'}`}>
                       <div className="flex items-start gap-3">
                         <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-green-900">On Track!</p>
-                          <p className="text-sm text-green-800 mt-1">
+                          <p className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-900'}`}>On Track!</p>
+                          <p className={`text-sm mt-1 ${isDark ? 'text-green-300' : 'text-green-800'}`}>
                             Your retirement plan is on track. You're projected to have a surplus of ₹{(projection.surplus / 100000).toFixed(2)}L.
                           </p>
                         </div>
@@ -481,8 +483,8 @@ const RetirementPlanner = () => {
                     </div>
                   )}
 
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-semibold mb-2">Optimization Tips</h4>
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                    <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : ''}`}>Optimization Tips</h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex items-start gap-2">
                         <TrendingUp className="w-4 h-4 mt-0.5 text-blue-600" />
@@ -504,8 +506,8 @@ const RetirementPlanner = () => {
                   </div>
 
                   {selectedPlan && (
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <h4 className="font-semibold mb-2">Suggested Actions</h4>
+                    <div className={`p-4 rounded-lg ${isDark ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
+                      <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : ''}`}>Suggested Actions</h4>
                       <ul className="space-y-2 text-sm">
                         {selectedPlan.monthlyContribution < 10000 && (
                           <li>• Consider increasing monthly contribution to at least ₹10,000</li>

@@ -97,7 +97,7 @@ const CurrencyInput = ({
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -110,7 +110,7 @@ const CurrencyInput = ({
             value={selectedCurrency}
             onChange={handleCurrencyChange}
             disabled={disabled}
-            className="h-full py-0 pl-3 pr-8 border-transparent bg-transparent text-gray-500 focus:ring-0 focus:border-transparent text-sm font-medium rounded-l-lg hover:bg-gray-50 transition-colors"
+            className="h-full py-0 pl-3 pr-8 border-transparent bg-transparent text-gray-500 dark:text-gray-400 focus:ring-0 focus:border-transparent text-sm font-medium rounded-l-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             aria-label="Select currency"
           >
             {CURRENCY_OPTIONS.map(option => (
@@ -130,12 +130,12 @@ const CurrencyInput = ({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
-          className={`block w-full pl-16 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+          className={`block w-full pl-16 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors dark:text-gray-100 ${
             error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-              : 'border-gray-300'
+              ? 'border-red-300 focus:border-red-500 focus:ring-red-500 dark:border-red-600' 
+              : 'border-gray-300 dark:border-gray-600'
           } ${
-            disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white'
+            disabled ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-700'
           }`}
           aria-label={label || 'Amount'}
           aria-invalid={error ? 'true' : 'false'}
@@ -150,17 +150,17 @@ const CurrencyInput = ({
 
       {/* Error Message */}
       {error && (
-        <p id="currency-error" className="text-sm text-red-600">
+        <p id="currency-error" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}
 
       {/* INR Conversion Display */}
       {showConversion && selectedCurrency === 'USD' && inputValue && parseFloat(inputValue) > 0 && (
-        <div className="flex items-center gap-2 text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-lg">
-          <IndianRupee className="h-4 w-4 text-blue-600" />
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-lg">
+          <IndianRupee className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <span>
-            Equivalent: <span className="font-semibold text-blue-700">
+            Equivalent: <span className="font-semibold text-blue-700 dark:text-blue-400">
               {formatCurrency(inrAmount, 'INR')}
             </span>
           </span>
@@ -169,7 +169,7 @@ const CurrencyInput = ({
 
       {/* Help Text */}
       {showConversion && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Reports will show amounts in INR
         </p>
       )}

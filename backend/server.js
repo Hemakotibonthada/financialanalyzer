@@ -268,6 +268,14 @@ app.use('/api/support', require('./routes/support'));
 // Database Backup & Restore
 app.use('/api/backup', require('./routes/backup'));
 
+// ========== ENTERPRISE SERVICES ==========
+// Data Export (CSV/JSON) — transactions, budgets, EMIs, investments, goals, snapshots
+app.use('/api/data-export', require('./routes/dataExportRoutes'));
+// Scheduled Jobs Management — budget reset, EMI reminders, AI retraining
+app.use('/api/jobs', require('./routes/scheduledJobsRoutes'));
+// Financial Insights — trends, ratios, velocity, merchant analysis
+app.use('/api/financial-insights', require('./routes/financialInsightsRoutes'));
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

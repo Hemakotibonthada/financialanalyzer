@@ -17,7 +17,7 @@ export const Tabs = ({ children, defaultValue, className = '', ...props }) => {
 export const TabsList = ({ children, className = '', ...props }) => {
   return (
     <div 
-      className={`flex border-b border-gray-200 ${className}`}
+      className={`flex border-b border-gray-200 dark:border-gray-700 ${className}`}
       role="tablist"
       {...props}
     >
@@ -38,8 +38,8 @@ export const TabsTrigger = ({ children, value, className = '', ...props }) => {
       className={`
         px-4 py-2 font-medium text-sm transition-colors
         ${isActive 
-          ? 'text-blue-600 border-b-2 border-blue-600' 
-          : 'text-gray-600 hover:text-gray-900'
+          ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' 
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }
         ${className}
       `}

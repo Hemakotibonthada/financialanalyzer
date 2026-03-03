@@ -29,6 +29,7 @@ ChartJS.register(
 import api from '../services/api';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 import MainLayout from '../components/MainLayout';
+import { FadeIn, PageTransition } from '../components/ui/AnimatedComponents';
 
 const Reports = () => {
   const [loading, setLoading] = useState(true);
@@ -177,6 +178,7 @@ const Reports = () => {
 
   return (
     <MainLayout title="Reports">
+    <PageTransition>
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -435,6 +437,7 @@ const Reports = () => {
         )}
       </div>
     </div>
+    </PageTransition>
     </MainLayout>
   );
 };

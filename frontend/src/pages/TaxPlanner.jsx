@@ -23,6 +23,7 @@ import {
 import api from '../services/api';
 import '../styles/animations.css';
 import MainLayout from '../components/MainLayout';
+import { useTheme } from '../context/ThemeContext';
 
 // ============================================================
 // Feature #100: Tax Planning & Optimization Page
@@ -165,6 +166,10 @@ const TaxPlanner = () => {
   });
   const [hraInputs, setHraInputs] = useState(HRA_DEFAULTS);
   const [expandedSection, setExpandedSection] = useState('80C');
+
+  const { isDark } = useTheme();
+  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
 
   // Suggestions state — fetched from API
   const [suggestions, setSuggestions] = useState([]);
@@ -311,12 +316,12 @@ const TaxPlanner = () => {
 
   return (
     <MainLayout title="Tax Planner">
-    <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out' }}>
+    <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out', bgcolor: isDark ? '#0f172a' : 'transparent', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Tax Planner</Typography>
-          <Typography color="text.secondary">Optimize your taxes with smart planning (FY 2024-25)</Typography>
+          <Typography variant="h4" fontWeight={700} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>Tax Planner</Typography>
+          <Typography sx={{ color: subTextColor }}>Optimize your taxes with smart planning (FY 2024-25)</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" startIcon={<Download />}>Download Report</Button>
@@ -348,9 +353,9 @@ const TaxPlanner = () => {
       {/* Income & Regime Selection */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
+          <Card sx={cardSx}>
             <CardContent>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Annual Gross Income</Typography>
+              <Typography variant="subtitle2" sx={{ color: subTextColor }} gutterBottom>Annual Gross Income</Typography>
               <TextField
                 fullWidth
                 type="number"
@@ -379,9 +384,9 @@ const TaxPlanner = () => {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
+          <Card sx={cardSx}>
             <CardContent>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>Tax Regime</Typography>
+              <Typography variant="subtitle2" sx={{ color: subTextColor }} gutterBottom>Tax Regime</Typography>
               <RadioGroup row value={regime} onChange={(e) => setRegime(e.target.value)}>
                 <FormControlLabel
                   value="new"
@@ -421,7 +426,7 @@ const TaxPlanner = () => {
           { label: 'Monthly Take Home', value: formatCurrency(currentTax.monthlySalary), color: '#4CAF50', icon: <Savings /> },
         ].map((card, idx) => (
           <Grid size={{ xs: 6, md: 3 }} key={idx}>
-            <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
+            <Card sx={{ ...cardSx, transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 } }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: `${card.color}15`, color: card.color }}>{card.icon}</Avatar>
                 <Box>
@@ -435,7 +440,7 @@ const TaxPlanner = () => {
       </Grid>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: isDark ? '#334155' : 'divider', '& .MuiTab-root': { color: isDark ? '#94a3b8' : undefined }, '& .Mui-selected': { color: isDark ? '#60a5fa' : 'primary.main' }, '& .MuiTabs-indicator': { bgcolor: isDark ? '#60a5fa' : 'primary.main' } }}>
         <Tab label="Tax Breakdown" icon={<Assessment />} iconPosition="start" />
         <Tab label="Deductions" icon={<Receipt />} iconPosition="start" />
         <Tab label="Regime Comparison" icon={<CompareArrows />} iconPosition="start" />
@@ -447,7 +452,7 @@ const TaxPlanner = () => {
       {activeTab === 0 && (
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 7 }}>
-            <Card>
+            <Card sx={cardSx}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Slab-wise Tax Breakdown ({regime === 'new' ? 'New' : 'Old'} Regime)</Typography>
                 <TableContainer>
@@ -493,7 +498,7 @@ const TaxPlanner = () => {
             </Card>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Card>
+            <Card sx={cardSx}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Income Distribution</Typography>
                 <ResponsiveContainer width="100%" height={300}>
@@ -539,7 +544,7 @@ const TaxPlanner = () => {
               key={section.section}
               expanded={expandedSection === section.section}
               onChange={() => setExpandedSection(expandedSection === section.section ? '' : section.section)}
-              sx={{ mb: 1 }}
+              sx={{ mb: 1, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', '& .MuiAccordionSummary-root': { color: isDark ? '#f1f5f9' : 'inherit' }, '& .MuiAccordionDetails-root': { bgcolor: isDark ? '#1e293b' : '#fff' } }}
               disabled={regime === 'new' && section.section !== '80CCD(1B)'}
             >
               <AccordionSummary expandIcon={<ExpandMore />}>
@@ -602,7 +607,7 @@ const TaxPlanner = () => {
 
           {/* HRA Calculator */}
           {regime === 'old' && (
-            <Card sx={{ mt: 3 }}>
+            <Card sx={{ mt: 3, ...cardSx }}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>HRA Exemption Calculator</Typography>
                 <Grid container spacing={2}>
@@ -669,7 +674,8 @@ const TaxPlanner = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <Card sx={{
                 border: betterRegime === 'old' ? '2px solid' : '1px solid',
-                borderColor: betterRegime === 'old' ? 'success.main' : 'divider',
+                borderColor: betterRegime === 'old' ? 'success.main' : isDark ? '#334155' : 'divider',
+                bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
               }}>
                 <CardContent>
                   {betterRegime === 'old' && (
@@ -706,7 +712,8 @@ const TaxPlanner = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <Card sx={{
                 border: betterRegime === 'new' ? '2px solid' : '1px solid',
-                borderColor: betterRegime === 'new' ? 'success.main' : 'divider',
+                borderColor: betterRegime === 'new' ? 'success.main' : isDark ? '#334155' : 'divider',
+                bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
               }}>
                 <CardContent>
                   {betterRegime === 'new' && (
@@ -743,7 +750,7 @@ const TaxPlanner = () => {
           </Grid>
 
           {/* Comparison Chart */}
-          <Card sx={{ mt: 3 }}>
+          <Card sx={{ mt: 3, ...cardSx }}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Visual Comparison</Typography>
               <ResponsiveContainer width="100%" height={350}>
@@ -828,9 +835,10 @@ const TaxPlanner = () => {
                   <Grid size={{ xs: 12, md: 6 }} key={idx}>
                     <Card sx={{
                       border: '1px solid',
-                      borderColor: suggestion.priority === 'high' ? 'success.main' : suggestion.priority === 'medium' ? 'warning.main' : 'divider',
+                      borderColor: suggestion.priority === 'high' ? 'success.main' : suggestion.priority === 'medium' ? 'warning.main' : isDark ? '#334155' : 'divider',
+                      bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
                       transition: 'all 0.3s',
-                      '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                      '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 },
                     }}>
                       <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -862,7 +870,7 @@ const TaxPlanner = () => {
 
               {/* Total Potential Savings */}
               {suggestions.some(s => s.savings > 0) && (
-                <Card sx={{ mt: 3, bgcolor: 'success.50' }}>
+                <Card sx={{ mt: 3, bgcolor: isDark ? '#064e3b' : 'success.50', color: isDark ? '#f1f5f9' : 'inherit' }}>
                   <CardContent sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" fontWeight={600}>Total Potential Tax Savings</Typography>
                     <Typography variant="h3" fontWeight={700} color="success.main">
@@ -886,9 +894,10 @@ const TaxPlanner = () => {
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                 <Card sx={{
                   transition: 'all 0.3s',
-                  '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 },
                   borderLeft: 4,
                   borderColor: event.type === 'payment' ? 'warning.main' : event.type === 'deadline' ? 'error.main' : 'info.main',
+                  bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
                 }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

@@ -47,6 +47,7 @@ import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/animations.css';
+import { FadeIn, PageTransition } from '../components/ui/AnimatedComponents';
 
 const GOAL_CATEGORIES = [
   { value: 'retirement', label: 'Retirement', icon: '🏖️' },
@@ -258,7 +259,7 @@ function FinancialGoals() {
       <MainLayout title="Financial Goals" subtitle="Track your financial aspirations">
         <Box className="flex items-center justify-center min-h-[60vh]">
           <Box sx={{ textAlign: 'center' }}>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 dark:border-blue-400 mx-auto mb-4"></div>
             <Typography sx={{ color: isDark ? '#94a3b8' : 'text.secondary' }}>Loading goals...</Typography>
           </Box>
         </Box>
@@ -280,6 +281,7 @@ function FinancialGoals() {
 
   return (
     <MainLayout title="Financial Goals" subtitle="Set, track & achieve your aspirations">
+      <PageTransition>
       <Box sx={{ pb: 4 }}>
         {/* Enhanced Header with Gradient */}
         <Box
@@ -333,6 +335,7 @@ function FinancialGoals() {
 
         <Container maxWidth="xl">
           {/* Enhanced Summary Cards with Gradients */}
+          <FadeIn delay={100}>
           <Grid container spacing={3} sx={{ mb: 3 }} className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
@@ -432,6 +435,7 @@ function FinancialGoals() {
               </Card>
             </Grid>
           </Grid>
+          </FadeIn>
 
       {/* Goals Grid */}
       {goals.length === 0 ? (
@@ -870,6 +874,7 @@ function FinancialGoals() {
       </Dialog>
         </Container>
       </Box>
+      </PageTransition>
     </MainLayout>
   );
 }

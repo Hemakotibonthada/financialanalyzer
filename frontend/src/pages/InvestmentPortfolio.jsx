@@ -43,6 +43,7 @@ import {
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { FadeIn, PageTransition } from '../components/ui/AnimatedComponents';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
@@ -255,6 +256,7 @@ function InvestmentPortfolio() {
 
   return (
     <MainLayout title="Investment Portfolio">
+      <PageTransition>
       <Box className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-8">
         {/* Enhanced Header with Gradient */}
         <Box
@@ -320,6 +322,7 @@ function InvestmentPortfolio() {
 
         <Container maxWidth="xl">
           {/* Enhanced Summary Cards with Gradients */}
+          <FadeIn delay={100}>
           <Grid container spacing={3} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ 
@@ -425,6 +428,7 @@ function InvestmentPortfolio() {
               </Card>
             </Grid>
           </Grid>
+          </FadeIn>
 
           {/* Tabs */}
           <Paper sx={{ mb: 3 }}>
@@ -1348,6 +1352,7 @@ function InvestmentPortfolio() {
       </Dialog>
         </Container>
       </Box>
+      </PageTransition>
     </MainLayout>
   );
 }

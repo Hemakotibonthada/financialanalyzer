@@ -160,6 +160,8 @@ const Sidebar = () => {
       label: 'Insights & Reports',
       icon: Brain,
       items: [
+        { label: 'AI Command Center', icon: Brain, path: '/ai-command-center', color: 'violet', badge: 'NEW' },
+        { label: 'Deep Insights', icon: Activity, path: '/financial-insights-dashboard', color: 'cyan', badge: 'NEW' },
         { label: 'AI Insights', icon: Brain, path: '/ai-insights', color: 'violet', badge: 'AI' },
         { label: 'Financial Chat', icon: Bot, path: '/financial-chat', color: 'blue' },
         { label: 'Spending Insights', icon: TrendingDown, path: '/spending-insights', color: 'rose' },
@@ -182,6 +184,7 @@ const Sidebar = () => {
         { label: 'Search', icon: Search, path: '/search', color: 'gray' },
         { label: 'Import / Export', icon: Upload, path: '/import-export', color: 'green' },
         { label: 'Company Expenses', icon: Receipt, path: '/company-expenses', color: 'amber' },
+        { label: 'System Dashboard', icon: Settings, path: '/system-dashboard', color: 'slate', badge: 'NEW' },
       ]
     },
   ];

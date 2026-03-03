@@ -12,6 +12,7 @@ import { useScrollReveal, useAnimatedCounter, useLocalStorage, useForm } from '.
 import { formatCurrency, formatPercentage, getCategoryIcon } from '../utils/helpers';
 import '../styles/animations.css';
 import MainLayout from '../components/MainLayout';
+import { FadeIn, StaggerChildren, PageTransition } from '../components/ui/AnimatedComponents';
 
 const BUDGET_CATEGORIES = [
   { id: 'housing', name: 'Housing/Rent', icon: '🏠', recommended: 30, color: '#667eea' },
@@ -312,6 +313,7 @@ export default function BudgetPlanner() {
 
   return (
     <MainLayout title="Budget Planner">
+    <PageTransition>
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -349,13 +351,13 @@ export default function BudgetPlanner() {
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-fadeIn">
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <StatCard title="Monthly Income" value={budgetData.income} format="currency" color="#10B981" icon="💰" delay={0} />
               <StatCard title="Total Budgeted" value={totalBudgeted} format="currency" color="#667eea" icon="📊" delay={100} />
               <StatCard title="Total Spent" value={totalSpent} format="currency" color="#EF4444" icon="💳" delay={200} />
               <StatCard title="Remaining" value={totalRemaining} format="currency" color={totalRemaining >= 0 ? '#10B981' : '#EF4444'} icon="💰" delay={300} />
               <StatCard title="Savings Rate" value={savingsRate} format="percentage" color="#8B5CF6" icon="📈" delay={400} />
-            </div>
+            </StaggerChildren>
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -752,6 +754,7 @@ export default function BudgetPlanner() {
         </div>
       </Modal>
     </div>
+    </PageTransition>
     </MainLayout>
   );
 }

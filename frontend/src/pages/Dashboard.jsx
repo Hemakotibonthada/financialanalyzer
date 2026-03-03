@@ -18,6 +18,7 @@ import QuickExpenseEntry from '../components/QuickExpenseEntry';
 import QuickIncomeEntry from '../components/QuickIncomeEntry';
 import NewFeaturesShowcase from '../components/NewFeaturesShowcase';
 import AIFinancialPredictions from '../components/AIFinancialPredictions';
+import { FadeIn, StaggerChildren, CardSkeleton, PageTransition } from '../components/ui/AnimatedComponents';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -152,10 +153,16 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-slate-400">Loading your financial dashboard...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <CardSkeleton key={i} lines={2} />)}
+          </div>
+          <CardSkeleton lines={6} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CardSkeleton lines={8} />
+            <CardSkeleton lines={8} />
+          </div>
         </div>
       </div>
     );
@@ -224,43 +231,46 @@ const Dashboard = () => {
       subtitle={`Welcome back, ${user?.name}!`}
       headerActions={headerActions}
     >
+      <PageTransition>
       {/* Financial Summary */}
+      <FadeIn direction="up" delay={0}>
       <div className="mb-6">
         <FinancialSummary summary={dashboardData?.summary} />
       </div>
+      </FadeIn>
 
       {/* Financial Health Score */}
+      <FadeIn direction="up" delay={100}>
       <div className="mb-6">
         <FinancialHealth healthData={dashboardData?.charts?.financialHealth} />
       </div>
+      </FadeIn>
 
       {/* AI Financial Predictions */}
+      <FadeIn direction="up" delay={150}>
       <div className="mb-6">
         <AIFinancialPredictions />
       </div>
+      </FadeIn>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <StaggerChildren staggerMs={80} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Monthly Trends */}
         <div className="lg:col-span-2">
           {(() => {
             const rawMonthly = dashboardData?.charts?.monthlyTrends;
-            // monthlyTrends can be: { trends: [...], summary: {...} } or just an array
             let monthlyProp = rawMonthly;
             if (Array.isArray(rawMonthly)) {
-              // Legacy format: wrap array in expected structure
               monthlyProp = {
                 trends: rawMonthly,
                 summary: dashboardData?.summary || {}
               };
             } else if (rawMonthly && !rawMonthly.trends && !Array.isArray(rawMonthly)) {
-              // Edge case: object without trends property
               monthlyProp = {
                 trends: [],
                 summary: rawMonthly
               };
             }
-            // Otherwise, monthlyProp is already { trends, summary } or null/undefined
             return <MonthlyTrends trendsData={monthlyProp} />;
           })()}
         </div>
@@ -274,16 +284,17 @@ const Dashboard = () => {
         <div>
           <SpendingPatterns patternsData={dashboardData?.charts?.spendingPatterns} />
         </div>
-      </div>
+      </StaggerChildren>
 
       {/* Budget, Savings, and Credit Score */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <StaggerChildren staggerMs={100} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <BudgetTracker budgetData={dashboardData?.charts?.budgetAnalysis} />
         <SavingsGoals savingsData={dashboardData?.insights?.savingsGoals} />
         <CreditScoreCard />
-      </div>
+      </StaggerChildren>
 
       {/* Insights Section */}
+      <FadeIn direction="up" delay={300}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
           <RecommendationsPanel recommendations={dashboardData?.insights?.recommendations} />
@@ -292,15 +303,19 @@ const Dashboard = () => {
           <RecurringTransactions recurringData={dashboardData?.insights?.recurringTransactions} />
         </div>
       </div>
+      </FadeIn>
 
       {/* New Features Showcase */}
+      <FadeIn direction="up" delay={350}>
       <div className="mb-6">
         <NewFeaturesShowcase />
       </div>
+      </FadeIn>
 
       {/* Recent Activity */}
       {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30">
+        <FadeIn direction="up" delay={400}>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 transition-all duration-300 hover:shadow-lg dark:hover:shadow-slate-900/50">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Analysis Activity</h3>
           </div>
@@ -344,11 +359,13 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+        </FadeIn>
       )}
 
       {/* Quick Entry Components */}
       <QuickExpenseEntry onExpenseAdded={fetchDashboardData} />
       <QuickIncomeEntry onIncomeAdded={fetchDashboardData} />
+      </PageTransition>
     </MainLayout>
   );
 };

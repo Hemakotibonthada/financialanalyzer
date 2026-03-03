@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { useTheme } from '../context/ThemeContext';
 import '../styles/animations.css';
 
 // ============================================================
@@ -58,6 +59,10 @@ const CashFlowForecast = () => {
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const { isDark } = useTheme();
+  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -180,7 +185,7 @@ const CashFlowForecast = () => {
   const CustomTooltipContent = ({ active, payload, label }) => {
     if (!active || !payload || payload.length === 0) return null;
     return (
-      <Paper sx={{ p: 1.5, minWidth: 200 }}>
+      <Paper sx={{ p: 1.5, minWidth: 200, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' }}>
         <Typography variant="subtitle2" fontWeight={600} gutterBottom>{label}</Typography>
         {payload.map((entry, idx) => (
           <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
@@ -194,12 +199,12 @@ const CashFlowForecast = () => {
 
   return (
     <MainLayout title="Cash Flow Forecast">
-    <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out' }}>
+    <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out', bgcolor: isDark ? '#0f172a' : 'transparent', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Cash Flow Forecast</Typography>
-          <Typography color="text.secondary">AI-powered financial projections and scenario analysis</Typography>
+          <Typography variant="h4" fontWeight={700} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>Cash Flow Forecast</Typography>
+          <Typography sx={{ color: subTextColor }}>AI-powered financial projections and scenario analysis</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -239,7 +244,7 @@ const CashFlowForecast = () => {
           { label: 'End Balance', value: formatCurrency(totals.endBalance), icon: <AccountBalance />, color: '#9C27B0', change: `+${totals.growthRate}%` },
         ].map((stat, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
+            <Card sx={{ ...cardSx, transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 } }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: `${stat.color}15`, color: stat.color, width: 48, height: 48 }}>
                   {stat.icon}
@@ -256,7 +261,7 @@ const CashFlowForecast = () => {
       </Grid>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: isDark ? '#334155' : 'divider', '& .MuiTab-root': { color: isDark ? '#94a3b8' : undefined }, '& .Mui-selected': { color: isDark ? '#60a5fa' : 'primary.main' }, '& .MuiTabs-indicator': { bgcolor: isDark ? '#60a5fa' : 'primary.main' } }}>
         <Tab icon={<ShowChart />} label="Forecast Chart" iconPosition="start" />
         <Tab icon={<CompareArrows />} label="Scenario Analysis" iconPosition="start" />
         <Tab icon={<BarChart />} label="Category Breakdown" iconPosition="start" />
@@ -284,7 +289,7 @@ const CashFlowForecast = () => {
           </Box>
 
           {/* Main Chart */}
-          <Card sx={{ mb: 3 }}>
+          <Card sx={{ mb: 3, ...cardSx }}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Income vs Expenses Forecast</Typography>
               <ResponsiveContainer width="100%" height={450}>
@@ -351,7 +356,7 @@ const CashFlowForecast = () => {
           </Card>
 
           {/* Balance Projection */}
-          <Card>
+          <Card sx={cardSx}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Balance Projection Over Time</Typography>
               <ResponsiveContainer width="100%" height={300}>
@@ -390,9 +395,10 @@ const CashFlowForecast = () => {
                   sx={{
                     cursor: 'pointer',
                     border: selectedScenario === scenario.id ? 2 : 1,
-                    borderColor: selectedScenario === scenario.id ? scenario.color : 'divider',
+                    borderColor: selectedScenario === scenario.id ? scenario.color : isDark ? '#334155' : 'divider',
+                    bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
                     transition: 'all 0.3s',
-                    '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                    '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 },
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center' }}>
@@ -409,7 +415,7 @@ const CashFlowForecast = () => {
           </Grid>
 
           {/* Custom Scenario Builder */}
-          <Card sx={{ mb: 3 }}>
+          <Card sx={{ mb: 3, ...cardSx }}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Custom Scenario Builder</Typography>
               <Grid container spacing={3}>
@@ -464,8 +470,8 @@ const CashFlowForecast = () => {
                     const projSavings = projIncome - projExpense;
                     return (
                       <Grid size={{ xs: 12, md: 4 }} key={idx}>
-                        <Paper sx={{ p: 2, textAlign: 'center' }}>
-                          <Typography variant="subtitle2" color="text.secondary">{period.label}</Typography>
+                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: isDark ? '#0f172a' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' }}>
+                          <Typography variant="subtitle2" sx={{ color: subTextColor }}>{period.label}</Typography>
                           <Typography variant="h5" fontWeight={700} color={projSavings > 0 ? 'success.main' : 'error.main'}>
                             {formatCurrency(Math.abs(projSavings))}
                           </Typography>
@@ -482,7 +488,7 @@ const CashFlowForecast = () => {
           </Card>
 
           {/* Scenario Comparison Chart */}
-          <Card>
+          <Card sx={cardSx}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Scenario Comparison</Typography>
               <ResponsiveContainer width="100%" height={400}>
@@ -522,7 +528,7 @@ const CashFlowForecast = () => {
           <Grid container spacing={2}>
             {expenseCategories.map((cat, idx) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-                <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
+                <Card sx={{ ...cardSx, transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 } }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="subtitle1" fontWeight={600}>{cat.name}</Typography>
@@ -574,7 +580,7 @@ const CashFlowForecast = () => {
           </Grid>
 
           {/* Total Summary */}
-          <Card sx={{ mt: 3 }}>
+          <Card sx={{ mt: 3, ...cardSx }}>
             <CardContent>
               <Typography variant="h6" fontWeight={600} gutterBottom>Expense Category Summary</Typography>
               <ResponsiveContainer width="100%" height={350}>
@@ -601,7 +607,7 @@ const CashFlowForecast = () => {
               const progress = (milestone.current / milestone.target) * 100;
               return (
                 <Grid size={{ xs: 12, md: 6 }} key={idx}>
-                  <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}>
+                  <Card sx={{ ...cardSx, transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 } }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                         <Typography variant="h6" fontWeight={600}>{milestone.label}</Typography>

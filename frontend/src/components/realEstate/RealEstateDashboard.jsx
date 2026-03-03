@@ -4,10 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, TrendingDown, Home, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { useTheme } from '../../context/ThemeContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
 const RealEstateDashboard = () => {
+  const { isDark } = useTheme();
   const [properties, setProperties] = useState([]);
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,13 +58,13 @@ const RealEstateDashboard = () => {
     }));
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading Real Estate Dashboard...</div>;
+    return <div className={`flex justify-center items-center h-64 ${isDark ? 'text-gray-300' : ''}`}>Loading Real Estate Dashboard...</div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className={`min-h-screen p-6 space-y-6 ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
+        <h1 className={`text-3xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           <Home className="w-8 h-8" />
           Real Estate Portfolio
         </h1>
@@ -79,7 +81,7 @@ const RealEstateDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{portfolio?.totalProperties || 0}</div>
-            <p className="text-xs text-gray-500 mt-1">Across {Object.keys(propertyDistribution).length} types</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Across {Object.keys(propertyDistribution).length} types</p>
           </CardContent>
         </Card>
 
@@ -91,7 +93,7 @@ const RealEstateDashboard = () => {
             <div className="text-2xl font-bold">
               ₹{((portfolio?.totalValue || 0) / 10000000).toFixed(2)}Cr
             </div>
-            <p className="text-xs text-gray-500 mt-1">Portfolio Value</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Portfolio Value</p>
           </CardContent>
         </Card>
 
@@ -103,7 +105,7 @@ const RealEstateDashboard = () => {
             <div className="text-2xl font-bold text-green-600">
               ₹{(portfolio?.totalRentalIncome || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500 mt-1">From {portfolio?.rentedProperties || 0} properties</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>From {portfolio?.rentedProperties || 0} properties</p>
           </CardContent>
         </Card>
 
@@ -115,7 +117,7 @@ const RealEstateDashboard = () => {
             <div className="text-2xl font-bold text-red-600">
               ₹{((portfolio?.totalMortgage || 0) / 100000).toFixed(2)}L
             </div>
-            <p className="text-xs text-gray-500 mt-1">Outstanding Debt</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Outstanding Debt</p>
           </CardContent>
         </Card>
       </div>
@@ -184,20 +186,20 @@ const RealEstateDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Average Property Value</p>
+                <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Average Property Value</p>
                   <p className="text-2xl font-bold">
                     ₹{((portfolio?.averagePropertyValue || 0) / 100000).toFixed(2)}L
                   </p>
                 </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Rental Yield</p>
+                <div className={`p-4 rounded-lg ${isDark ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Rental Yield</p>
                   <p className="text-2xl font-bold text-green-600">
                     {portfolio?.rentalYield?.toFixed(2) || 0}%
                   </p>
                 </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Loan-to-Value Ratio</p>
+                <div className={`p-4 rounded-lg ${isDark ? 'bg-orange-900/20' : 'bg-orange-50'}`}>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Loan-to-Value Ratio</p>
                   <p className="text-2xl font-bold text-orange-600">
                     {portfolio?.loanToValue?.toFixed(1) || 0}%
                   </p>
@@ -215,22 +217,22 @@ const RealEstateDashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {properties.map(property => (
-                  <div key={property._id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div key={property._id} className={`p-4 border rounded-lg hover:shadow-md transition-shadow ${isDark ? 'border-gray-700 hover:shadow-gray-900/30' : 'border-gray-200'}`}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold">{property.propertyName}</h3>
-                        <p className="text-sm text-gray-600">{property.address.city}, {property.address.state}</p>
+                        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : ''}`}>{property.propertyName}</h3>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{property.address.city}, {property.address.state}</p>
                         <div className="flex gap-4 mt-2 text-sm">
-                          <span className="px-2 py-1 bg-blue-100 rounded">
+                          <span className={`px-2 py-1 rounded ${isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100'}`}>
                             {property.propertyType.replace('_', ' ')}
                           </span>
-                          <span className="px-2 py-1 bg-gray-100 rounded">
+                          <span className={`px-2 py-1 rounded ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100'}`}>
                             {property.area} {property.areaUnit}
                           </span>
                           <span className={`px-2 py-1 rounded ${
-                            property.status === 'owned' ? 'bg-green-100 text-green-800' :
-                            property.status === 'rented' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100'
+                            property.status === 'owned' ? (isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800') :
+                            property.status === 'rented' ? (isDark ? 'bg-yellow-900/30 text-yellow-300' : 'bg-yellow-100 text-yellow-800') :
+                            (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100')
                           }`}>
                             {property.status}
                           </span>
@@ -269,12 +271,12 @@ const RealEstateDashboard = () => {
                 {properties
                   .filter(p => p.rentalIncome && p.rentalIncome.monthlyRent > 0)
                   .map(property => (
-                    <div key={property._id} className="p-4 border rounded-lg">
+                    <div key={property._id} className={`p-4 border rounded-lg ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="font-semibold">{property.propertyName}</h3>
+                          <h3 className={`font-semibold ${isDark ? 'text-white' : ''}`}>{property.propertyName}</h3>
                           {property.tenants && property.tenants.length > 0 && (
-                            <p className="text-sm text-gray-600">
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                               Tenant: {property.tenants[0].name}
                             </p>
                           )}
@@ -283,7 +285,7 @@ const RealEstateDashboard = () => {
                           <p className="text-lg font-bold text-green-600">
                             ₹{property.rentalIncome.monthlyRent.toLocaleString()}/mo
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                             Deposit: ₹{property.rentalIncome.securityDeposit?.toLocaleString() || 0}
                           </p>
                         </div>
@@ -291,13 +293,13 @@ const RealEstateDashboard = () => {
                       
                       {/* Lease details */}
                       {property.tenants && property.tenants[0] && (
-                        <div className="grid grid-cols-2 gap-2 text-sm mt-3 pt-3 border-t">
+                        <div className={`grid grid-cols-2 gap-2 text-sm mt-3 pt-3 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                           <div>
-                            <p className="text-gray-600">Lease Start</p>
+                            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Lease Start</p>
                             <p>{new Date(property.tenants[0].leaseStartDate).toLocaleDateString()}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Lease End</p>
+                            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Lease End</p>
                             <p>{new Date(property.tenants[0].leaseEndDate).toLocaleDateString()}</p>
                           </div>
                         </div>
@@ -319,12 +321,12 @@ const RealEstateDashboard = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2">Property</th>
-                        <th className="text-right py-2">Purchase Price</th>
-                        <th className="text-right py-2">Current Value</th>
-                        <th className="text-right py-2">Appreciation</th>
-                        <th className="text-right py-2">ROI</th>
+                      <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Property</th>
+                        <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Purchase Price</th>
+                        <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Current Value</th>
+                        <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Appreciation</th>
+                        <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>ROI</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -335,7 +337,7 @@ const RealEstateDashboard = () => {
                           : 0;
 
                         return (
-                          <tr key={property._id} className="border-b">
+                          <tr key={property._id} className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                             <td className="py-2">{property.propertyName}</td>
                             <td className="text-right py-2">
                               ₹{((property.purchasePrice || 0) / 100000).toFixed(2)}L

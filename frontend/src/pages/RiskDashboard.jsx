@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { useTheme } from '../context/ThemeContext';
 
 // ==============================
 // Static Reference Data
@@ -47,6 +48,10 @@ const RiskDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [riskData, setRiskData] = useState(null);
   const [riskHistory, setRiskHistory] = useState([]);
+
+  const { isDark } = useTheme();
+  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
 
   useEffect(() => {
     const fetchRiskData = async () => {
@@ -159,12 +164,12 @@ const RiskDashboard = () => {
 
   return (
     <MainLayout title="Risk Dashboard">
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, bgcolor: isDark ? '#0f172a' : 'transparent', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Risk Dashboard</Typography>
-          <Typography color="text.secondary">Comprehensive financial risk assessment</Typography>
+          <Typography variant="h4" fontWeight={700} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>Risk Dashboard</Typography>
+          <Typography sx={{ color: subTextColor }}>Comprehensive financial risk assessment</Typography>
         </Box>
         <Chip icon={<Assessment />} label={`Score: ${overallScore}/100 — ${getScoreLabel(overallScore)}`}
           sx={{ bgcolor: getScoreColor(overallScore) + '20', color: getScoreColor(overallScore), fontWeight: 600, fontSize: '0.85rem', height: 36 }} />
@@ -204,7 +209,7 @@ const RiskDashboard = () => {
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: isDark ? '#334155' : 'divider', '& .MuiTab-root': { color: isDark ? '#94a3b8' : undefined }, '& .Mui-selected': { color: isDark ? '#60a5fa' : 'primary.main' }, '& .MuiTabs-indicator': { bgcolor: isDark ? '#60a5fa' : 'primary.main' } }}>
         <Tab icon={<Assessment />} label="Risk Factors" iconPosition="start" />
         <Tab icon={<Warning />} label="Stress Tests" iconPosition="start" />
         <Tab icon={<Timeline />} label="History" iconPosition="start" />
@@ -215,7 +220,7 @@ const RiskDashboard = () => {
       {activeTab === 0 && (
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Card>
+            <Card sx={cardSx}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Risk Profile Radar</Typography>
                 <ResponsiveContainer width="100%" height={350}>
@@ -232,12 +237,12 @@ const RiskDashboard = () => {
             </Card>
           </Grid>
           <Grid size={{ xs: 12, md: 7 }}>
-            <Card>
+            <Card sx={cardSx}>
               <CardContent>
                 <Typography variant="h6" fontWeight={600} gutterBottom>Factor Details</Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {computedFactors.map(f => (
-                    <Box key={f.id} sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+                    <Box key={f.id} sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? '#0f172a' : 'action.hover' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2" component="span">{f.icon}</Typography>
@@ -270,7 +275,7 @@ const RiskDashboard = () => {
         <Grid container spacing={3}>
           {stressResults.map(scenario => (
             <Grid size={{ xs: 12, md: 6 }} key={scenario.id}>
-              <Card sx={{ border: '1px solid', borderColor: scenario.resilience === 'Strong' ? '#10b98140' : scenario.resilience === 'Moderate' ? '#f59e0b40' : '#ef444440' }}>
+              <Card sx={{ border: '1px solid', borderColor: scenario.resilience === 'Strong' ? '#10b98140' : scenario.resilience === 'Moderate' ? '#f59e0b40' : '#ef444440', bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -314,7 +319,7 @@ const RiskDashboard = () => {
 
       {/* History Tab */}
       {activeTab === 2 && (
-        <Card>
+        <Card sx={cardSx}>
           <CardContent>
             <Typography variant="h6" fontWeight={600} gutterBottom>Risk Score Trend</Typography>
             {riskHistory.length === 0 ? (
@@ -334,7 +339,7 @@ const RiskDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} />
                   <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={12} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#fff', border: `1px solid ${isDark ? '#334155' : '#e5e7eb'}`, borderRadius: '8px', color: isDark ? '#f1f5f9' : '#1e293b' }} />
                   <Area type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={3} fill="url(#gradScore)" />
                   <Legend />
                 </AreaChart>
@@ -348,7 +353,7 @@ const RiskDashboard = () => {
       {activeTab === 3 && (
         <Box>
           {actionItems.length === 0 ? (
-            <Card>
+            <Card sx={cardSx}>
               <CardContent sx={{ textAlign: 'center', py: 6 }}>
                 <CheckCircle sx={{ fontSize: 48, color: '#10b981', mb: 2 }} />
                 <Typography variant="h6" fontWeight={600}>All Clear!</Typography>
@@ -359,7 +364,7 @@ const RiskDashboard = () => {
             <Grid container spacing={2}>
               {actionItems.map((item, i) => (
                 <Grid size={{ xs: 12, md: 6 }} key={i}>
-                  <Card sx={{ borderLeft: 4, borderColor: item.priority === 'High' ? 'error.main' : item.priority === 'Medium' ? 'warning.main' : 'info.main' }}>
+                  <Card sx={{ borderLeft: 4, borderColor: item.priority === 'High' ? 'error.main' : item.priority === 'Medium' ? 'warning.main' : 'info.main', bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

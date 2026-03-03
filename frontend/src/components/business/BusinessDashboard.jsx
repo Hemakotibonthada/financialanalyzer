@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { Briefcase, FileText, Users, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { useTheme } from '../../context/ThemeContext';
 
 // Simple UI components using Tailwind CSS
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-md ${className}`}>{children}</div>
+  <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/30 ${className}`}>{children}</div>
 );
 
 const CardHeader = ({ children, className = '' }) => (
-  <div className={`p-6 border-b border-gray-200 ${className}`}>{children}</div>
+  <div className={`p-6 border-b border-gray-200 dark:border-gray-700 ${className}`}>{children}</div>
 );
 
 const CardTitle = ({ children, className = '' }) => (
-  <h3 className={`text-xl font-bold text-gray-900 ${className}`}>{children}</h3>
+  <h3 className={`text-xl font-bold text-gray-900 dark:text-gray-100 ${className}`}>{children}</h3>
 );
 
 const CardContent = ({ children, className = '' }) => (
@@ -25,7 +26,7 @@ const Tabs = ({ children, value, onValueChange, className = '' }) => (
 );
 
 const TabsList = ({ children, className = '' }) => (
-  <div className={`flex space-x-2 border-b border-gray-200 ${className}`}>{children}</div>
+  <div className={`flex space-x-2 border-b border-gray-200 dark:border-gray-700 ${className}`}>{children}</div>
 );
 
 const TabsTrigger = ({ children, value, onClick, active, className = '' }) => (
@@ -33,8 +34,8 @@ const TabsTrigger = ({ children, value, onClick, active, className = '' }) => (
     onClick={onClick}
     className={`px-4 py-2 font-medium transition-colors ${
       active
-        ? 'border-b-2 border-indigo-600 text-indigo-600'
-        : 'text-gray-600 hover:text-gray-900'
+        ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
     } ${className}`}
   >
     {children}
@@ -48,6 +49,7 @@ const TabsContent = ({ children, value, activeValue, className = '' }) => (
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
 
 const BusinessDashboard = () => {
+  const { isDark } = useTheme();
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -135,13 +137,13 @@ const BusinessDashboard = () => {
     .slice(-6);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading Business Dashboard...</div>;
+    return <div className={`flex justify-center items-center h-64 ${isDark ? 'text-gray-300' : ''}`}>Loading Business Dashboard...</div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className={`min-h-screen p-6 space-y-6 ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
+        <h1 className={`text-3xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           <Briefcase className="w-8 h-8" />
           Business Management
         </h1>
@@ -149,7 +151,7 @@ const BusinessDashboard = () => {
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             New Invoice
           </button>
-          <button className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+          <button className={`px-4 py-2 border rounded-lg ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
             New Client
           </button>
         </div>
@@ -157,7 +159,7 @@ const BusinessDashboard = () => {
 
       {/* Alerts */}
       {overdueInvoices.length > 0 && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className={`${isDark ? 'border-red-800 bg-red-900/20' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
@@ -180,7 +182,7 @@ const BusinessDashboard = () => {
             <div className="text-2xl font-bold text-green-600">
               ₹{(totalRevenue / 100000).toFixed(2)}L
             </div>
-            <p className="text-xs text-gray-500 mt-1">From {invoices.filter(i => i.status === 'paid').length} invoices</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>From {invoices.filter(i => i.status === 'paid').length} invoices</p>
           </CardContent>
         </Card>
 
@@ -192,7 +194,7 @@ const BusinessDashboard = () => {
             <div className="text-2xl font-bold text-orange-600">
               ₹{(totalPending / 100000).toFixed(2)}L
             </div>
-            <p className="text-xs text-gray-500 mt-1">{pendingInvoices.length} pending invoices</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{pendingInvoices.length} pending invoices</p>
           </CardContent>
         </Card>
 
@@ -202,7 +204,7 @@ const BusinessDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeProjects.length}</div>
-            <p className="text-xs text-gray-500 mt-1">{completedProjects.length} completed</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{completedProjects.length} completed</p>
           </CardContent>
         </Card>
 
@@ -212,7 +214,7 @@ const BusinessDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{clients.length}</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               {clients.filter(c => c.status === 'active').length} active
             </p>
           </CardContent>
@@ -347,13 +349,13 @@ const BusinessDashboard = () => {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Invoice #</th>
-                      <th className="text-left py-2">Client</th>
-                      <th className="text-left py-2">Date</th>
-                      <th className="text-right py-2">Amount</th>
-                      <th className="text-left py-2">Status</th>
-                      <th className="text-left py-2">Due Date</th>
+                    <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                      <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Invoice #</th>
+                      <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Client</th>
+                      <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Date</th>
+                      <th className={`text-right py-2 ${isDark ? 'text-gray-300' : ''}`}>Amount</th>
+                      <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Status</th>
+                      <th className={`text-left py-2 ${isDark ? 'text-gray-300' : ''}`}>Due Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -364,17 +366,17 @@ const BusinessDashboard = () => {
                         : 0;
 
                       return (
-                        <tr key={invoice._id} className="border-b hover:bg-gray-50">
+                        <tr key={invoice._id} className={`border-b ${isDark ? 'border-gray-700 hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
                           <td className="py-2 font-mono text-sm">{invoice.invoiceNumber}</td>
                           <td className="py-2">{client?.clientName || 'Unknown'}</td>
                           <td className="py-2 text-sm">{new Date(invoice.invoiceDate).toLocaleDateString()}</td>
                           <td className="text-right py-2 font-semibold">₹{invoice.totalAmount?.toLocaleString()}</td>
                           <td className="py-2">
                             <span className={`px-2 py-1 text-xs rounded ${
-                              invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                              invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
-                              invoice.status === 'overdue' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100'
+                              invoice.status === 'paid' ? (isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800') :
+                              invoice.status === 'sent' ? (isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800') :
+                              invoice.status === 'overdue' ? (isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-800') :
+                              (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100')
                             }`}>
                               {invoice.status}
                             </span>
@@ -413,39 +415,39 @@ const BusinessDashboard = () => {
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="text-lg font-bold">{client.clientName}</h3>
-                        <p className="text-sm text-gray-600">{client.email}</p>
+                        <h3 className={`text-lg font-bold ${isDark ? 'text-white' : ''}`}>{client.clientName}</h3>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{client.email}</p>
                         {client.phone && (
-                          <p className="text-sm text-gray-600">{client.phone}</p>
+                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{client.phone}</p>
                         )}
                       </div>
                       <span className={`px-2 py-1 text-xs rounded ${
-                        client.status === 'active' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100'
+                        client.status === 'active' ? (isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800') :
+                        (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100')
                       }`}>
                         {client.status}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t">
+                    <div className={`grid grid-cols-2 gap-3 mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                       <div>
-                        <p className="text-xs text-gray-600">Total Revenue</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Revenue</p>
                         <p className="text-lg font-semibold text-green-600">
                           ₹{clientRevenue.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Pending</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Pending</p>
                         <p className="text-lg font-semibold text-orange-600">
                           ₹{pendingAmount.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Total Invoices</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Invoices</p>
                         <p className="text-lg font-semibold">{clientInvoices.length}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Projects</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Projects</p>
                         <p className="text-lg font-semibold">
                           {projects.filter(p => (p.client?._id || p.client) === client._id).length}
                         </p>
@@ -453,8 +455,8 @@ const BusinessDashboard = () => {
                     </div>
 
                     {client.company && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-xs text-gray-600">Company</p>
+                      <div className={`mt-3 pt-3 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Company</p>
                         <p className="text-sm font-medium">{client.company}</p>
                       </div>
                     )}
@@ -480,17 +482,17 @@ const BusinessDashboard = () => {
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold">{project.projectName}</h3>
-                        <p className="text-sm text-gray-600">{client?.clientName || 'Unknown Client'}</p>
+                        <h3 className={`text-lg font-bold ${isDark ? 'text-white' : ''}`}>{project.projectName}</h3>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{client?.clientName || 'Unknown Client'}</p>
                         {project.description && (
-                          <p className="text-sm text-gray-500 mt-1">{project.description}</p>
+                          <p className={`text-sm mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{project.description}</p>
                         )}
                       </div>
                       <span className={`px-2 py-1 text-xs rounded ${
-                        project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        project.status === 'active' || project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        project.status === 'on_hold' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100'
+                        project.status === 'completed' ? (isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800') :
+                        project.status === 'active' || project.status === 'in_progress' ? (isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800') :
+                        project.status === 'on_hold' ? (isDark ? 'bg-yellow-900/30 text-yellow-300' : 'bg-yellow-100 text-yellow-800') :
+                        (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100')
                       }`}>
                         {project.status.replace('_', ' ')}
                       </span>
@@ -498,21 +500,21 @@ const BusinessDashboard = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                       <div>
-                        <p className="text-xs text-gray-600">Budget</p>
-                        <p className="text-lg font-semibold">₹{project.budget?.toLocaleString()}</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Budget</p>
+                        <p className={`text-lg font-semibold ${isDark ? 'text-white' : ''}`}>₹{project.budget?.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Invoiced</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Invoiced</p>
                         <p className="text-lg font-semibold text-green-600">
                           ₹{invoicedAmount.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Start Date</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Start Date</p>
                         <p className="text-sm">{new Date(project.startDate).toLocaleDateString()}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">End Date</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>End Date</p>
                         <p className="text-sm">
                           {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Ongoing'}
                         </p>
@@ -525,7 +527,7 @@ const BusinessDashboard = () => {
                         <span>Budget Utilization</span>
                         <span className="font-semibold">{progress.toFixed(1)}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className={`w-full rounded-full h-2 ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
                         <div 
                           className={`h-2 rounded-full transition-all ${
                             progress > 100 ? 'bg-red-600' : 'bg-blue-600'
@@ -536,8 +538,8 @@ const BusinessDashboard = () => {
                     </div>
 
                     {project.milestones && project.milestones.length > 0 && (
-                      <div className="mt-4 pt-4 border-t">
-                        <p className="text-sm font-medium mb-2">Milestones</p>
+                      <div className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : ''}`}>Milestones</p>
                         <div className="space-y-2">
                           {project.milestones.map((milestone, idx) => (
                             <div key={idx} className="flex items-center justify-between text-sm">

@@ -85,6 +85,7 @@ import {
 } from '@mui/icons-material';
 
 import api from '../services/api';
+import { FadeIn, StaggerChildren, PageTransition } from '../components/ui/AnimatedComponents';
 
 // Color palette for charts
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
@@ -1823,6 +1824,7 @@ const EMITracker = () => {
 
   return (
     <MainLayout title="EMI Tracker">
+      <PageTransition>
       <Box className={`min-h-screen transition-all duration-300 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
       {/* Enhanced Header with Gradient Background */}
@@ -9839,6 +9841,7 @@ const EMITracker = () => {
       </Snackbar>
     </Container>
       </Box>
+      </PageTransition>
     </MainLayout>
   );
 };

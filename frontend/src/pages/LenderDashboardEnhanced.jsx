@@ -118,6 +118,7 @@ import { format, addMonths, differenceInDays } from 'date-fns';
 
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { useTheme as useAppTheme } from '../context/ThemeContext';
 
 // Color palette
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1'];
@@ -149,6 +150,10 @@ const LenderDashboardEnhanced = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const { isDark } = useAppTheme();
+  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' } };
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -426,7 +431,7 @@ const LenderDashboardEnhanced = () => {
 
   return (
     <MainLayout title="Lender Dashboard">
-    <Box sx={{ pb: isMobile ? 10 : 4 }}>
+    <Box sx={{ pb: isMobile ? 10 : 4, bgcolor: isDark ? '#0f172a' : 'transparent', minHeight: '100vh' }}>
       <Container maxWidth="xl" sx={{ mt: isMobile ? 2 : 4 }}>
         {/* Mobile Header */}
         {isMobile && (
@@ -458,10 +463,10 @@ const LenderDashboardEnhanced = () => {
         {!isMobile && (
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Box>
-              <Typography variant="h4" fontWeight="bold">
+              <Typography variant="h4" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>
                 Lender Dashboard
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: subTextColor }}>
                 Manage your loans and borrowers efficiently
               </Typography>
             </Box>
@@ -560,7 +565,7 @@ const LenderDashboardEnhanced = () => {
         </Box>
 
         {/* Search and Filter Bar - Mobile Optimized */}
-        <Card sx={{ mb: 3, p: 2 }}>
+        <Card sx={{ mb: 3, p: 2, ...cardSx }}>
           <Stack direction={isMobile ? "column" : "row"} spacing={2}>
             <TextField
               fullWidth
@@ -630,8 +635,9 @@ const LenderDashboardEnhanced = () => {
               key={index}
               sx={{ 
                 ...mobileCardStyle,
+                ...cardSx,
                 cursor: 'pointer',
-                '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+                '&:hover': { boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.15)' }
               }}
               onClick={() => {
                 setSelectedBorrower(borrower);
@@ -772,8 +778,8 @@ const LenderDashboardEnhanced = () => {
 
         {/* Empty State */}
         {filteredBorrowers.length === 0 && (
-          <Card sx={{ textAlign: 'center', py: 6 }}>
-            <AccountBalanceWallet sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+          <Card sx={{ textAlign: 'center', py: 6, ...cardSx }}>
+            <AccountBalanceWallet sx={{ fontSize: 80, color: subTextColor, mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No borrowers found
             </Typography>
@@ -800,7 +806,7 @@ const LenderDashboardEnhanced = () => {
             
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 3 }}>
               {/* Portfolio Distribution */}
-              <Card sx={{ p: 3 }}>
+              <Card sx={{ p: 3, ...cardSx }}>
                 <Typography variant="h6" fontWeight="600" mb={2}>
                   Portfolio Distribution
                 </Typography>
@@ -837,7 +843,7 @@ const LenderDashboardEnhanced = () => {
               </Card>
 
               {/* Loan Status Breakdown */}
-              <Card sx={{ p: 3 }}>
+              <Card sx={{ p: 3, ...cardSx }}>
                 <Typography variant="h6" fontWeight="600" mb={2}>
                   Loan Status Overview
                 </Typography>
@@ -872,7 +878,7 @@ const LenderDashboardEnhanced = () => {
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 3 }}>
               {/* Interest vs Principal */}
-              <Card sx={{ p: 3 }}>
+              <Card sx={{ p: 3, ...cardSx }}>
                 <Typography variant="h6" fontWeight="600" mb={2}>
                   Interest vs Principal Breakdown
                 </Typography>
@@ -912,7 +918,7 @@ const LenderDashboardEnhanced = () => {
               </Card>
 
               {/* Collection Performance */}
-              <Card sx={{ p: 3 }}>
+              <Card sx={{ p: 3, ...cardSx }}>
                 <Typography variant="h6" fontWeight="600" mb={2}>
                   Collection Performance
                 </Typography>
@@ -976,7 +982,7 @@ const LenderDashboardEnhanced = () => {
 
             {/* Borrower-wise Performance */}
             {filteredBorrowers.length > 0 && (
-              <Card sx={{ p: 3 }}>
+              <Card sx={{ p: 3, ...cardSx }}>
                 <Typography variant="h6" fontWeight="600" mb={2}>
                   Top Borrowers by Outstanding Amount
                 </Typography>
@@ -1009,7 +1015,7 @@ const LenderDashboardEnhanced = () => {
 
             {/* Monthly Trend (if we have loan data with dates) */}
             {filteredBorrowers.length > 0 && (
-              <Card sx={{ p: 3, mt: 3 }}>
+              <Card sx={{ p: 3, mt: 3, ...cardSx }}>
                 <Typography variant="h6" fontWeight="600" mb={2}>
                   Payment Status Distribution
                 </Typography>
@@ -1064,7 +1070,7 @@ const LenderDashboardEnhanced = () => {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000 }} elevation={3}>
+        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, bgcolor: isDark ? '#1e293b' : '#fff' }} elevation={3}>
           <BottomNavigation
             value={mobileView}
             onChange={(event, newValue) => setMobileView(newValue)}
@@ -1124,6 +1130,8 @@ const LenderDashboardEnhanced = () => {
             height: '85vh',
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
+            bgcolor: isDark ? '#1e293b' : '#fff',
+            color: isDark ? '#f1f5f9' : 'inherit',
           },
         }}
       >
@@ -1301,6 +1309,8 @@ const LenderDashboardEnhanced = () => {
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
             p: 3,
+            bgcolor: isDark ? '#1e293b' : '#fff',
+            color: isDark ? '#f1f5f9' : 'inherit',
           },
         }}
       >
@@ -1350,6 +1360,7 @@ const LenderDashboardEnhanced = () => {
         maxWidth="sm" 
         fullWidth
         fullScreen={isMobile}
+        sx={dialogSx}
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -1462,6 +1473,7 @@ const LenderDashboardEnhanced = () => {
         maxWidth="sm" 
         fullWidth
         fullScreen={isMobile}
+        sx={dialogSx}
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">

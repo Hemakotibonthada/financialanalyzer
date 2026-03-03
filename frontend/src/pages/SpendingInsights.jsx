@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { FadeIn, PageTransition, StaggerChildren } from '../components/ui/AnimatedComponents';
 import {
   TrendingUp,
   TrendingDown,
@@ -106,6 +107,7 @@ const SpendingInsights = () => {
 
   return (
     <MainLayout title="Spending Insights">
+    <PageTransition>
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -938,6 +940,7 @@ const SpendingInsights = () => {
         )}
       </div>
     </div>
+    </PageTransition>
     </MainLayout>
   );
 };

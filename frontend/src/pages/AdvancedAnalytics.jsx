@@ -16,6 +16,7 @@ import {
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 import '../styles/animations.css';
+import { FadeIn, StaggerChildren, PageTransition } from '../components/ui/AnimatedComponents';
 
 // Color palette for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
@@ -166,6 +167,7 @@ const AdvancedAnalytics = () => {
 
   return (
     <MainLayout title="Advanced Analytics" subtitle="AI-powered insights into your finances">
+      <PageTransition>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 animate-fade-in-up">
@@ -234,7 +236,7 @@ const AdvancedAnalytics = () => {
           </div>
         )}
         {/* EMI Analytics Section - Advanced */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* EMI Summary Card */}
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 p-6 flex flex-col h-full">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><CreditCard className="w-5 h-5" /> EMI Analytics</h2>
@@ -316,7 +318,7 @@ const AdvancedAnalytics = () => {
               ))}
             </div>
           </div>
-        </div>
+        </StaggerChildren>
 
         {/* Tab Navigation */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm dark:shadow-slate-900/30 mb-6 p-2">
@@ -753,6 +755,7 @@ const AdvancedAnalytics = () => {
           )}
         </div>
       </div>
+      </PageTransition>
     </MainLayout>
   );
 };

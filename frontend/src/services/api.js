@@ -245,6 +245,86 @@ export const financialService = {
   }),
 };
 
+// AI / ML Services
+export const aiService = {
+  // Dashboard
+  getDashboard: () => api.get('/ai/dashboard'),
+  // Health
+  getHealthScore: () => api.get('/ai/health-score'),
+  // Recommendations
+  getRecommendations: () => api.get('/ai/recommendations'),
+  // Forecasting
+  getSpendingForecast: (days = 30) => api.get('/ai/forecast/spending', { params: { days } }),
+  getIncomeForecast: (months = 3) => api.get('/ai/forecast/income', { params: { months } }),
+  getSavingsPotential: () => api.get('/ai/forecast/savings'),
+  // Anomalies
+  getAnomalies: () => api.get('/ai/anomalies'),
+  // Insights
+  getInsights: (period = 'month') => api.get('/ai/insights', { params: { period } }),
+  // Pattern recognition
+  getRecurringPatterns: () => api.get('/ai/patterns/recurring'),
+  getMerchantPatterns: () => api.get('/ai/patterns/merchants'),
+  getVelocityPatterns: (days = 7) => api.get('/ai/patterns/velocity', { params: { days } }),
+  // Training
+  trainModels: () => api.post('/ai/train'),
+  // Categorization
+  categorizeTransaction: (description, amount, merchantName) =>
+    api.post('/ai/categorize', { description, amount, merchantName }),
+};
+
+// Automation Services
+export const automationService = {
+  // CRUD
+  getRules: (params) => api.get('/automation', { params }),
+  getRule: (id) => api.get(`/automation/${id}`),
+  createRule: (data) => api.post('/automation', data),
+  updateRule: (id, data) => api.put(`/automation/${id}`, data),
+  deleteRule: (id) => api.delete(`/automation/${id}`),
+  // Actions
+  toggleRule: (id) => api.patch(`/automation/${id}/toggle`),
+  duplicateRule: (id) => api.post(`/automation/${id}/duplicate`),
+  testRule: (id, data) => api.post(`/automation/${id}/test`, data),
+  // Bulk
+  bulkAction: (data) => api.post('/automation/bulk', data),
+  importRules: (data) => api.post('/automation/import', data),
+  exportRules: () => api.get('/automation/export'),
+  // Metadata
+  getStats: () => api.get('/automation/stats'),
+  getHistory: (params) => api.get('/automation/history', { params }),
+  getTemplates: () => api.get('/automation/templates'),
+  getSuggestions: () => api.get('/automation/suggestions'),
+  getMetadata: () => api.get('/automation/metadata'),
+};
+
+// ─── Financial Insights Service ─────────────────────────────────────
+export const financialInsightsService = {
+  getDashboard: () => api.get('/financial-insights/dashboard'),
+  getTrends: (months = 12) => api.get('/financial-insights/trends', { params: { months } }),
+  getCategories: (months = 6) => api.get('/financial-insights/categories', { params: { months } }),
+  getRatios: () => api.get('/financial-insights/ratios'),
+  getVelocity: (days = 30) => api.get('/financial-insights/velocity', { params: { days } }),
+  getMerchants: (months = 6) => api.get('/financial-insights/merchants', { params: { months } }),
+};
+
+// ─── Data Export Service ────────────────────────────────────────────
+export const dataExportService = {
+  exportTransactions: (params) => api.get('/data-export/transactions', { params, responseType: 'blob' }),
+  exportBudgets: (params) => api.get('/data-export/budgets', { params, responseType: 'blob' }),
+  exportEMIs: (params) => api.get('/data-export/emis', { params, responseType: 'blob' }),
+  exportInvestments: (params) => api.get('/data-export/investments', { params, responseType: 'blob' }),
+  exportGoals: (params) => api.get('/data-export/goals', { params, responseType: 'blob' }),
+  exportSnapshot: (params) => api.get('/data-export/snapshot', { params }),
+  exportCategoryReport: (params) => api.get('/data-export/category-report', { params, responseType: 'blob' }),
+};
+
+// ─── Jobs Service ───────────────────────────────────────────────────
+export const jobsService = {
+  getStatus: () => api.get('/jobs/status'),
+  runJob: (name) => api.post(`/jobs/run/${name}`),
+  startAll: () => api.post('/jobs/start'),
+  stopAll: () => api.post('/jobs/stop'),
+};
+
 // Debug: log computed API URL at runtime (only in development)
 if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.MODE === 'development')) {
   // eslint-disable-next-line no-console

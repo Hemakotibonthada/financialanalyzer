@@ -33,24 +33,24 @@ const NotificationToast = ({ notification, onClose }) => {
   const getBackground = () => {
     switch (notification.type) {
       case 'success':
-        return 'bg-green-50 border-green-200';
+        return 'bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800';
       case 'error':
-        return 'bg-red-50 border-red-200';
+        return 'bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800';
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200';
+        return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800';
       case 'budget-alert':
-        return 'bg-orange-50 border-orange-200';
+        return 'bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-800';
       case 'spending':
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800';
       case 'info':
       default:
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800';
     }
   };
 
   return (
     <div
-      className={`${getBackground()} border rounded-lg shadow-lg p-4 mb-3 min-w-[320px] max-w-[400px] animate-slide-in`}
+      className={`${getBackground()} border rounded-lg shadow-lg dark:shadow-gray-900/30 p-4 mb-3 min-w-[320px] max-w-[400px] animate-slide-in`}
       role="alert"
     >
       <div className="flex items-start space-x-3">
@@ -59,11 +59,11 @@ const NotificationToast = ({ notification, onClose }) => {
         </div>
         <div className="flex-1 min-w-0">
           {notification.title && (
-            <p className="text-sm font-semibold text-gray-900 mb-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
               {notification.title}
             </p>
           )}
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
             {notification.message}
           </p>
           {notification.action && (
@@ -72,7 +72,7 @@ const NotificationToast = ({ notification, onClose }) => {
                 notification.action.onClick();
                 onClose(notification.id);
               }}
-              className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
               {notification.action.label}
             </button>
@@ -80,7 +80,7 @@ const NotificationToast = ({ notification, onClose }) => {
         </div>
         <button
           onClick={() => onClose(notification.id)}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+          className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
         >
           <X className="w-4 h-4" />
         </button>

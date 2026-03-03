@@ -158,6 +158,9 @@ const FinancialDocuments = lazy(() => import('./pages/FinancialDocuments'));
 const FinancialTemplate = lazy(() => import('./pages/FinancialTemplate'));
 const BillOfMaterials = lazy(() => import('./pages/BillOfMaterials'));
 const AutomationRules = lazy(() => import('./pages/AutomationRules'));
+const AICommandCenter = lazy(() => import('./pages/AICommandCenter'));
+const FinancialInsightsDashboard = lazy(() => import('./pages/FinancialInsightsDashboard'));
+const SystemDashboard = lazy(() => import('./pages/SystemDashboard'));
 
 // Social & Communication
 const FamilyFinance = lazy(() => import('./pages/FamilyFinance'));
@@ -315,10 +318,15 @@ function App() {
               
               {/* ========== AI & ML INSIGHTS ========== */}
               <Route path="/ai-insights" element={<ProtectedRoute><AIInsights /></ProtectedRoute>} />
+              <Route path="/ai-command-center" element={<ProtectedRoute><AICommandCenter /></ProtectedRoute>} />
+              <Route path="/financial-insights-dashboard" element={<ProtectedRoute><FinancialInsightsDashboard /></ProtectedRoute>} />
               <Route path="/ml-dashboard" element={<ProtectedRoute><MLDashboard /></ProtectedRoute>} />
               <Route path="/financial-health" element={<ProtectedRoute><FinancialHealthDashboard /></ProtectedRoute>} />
               <Route path="/spending-insights" element={<ProtectedRoute><SpendingInsights /></ProtectedRoute>} />
               <Route path="/financial-chat" element={<ProtectedRoute><FinancialChat /></ProtectedRoute>} />
+              
+              {/* ========== SYSTEM & ADMIN ========== */}
+              <Route path="/system-dashboard" element={<ProtectedRoute><SystemDashboard /></ProtectedRoute>} />
               
               {/* ========== EDUCATION & GAMIFICATION ========== */}
               <Route path="/education" element={<ProtectedRoute><FinancialEducation /></ProtectedRoute>} />

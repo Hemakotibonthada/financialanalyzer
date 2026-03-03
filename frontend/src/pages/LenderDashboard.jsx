@@ -69,6 +69,7 @@ import {
 
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { useTheme } from '../context/ThemeContext';
 
 // Color palette for charts (matching EMI Tracker)
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1'];
@@ -99,6 +100,10 @@ const chartCardHoverEffect = {
 
 const LenderDashboard = () => {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
+  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' } };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -309,10 +314,10 @@ const LenderDashboard = () => {
 
   return (
     <MainLayout title="Lender Dashboard">
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, bgcolor: isDark ? '#0f172a' : 'transparent' }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
+        <Typography variant="h4" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>
           Lender Dashboard
         </Typography>
         <Box>
@@ -430,7 +435,7 @@ const LenderDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Monthly Collection Trends - Line Chart */}
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Card elevation={0} sx={chartCardHoverEffect}>
+          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', borderColor: isDark ? '#334155' : undefined }}>
             <CardContent>
               <Box 
                 className="chart-header"
@@ -521,7 +526,7 @@ const LenderDashboard = () => {
 
         {/* Lender Portfolio Distribution - Bar Chart */}
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Card elevation={0} sx={chartCardHoverEffect}>
+          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', borderColor: isDark ? '#334155' : undefined }}>
             <CardContent>
               <Box 
                 className="chart-header"
@@ -600,7 +605,7 @@ const LenderDashboard = () => {
 
         {/* Loan Status Distribution - Pie Chart */}
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <Card elevation={0} sx={chartCardHoverEffect}>
+          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', borderColor: isDark ? '#334155' : undefined }}>
             <CardContent>
               <Box 
                 className="chart-header"
@@ -676,7 +681,7 @@ const LenderDashboard = () => {
 
         {/* Lenders Overview Table */}
         <Grid size={{ xs: 12, md: 6, lg: 8 }}>
-          <Card>
+          <Card sx={cardSx}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Lenders Overview
@@ -717,8 +722,8 @@ const LenderDashboard = () => {
       </Grid>
 
       {/* Tabs Section */}
-      <Card>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+      <Card sx={cardSx}>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ borderColor: isDark ? '#334155' : 'divider', '& .MuiTab-root': { color: isDark ? '#94a3b8' : undefined }, '& .Mui-selected': { color: isDark ? '#60a5fa' : 'primary.main' }, '& .MuiTabs-indicator': { bgcolor: isDark ? '#60a5fa' : 'primary.main' } }}>
           <Tab label="Recent Loans" />
           <Tab label="Overdue Loans" />
           <Tab label="Upcoming EMIs" />
@@ -765,7 +770,7 @@ const LenderDashboard = () => {
                               sx={{
                                 height: 8,
                                 borderRadius: 4,
-                                bgcolor: 'grey.200',
+                                bgcolor: isDark ? '#334155' : 'grey.200',
                                 overflow: 'hidden',
                               }}
                             >
@@ -882,7 +887,7 @@ const LenderDashboard = () => {
       </Card>
 
       {/* Add Lender Dialog */}
-      <Dialog open={openAddLenderDialog} onClose={() => setOpenAddLenderDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openAddLenderDialog} onClose={() => setOpenAddLenderDialog(false)} maxWidth="sm" fullWidth sx={dialogSx}>
         <DialogTitle>Add New Lender</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
@@ -943,7 +948,7 @@ const LenderDashboard = () => {
       </Dialog>
 
       {/* Add Loan Dialog */}
-      <Dialog open={openAddLoanDialog} onClose={() => setOpenAddLoanDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openAddLoanDialog} onClose={() => setOpenAddLoanDialog(false)} maxWidth="md" fullWidth sx={dialogSx}>
         <DialogTitle>Add New Loan</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>

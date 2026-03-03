@@ -12,6 +12,7 @@ import {
   PieChart as RePieChart, Pie, Cell, Legend
 } from 'recharts';
 import api from '../services/api';
+import { FadeIn, PageTransition, StaggerChildren, CardSkeleton } from '../components/ui/AnimatedComponents';
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 
@@ -170,6 +171,7 @@ const TransactionManager = () => {
 
   return (
     <MainLayout title="Transaction Manager">
+    <PageTransition>
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 animate-fade-in-down">
@@ -190,7 +192,7 @@ const TransactionManager = () => {
 
       {/* Statistics Cards */}
       {statistics && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 dashboard-grid">
+        <StaggerChildren className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 dashboard-grid">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
@@ -229,7 +231,7 @@ const TransactionManager = () => {
             </div>
             <p className="text-xl font-bold text-slate-900 dark:text-white">{statistics.count}</p>
           </div>
-        </div>
+        </StaggerChildren>
       )}
 
       {/* Search & Filters */}
@@ -585,6 +587,7 @@ const TransactionManager = () => {
         </div>
       )}
     </div>
+    </PageTransition>
     </MainLayout>
   );
 };

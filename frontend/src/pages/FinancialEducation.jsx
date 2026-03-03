@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import '../styles/animations.css';
 import MainLayout from '../components/MainLayout';
+import { useTheme } from '../context/ThemeContext';
 
 // ============================================================
 // Feature #98: Financial Education & Tips Page
@@ -231,6 +232,32 @@ const FinancialEducation = () => {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [difficulty, setDifficulty] = useState('all');
 
+  const { isDark } = useTheme();
+
+  // Dark mode style helpers
+  const cardSx = {
+    bgcolor: isDark ? '#1e293b' : '#fff',
+    border: '1px solid',
+    borderColor: isDark ? '#334155' : '#e2e8f0',
+    color: isDark ? '#f1f5f9' : 'inherit',
+  };
+  const dialogSx = {
+    '& .MuiDialog-paper': {
+      bgcolor: isDark ? '#1e293b' : '#fff',
+      color: isDark ? '#f1f5f9' : 'inherit',
+      backgroundImage: 'none',
+    },
+  };
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      bgcolor: isDark ? '#0f172a' : '#fff',
+      color: isDark ? '#f1f5f9' : 'inherit',
+      '& fieldset': { borderColor: isDark ? '#334155' : '#e2e8f0' },
+    },
+    '& .MuiInputLabel-root': { color: isDark ? '#94a3b8' : undefined },
+  };
+  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
+
   const filteredTips = useMemo(() => {
     return FINANCIAL_TIPS.filter(tip => {
       if (selectedCategory !== 'all' && tip.category !== selectedCategory) return false;
@@ -267,12 +294,12 @@ const FinancialEducation = () => {
 
   return (
     <MainLayout title="Financial Education">
-    <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out' }}>
+    <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out', bgcolor: isDark ? '#0f172a' : 'transparent', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Financial Education</Typography>
-          <Typography color="text.secondary">Learn, grow, and master your finances</Typography>
+          <Typography variant="h4" fontWeight={700} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>Financial Education</Typography>
+          <Typography sx={{ color: subTextColor }}>Learn, grow, and master your finances</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Chip icon={<Star />} label={`${bookmarkedTips.size} Saved`} variant="outlined" />
@@ -281,7 +308,7 @@ const FinancialEducation = () => {
       </Box>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: isDark ? '#334155' : 'divider', '& .MuiTab-root': { color: isDark ? '#94a3b8' : undefined }, '& .Mui-selected': { color: isDark ? '#60a5fa' : undefined } }}>
         <Tab icon={<Article />} label="Tips & Articles" iconPosition="start" />
         <Tab icon={<MenuBook />} label="Learning Modules" iconPosition="start" />
         <Tab icon={<Quiz />} label="Quizzes" iconPosition="start" />
@@ -299,7 +326,7 @@ const FinancialEducation = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }}
-              sx={{ minWidth: 250 }}
+              sx={{ minWidth: 250, ...inputSx }}
             />
             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
               {categories.map(cat => (
@@ -329,10 +356,11 @@ const FinancialEducation = () => {
                   sx={{
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 },
+                    '&:hover': { transform: 'translateY(-4px)', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 6 },
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    ...cardSx,
                   }}
                   onClick={() => setSelectedTip(tip)}
                 >
@@ -346,10 +374,10 @@ const FinancialEducation = () => {
                         {bookmarkedTips.has(tip.id) ? <Bookmark color="primary" /> : <BookmarkBorder />}
                       </IconButton>
                     </Box>
-                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ fontSize: '1rem' }}>
+                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ fontSize: '1rem', color: isDark ? '#f1f5f9' : 'inherit' }}>
                       {tip.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 2, color: subTextColor }}>
                       {tip.content}
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
@@ -366,13 +394,13 @@ const FinancialEducation = () => {
                           color={tip.difficulty === 'beginner' ? 'success' : tip.difficulty === 'intermediate' ? 'warning' : 'error'}
                           sx={{ fontSize: '0.65rem', height: 20 }}
                         />
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{ color: subTextColor }}>
                           <Timer sx={{ fontSize: 12, mr: 0.3 }} />{tip.readTime} min
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <ThumbUp sx={{ fontSize: 14, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">{tip.likes}</Typography>
+                        <ThumbUp sx={{ fontSize: 14, color: subTextColor }} />
+                        <Typography variant="caption" sx={{ color: subTextColor }}>{tip.likes}</Typography>
                       </Box>
                     </Box>
                   </CardContent>
@@ -382,8 +410,8 @@ const FinancialEducation = () => {
           </Grid>
           {filteredTips.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography variant="h6" color="text.secondary">No tips found</Typography>
-              <Typography variant="body2" color="text.secondary">Try adjusting your filters</Typography>
+              <Typography variant="h6" sx={{ color: subTextColor }}>No tips found</Typography>
+              <Typography variant="body2" sx={{ color: subTextColor }}>Try adjusting your filters</Typography>
             </Box>
           )}
         </Box>
@@ -394,7 +422,7 @@ const FinancialEducation = () => {
         <Grid container spacing={3}>
           {LEARNING_MODULES.map(module => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={module.id}>
-              <Card sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }, height: '100%' }}>
+              <Card sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 6 }, height: '100%', ...cardSx }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h2" component="span">{module.icon}</Typography>
@@ -404,14 +432,14 @@ const FinancialEducation = () => {
                       color={module.difficulty === 'beginner' ? 'success' : module.difficulty === 'intermediate' ? 'warning' : 'error'}
                     />
                   </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>{module.title}</Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>{module.description}</Typography>
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>{module.title}</Typography>
+                  <Typography variant="body2" gutterBottom sx={{ color: subTextColor }}>{module.description}</Typography>
                   <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary">📖 {module.lessons} Lessons</Typography>
-                    <Typography variant="caption" color="text.secondary">⏱️ {module.duration}</Typography>
+                    <Typography variant="caption" sx={{ color: subTextColor }}>📖 {module.lessons} Lessons</Typography>
+                    <Typography variant="caption" sx={{ color: subTextColor }}>⏱️ {module.duration}</Typography>
                   </Box>
                   <LinearProgress variant="determinate" value={module.progress} sx={{ mb: 1, borderRadius: 1, height: 6 }} />
-                  <Typography variant="caption" color="text.secondary">{module.progress}% Complete</Typography>
+                  <Typography variant="caption" sx={{ color: subTextColor }}>{module.progress}% Complete</Typography>
                   <Box sx={{ mt: 2 }}>
                     <Button
                       fullWidth
@@ -436,10 +464,10 @@ const FinancialEducation = () => {
             <Grid container spacing={3}>
               {QUIZZES.map(quiz => (
                 <Grid size={{ xs: 12, sm: 6 }} key={quiz.id}>
-                  <Card sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
+                  <Card sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 6 }, ...cardSx }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="h6" fontWeight={600}>{quiz.title}</Typography>
+                      <Typography variant="h6" fontWeight={600} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>{quiz.title}</Typography>
                         <Chip
                           label={quiz.difficulty}
                           size="small"
@@ -447,8 +475,8 @@ const FinancialEducation = () => {
                         />
                       </Box>
                       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary">📝 {quiz.questions.length} Questions</Typography>
-                        <Typography variant="body2" color="text.secondary">⏱️ {quiz.timeLimit / 60} min</Typography>
+                        <Typography variant="body2" sx={{ color: subTextColor }}>📝 {quiz.questions.length} Questions</Typography>
+                        <Typography variant="body2" sx={{ color: subTextColor }}>⏱️ {quiz.timeLimit / 60} min</Typography>
                       </Box>
                       <Button
                         variant="contained"
@@ -464,10 +492,10 @@ const FinancialEducation = () => {
               ))}
             </Grid>
           ) : (
-            <Card>
+            <Card sx={{ ...cardSx }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h5" fontWeight={600}>{activeQuiz.title}</Typography>
+                  <Typography variant="h5" fontWeight={600} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>{activeQuiz.title}</Typography>
                   <Button variant="outlined" onClick={() => setActiveQuiz(null)}>Back to Quizzes</Button>
                 </Box>
 
@@ -476,10 +504,10 @@ const FinancialEducation = () => {
                     <Typography variant="h2" sx={{ mb: 2 }}>
                       {getQuizScore() === activeQuiz.questions.length ? '🏆' : getQuizScore() >= activeQuiz.questions.length * 0.6 ? '👍' : '📚'}
                     </Typography>
-                    <Typography variant="h4" fontWeight={700} gutterBottom>
+                    <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>
                       {getQuizScore()} / {activeQuiz.questions.length}
                     </Typography>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: subTextColor }}>
                       {getQuizScore() === activeQuiz.questions.length ? 'Perfect Score!' : getQuizScore() >= activeQuiz.questions.length * 0.6 ? 'Good Job!' : 'Keep Learning!'}
                     </Typography>
                     <LinearProgress
@@ -496,8 +524,8 @@ const FinancialEducation = () => {
                 ) : (
                   <Box>
                     {activeQuiz.questions.map((question, qi) => (
-                      <Box key={qi} sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-                        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                      <Box key={qi} sx={{ mb: 3, p: 2, bgcolor: isDark ? '#0f172a' : 'background.default', borderRadius: 2, border: isDark ? '1px solid #334155' : 'none' }}>
+                        <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>
                           {qi + 1}. {question.q}
                         </Typography>
                         <Grid container spacing={1}>
@@ -546,11 +574,11 @@ const FinancialEducation = () => {
             { title: 'CIBIL Score Check', url: 'https://www.cibil.com', icon: '💳', description: 'Check and monitor your credit score' },
           ].map((resource, idx) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-              <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
+              <Card sx={{ transition: 'all 0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 6 }, ...cardSx }}>
                 <CardContent>
                   <Typography variant="h2" component="span">{resource.icon}</Typography>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mt: 1 }}>{resource.title}</Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>{resource.description}</Typography>
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mt: 1, color: isDark ? '#f1f5f9' : 'inherit' }}>{resource.title}</Typography>
+                  <Typography variant="body2" gutterBottom sx={{ color: subTextColor }}>{resource.description}</Typography>
                   <Button variant="outlined" size="small" endIcon={<ArrowForward />} sx={{ mt: 1 }}>
                     Visit Resource
                   </Button>
@@ -562,14 +590,14 @@ const FinancialEducation = () => {
       )}
 
       {/* Tip Detail Dialog */}
-      <Dialog open={!!selectedTip} onClose={() => setSelectedTip(null)} maxWidth="md" fullWidth>
+      <Dialog open={!!selectedTip} onClose={() => setSelectedTip(null)} maxWidth="md" fullWidth sx={dialogSx}>
         {selectedTip && (
           <>
             <DialogTitle>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="h4" component="span">{selectedTip.icon}</Typography>
-                  <Typography variant="h6" fontWeight={700}>{selectedTip.title}</Typography>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>{selectedTip.title}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <IconButton onClick={() => toggleBookmark(selectedTip.id)}>
@@ -604,18 +632,18 @@ const FinancialEducation = () => {
       </Dialog>
 
       {/* Module Detail Dialog */}
-      <Dialog open={!!selectedModule} onClose={() => setSelectedModule(null)} maxWidth="sm" fullWidth>
+      <Dialog open={!!selectedModule} onClose={() => setSelectedModule(null)} maxWidth="sm" fullWidth sx={dialogSx}>
         {selectedModule && (
           <>
             <DialogTitle>
-              <Typography variant="h6" fontWeight={700}>{selectedModule.icon} {selectedModule.title}</Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>{selectedModule.icon} {selectedModule.title}</Typography>
             </DialogTitle>
             <DialogContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>{selectedModule.description}</Typography>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle2" fontWeight={600} gutterBottom>Lessons:</Typography>
+              <Typography variant="body2" gutterBottom sx={{ color: subTextColor }}>{selectedModule.description}</Typography>
+              <Divider sx={{ my: 2, borderColor: isDark ? '#334155' : undefined }} />
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>Lessons:</Typography>
               {selectedModule.topics.map((topic, idx) => (
-                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1, borderBottom: '1px solid', borderColor: isDark ? '#334155' : 'divider' }}>
                   <Avatar sx={{ width: 28, height: 28, fontSize: '0.8rem', bgcolor: 'primary.main' }}>{idx + 1}</Avatar>
                   <Typography variant="body2">{topic}</Typography>
                   <Box sx={{ flex: 1 }} />

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Filter, Calendar, DollarSign, Tag, ArrowUpDown } from 'lucide-react';
 import axios from 'axios';
+import { useTheme } from '../../context/ThemeContext';
 
 const AdvancedSearch = () => {
+  const { isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -112,9 +114,9 @@ const AdvancedSearch = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className={`min-h-screen p-6 space-y-6 ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
+        <h1 className={`text-3xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           <Search className="w-8 h-8" />
           Advanced Search
         </h1>
@@ -131,9 +133,9 @@ const AdvancedSearch = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Search transactions, invoices, clients, projects..."
-                className="w-full px-4 py-3 pr-10 border rounded-lg text-lg"
+                className={`w-full px-4 py-3 pr-10 border rounded-lg text-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300'}`}
               />
-              <Search className="absolute right-3 top-3.5 w-5 h-5 text-gray-400" />
+              <Search className={`absolute right-3 top-3.5 w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
             </div>
             <button
               onClick={() => handleSearch(false)}
@@ -143,7 +145,7 @@ const AdvancedSearch = () => {
             </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 border rounded-lg hover:bg-gray-50 ${showFilters ? 'bg-gray-100' : ''}`}
+              className={`px-4 py-3 border rounded-lg ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'hover:bg-gray-50'} ${showFilters ? (isDark ? 'bg-gray-700' : 'bg-gray-100') : ''}`}
             >
               <Filter className="w-5 h-5" />
             </button>
@@ -169,11 +171,11 @@ const AdvancedSearch = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Search In</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : ''}`}>Search In</label>
                 <select
                   value={filters.type}
                   onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
                 >
                   {searchTypes.map(type => (
                     <option key={type.value} value={type.value}>
@@ -184,11 +186,11 @@ const AdvancedSearch = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Date Range</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : ''}`}>Date Range</label>
                 <select
                   value={filters.dateRange}
                   onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
                 >
                   {dateRanges.map(range => (
                     <option key={range.value} value={range.value}>
@@ -199,11 +201,11 @@ const AdvancedSearch = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Sort By</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : ''}`}>Sort By</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
                 >
                   <option value="relevance">Relevance</option>
                   <option value="date_desc">Date (Newest)</option>
@@ -214,35 +216,35 @@ const AdvancedSearch = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Min Amount</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : ''}`}>Min Amount</label>
                 <input
                   type="number"
                   value={filters.minAmount}
                   onChange={(e) => setFilters({ ...filters, minAmount: e.target.value })}
                   placeholder="₹0"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300'}`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Max Amount</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : ''}`}>Max Amount</label>
                 <input
                   type="number"
                   value={filters.maxAmount}
                   onChange={(e) => setFilters({ ...filters, maxAmount: e.target.value })}
                   placeholder="No limit"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300'}`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : ''}`}>Category</label>
                 <input
                   type="text"
                   value={filters.category}
                   onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                   placeholder="Any category"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300'}`}
                 />
               </div>
             </div>
@@ -265,7 +267,7 @@ const AdvancedSearch = () => {
                   });
                   setSortBy('relevance');
                 }}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className={`px-4 py-2 border rounded-lg ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'hover:bg-gray-50'}`}
               >
                 Clear All
               </button>
@@ -279,12 +281,12 @@ const AdvancedSearch = () => {
         <Card>
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-            <p className="text-gray-600">Searching...</p>
+            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Searching...</p>
           </CardContent>
         </Card>
       ) : results.length > 0 ? (
         <div>
-          <div className="mb-4 text-sm text-gray-600">
+          <div className={`mb-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Found {results.length} result{results.length !== 1 ? 's' : ''}
           </div>
           <div className="space-y-3">
@@ -298,18 +300,18 @@ const AdvancedSearch = () => {
                         <h3 className="font-semibold">
                           {highlightMatch(result.title || result.description, searchQuery)}
                         </h3>
-                        <span className="text-xs px-2 py-1 bg-gray-100 rounded capitalize">
+                        <span className={`text-xs px-2 py-1 rounded capitalize ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100'}`}>
                           {result.type}
                         </span>
                       </div>
                       
                       {result.description && result.description !== result.title && (
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                           {highlightMatch(result.description, searchQuery)}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-500">
+                      <div className={`flex flex-wrap gap-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                         {result.date && (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
@@ -331,7 +333,7 @@ const AdvancedSearch = () => {
                       </div>
 
                       {result.highlights && result.highlights.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-500">
+                        <div className={`mt-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                           {result.highlights.map((highlight, i) => (
                             <div key={i} dangerouslySetInnerHTML={{ __html: highlight }} />
                           ))}
@@ -347,9 +349,9 @@ const AdvancedSearch = () => {
       ) : searchQuery && !loading ? (
         <Card>
           <CardContent className="p-8 text-center text-gray-500">
-            <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-lg font-medium">No results found</p>
-            <p className="text-sm mt-1">Try different keywords or filters</p>
+            <Search className={`w-12 h-12 mx-auto mb-2 opacity-50 ${isDark ? 'text-gray-500' : ''}`} />
+            <p className={`text-lg font-medium ${isDark ? 'text-gray-300' : ''}`}>No results found</p>
+            <p className={`text-sm mt-1 ${isDark ? 'text-gray-500' : ''}`}>Try different keywords or filters</p>
           </CardContent>
         </Card>
       ) : null}
@@ -363,8 +365,8 @@ const AdvancedSearch = () => {
           <CardContent>
             <div className="space-y-3 text-sm">
               <div>
-                <p className="font-semibold mb-1">Natural Language Queries:</p>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
+                <p className={`font-semibold mb-1 ${isDark ? 'text-gray-200' : ''}`}>Natural Language Queries:</p>
+                <ul className={`list-disc list-inside space-y-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   <li>"expenses over ₹5000 this month"</li>
                   <li>"income from last week"</li>
                   <li>"groceries less than ₹1000"</li>
@@ -372,8 +374,8 @@ const AdvancedSearch = () => {
                 </ul>
               </div>
               <div>
-                <p className="font-semibold mb-1">Quick Search:</p>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
+                <p className={`font-semibold mb-1 ${isDark ? 'text-gray-200' : ''}`}>Quick Search:</p>
+                <ul className={`list-disc list-inside space-y-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   <li>Use keywords like merchant names, descriptions, or categories</li>
                   <li>Combine filters for more specific results</li>
                   <li>Sort results by relevance, date, or amount</li>
