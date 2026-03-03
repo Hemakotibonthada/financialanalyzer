@@ -288,8 +288,8 @@ const CSVImportExport = () => {
               p: 4, 
               mb: 3, 
               border: '2px dashed', 
-              borderColor: selectedFile ? 'success.main' : 'grey.300',
-              bgcolor: selectedFile ? 'success.50' : 'grey.50',
+              borderColor: selectedFile ? 'success.main' : 'divider',
+              bgcolor: selectedFile ? 'action.selected' : 'background.default',
               textAlign: 'center',
               transition: 'all 0.3s'
             }}
@@ -418,7 +418,7 @@ const CSVImportExport = () => {
                 {previewData.preview.map((row, rowIndex) => (
                   <TableRow 
                     key={rowIndex}
-                    sx={{ '&:nth-of-type(odd)': { bgcolor: 'grey.50' } }}
+                    sx={{ '&:nth-of-type(odd)': { bgcolor: 'action.hover' } }}
                   >
                     {previewData.headers.map((header, colIndex) => (
                       <TableCell key={colIndex}>{row[header]}</TableCell>
@@ -571,7 +571,7 @@ const CSVImportExport = () => {
         Export Transactions to CSV
       </Typography>
 
-      <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+      <Paper sx={{ p: 3, mb: 3, bgcolor: 'background.default' }}>
         <Typography variant="subtitle2" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
           Filter Options (Optional)
         </Typography>
@@ -646,7 +646,7 @@ const CSVImportExport = () => {
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', pt: 12 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pt: 12 }}>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
         {/* Header Section */}
         <Box sx={{ mb: 4, textAlign: 'center' }}>
@@ -697,7 +697,7 @@ const CSVImportExport = () => {
           sx={{ 
             borderRadius: 3,
             overflow: 'hidden',
-            background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)'
+            bgcolor: 'background.paper'
           }}
         >
           <CardContent sx={{ p: 4 }}>
@@ -706,7 +706,7 @@ const CSVImportExport = () => {
         </Card>
 
         {/* Info Section */}
-        <Paper sx={{ mt: 3, p: 3, borderRadius: 2, bgcolor: 'info.50' }}>
+        <Paper sx={{ mt: 3, p: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: 'center' }}>

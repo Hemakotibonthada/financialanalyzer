@@ -272,7 +272,7 @@ export default function FinancialInsightsDashboard() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-center py-12 text-gray-400">No trend data available</div>
+              <div className="text-center py-12 text-gray-400 dark:text-gray-500">No trend data available</div>
             )}
           </div>
         </FadeIn>
@@ -294,7 +294,7 @@ export default function FinancialInsightsDashboard() {
                   </RePieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="text-center py-12 text-gray-400">No category data</div>
+                <div className="text-center py-12 text-gray-400 dark:text-gray-500">No category data</div>
               )}
             </div>
           </FadeIn>
@@ -361,7 +361,7 @@ export default function FinancialInsightsDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-center py-8 text-gray-400">No velocity data</div>
+              <div className="text-center py-8 text-gray-400 dark:text-gray-500">No velocity data</div>
             )}
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -433,7 +433,7 @@ export default function FinancialInsightsDashboard() {
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-500 dark:text-gray-400">{cat.percentOfTotal?.toFixed(1)}%</span>
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(cat.totalSpent).toLocaleString('en-IN')}</span>
-                        {expandedCategory === i ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                        {expandedCategory === i ? <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
                       </div>
                     </button>
                     {expandedCategory === i && cat.monthlyData && (

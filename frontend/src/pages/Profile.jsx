@@ -1093,7 +1093,7 @@ const Profile = () => {
                 {/* Display Preferences (localStorage) */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-slate-700">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-gray-600" />
+                    <Eye className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     Display Preferences
                   </h3>
                   <div className="space-y-3">
@@ -1110,7 +1110,7 @@ const Profile = () => {
                 {/* Default Settings (localStorage) */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-slate-700">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-gray-600" />
+                    <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     Default Settings
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1883,21 +1883,21 @@ function DataManagementTab() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.transactions.toLocaleString()}</div>
-            <div className="text-xs text-gray-500">Transactions</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Transactions</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.budgets}</div>
-            <div className="text-xs text-gray-500">Budgets</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Budgets</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{backups.length}</div>
-            <div className="text-xs text-gray-500">Saved Backups</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Saved Backups</div>
           </div>
           <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {backupSchedule.enabled ? '🟢' : '⚪'}
             </div>
-            <div className="text-xs text-gray-500">{backupSchedule.enabled ? `Auto: ${backupSchedule.frequency}` : 'Auto-backup Off'}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{backupSchedule.enabled ? `Auto: ${backupSchedule.frequency}` : 'Auto-backup Off'}</div>
           </div>
         </div>
       </AnimatedCard>
@@ -1975,10 +1975,10 @@ function DataManagementTab() {
                   accept=".json,.gz"
                   onChange={restoreFromUpload}
                   disabled={restoreLoading}
-                  className="w-full text-sm text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
+                  className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
                 />
               </div>
-              <button onClick={() => setShowUploadRestore(false)} className="text-xs text-gray-400 hover:text-gray-600 mt-6">Cancel</button>
+              <button onClick={() => setShowUploadRestore(false)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-6">Cancel</button>
             </div>
           </div>
         )}
@@ -2059,7 +2059,7 @@ function DataManagementTab() {
           <div className="flex items-center justify-between">
             <div>
               <div className="font-medium text-gray-900 dark:text-white">Enable Auto-Backup</div>
-              <div className="text-xs text-gray-500">Automatically create backups on a schedule</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Automatically create backups on a schedule</div>
             </div>
             <button
               onClick={() => updateSchedule({ ...backupSchedule, enabled: !backupSchedule.enabled })}
@@ -2105,7 +2105,7 @@ function DataManagementTab() {
                     { key: 'monthly', label: 'Monthly', count: backupSchedule.retentionCount?.monthly || 6 }
                   ].map(r => (
                     <div key={r.key} className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">{r.label} backups</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{r.label} backups</div>
                       <div className="text-lg font-bold text-gray-900 dark:text-white">Keep {r.count}</div>
                     </div>
                   ))}
@@ -2229,14 +2229,14 @@ function DataManagementTab() {
                 <input type="radio" name="strategy" value="merge" checked={restoreStrategy === 'merge'} onChange={(e) => setRestoreStrategy(e.target.value)} className="mt-1" />
                 <div>
                   <div className="font-medium text-gray-900 dark:text-white">Merge</div>
-                  <div className="text-xs text-gray-500">Keep existing data and add missing items from the backup. Safest option.</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Keep existing data and add missing items from the backup. Safest option.</div>
                 </div>
               </label>
               <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <input type="radio" name="strategy" value="replace" checked={restoreStrategy === 'replace'} onChange={(e) => setRestoreStrategy(e.target.value)} className="mt-1" />
                 <div>
                   <div className="font-medium text-red-600">Replace</div>
-                  <div className="text-xs text-gray-500">Delete existing data and replace with backup data. ⚠️ Destructive.</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Delete existing data and replace with backup data. ⚠️ Destructive.</div>
                 </div>
               </label>
             </div>

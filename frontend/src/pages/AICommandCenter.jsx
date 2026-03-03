@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
+import { useTheme } from '../context/ThemeContext';
 import { FadeIn, StaggerChildren, PageTransition, AnimatedCounter, AnimatedProgress, CardSkeleton, GlassCard, AnimatedBadge } from '../components/ui/AnimatedComponents';
 
 // ─── Constants ──────────────────────────────────────────────────────
@@ -191,7 +192,7 @@ const AICommandCenter = () => {
   const [training, setTraining] = useState(false);
   const [trainResult, setTrainResult] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const isDark = document.documentElement.classList.contains('dark');
+  const { isDark } = useTheme();
 
   const fetchAll = useCallback(async () => {
     try {

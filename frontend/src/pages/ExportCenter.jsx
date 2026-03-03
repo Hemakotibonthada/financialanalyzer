@@ -339,7 +339,7 @@ export default function ExportCenter() {
             <div className="text-center py-8">
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
               <h3 className="font-semibold text-gray-900 dark:text-white mt-4">Generating Report...</h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Preparing your {selectedTemplate.name}. This may take a moment.
               </p>
             </div>
@@ -348,7 +348,7 @@ export default function ExportCenter() {
               <div className="text-center py-4">
                 <span className="text-4xl block mb-2">{selectedTemplate.icon}</span>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">{selectedTemplate.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{selectedTemplate.description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{selectedTemplate.description}</p>
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
@@ -358,7 +358,7 @@ export default function ExportCenter() {
                     <Badge key={section} variant="info" size="xs">{section.replace(/-/g, ' ')}</Badge>
                   ))}
                 </div>
-                <div className="text-xs text-gray-400 mt-2">~{selectedTemplate.estimatedPages} pages</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-2">~{selectedTemplate.estimatedPages} pages</div>
               </div>
 
               <div>
@@ -421,7 +421,7 @@ function ReportTemplatesView({ templates, onSelect }) {
                   <span className="text-3xl group-hover:scale-110 transition-transform">{template.icon}</span>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{template.name}</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">{template.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{template.description}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="info" size="xs">{template.estimatedPages} pages</Badge>
                       <Badge variant="default" size="xs" className="capitalize">{template.category}</Badge>
@@ -449,7 +449,7 @@ function ReportTemplatesView({ templates, onSelect }) {
                 <span className="text-3xl group-hover:scale-110 transition-transform">{template.icon}</span>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{template.name}</h4>
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{template.description}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{template.description}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="info" size="xs">{template.estimatedPages} pages</Badge>
                     {template.popular && <Badge variant="warning" size="xs">Popular</Badge>}
@@ -489,7 +489,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
                 className={`p-4 rounded-xl text-center transition-all ${
                   config.dataCategories.includes(cat.id)
                     ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-700'
-                    : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:bg-gray-100'
+                    : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <span className="text-2xl block mb-1">{cat.icon}</span>
@@ -529,7 +529,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
                     className={`flex-1 p-2 rounded-lg text-center text-xs transition-all ${
                       config.format === format.id
                         ? 'text-white'
-                        : 'bg-gray-50 dark:bg-gray-700 text-gray-600'
+                        : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                     }`}
                     style={config.format === format.id ? { backgroundColor: format.color } : {}}
                   >
@@ -546,7 +546,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
               type="checkbox"
               checked={config.includeCharts}
               onChange={(e) => setConfig(prev => ({ ...prev, includeCharts: e.target.checked }))}
-              className="rounded border-gray-300"
+              className="rounded border-gray-300 dark:border-gray-600"
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">Include charts and visualizations</span>
           </label>
@@ -556,7 +556,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
         <AnimatedCard delay={200}>
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">3️⃣ Export</h3>
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {config.dataCategories.length} categories selected • {config.dateRange.replace(/-/g, ' ')} • {config.format.toUpperCase()}
             </div>
             <button
@@ -582,7 +582,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
         <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Preview</h3>
         <div className="space-y-3">
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 mb-1">Selected Data</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Selected Data</div>
             <div className="flex flex-wrap gap-1">
               {config.dataCategories.map(catId => {
                 const cat = DATA_CATEGORIES.find(c => c.id === catId);
@@ -591,22 +591,22 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
                 ) : null;
               })}
               {config.dataCategories.length === 0 && (
-                <span className="text-xs text-gray-400">No categories selected</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">No categories selected</span>
               )}
             </div>
           </div>
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 mb-1">Categories</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Categories</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {config.dataCategories.length}
             </div>
           </div>
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 mb-1">Format</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Format</div>
             <div className="text-lg font-bold text-gray-900 dark:text-white uppercase">{config.format}</div>
           </div>
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 mb-1">Date Range</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Date Range</div>
             <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
               {config.dateRange.replace(/-/g, ' ')}
             </div>
@@ -651,7 +651,7 @@ function ScheduledExportsView() {
         {loading ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Loading scheduled exports...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Loading scheduled exports...</p>
           </div>
         ) : scheduledExports.length === 0 ? (
           <div className="text-center py-12">
@@ -666,7 +666,7 @@ function ScheduledExportsView() {
                 <div className={`w-3 h-3 rounded-full ${schedule.enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 dark:text-white">{schedule.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {schedule.frequency} • Next: {formatDate(schedule.nextRun)} • {(schedule.format || '').toUpperCase()}
                   </div>
                 </div>
@@ -710,7 +710,7 @@ function ExportHistoryView({ history }) {
               <span className="text-xl">{formatInfo.icon}</span>
               <div className="flex-1">
                 <div className="font-medium text-gray-900 dark:text-white text-sm">{entry.name}</div>
-                <div className="text-xs text-gray-400">{formatDate(entry.date)} • {entry.size || 'Unknown'}</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500">{formatDate(entry.date)} • {entry.size || 'Unknown'}</div>
               </div>
               <Badge variant={entry.status === 'completed' ? 'success' : 'warning'} size="xs">{entry.status}</Badge>
               <div className="flex gap-1">
