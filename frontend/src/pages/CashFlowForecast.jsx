@@ -20,6 +20,7 @@ import {
   ComposedChart, Scatter, ReferenceLine, Brush
 } from 'recharts';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 import '../styles/animations.css';
 
 // ============================================================
@@ -192,6 +193,7 @@ const CashFlowForecast = () => {
   };
 
   return (
+    <MainLayout title="Cash Flow Forecast">
     <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -675,6 +677,7 @@ const CashFlowForecast = () => {
         </Box>
       )}
     </Box>
+    </MainLayout>
   );
 };
 

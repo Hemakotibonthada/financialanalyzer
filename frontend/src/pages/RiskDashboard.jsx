@@ -14,6 +14,7 @@ import {
   Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Area, AreaChart
 } from 'recharts';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 // ==============================
 // Static Reference Data
@@ -141,20 +142,23 @@ const RiskDashboard = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress size={48} />
-          <Typography sx={{ mt: 2 }} color="text.secondary">Analyzing your risk profile...</Typography>
+      <MainLayout title="Risk Dashboard">
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress size={48} />
+            <Typography sx={{ mt: 2 }} color="text.secondary">Analyzing your risk profile...</Typography>
+          </Box>
         </Box>
-      </Box>
+      </MainLayout>
     );
   }
 
   if (error) {
-    return <Box sx={{ p: 3 }}><Alert severity="error">{error}</Alert></Box>;
+    return <MainLayout title="Risk Dashboard"><Box sx={{ p: 3 }}><Alert severity="error">{error}</Alert></Box></MainLayout>;
   }
 
   return (
+    <MainLayout title="Risk Dashboard">
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -377,6 +381,7 @@ const RiskDashboard = () => {
         </Box>
       )}
     </Box>
+    </MainLayout>
   );
 };
 

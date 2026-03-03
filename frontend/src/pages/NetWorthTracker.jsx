@@ -52,15 +52,12 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import axios from 'axios';
-import Sidebar from '../components/Sidebar';
-import { useSidebar } from '../context/SidebarContext';
-import { API_URL } from '../services/api';
+import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 function NetWorthTracker() {
-  const { isCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState(0);
   const [latestSnapshot, setLatestSnapshot] = useState(null);
   const [history, setHistory] = useState([]);
@@ -112,14 +109,12 @@ function NetWorthTracker() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
 
       const [latestRes, historyRes, trendRes, comparisonRes] = await Promise.all([
-  axios.get(`${API_URL}/networth/latest`, { headers }).catch(() => ({ data: { data: null } })),
-  axios.get(`${API_URL}/networth/history?months=12`, { headers }).catch(() => ({ data: { data: [] } })),
-  axios.get(`${API_URL}/networth/trend?period=monthly&count=12`, { headers }).catch(() => ({ data: { data: [] } })),
-  axios.get(`${API_URL}/networth/comparison`, { headers }).catch(() => ({ data: { data: null } }))
+  api.get('/networth/latest').catch(() => ({ data: { data: null } })),
+  api.get('/networth/history?months=12').catch(() => ({ data: { data: [] } })),
+  api.get('/networth/trend?period=monthly&count=12').catch(() => ({ data: { data: [] } })),
+  api.get('/networth/comparison').catch(() => ({ data: { data: null } }))
       ]);
 
       setLatestSnapshot(latestRes.data.data);
@@ -135,12 +130,7 @@ function NetWorthTracker() {
 
   const handleAutoGenerate = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/networth/auto-generate`,
-        { period: 'monthly' },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/networth/auto-generate', { period: 'monthly' });
       fetchData();
     } catch (error) {
       console.error('Error auto-generating snapshot:', error);
@@ -150,12 +140,7 @@ function NetWorthTracker() {
 
   const handleCreateSnapshot = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/networth/snapshot`,
-        snapshotData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/networth/snapshot', snapshotData);
       setOpenDialog(false);
       resetForm();
       fetchData();
@@ -223,20 +208,18 @@ function NetWorthTracker() {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
+      <MainLayout title="Net Worth Tracker">
+        <Box className="min-h-[60vh] flex items-center justify-center">
           <Typography>Loading net worth data...</Typography>
         </Box>
-      </>
+      </MainLayout>
     );
   }
 
   if (!latestSnapshot) {
     return (
-      <>
-        <Sidebar />
-        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
+      <MainLayout title="Net Worth Tracker">
+        <Box className="min-h-[60vh] flex items-center justify-center">
           <Container maxWidth="md" sx={{ textAlign: 'center', py: 8 }}>
             <AccountBalanceIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h4" gutterBottom>
@@ -265,7 +248,7 @@ function NetWorthTracker() {
             </Box>
           </Container>
         </Box>
-      </>
+      </MainLayout>
     );
   }
 
@@ -282,9 +265,8 @@ function NetWorthTracker() {
   ] : [];
 
   return (
-    <>
-      <Sidebar />
-      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 pb-8 transition-all duration-300`}>
+    <MainLayout title="Net Worth Tracker">
+      <Box className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-8">
         {/* Enhanced Header with Gradient */}
         <Box
           sx={{
@@ -885,7 +867,7 @@ function NetWorthTracker() {
       </Dialog>
         </Container>
       </Box>
-    </>
+    </MainLayout>
   );
 }
 

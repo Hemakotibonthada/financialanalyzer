@@ -66,9 +66,9 @@ import {
   Area,
   AreaChart,
 } from 'recharts';
-import axios from 'axios';
 
-import { API_URL as API_BASE_URL } from '../services/api';
+import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 // Color palette for charts (matching EMI Tracker)
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1'];
@@ -139,11 +139,8 @@ const LenderDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.get(`${API_BASE_URL}/lenders/dashboard`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/lenders/dashboard');
       
       setDashboardData(response.data.data);
       setError(null);
@@ -161,11 +158,8 @@ const LenderDashboard = () => {
 
   const handleAddLender = async () => {
     try {
-      const token = localStorage.getItem('token');
       
-      await axios.post(`${API_BASE_URL}/lenders`, lenderForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/lenders', lenderForm);
       
       setOpenAddLenderDialog(false);
       setLenderForm({
@@ -185,11 +179,8 @@ const LenderDashboard = () => {
 
   const handleAddLoan = async () => {
     try {
-      const token = localStorage.getItem('token');
       
-      await axios.post(`${API_BASE_URL}/lender-loans`, loanForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/lender-loans', loanForm);
       
       setOpenAddLoanDialog(false);
       setLoanForm({
@@ -213,28 +204,34 @@ const LenderDashboard = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress size={60} />
-      </Box>
+      <MainLayout title="Lender Dashboard">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+          <CircularProgress size={60} />
+        </Box>
+      </MainLayout>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
-        <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/')}>
-          Go Back
-        </Button>
-      </Container>
+      <MainLayout title="Lender Dashboard">
+        <Container maxWidth="md" sx={{ mt: 4 }}>
+          <Alert severity="error">{error}</Alert>
+          <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/')}>
+            Go Back
+          </Button>
+        </Container>
+      </MainLayout>
     );
   }
 
   if (!dashboardData) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Alert severity="info">No dashboard data available</Alert>
-      </Container>
+      <MainLayout title="Lender Dashboard">
+        <Container maxWidth="md" sx={{ mt: 4 }}>
+          <Alert severity="info">No dashboard data available</Alert>
+        </Container>
+      </MainLayout>
     );
   }
 
@@ -311,6 +308,7 @@ const LenderDashboard = () => {
   };
 
   return (
+    <MainLayout title="Lender Dashboard">
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -1062,6 +1060,7 @@ const LenderDashboard = () => {
         </DialogActions>
       </Dialog>
     </Container>
+    </MainLayout>
   );
 };
 

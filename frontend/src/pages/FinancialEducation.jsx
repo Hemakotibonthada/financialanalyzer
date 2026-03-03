@@ -14,6 +14,7 @@ import {
   MenuBook, Quiz, VideoLibrary, Article
 } from '@mui/icons-material';
 import '../styles/animations.css';
+import MainLayout from '../components/MainLayout';
 
 // ============================================================
 // Feature #98: Financial Education & Tips Page
@@ -265,6 +266,7 @@ const FinancialEducation = () => {
   };
 
   return (
+    <MainLayout title="Financial Education">
     <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out' }}>
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -629,6 +631,7 @@ const FinancialEducation = () => {
         )}
       </Dialog>
     </Box>
+    </MainLayout>
   );
 };
 

@@ -41,10 +41,8 @@ import {
   Download as DownloadIcon
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import axios from 'axios';
-import { API_URL } from '../services/api';
-import Sidebar from '../components/Sidebar';
-import { useSidebar } from '../context/SidebarContext';
+import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
@@ -69,7 +67,6 @@ const CATEGORIES = ['equity', 'debt', 'hybrid', 'commodity', 'real_estate', 'cry
 const RISK_LEVELS = ['low', 'medium', 'high'];
 
 function InvestmentPortfolio() {
-  const { isCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState(0);
   const [investments, setInvestments] = useState([]);
   const [portfolio, setPortfolio] = useState(null);
@@ -110,17 +107,12 @@ function InvestmentPortfolio() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
 
       const [investmentsRes, portfolioRes, maturitiesRes, allocationRes] = await Promise.all([
-  axios.get(`${API_URL}/investments`, {
-          headers,
-          params: filters
-        }),
-        axios.get(`${API_URL}/investments/portfolio`, { headers }),
-        axios.get(`${API_URL}/investments/maturities?days=90`, { headers }),
-        axios.get(`${API_URL}/investments/analytics/allocation`, { headers })
+  api.get('/investments', { params: filters }),
+        api.get('/investments/portfolio'),
+        api.get('/investments/maturities?days=90'),
+        api.get('/investments/analytics/allocation')
       ]);
       
       // Debug: log investment fetch shapes and API host
@@ -144,20 +136,15 @@ function InvestmentPortfolio() {
 
   const handleAddInvestment = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       if (editingInvestment) {
-        await axios.put(
-          `${API_URL}/investments/${editingInvestment._id}`,
-          formData,
-          { headers }
+        await api.put(
+          `/investments/${editingInvestment._id}`,
+          formData
         );
       } else {
-        await axios.post(
-          `${API_URL}/investments`,
-          formData,
-          { headers }
+        await api.post(
+          '/investments',
+          formData
         );
       }
 
@@ -174,10 +161,7 @@ function InvestmentPortfolio() {
     if (!window.confirm('Are you sure you want to delete this investment?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-  await axios.delete(`${API_URL}/investments/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  await api.delete(`/investments/${id}`);
       fetchData();
     } catch (error) {
       console.error('Error deleting investment:', error);
@@ -256,12 +240,11 @@ function InvestmentPortfolio() {
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 flex items-center justify-center transition-all duration-300`}>
+      <MainLayout title="Investment Portfolio">
+        <Box className="min-h-[60vh] flex items-center justify-center">
           <Typography>Loading portfolio...</Typography>
         </Box>
-      </>
+      </MainLayout>
     );
   }
 
@@ -271,9 +254,8 @@ function InvestmentPortfolio() {
   const returnsPercentage = totalInvested > 0 ? (totalReturns / totalInvested) * 100 : 0;
 
   return (
-    <>
-      <Sidebar />
-      <Box className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} min-h-screen bg-gray-50 pb-8 transition-all duration-300`}>
+    <MainLayout title="Investment Portfolio">
+      <Box className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-8">
         {/* Enhanced Header with Gradient */}
         <Box
           sx={{
@@ -1366,7 +1348,7 @@ function InvestmentPortfolio() {
       </Dialog>
         </Container>
       </Box>
-    </>
+    </MainLayout>
   );
 }
 

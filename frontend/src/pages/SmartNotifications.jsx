@@ -10,6 +10,7 @@ import {
   PieChart, Pie, Cell, CartesianGrid
 } from 'recharts';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -204,30 +205,35 @@ export default function SmartNotifications() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Loading notifications...</p>
+      <MainLayout title="Notifications">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400">Loading notifications...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   if (error && notifications.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
-          <button onClick={fetchNotifications} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
-            <RefreshCw className="w-4 h-4" /> Retry
-          </button>
+      <MainLayout title="Notifications">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center">
+            <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+            <button onClick={fetchNotifications} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </button>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
+    <MainLayout title="Notifications">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header */}
@@ -502,5 +508,6 @@ export default function SmartNotifications() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

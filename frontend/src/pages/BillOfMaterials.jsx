@@ -44,6 +44,7 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const BillOfMaterials = () => {
   const [materials, setMaterials] = useState([]);
@@ -380,17 +381,19 @@ const BillOfMaterials = () => {
 
   if (loading) {
     return (
-      <Box className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Typography>Loading Bill of Materials...</Typography>
-      </Box>
+      <MainLayout title="Bill of Materials">
+        <Box className="min-h-[60vh] flex items-center justify-center">
+          <Typography>Loading Bill of Materials...</Typography>
+        </Box>
+      </MainLayout>
     );
   }
 
   const filteredMaterials = getFilteredMaterials();
 
   return (
-    <>
-      <Box className="min-h-screen bg-gray-50 pb-8">{/* Removed sidebar and left margin */}
+    <MainLayout title="Bill of Materials">
+      <Box className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-8">{/* Removed sidebar and left margin */}
         {/* Header */}
         <Box
           sx={{
@@ -1141,7 +1144,7 @@ const BillOfMaterials = () => {
           </DialogActions>
         </Dialog>
       </Box>
-    </>
+    </MainLayout>
   );
 };
 

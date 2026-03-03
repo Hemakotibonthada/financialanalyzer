@@ -11,6 +11,7 @@ import {
   CartesianGrid, PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -226,6 +227,7 @@ export default function FinancialChat() {
   }
 
   return (
+    <MainLayout title="AI Chat">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col animate-fade-in-up">
       {/* Header */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 md:px-8 py-4">
@@ -401,5 +403,6 @@ export default function FinancialChat() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

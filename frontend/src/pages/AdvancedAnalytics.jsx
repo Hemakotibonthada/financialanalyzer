@@ -6,7 +6,6 @@ import {
   Percent, Users, ShoppingBag, Bell, Smartphone, Wallet, ArrowUpRight,
   ArrowDownRight, Shield, Building, Package, Receipt, Star, Info
 } from 'lucide-react';
-import axios from 'axios';
 import {
   LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell,
   AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -14,7 +13,7 @@ import {
   ScatterChart, ZAxis, ComposedChart
 } from 'recharts';
 
-import { API_URL } from '../services/api';
+import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 import '../styles/animations.css';
 
@@ -42,25 +41,13 @@ const AdvancedAnalytics = () => {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem('token');
-      
       // Fetch all analytics data in parallel
       const [advancedRes, emiRes, profileRes, transactionsRes, billsRes] = await Promise.all([
-        axios.get(`${API_URL}/analytics/advanced/complete-dashboard`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/emi/overview`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { success: false } })),
-        axios.get(`${API_URL}/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { success: false } })),
-        axios.get(`${API_URL}/transactions/analytics`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { success: false } })),
-        axios.get(`${API_URL}/bill-reminders`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { success: false } }))
+        api.get('/analytics/advanced/complete-dashboard'),
+        api.get('/emi/overview').catch(() => ({ data: { success: false } })),
+        api.get('/profile').catch(() => ({ data: { success: false } })),
+        api.get('/transactions/analytics').catch(() => ({ data: { success: false } })),
+        api.get('/bill-reminders').catch(() => ({ data: { success: false } }))
       ]);
 
       if (advancedRes.data.success) {

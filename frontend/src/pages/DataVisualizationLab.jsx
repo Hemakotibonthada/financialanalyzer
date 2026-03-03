@@ -9,6 +9,7 @@ import { EnhancedLineChart, EnhancedBarChart, EnhancedDoughnutChart, FinancialRa
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { useLocalStorage } from '../hooks/useCustomHooks';
 import '../styles/animations.css';
+import MainLayout from '../components/MainLayout';
 
 const CHART_TYPES = [
   { id: 'line', label: 'Line Chart', icon: '📈', description: 'Trends over time' },
@@ -100,6 +101,7 @@ export default function DataVisualizationLab() {
   ];
 
   return (
+    <MainLayout title="Data Visualization Lab">
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -176,6 +178,7 @@ export default function DataVisualizationLab() {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 import {
   TrendingUp,
   TrendingDown,
@@ -81,25 +82,30 @@ const SpendingInsights = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
+      <MainLayout title="Spending Insights">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600"></div>
+        </div>
+      </MainLayout>
     );
   }
 
   if (!spendingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertTriangle className="w-16 h-16 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-700 dark:text-slate-300">No Data Available</h2>
-          <p className="text-gray-500 dark:text-slate-400 mt-2">Add some transactions to see spending insights</p>
+      <MainLayout title="Spending Insights">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <AlertTriangle className="w-16 h-16 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-700 dark:text-slate-300">No Data Available</h2>
+            <p className="text-gray-500 dark:text-slate-400 mt-2">Add some transactions to see spending insights</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
+    <MainLayout title="Spending Insights">
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -932,6 +938,7 @@ const SpendingInsights = () => {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 };
 
@@ -1006,3 +1013,4 @@ const RecommendationCard = ({ recommendation }) => {
 };
 
 export default SpendingInsights;
+
