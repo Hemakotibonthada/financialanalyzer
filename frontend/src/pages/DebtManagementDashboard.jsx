@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Info
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -618,6 +619,7 @@ const DebtCard = ({ debt }) => {
   const progress = ((debt.originalAmount - debt.balance) / debt.originalAmount) * 100;
 
   return (
+    <MainLayout title="Debt Management Dashboard">
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -658,6 +660,7 @@ const DebtCard = ({ debt }) => {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 };
 

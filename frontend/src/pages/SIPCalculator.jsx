@@ -7,6 +7,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend, BarChart, Bar
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -114,6 +115,7 @@ export default function SIPCalculator() {
   }
 
   return (
+    <MainLayout title="SIP Calculator">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -345,5 +347,6 @@ export default function SIPCalculator() {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 }

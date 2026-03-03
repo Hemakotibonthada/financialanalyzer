@@ -6,6 +6,7 @@ import {
   HardDrive, ChevronRight, Tag, Lock
 } from 'lucide-react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -110,6 +111,7 @@ export default function FinancialDocuments() {
   }
 
   return (
+    <MainLayout title="Financial Documents">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>
@@ -407,5 +409,6 @@ export default function FinancialDocuments() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

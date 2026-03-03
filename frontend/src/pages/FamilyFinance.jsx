@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, CartesianGrid, Legend, LineChart, Line
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
@@ -120,6 +121,7 @@ export default function FamilyFinance() {
   }
 
   return (
+    <MainLayout title="Family Finance">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header */}
@@ -434,5 +436,6 @@ export default function FamilyFinance() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

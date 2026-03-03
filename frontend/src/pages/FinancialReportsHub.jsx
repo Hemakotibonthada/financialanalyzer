@@ -6,6 +6,7 @@ import {
   FileSpreadsheet, FileType as FilePdf, Printer, RefreshCw, ArrowRight, BookOpen, Shield,
   AlertTriangle
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area
@@ -247,6 +248,7 @@ export default function FinancialReportsHub() {
   }
 
   return (
+    <MainLayout title="Financial Reports Hub">
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -612,5 +614,6 @@ export default function FinancialReportsHub() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

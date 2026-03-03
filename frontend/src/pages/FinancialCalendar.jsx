@@ -5,6 +5,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -236,6 +237,7 @@ export default function FinancialCalendar() {
   }
 
   return (
+    <MainLayout title="Financial Calendar">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
       {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>}
 
@@ -413,5 +415,6 @@ export default function FinancialCalendar() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

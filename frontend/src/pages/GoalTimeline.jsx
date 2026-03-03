@@ -8,6 +8,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area,
   XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -192,6 +193,7 @@ export default function GoalTimeline() {
   }
 
   return (
+    <MainLayout title="Goal Timeline">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       {showConfetti && <Confetti />}
       <div className="max-w-7xl mx-auto space-y-6">
@@ -467,5 +469,6 @@ export default function GoalTimeline() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

@@ -8,6 +8,7 @@ import {
   PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const COLORS = ['#f7931a', '#627eea', '#26a17b', '#e6007a', '#8247e5', '#00d4aa', '#ff007a', '#3b82f6'];
@@ -95,6 +96,7 @@ export default function CryptoPortfolio() {
   }, [dcaAmount, dcaFreq, dcaDuration]);
 
   return (
+    <MainLayout title="Crypto Portfolio">
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -256,5 +258,6 @@ export default function CryptoPortfolio() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

@@ -15,6 +15,7 @@ import {
   ArrowDown,
   Info
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import { Line, Pie, Bar, Radar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -581,6 +582,7 @@ const ProjectionCard = ({ period, score, currentScore }) => {
   const improvement = score - currentScore;
   
   return (
+    <MainLayout title="Financial Health Dashboard">
     <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg p-6 text-white">
       <h4 className="text-lg font-semibold mb-2">{period}</h4>
       <div className="text-4xl font-bold mb-2">{score}</div>
@@ -595,6 +597,7 @@ const ProjectionCard = ({ period, score, currentScore }) => {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 };
 

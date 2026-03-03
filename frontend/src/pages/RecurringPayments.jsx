@@ -7,6 +7,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -151,6 +152,7 @@ export default function RecurringPayments() {
   }
 
   return (
+    <MainLayout title="Recurring Payments">
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -393,5 +395,6 @@ export default function RecurringPayments() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

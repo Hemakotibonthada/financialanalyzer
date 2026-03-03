@@ -8,6 +8,7 @@ import {
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const SUBSCRIPTION_CATEGORIES = [
@@ -219,6 +220,7 @@ export default function SubscriptionManager() {
   }
 
   return (
+    <MainLayout title="Subscription Manager">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
       {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>}
 
@@ -418,5 +420,6 @@ export default function SubscriptionManager() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

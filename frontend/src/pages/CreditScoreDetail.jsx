@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart 
 } from 'recharts';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const CreditScoreDetail = () => {
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ const CreditScoreDetail = () => {
   };
 
   return (
+    <MainLayout title="Credit Score Detail">
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -448,6 +450,7 @@ const CreditScoreDetail = () => {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 };
 

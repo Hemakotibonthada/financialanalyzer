@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const MARKET_INDICES = [
   { name: 'SENSEX', value: 82450.32, change: 345.67, changePercent: 0.42, high: 82680, low: 81920 },
@@ -128,6 +129,7 @@ export default function MarketInsights() {
   const totalPortfolioImpact = portfolioImpact.reduce((s, p) => s + p.impact, 0);
 
   return (
+    <MainLayout title="Market Insights">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -360,5 +362,6 @@ export default function MarketInsights() {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 }

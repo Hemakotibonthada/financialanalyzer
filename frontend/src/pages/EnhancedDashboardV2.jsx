@@ -13,6 +13,7 @@ import {
   RadialBar, ComposedChart, Scatter
 } from 'recharts';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 
@@ -416,6 +417,7 @@ const EnhancedDashboardV2 = () => {
   }
 
   return (
+    <MainLayout title="Enhanced Dashboard V2">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 animate-fade-in-down">
@@ -612,6 +614,7 @@ const EnhancedDashboardV2 = () => {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 };
 

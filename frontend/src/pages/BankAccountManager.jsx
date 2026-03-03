@@ -8,6 +8,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -129,6 +130,7 @@ export default function BankAccountManager() {
   }
 
   return (
+    <MainLayout title="Bank Account Manager">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -332,5 +334,6 @@ export default function BankAccountManager() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

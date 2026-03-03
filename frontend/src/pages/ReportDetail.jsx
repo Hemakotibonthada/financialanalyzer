@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { financialService } from '../services/api';
 import { ArrowLeft, Loader } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 
 const ReportDetail = () => {
   const { id } = useParams();
@@ -53,6 +54,7 @@ const ReportDetail = () => {
   }
 
   return (
+    <MainLayout title="Report Detail">
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <nav className="bg-white dark:bg-slate-800 shadow-sm dark:shadow-slate-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -134,6 +136,7 @@ const ReportDetail = () => {
         )}
       </main>
     </div>
+    </MainLayout>
   );
 };
 

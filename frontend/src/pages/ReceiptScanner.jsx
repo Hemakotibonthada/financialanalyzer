@@ -7,6 +7,7 @@ import {
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -198,6 +199,7 @@ export default function ReceiptScanner() {
   }
 
   return (
+    <MainLayout title="Receipt Scanner">
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>
@@ -492,5 +494,6 @@ export default function ReceiptScanner() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

@@ -8,6 +8,7 @@ import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
@@ -125,6 +126,7 @@ export default function EPFTracker() {
   }, [retirementProjection, account.totalBalance, calcBasic, calcYears, calcIncrement]);
 
   return (
+    <MainLayout title="EPF Tracker">
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -352,5 +354,6 @@ export default function EPFTracker() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

@@ -7,6 +7,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -106,6 +107,7 @@ export default function LoanCalculator() {
   }
 
   return (
+    <MainLayout title="Loan Calculator">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -304,5 +306,6 @@ export default function LoanCalculator() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }

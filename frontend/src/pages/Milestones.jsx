@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const BADGE_COLORS = {
   gold: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', border: 'border-yellow-400', text: 'text-yellow-700 dark:text-yellow-300', icon: '🏆' },
@@ -84,6 +85,7 @@ export default function Milestones() {
   };
 
   return (
+    <MainLayout title="Milestones">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -281,5 +283,6 @@ export default function Milestones() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }

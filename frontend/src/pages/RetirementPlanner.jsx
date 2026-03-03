@@ -9,6 +9,7 @@ import {
   PiggyBank, Clock, Award, ChevronDown, ChevronUp, Info, Shield,
   Sun, Briefcase, Heart
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -150,6 +151,7 @@ export default function RetirementPlanner() {
   const gaugeAngle = (readinessScore / 100) * 180;
 
   return (
+    <MainLayout title="Retirement Planner">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
       {/* Header */}
       <div>
@@ -403,5 +405,6 @@ export default function RetirementPlanner() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }

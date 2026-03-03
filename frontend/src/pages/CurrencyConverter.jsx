@@ -6,6 +6,7 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
 const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
@@ -145,6 +146,7 @@ export default function CurrencyConverter() {
   }
 
   return (
+    <MainLayout title="Currency Converter">
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -436,5 +438,6 @@ export default function CurrencyConverter() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

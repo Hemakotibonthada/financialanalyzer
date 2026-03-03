@@ -4,6 +4,7 @@ import { EnhancedDoughnutChart, EnhancedBarChart, Sparkline } from '../component
 import { useLocalStorage, useAnimatedCounter } from '../hooks/useCustomHooks';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 // ============================================================
 // Feature #55: Gamified Savings Challenges
@@ -277,6 +278,7 @@ export default function SavingsChallenges() {
   }
 
   return (
+    <MainLayout title="Savings Challenges">
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>
@@ -313,5 +315,6 @@ export default function SavingsChallenges() {
       {activeTab === 2 && <CompletedChallengesView challenges={completedChallenges} />}
       {activeTab === 3 && <LeaderboardView leaderboard={leaderboard} />}
     </div>
+    </MainLayout>
   );
 }

@@ -6,6 +6,7 @@ import {
   Fingerprint, Mail, Globe, ChevronRight, ToggleLeft, ToggleRight,
   FileText, UserX, Settings, Activity, Info, X, Check
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, Tooltip, PieChart, Pie, Cell
@@ -217,6 +218,7 @@ export default function SecurityCenter() {
   }
 
   return (
+    <MainLayout title="Security Center">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header */}
@@ -517,5 +519,6 @@ export default function SecurityCenter() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

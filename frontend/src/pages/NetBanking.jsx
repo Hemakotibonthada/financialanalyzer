@@ -10,6 +10,7 @@ import {
   Filter, Download, Upload, Tag, Wifi, WifiOff, Shield,
   ChevronDown, Eye, FileText
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -122,6 +123,7 @@ export default function NetBanking() {
   };
 
   return (
+    <MainLayout title="Net Banking">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -351,5 +353,6 @@ export default function NetBanking() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

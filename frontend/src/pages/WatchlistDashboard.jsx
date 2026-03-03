@@ -8,6 +8,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Area, AreaChart
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const loadLocal = (key, fallback = []) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
@@ -111,6 +112,7 @@ export default function WatchlistDashboard() {
   }
 
   return (
+    <MainLayout title="Watchlist Dashboard">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -331,5 +333,6 @@ export default function WatchlistDashboard() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

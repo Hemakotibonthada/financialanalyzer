@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const QUIZ_CATEGORIES = [
   { id: 'basics', label: 'Financial Basics', icon: '📚', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
@@ -148,6 +149,7 @@ export default function FinancialQuiz() {
   };
 
   return (
+    <MainLayout title="Financial Quiz">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
@@ -468,5 +470,6 @@ export default function FinancialQuiz() {
         )}
       </div>
     </div>
+    </MainLayout>
   );
 }

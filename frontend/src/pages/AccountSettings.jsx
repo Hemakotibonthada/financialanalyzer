@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useCustomHooks';
 import api from '../services/api';
 import '../styles/animations.css';
+import MainLayout from '../components/MainLayout';
 
 const CURRENCIES = [
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
@@ -855,6 +856,7 @@ function DataManagementTab() {
   }
 
   return (
+    <MainLayout title="Account Settings">
     <div className="space-y-6">
       {/* Status Message */}
       {message && (
@@ -1250,5 +1252,6 @@ function DataManagementTab() {
         </Modal>
       )}
     </div>
+    </MainLayout>
   );
 }

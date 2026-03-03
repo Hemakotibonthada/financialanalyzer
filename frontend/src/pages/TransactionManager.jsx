@@ -6,6 +6,7 @@ import {
   RefreshCw, Plus, Edit2, Trash2, MoreHorizontal, CheckCircle, XCircle,
   ArrowUp, ArrowDown, X, SlidersHorizontal, Grid, List as ListIcon
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart as RePieChart, Pie, Cell, Legend
@@ -168,6 +169,7 @@ const TransactionManager = () => {
   };
 
   return (
+    <MainLayout title="Transaction Manager">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 animate-fade-in-down">
@@ -583,6 +585,7 @@ const TransactionManager = () => {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 };
 

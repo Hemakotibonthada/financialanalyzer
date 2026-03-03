@@ -11,6 +11,7 @@ import { EnhancedBarChart, EnhancedDoughnutChart, EnhancedLineChart, GaugeChart,
 import { useScrollReveal, useAnimatedCounter, useLocalStorage, useForm } from '../hooks/useCustomHooks';
 import { formatCurrency, formatPercentage, getCategoryIcon } from '../utils/helpers';
 import '../styles/animations.css';
+import MainLayout from '../components/MainLayout';
 
 const BUDGET_CATEGORIES = [
   { id: 'housing', name: 'Housing/Rent', icon: '🏠', recommended: 30, color: '#667eea' },
@@ -310,6 +311,7 @@ export default function BudgetPlanner() {
   }
 
   return (
+    <MainLayout title="Budget Planner">
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -750,5 +752,6 @@ export default function BudgetPlanner() {
         </div>
       </Modal>
     </div>
+    </MainLayout>
   );
 }

@@ -18,6 +18,7 @@ import {
   PieChart as PieChartIcon,
   LineChart as LineChartIcon
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import { Line, Bar, Doughnut, Scatter } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -706,6 +707,7 @@ const HoldingCard = ({ holding }) => {
   const isProfit = returnPercent >= 0;
 
   return (
+    <MainLayout title="Portfolio Analytics Dashboard">
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -741,6 +743,7 @@ const HoldingCard = ({ holding }) => {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 };
 

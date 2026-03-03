@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
@@ -196,6 +197,7 @@ export default function FinancialTemplate() {
   }
 
   return (
+    <MainLayout title="Financial Template">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header */}
@@ -402,5 +404,6 @@ export default function FinancialTemplate() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

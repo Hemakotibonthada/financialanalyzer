@@ -9,6 +9,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   CartesianGrid
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 
 const AnimatedValue = ({ value, duration = 800 }) => {
   const [display, setDisplay] = useState(0);
@@ -158,6 +159,7 @@ export default function ComparisonTool() {
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
+    <MainLayout title="Comparison Tool">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header */}
@@ -494,5 +496,6 @@ export default function ComparisonTool() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

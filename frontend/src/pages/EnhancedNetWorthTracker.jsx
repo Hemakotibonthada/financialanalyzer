@@ -9,6 +9,7 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
@@ -193,6 +194,7 @@ const EnhancedNetWorthTracker = () => {
   }
 
   return (
+    <MainLayout title="Enhanced Net Worth Tracker">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 animate-fade-in-down">
@@ -582,6 +584,7 @@ const EnhancedNetWorthTracker = () => {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 };
 

@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const ACCENT_PRESETS = [
@@ -137,6 +138,7 @@ export default function DarkModeSettings() {
   }
 
   return (
+    <MainLayout title="Dark Mode Settings">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header */}
@@ -389,5 +391,6 @@ export default function DarkModeSettings() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }

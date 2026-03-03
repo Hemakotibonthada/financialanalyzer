@@ -7,6 +7,7 @@ import {
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const AnimatedValue = ({ end, prefix = '₹' }) => {
@@ -154,6 +155,7 @@ export default function SplitExpenses() {
   }
 
   return (
+    <MainLayout title="Split Expenses">
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -493,5 +495,6 @@ export default function SplitExpenses() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

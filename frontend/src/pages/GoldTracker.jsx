@@ -8,6 +8,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line
 } from 'recharts';
+import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#ec4899'];
@@ -142,6 +143,7 @@ export default function GoldTracker() {
   };
 
   return (
+    <MainLayout title="Gold Tracker">
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -375,5 +377,6 @@ export default function GoldTracker() {
         </div>
       )}
     </div>
+    </MainLayout>
   );
 }

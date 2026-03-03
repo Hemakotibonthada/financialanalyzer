@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import api from '../services/api';
+import MainLayout from '../components/MainLayout';
 
 const STEPS = ['Income', 'Fixed Expenses', 'Variable Expenses', 'Savings', 'Review'];
 
@@ -124,6 +125,7 @@ export default function SmartBudgetWizard() {
   };
 
   return (
+    <MainLayout title="Smart Budget Wizard">
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
@@ -525,5 +527,6 @@ export default function SmartBudgetWizard() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }

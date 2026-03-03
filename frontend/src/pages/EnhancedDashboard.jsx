@@ -20,6 +20,7 @@ import { formatCurrency, getGreeting, getFinancialQuote } from '../utils/helpers
 
 // Import animations
 import '../styles/animations.css';
+import MainLayout from '../components/MainLayout';
 
 export default function EnhancedDashboard() {
   const { user } = useAuth();
@@ -374,6 +375,7 @@ function AddTransactionForm({ onClose }) {
   };
 
   return (
+    <MainLayout title="Enhanced Dashboard">
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Type Toggle */}
       <div className="flex gap-2">
@@ -489,6 +491,7 @@ function AddTransactionForm({ onClose }) {
         </button>
       </div>
     </form>
+    </MainLayout>
   );
 }
 
