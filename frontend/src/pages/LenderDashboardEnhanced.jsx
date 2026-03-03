@@ -151,9 +151,9 @@ const LenderDashboardEnhanced = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const { isDark } = useAppTheme();
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
-  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
-  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' } };
+  const cardSx = { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider' };
+  const subTextColor = 'text.secondary';
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: 'background.paper', color: 'text.primary' } };
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -463,7 +463,7 @@ const LenderDashboardEnhanced = () => {
         {!isMobile && (
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Box>
-              <Typography variant="h4" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>
+              <Typography variant="h4" fontWeight="bold" sx={{ color: 'text.primary' }}>
                 Lender Dashboard
               </Typography>
               <Typography variant="body2" sx={{ color: subTextColor }}>
@@ -1070,7 +1070,7 @@ const LenderDashboardEnhanced = () => {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, bgcolor: isDark ? '#1e293b' : '#fff' }} elevation={3}>
+        <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, bgcolor: 'background.paper' }} elevation={3}>
           <BottomNavigation
             value={mobileView}
             onChange={(event, newValue) => setMobileView(newValue)}
@@ -1130,8 +1130,8 @@ const LenderDashboardEnhanced = () => {
             height: '85vh',
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
-            bgcolor: isDark ? '#1e293b' : '#fff',
-            color: isDark ? '#f1f5f9' : 'inherit',
+            bgcolor: 'background.paper',
+            color: 'text.primary',
           },
         }}
       >
@@ -1309,8 +1309,8 @@ const LenderDashboardEnhanced = () => {
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
             p: 3,
-            bgcolor: isDark ? '#1e293b' : '#fff',
-            color: isDark ? '#f1f5f9' : 'inherit',
+            bgcolor: 'background.paper',
+            color: 'text.primary',
           },
         }}
       >

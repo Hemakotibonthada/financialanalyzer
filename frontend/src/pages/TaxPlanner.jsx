@@ -168,7 +168,7 @@ const TaxPlanner = () => {
   const [expandedSection, setExpandedSection] = useState('80C');
 
   const { isDark } = useTheme();
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const cardSx = { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
   const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
 
   // Suggestions state — fetched from API
@@ -544,7 +544,7 @@ const TaxPlanner = () => {
               key={section.section}
               expanded={expandedSection === section.section}
               onChange={() => setExpandedSection(expandedSection === section.section ? '' : section.section)}
-              sx={{ mb: 1, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', '& .MuiAccordionSummary-root': { color: isDark ? '#f1f5f9' : 'inherit' }, '& .MuiAccordionDetails-root': { bgcolor: isDark ? '#1e293b' : '#fff' } }}
+              sx={{ mb: 1, bgcolor: 'background.paper', color: 'text.primary', '& .MuiAccordionSummary-root': { color: 'text.primary' }, '& .MuiAccordionDetails-root': { bgcolor: 'background.paper' } }}
               disabled={regime === 'new' && section.section !== '80CCD(1B)'}
             >
               <AccordionSummary expandIcon={<ExpandMore />}>
@@ -675,7 +675,7 @@ const TaxPlanner = () => {
               <Card sx={{
                 border: betterRegime === 'old' ? '2px solid' : '1px solid',
                 borderColor: betterRegime === 'old' ? 'success.main' : isDark ? '#334155' : 'divider',
-                bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
+                bgcolor: 'background.paper', color: 'text.primary',
               }}>
                 <CardContent>
                   {betterRegime === 'old' && (
@@ -713,7 +713,7 @@ const TaxPlanner = () => {
               <Card sx={{
                 border: betterRegime === 'new' ? '2px solid' : '1px solid',
                 borderColor: betterRegime === 'new' ? 'success.main' : isDark ? '#334155' : 'divider',
-                bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
+                bgcolor: 'background.paper', color: 'text.primary',
               }}>
                 <CardContent>
                   {betterRegime === 'new' && (
@@ -836,7 +836,7 @@ const TaxPlanner = () => {
                     <Card sx={{
                       border: '1px solid',
                       borderColor: suggestion.priority === 'high' ? 'success.main' : suggestion.priority === 'medium' ? 'warning.main' : isDark ? '#334155' : 'divider',
-                      bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
+                      bgcolor: 'background.paper', color: 'text.primary',
                       transition: 'all 0.3s',
                       '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 },
                     }}>
@@ -897,7 +897,7 @@ const TaxPlanner = () => {
                   '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 },
                   borderLeft: 4,
                   borderColor: event.type === 'payment' ? 'warning.main' : event.type === 'deadline' ? 'error.main' : 'info.main',
-                  bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
+                  bgcolor: 'background.paper', color: 'text.primary',
                 }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

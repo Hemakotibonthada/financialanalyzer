@@ -179,10 +179,10 @@ const AchievementsPage = () => {
   }, [selectedCategory, showUnlocked, allAchievements]);
 
   // Dark mode style helpers
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const cardSx = { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
   const textColor = isDark ? '#f1f5f9' : 'text.primary';
   const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
-  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' } };
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: 'background.paper', color: 'text.primary' } };
 
   if (loading) {
     return (
@@ -368,7 +368,7 @@ const AchievementsPage = () => {
               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                 {Array.from({ length: Math.max(streak, 30) }, (_, i) => (
                   <Tooltip key={i} title={`Day ${i + 1}`}>
-                    <Box sx={{ width: 24, height: 24, borderRadius: 1, bgcolor: i < streak ? (i >= streak - 7 ? '#4CAF50' : '#4CAF5060') : isDark ? '#334155' : '#f0f0f0', transition: 'all 0.2s', '&:hover': { transform: 'scale(1.2)' } }} />
+                    <Box sx={{ width: 24, height: 24, borderRadius: 1, bgcolor: i < streak ? (i >= streak - 7 ? '#4CAF50' : '#4CAF5060') : 'background.default', transition: 'all 0.2s', '&:hover': { transform: 'scale(1.2)' } }} />
                   </Tooltip>
                 ))}
               </Box>

@@ -236,22 +236,22 @@ const FinancialEducation = () => {
 
   // Dark mode style helpers
   const cardSx = {
-    bgcolor: isDark ? '#1e293b' : '#fff',
+    bgcolor: 'background.paper',
     border: '1px solid',
     borderColor: isDark ? '#334155' : '#e2e8f0',
-    color: isDark ? '#f1f5f9' : 'inherit',
+    color: 'text.primary',
   };
   const dialogSx = {
     '& .MuiDialog-paper': {
-      bgcolor: isDark ? '#1e293b' : '#fff',
-      color: isDark ? '#f1f5f9' : 'inherit',
+      bgcolor: 'background.paper',
+      color: 'text.primary',
       backgroundImage: 'none',
     },
   };
   const inputSx = {
     '& .MuiOutlinedInput-root': {
-      bgcolor: isDark ? '#0f172a' : '#fff',
-      color: isDark ? '#f1f5f9' : 'inherit',
+      bgcolor: 'background.default',
+      color: 'text.primary',
       '& fieldset': { borderColor: isDark ? '#334155' : '#e2e8f0' },
     },
     '& .MuiInputLabel-root': { color: isDark ? '#94a3b8' : undefined },

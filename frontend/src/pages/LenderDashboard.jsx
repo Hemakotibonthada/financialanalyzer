@@ -101,9 +101,9 @@ const chartCardHoverEffect = {
 const LenderDashboard = () => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
-  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
-  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' } };
+  const cardSx = { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider' };
+  const subTextColor = 'text.secondary';
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: 'background.paper', color: 'text.primary' } };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -317,7 +317,7 @@ const LenderDashboard = () => {
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, bgcolor: isDark ? '#0f172a' : 'transparent' }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : 'inherit' }}>
+        <Typography variant="h4" fontWeight="bold" sx={{ color: 'text.primary' }}>
           Lender Dashboard
         </Typography>
         <Box>
@@ -435,7 +435,7 @@ const LenderDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Monthly Collection Trends - Line Chart */}
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', borderColor: isDark ? '#334155' : undefined }}>
+          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: 'background.paper', color: 'text.primary', borderColor: 'divider' }}>
             <CardContent>
               <Box 
                 className="chart-header"
@@ -526,7 +526,7 @@ const LenderDashboard = () => {
 
         {/* Lender Portfolio Distribution - Bar Chart */}
         <Grid size={{ xs: 12, lg: 6 }}>
-          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', borderColor: isDark ? '#334155' : undefined }}>
+          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: 'background.paper', color: 'text.primary', borderColor: 'divider' }}>
             <CardContent>
               <Box 
                 className="chart-header"
@@ -605,7 +605,7 @@ const LenderDashboard = () => {
 
         {/* Loan Status Distribution - Pie Chart */}
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', borderColor: isDark ? '#334155' : undefined }}>
+          <Card elevation={0} sx={{ ...chartCardHoverEffect, bgcolor: 'background.paper', color: 'text.primary', borderColor: 'divider' }}>
             <CardContent>
               <Box 
                 className="chart-header"

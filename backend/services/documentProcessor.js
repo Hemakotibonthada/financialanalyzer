@@ -7,7 +7,12 @@ const path = require('path');
 const sharp = require('sharp');
 const mammoth = require('mammoth');
 const { PDFDocument } = require('pdf-lib');
-const qpdf = require('node-qpdf2');
+// node-qpdf2 is ESM-only — use dynamic import() instead of require()
+let _qpdf = null;
+async function getQpdf() {
+  if (!_qpdf) { _qpdf = await import('node-qpdf2'); }
+  return _qpdf.default || _qpdf;
+}
 const logger = require('../utils/logger');
 const Document = require('../models/Document');
 const Transaction = require('../models/Transaction');
@@ -34,6 +39,7 @@ const parsePDF = async (filePath, password = null) => {
         try {
           // Use qpdf to decrypt the PDF
           // node-qpdf2 syntax: decrypt(input, password, output)
+          const qpdf = await getQpdf();
           await qpdf.decrypt(filePath, password, decryptedPath);
           
           logger.info(`✅ PDF decrypted successfully with qpdf`);

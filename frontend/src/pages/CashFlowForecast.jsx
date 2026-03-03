@@ -61,7 +61,7 @@ const CashFlowForecast = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { isDark } = useTheme();
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const cardSx = { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
   const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
 
   useEffect(() => {
@@ -185,7 +185,7 @@ const CashFlowForecast = () => {
   const CustomTooltipContent = ({ active, payload, label }) => {
     if (!active || !payload || payload.length === 0) return null;
     return (
-      <Paper sx={{ p: 1.5, minWidth: 200, bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' }}>
+      <Paper sx={{ p: 1.5, minWidth: 200, bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' }}>
         <Typography variant="subtitle2" fontWeight={600} gutterBottom>{label}</Typography>
         {payload.map((entry, idx) => (
           <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
@@ -396,7 +396,7 @@ const CashFlowForecast = () => {
                     cursor: 'pointer',
                     border: selectedScenario === scenario.id ? 2 : 1,
                     borderColor: selectedScenario === scenario.id ? scenario.color : isDark ? '#334155' : 'divider',
-                    bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit',
+                    bgcolor: 'background.paper', color: 'text.primary',
                     transition: 'all 0.3s',
                     '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 },
                   }}
@@ -470,7 +470,7 @@ const CashFlowForecast = () => {
                     const projSavings = projIncome - projExpense;
                     return (
                       <Grid size={{ xs: 12, md: 4 }} key={idx}>
-                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: isDark ? '#0f172a' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' }}>
+                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.paper', color: 'text.primary' }}>
                           <Typography variant="subtitle2" sx={{ color: subTextColor }}>{period.label}</Typography>
                           <Typography variant="h5" fontWeight={700} color={projSavings > 0 ? 'success.main' : 'error.main'}>
                             {formatCurrency(Math.abs(projSavings))}
@@ -558,7 +558,7 @@ const CashFlowForecast = () => {
                       sx={{
                         height: 8,
                         borderRadius: 4,
-                        bgcolor: '#f0f0f0',
+                        bgcolor: 'background.default',
                         '& .MuiLinearProgress-bar': { bgcolor: cat.color, borderRadius: 4 }
                       }}
                     />
@@ -641,7 +641,7 @@ const CashFlowForecast = () => {
                         sx={{
                           height: 12,
                           borderRadius: 6,
-                          bgcolor: '#f0f0f0',
+                          bgcolor: 'background.default',
                           '& .MuiLinearProgress-bar': {
                             borderRadius: 6,
                             bgcolor: milestone.status === 'on-track' ? '#4CAF50' : milestone.status === 'at-risk' ? '#FF9800' : '#F44336'

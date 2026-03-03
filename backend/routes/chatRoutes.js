@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
 const ChatMessage = require('../models/ChatMessage');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const axios = require('axios');
 const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');

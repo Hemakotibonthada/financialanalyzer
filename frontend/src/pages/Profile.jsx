@@ -103,7 +103,6 @@ function ToggleSetting({ label, description, value, onChange }) {
 const Profile = () => {
   const { user } = useAuth();
   const { darkMode, toggleTheme } = useTheme();
-  const { isCollapsed } = useSidebar();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');

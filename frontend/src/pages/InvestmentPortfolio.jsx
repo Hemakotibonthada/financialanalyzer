@@ -308,7 +308,7 @@ function InvestmentPortfolio() {
                     setOpenAddDialog(true);
                   }}
                   sx={{
-                    bgcolor: 'white',
+                    bgcolor: 'background.paper',
                     color: 'primary.main',
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
                   }}
@@ -445,7 +445,7 @@ function InvestmentPortfolio() {
       {activeTab === 0 && (
         <Paper>
           {/* Filters */}
-          <Box sx={{ p: 2, display: 'flex', flexWrap: 'wrap', gap: 2, borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ p: 2, display: 'flex', flexWrap: 'wrap', gap: 2, borderBottom: 1, borderColor: 'divider' }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Type</InputLabel>
               <Select

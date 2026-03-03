@@ -272,12 +272,12 @@ function FinancialGoals() {
   const totalProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
 
   // Dark mode card styles
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', '&:hover': { boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 4 } };
-  const paperSx = { bgcolor: isDark ? '#1e293b' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
-  const dialogSx = { '& .MuiDialog-paper': { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', backgroundImage: 'none' } };
-  const inputSx = { '& .MuiOutlinedInput-root': { bgcolor: isDark ? '#0f172a' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', '& fieldset': { borderColor: isDark ? '#334155' : '#e2e8f0' } }, '& .MuiInputLabel-root': { color: isDark ? '#94a3b8' : undefined } };
-  const textColor = isDark ? '#f1f5f9' : undefined;
-  const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
+  const cardSx = { bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', '&:hover': { boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : 4 } };
+  const paperSx = { bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' };
+  const dialogSx = { '& .MuiDialog-paper': { bgcolor: 'background.paper', color: 'text.primary', backgroundImage: 'none' } };
+  const inputSx = { '& .MuiOutlinedInput-root': { bgcolor: 'background.default', color: 'text.primary', '& fieldset': { borderColor: 'divider' } }, '& .MuiInputLabel-root': { color: isDark ? '#94a3b8' : undefined } };
+  const textColor = 'text.primary';
+  const subTextColor = 'text.secondary';
 
   return (
     <MainLayout title="Financial Goals" subtitle="Set, track & achieve your aspirations">
@@ -322,7 +322,7 @@ function FinancialGoals() {
                   setOpenDialog(true);
                 }}
                 sx={{
-                  bgcolor: 'white',
+                  bgcolor: 'background.paper',
                   color: 'primary.main',
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
                 }}

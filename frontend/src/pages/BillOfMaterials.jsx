@@ -666,7 +666,7 @@ const BillOfMaterials = () => {
             <Paper sx={{ 
               p: 8, 
               textAlign: 'center',
-              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+              bgcolor: 'background.default',
               borderRadius: 4,
               boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
               position: 'relative',
@@ -701,10 +701,10 @@ const BillOfMaterials = () => {
                 }}>
                   <ShoppingCartIcon sx={{ fontSize: 80, color: 'white' }} />
                 </Box>
-                <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, color: '#2c3e50' }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ mb: 2, color: 'text.primary' }}>
                   {searchTerm || filterCategory !== 'all' ? 'No Materials Found' : 'Start Your Bill of Materials'}
                 </Typography>
-                <Typography variant="body1" sx={{ mb: 4, color: '#7f8c8d', maxWidth: 500, mx: 'auto' }}>
+                <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', maxWidth: 500, mx: 'auto' }}>
                   {searchTerm || filterCategory !== 'all' 
                     ? 'Try adjusting your search filters to find materials'
                     : 'Create your first material entry to start tracking costs, quantities, and suppliers'}
@@ -866,22 +866,22 @@ const BillOfMaterials = () => {
               <Card sx={{ 
                 minWidth: 400,
                 maxWidth: 500,
-                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                bgcolor: 'background.paper',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                 border: '2px solid #e9ecef'
               }}>
                 <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: '#2c3e50', borderBottom: '2px solid #667eea', pb: 1 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: 'text.primary', borderBottom: '2px solid #667eea', pb: 1 }}>
                     Order Summary
                   </Typography>
                   
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {/* Subtotal */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5, borderBottom: '1px solid #e9ecef' }}>
-                      <Typography variant="body1" sx={{ color: '#495057', fontWeight: 500 }}>
+                      <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500 }}>
                         Subtotal
                       </Typography>
-                      <Typography variant="h6" fontWeight="bold" sx={{ color: '#2c3e50' }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.primary' }}>
                         ₹{filteredMaterials.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0).toLocaleString('en-IN')}
                       </Typography>
                     </Box>
@@ -889,10 +889,10 @@ const BillOfMaterials = () => {
                     {/* Tax */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5, borderBottom: '1px solid #e9ecef' }}>
                       <Box>
-                        <Typography variant="body1" sx={{ color: '#495057', fontWeight: 500 }}>
+                        <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500 }}>
                           Tax (18% GST)
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#6c757d' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           Goods & Services Tax
                         </Typography>
                       </Box>
@@ -921,7 +921,7 @@ const BillOfMaterials = () => {
                       </Typography>
                     </Box>
 
-                    <Typography variant="caption" sx={{ color: '#6c757d', textAlign: 'center', mt: 1 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', textAlign: 'center', mt: 1 }}>
                       All prices are in Indian Rupees (₹)
                     </Typography>
                   </Box>

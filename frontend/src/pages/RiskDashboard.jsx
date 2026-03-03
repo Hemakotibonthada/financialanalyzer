@@ -50,7 +50,7 @@ const RiskDashboard = () => {
   const [riskHistory, setRiskHistory] = useState([]);
 
   const { isDark } = useTheme();
-  const cardSx = { bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
+  const cardSx = { bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' };
   const subTextColor = isDark ? '#94a3b8' : 'text.secondary';
 
   useEffect(() => {
@@ -199,7 +199,7 @@ const RiskDashboard = () => {
                         <Typography variant="caption" color="text.secondary">{f.icon} {f.name}</Typography>
                         <Typography variant="caption" fontWeight={600} sx={{ color: getScoreColor(f.score) }}>{f.score}%</Typography>
                       </Box>
-                      <LinearProgress variant="determinate" value={f.score} sx={{ height: 6, borderRadius: 3, mt: 0.5, bgcolor: '#f0f0f0', '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: getScoreColor(f.score) } }} />
+                      <LinearProgress variant="determinate" value={f.score} sx={{ height: 6, borderRadius: 3, mt: 0.5, bgcolor: 'background.default', '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: getScoreColor(f.score) } }} />
                     </Box>
                   </Grid>
                 ))}
@@ -257,7 +257,7 @@ const RiskDashboard = () => {
                         </Box>
                       </Box>
                       <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>{f.description}</Typography>
-                      <LinearProgress variant="determinate" value={f.score} sx={{ height: 5, borderRadius: 3, bgcolor: '#f0f0f0', '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: getScoreColor(f.score) } }} />
+                      <LinearProgress variant="determinate" value={f.score} sx={{ height: 5, borderRadius: 3, bgcolor: 'background.default', '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: getScoreColor(f.score) } }} />
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
                         Benchmark: {f.benchmark}{f.unit} {f.inverted ? '(lower is better)' : '(higher is better)'}
                       </Typography>
@@ -275,7 +275,7 @@ const RiskDashboard = () => {
         <Grid container spacing={3}>
           {stressResults.map(scenario => (
             <Grid size={{ xs: 12, md: 6 }} key={scenario.id}>
-              <Card sx={{ border: '1px solid', borderColor: scenario.resilience === 'Strong' ? '#10b98140' : scenario.resilience === 'Moderate' ? '#f59e0b40' : '#ef444440', bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' }}>
+              <Card sx={{ border: '1px solid', borderColor: scenario.resilience === 'Strong' ? '#10b98140' : scenario.resilience === 'Moderate' ? '#f59e0b40' : '#ef444440', bgcolor: 'background.paper', color: 'text.primary' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -301,7 +301,7 @@ const RiskDashboard = () => {
                       <Typography variant="caption" fontWeight={600}>{scenario.avgScore}%</Typography>
                     </Box>
                     <LinearProgress variant="determinate" value={scenario.avgScore}
-                      sx={{ height: 8, borderRadius: 4, bgcolor: '#f0f0f0', '& .MuiLinearProgress-bar': { borderRadius: 4, bgcolor: getScoreColor(scenario.avgScore) } }} />
+                      sx={{ height: 8, borderRadius: 4, bgcolor: 'background.default', '& .MuiLinearProgress-bar': { borderRadius: 4, bgcolor: getScoreColor(scenario.avgScore) } }} />
                   </Box>
                   <Typography variant="caption" color="text.secondary">Related factors:</Typography>
                   <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
@@ -364,7 +364,7 @@ const RiskDashboard = () => {
             <Grid container spacing={2}>
               {actionItems.map((item, i) => (
                 <Grid size={{ xs: 12, md: 6 }} key={i}>
-                  <Card sx={{ borderLeft: 4, borderColor: item.priority === 'High' ? 'error.main' : item.priority === 'Medium' ? 'warning.main' : 'info.main', bgcolor: isDark ? '#1e293b' : '#fff', color: isDark ? '#f1f5f9' : 'inherit' }}>
+                  <Card sx={{ borderLeft: 4, borderColor: item.priority === 'High' ? 'error.main' : item.priority === 'Medium' ? 'warning.main' : 'info.main', bgcolor: 'background.paper', color: 'text.primary' }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -375,7 +375,7 @@ const RiskDashboard = () => {
                           color={item.priority === 'High' ? 'error' : item.priority === 'Medium' ? 'warning' : 'info'} />
                       </Box>
                       <LinearProgress variant="determinate" value={item.score}
-                        sx={{ height: 6, borderRadius: 3, mb: 1, bgcolor: '#f0f0f0', '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: getScoreColor(item.score) } }} />
+                        sx={{ height: 6, borderRadius: 3, mb: 1, bgcolor: 'background.default', '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: getScoreColor(item.score) } }} />
                       <Typography variant="body2" color="text.secondary">{item.suggestion}</Typography>
                     </CardContent>
                   </Card>

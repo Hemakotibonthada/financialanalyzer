@@ -92,7 +92,7 @@ const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'
 
 // Theme-aware chart card styling factory
 const getChartCardStyle = (isDark) => ({
-  bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'white',
+  bgcolor: 'background.paper',
   borderRadius: 4,
   boxShadow: isDark
     ? '0 2px 12px rgba(0,0,0,0.3)'
@@ -2032,7 +2032,7 @@ const EMITracker = () => {
         onClose={() => setEmiDetailOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle>
           {selectedEMI ? `${selectedEMI.merchantName} — EMI Details` : 'EMI Details'}
@@ -2222,7 +2222,7 @@ const EMITracker = () => {
       <Dialog
         open={confirmationDialog.open}
         onClose={() => setConfirmationDialog(prev => ({ ...prev, open: false }))}
-        PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', bgcolor: isDark ? '#1e293b' : '#fff' } }}
+        PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', bgcolor: 'background.paper' } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: confirmationDialog.isError ? 'error.main' : confirmationDialog.isSuccess ? 'success.main' : 'text.primary' }}>
           {confirmationDialog.isError ? <WarningIcon color="error" /> : confirmationDialog.isSuccess ? <CheckCircleIcon color="success" /> : <InfoIcon />}
@@ -2275,7 +2275,7 @@ const EMITracker = () => {
         }}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? '#1e293b' : '#fff' } }}
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: 'background.paper' } }}
       >
         <DialogTitle sx={{ 
           background: isDark ? 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -2722,7 +2722,7 @@ const EMITracker = () => {
           elevation={3}
           sx={{
             mb: 4,
-            bgcolor: isDark ? 'rgba(30, 41, 59, 0.7)' : 'white',
+            bgcolor: 'background.paper',
             borderRadius: 4,
             boxShadow: isDark 
               ? '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)'
@@ -3137,7 +3137,7 @@ const EMITracker = () => {
       <Box 
         sx={{ 
           mb: 4,
-          bgcolor: isDark ? 'rgba(30, 41, 59, 0.7)' : 'white',
+          bgcolor: 'background.paper',
           borderRadius: 4,
           boxShadow: isDark 
             ? '0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
@@ -5775,9 +5775,9 @@ const EMITracker = () => {
                             p: 2, 
                             mb: 2, 
                             borderRadius: 2,
-                            bgcolor: isUrgent ? '#ffebee' : isComingSoon ? '#fff3e0' : '#f5f5f5',
+                            bgcolor: isUrgent ? '#ffebee' : isComingSoon ? '#fff3e0' : 'background.default',
                             border: '1px solid',
-                            borderColor: isUrgent ? '#f44336' : isComingSoon ? '#ff9800' : '#e0e0e0',
+                            borderColor: isUrgent ? '#f44336' : isComingSoon ? '#ff9800' : 'divider',
                             transition: 'all 0.3s ease',
                             '&:hover': {
                               boxShadow: 3,
@@ -5964,9 +5964,9 @@ const EMITracker = () => {
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: 2, 
-                        bgcolor: debtAnalysis.emergencyFundPercentage < 50 ? '#e3f2fd' : '#f5f5f5',
+                        bgcolor: debtAnalysis.emergencyFundPercentage < 50 ? '#e3f2fd' : 'background.default',
                         border: '2px solid',
-                        borderColor: debtAnalysis.emergencyFundPercentage < 50 ? '#2196f3' : '#e0e0e0'
+                        borderColor: debtAnalysis.emergencyFundPercentage < 50 ? '#2196f3' : 'divider'
                       }}>
                         <Typography variant="h6" fontWeight="bold" mb={1}>
                           🛡️ Emergency Fund
@@ -6035,7 +6035,7 @@ const EMITracker = () => {
                     </Grid>
                   </Grid>
                   
-                  <Box mt={3} p={2} bgcolor="#f5f5f5" borderRadius={2}>
+                  <Box mt={3} p={2} bgcolor="background.default" borderRadius={2}>
                     <Typography variant="body2" fontWeight="bold" gutterBottom>
                       💡 Pro Tip: Review and adjust monthly
                     </Typography>
@@ -7726,7 +7726,7 @@ const EMITracker = () => {
 
               {/* Bills Table */}
               {ccBills.length === 0 ? (
-                <Card sx={{ p: 4, textAlign: 'center', bgcolor: isDark ? 'rgba(30,41,59,0.8)' : 'white' }}>
+                <Card sx={{ p: 4, textAlign: 'center', bgcolor: 'background.paper' }}>
                   <CreditCardIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary">No credit card bills found</Typography>
                   <Typography variant="body2" color="text.secondary" mb={2}>
@@ -7734,7 +7734,7 @@ const EMITracker = () => {
                   </Typography>
                 </Card>
               ) : (
-                <Card sx={{ mb: 4, borderRadius: 3, overflow: 'hidden', bgcolor: isDark ? 'rgba(30,41,59,0.8)' : 'white' }}>
+                <Card sx={{ mb: 4, borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper' }}>
                   <TableContainer>
                     <Table>
                       <TableHead>
@@ -7997,7 +7997,7 @@ const EMITracker = () => {
           sx: {
             borderRadius: 3,
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            bgcolor: isDark ? '#1e293b' : '#fff'
+            bgcolor: 'background.paper'
           }
         }}
       >
@@ -8088,7 +8088,7 @@ const EMITracker = () => {
           sx: {
             borderRadius: 3,
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            bgcolor: isDark ? '#1e293b' : '#fff'
+            bgcolor: 'background.paper'
           }
         }}
       >
@@ -8541,7 +8541,7 @@ const EMITracker = () => {
           sx: {
             borderRadius: 3,
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            bgcolor: isDark ? '#1e293b' : '#fff'
+            bgcolor: 'background.paper'
           }
         }}
       >
@@ -8927,7 +8927,7 @@ const EMITracker = () => {
 
       {/* Add/Edit Loan Given Dialog */}
       <Dialog open={loanGivenDialogOpen} onClose={() => setLoanGivenDialogOpen(false)} maxWidth="md" fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle>
           {selectedLoanGiven ? 'Edit Loan' : 'Add New Loan Given'}
@@ -9089,7 +9089,7 @@ const EMITracker = () => {
 
       {/* Add Repayment Dialog */}
       <Dialog open={repaymentDialogOpen} onClose={() => setRepaymentDialogOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle>Add Repayment</DialogTitle>
         <DialogContent>
@@ -9169,7 +9169,7 @@ const EMITracker = () => {
         onClose={() => setPersonalLoanDialogOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle>
           {selectedPersonalLoan ? 'Edit Personal Loan' : 'Add Personal Loan'}
@@ -9367,7 +9367,7 @@ const EMITracker = () => {
         onClose={() => setPersonalLoanRepaymentDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle>Add Repayment</DialogTitle>
         <DialogContent>
@@ -9423,7 +9423,7 @@ const EMITracker = () => {
         onClose={() => { setCcBillDialogOpen(false); setSelectedCcBill(null); }}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CreditCardIcon color="primary" />
@@ -9625,7 +9625,7 @@ const EMITracker = () => {
         onClose={() => { setCcBillPayDialogOpen(false); setSelectedCcBill(null); }}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <PaymentIcon color="success" />
@@ -9722,7 +9722,7 @@ const EMITracker = () => {
         maxWidth="sm"
         fullWidth
         disableEnforceFocus
-        PaperProps={{ sx: { bgcolor: isDark ? '#1e293b' : '#fff', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
         <DialogTitle>Edit EMI — {selectedEMI?.merchantName}</DialogTitle>
         <DialogContent dividers>

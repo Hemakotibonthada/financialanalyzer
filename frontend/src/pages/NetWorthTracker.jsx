@@ -315,7 +315,7 @@ function NetWorthTracker() {
                   startIcon={<AddIcon />}
                   onClick={() => setOpenDialog(true)}
                   sx={{
-                    bgcolor: 'white',
+                    bgcolor: 'background.paper',
                     color: 'primary.main',
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
                   }}
