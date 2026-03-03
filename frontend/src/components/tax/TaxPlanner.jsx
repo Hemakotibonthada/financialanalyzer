@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Calculator, TrendingUp, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
@@ -39,7 +39,7 @@ const TaxPlanner = () => {
 
   const fetchTaxRecords = async () => {
     try {
-      const response = await axios.get('/api/tax');
+      const response = await api.get('/tax');
       setTaxRecords(response.data);
       if (response.data.length > 0) {
         setSelectedRecord(response.data[0]);
@@ -63,7 +63,7 @@ const TaxPlanner = () => {
 
   const calculateTax = async () => {
     try {
-      const response = await axios.post('/api/tax', formData);
+      const response = await api.post('/tax', formData);
       await fetchTaxRecords();
       setSelectedRecord(response.data);
       alert('Tax calculated successfully!');
@@ -75,7 +75,7 @@ const TaxPlanner = () => {
 
   const generateOptimizations = async (recordId) => {
     try {
-      const response = await axios.post(`/api/tax/${recordId}/optimize`);
+      const response = await api.post(`/tax/${recordId}/optimize`);
       setSelectedRecord(response.data);
       alert('Optimizations generated!');
     } catch (error) {
@@ -85,7 +85,7 @@ const TaxPlanner = () => {
 
   const compareRegimes = async (recordId) => {
     try {
-      const response = await axios.post(`/api/tax/${recordId}/compare-regimes`);
+      const response = await api.post(`/tax/${recordId}/compare-regimes`);
       alert(`Current Regime: ₹${response.data.currentRegime.totalTax.toLocaleString()}\nOther Regime: ₹${response.data.otherRegime.totalTax.toLocaleString()}\nRecommended: ${response.data.recommendation}`);
     } catch (error) {
       console.error('Error comparing regimes:', error);

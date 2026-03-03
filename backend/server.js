@@ -251,6 +251,8 @@ app.use('/api/insurance', require('./routes/insurance'));
 app.use('/api/ml', require('./routes/ml'));
 // Local AI Engine
 app.use('/api/ai', require('./routes/aiRoutes'));
+// AI Model Training & NLP Chat
+app.use('/api/ai-training', require('./routes/aiTrainingRoutes'));
 // Portfolio Analytics
 app.use('/api/portfolio', require('./routes/portfolio'));
 // Real Estate Management

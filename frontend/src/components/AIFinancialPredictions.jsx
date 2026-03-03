@@ -17,7 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { Line, Bar } from 'react-chartjs-2';
-import axios from 'axios';
+import api from '../services/api';
 
 const AIFinancialPredictions = () => {
   const [predictions, setPredictions] = useState(null);
@@ -32,7 +32,7 @@ const AIFinancialPredictions = () => {
   const fetchPredictions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/insights/ai-predictions?timeframe=${selectedTimeframe}`);
+      const response = await api.get(`/insights/ai-predictions?timeframe=${selectedTimeframe}`);
       setPredictions(response.data);
     } catch (error) {
       console.error('Error fetching AI predictions:', error);

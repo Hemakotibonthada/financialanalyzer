@@ -50,9 +50,7 @@ import {
   InsertDriveFile as FileIcon,
   Assessment as AssessmentIcon
 } from '@mui/icons-material';
-import axios from 'axios';
-
-import { API_URL as API_BASE_URL } from '../services/api';
+import api from '../services/api';
 
 /**
  * CSVImportExport Component
@@ -88,10 +86,7 @@ const CSVImportExport = () => {
 
   const fetchFormats = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/csv/formats`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/csv/formats');
 
       if (response.data.success) {
         setAvailableFormats(response.data.data);
@@ -123,10 +118,8 @@ const CSVImportExport = () => {
       formData.append('file', selectedFile);
       formData.append('rows', '10');
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE_URL}/csv/preview`, formData, {
+      const response = await api.post('/csv/preview', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -154,10 +147,8 @@ const CSVImportExport = () => {
       formData.append('file', selectedFile);
       formData.append('bankFormat', bankFormat);
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE_URL}/csv/validate`, formData, {
+      const response = await api.post('/csv/validate', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -186,10 +177,8 @@ const CSVImportExport = () => {
       formData.append('skipDuplicates', skipDuplicates);
       formData.append('validateData', validateData);
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE_URL}/csv/import`, formData, {
+      const response = await api.post('/csv/import', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -216,7 +205,6 @@ const CSVImportExport = () => {
   const handleExport = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const params = {};
       
       if (exportFilters.startDate) params.startDate = exportFilters.startDate;
@@ -224,9 +212,8 @@ const CSVImportExport = () => {
       if (exportFilters.type) params.type = exportFilters.type;
       if (exportFilters.category) params.category = exportFilters.category;
 
-      const response = await axios.get(`${API_BASE_URL}/csv/export`, {
+      const response = await api.get('/csv/export', {
         params,
-        headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
 
@@ -249,10 +236,8 @@ const CSVImportExport = () => {
   // Download template
   const handleDownloadTemplate = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/csv/template`, {
+      const response = await api.get('/csv/template', {
         params: { format: bankFormat },
-        headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
 

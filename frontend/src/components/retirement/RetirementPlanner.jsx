@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, DollarSign, Calendar, Target, AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
@@ -22,7 +22,7 @@ const RetirementPlanner = () => {
 
   const fetchRetirementData = async () => {
     try {
-      const plansRes = await axios.get('/api/retirement');
+      const plansRes = await api.get('/retirement');
       setPlans(plansRes.data);
       
       if (plansRes.data.length > 0) {
@@ -38,7 +38,7 @@ const RetirementPlanner = () => {
 
   const fetchProjection = async (planId) => {
     try {
-      const res = await axios.get(`/api/retirement/${planId}/projection`);
+      const res = await api.get(`/retirement/${planId}/projection`);
       setProjection(res.data);
     } catch (error) {
       console.error('Error fetching projection:', error);

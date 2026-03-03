@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { Briefcase, FileText, Users, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
 // Simple UI components using Tailwind CSS
@@ -64,10 +64,10 @@ const BusinessDashboard = () => {
   const fetchBusinessData = async () => {
     try {
       const [invoicesRes, clientsRes, projectsRes, vendorsRes] = await Promise.all([
-        axios.get('/api/business/invoices'),
-        axios.get('/api/business/clients'),
-        axios.get('/api/business/projects'),
-        axios.get('/api/business/vendors')
+        api.get('/business/invoices'),
+        api.get('/business/clients'),
+        api.get('/business/projects'),
+        api.get('/business/vendors')
       ]);
 
       setInvoices(invoicesRes.data);

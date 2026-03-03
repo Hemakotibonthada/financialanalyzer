@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, TrendingDown, Home, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
@@ -22,8 +22,8 @@ const RealEstateDashboard = () => {
   const fetchRealEstateData = async () => {
     try {
       const [propertiesRes, portfolioRes] = await Promise.all([
-        axios.get('/api/realEstate'),
-        axios.get('/api/realEstate/portfolio/summary')
+        api.get('/realEstate'),
+        api.get('/realEstate/portfolio/summary')
       ]);
 
       setProperties(propertiesRes.data);

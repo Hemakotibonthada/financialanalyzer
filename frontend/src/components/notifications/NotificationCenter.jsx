@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, X, Check, AlertCircle, Info, CheckCircle, Clock, Settings } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState([]);
@@ -17,7 +17,7 @@ const NotificationCenter = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get('/api/notifications');
+      const response = await api.get('/notifications');
       setNotifications(response.data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -28,7 +28,7 @@ const NotificationCenter = () => {
 
   const fetchPreferences = async () => {
     try {
-      const response = await axios.get('/api/notifications/preferences');
+      const response = await api.get('/notifications/preferences');
       setPreferences(response.data);
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -37,7 +37,7 @@ const NotificationCenter = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(`/api/notifications/${notificationId}/read`);
+      await api.put(`/notifications/${notificationId}/read`);
       setNotifications(notifications.map(n => 
         n._id === notificationId ? { ...n, read: true } : n
       ));
@@ -48,7 +48,7 @@ const NotificationCenter = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axios.put('/api/notifications/read-all');
+      await api.put('/notifications/read-all');
       setNotifications(notifications.map(n => ({ ...n, read: true })));
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -57,7 +57,7 @@ const NotificationCenter = () => {
 
   const deleteNotification = async (notificationId) => {
     try {
-      await axios.delete(`/api/notifications/${notificationId}`);
+      await api.delete(`/notifications/${notificationId}`);
       setNotifications(notifications.filter(n => n._id !== notificationId));
     } catch (error) {
       console.error('Error deleting notification:', error);
@@ -66,7 +66,7 @@ const NotificationCenter = () => {
 
   const updatePreferences = async (newPreferences) => {
     try {
-      await axios.put('/api/notifications/preferences', newPreferences);
+      await api.put('/notifications/preferences', newPreferences);
       setPreferences(newPreferences);
       setShowSettings(false);
     } catch (error) {

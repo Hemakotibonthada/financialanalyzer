@@ -306,6 +306,35 @@ export const financialInsightsService = {
   getMerchants: (months = 6) => api.get('/financial-insights/merchants', { params: { months } }),
 };
 
+// ─── AI Training & ML Pipeline Service ──────────────────────────────
+export const aiTrainingService = {
+  // Model Training
+  trainAll: () => api.post('/ai-training/train-all'),
+  trainModel: (name) => api.post(`/ai-training/train/${name}`),
+  // Model Status & Query
+  getStatus: () => api.get('/ai-training/status'),
+  getModel: (name) => api.get(`/ai-training/model/${name}`),
+  listModels: () => api.get('/ai-training/models'),
+  // Predictions
+  classify: (description, amount, merchantName) =>
+    api.post('/ai-training/classify', { description, amount, merchantName }),
+  batchClassify: (transactions) =>
+    api.post('/ai-training/batch-classify', { transactions }),
+  // NLP Chat
+  chat: (message, context) =>
+    api.post('/ai-training/chat', { message, context }),
+  getSuggestions: () => api.get('/ai-training/suggestions'),
+  // Analysis Endpoints (auto-train if missing)
+  getRiskProfile: () => api.get('/ai-training/risk-profile'),
+  getBudgetOptimization: () => api.get('/ai-training/budget-optimization'),
+  getSpendingForecast: () => api.get('/ai-training/spending-forecast'),
+  getMerchantIntelligence: () => api.get('/ai-training/merchant-intelligence'),
+  getLifestyle: () => api.get('/ai-training/lifestyle'),
+  getSentiment: () => api.get('/ai-training/sentiment'),
+  getIncomeForecast: () => api.get('/ai-training/income-forecast'),
+  getGoalForecast: () => api.get('/ai-training/goal-forecast'),
+};
+
 // ─── Data Export Service ────────────────────────────────────────────
 export const dataExportService = {
   exportTransactions: (params) => api.get('/data-export/transactions', { params, responseType: 'blob' }),

@@ -161,6 +161,9 @@ const Sidebar = () => {
       icon: Brain,
       items: [
         { label: 'AI Command Center', icon: Brain, path: '/ai-command-center', color: 'violet', badge: 'NEW' },
+        { label: 'AI Training', icon: Brain, path: '/ai-training', color: 'purple', badge: 'ML' },
+        { label: 'Smart Budget', icon: Sparkles, path: '/smart-budget-optimizer', color: 'emerald', badge: 'AI' },
+        { label: 'Risk Assessment', icon: Activity, path: '/risk-assessment', color: 'red', badge: 'AI' },
         { label: 'Deep Insights', icon: Activity, path: '/financial-insights-dashboard', color: 'cyan', badge: 'NEW' },
         { label: 'AI Insights', icon: Brain, path: '/ai-insights', color: 'violet', badge: 'AI' },
         { label: 'Financial Chat', icon: Bot, path: '/financial-chat', color: 'blue' },

@@ -34,9 +34,7 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 import { debounce } from 'lodash';
-import axios from 'axios';
-
-import { API_URL as API_BASE_URL } from '../services/api';
+import api from '../services/api';
 
 /**
  * TransactionSearch Component
@@ -78,10 +76,7 @@ const TransactionSearch = ({ onSelectTransaction, compact = false }) => {
   // Fetch popular search terms
   const fetchPopularTerms = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/search/popular`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/search/popular');
       
       if (response.data.success) {
         setPopularTerms(response.data.data);
@@ -100,10 +95,8 @@ const TransactionSearch = ({ onSelectTransaction, compact = false }) => {
       }
 
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_BASE_URL}/search/suggestions`, {
-          params: { q: query },
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await api.get('/search/suggestions', {
+          params: { q: query }
         });
         
         if (response.data.success) {
@@ -140,10 +133,8 @@ const TransactionSearch = ({ onSelectTransaction, compact = false }) => {
     saveRecentSearch(query);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/search/transactions`, {
-        params: { q: query, limit: 50, sortBy: 'relevance' },
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await api.get('/search/transactions', {
+        params: { q: query, limit: 50, sortBy: 'relevance' }
       });
       
       if (response.data.success) {
@@ -166,10 +157,8 @@ const TransactionSearch = ({ onSelectTransaction, compact = false }) => {
     saveRecentSearch(query);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/search/global`, {
-        params: { q: query, limit: 20 },
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await api.get('/search/global', {
+        params: { q: query, limit: 20 }
       });
       
       if (response.data.success) {
@@ -188,10 +177,7 @@ const TransactionSearch = ({ onSelectTransaction, compact = false }) => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/search/quick/${type}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get(`/search/quick/${type}`);
       
       if (response.data.success) {
         setSearchResults(response.data.data);

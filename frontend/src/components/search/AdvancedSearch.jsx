@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Filter, Calendar, DollarSign, Tag, ArrowUpDown } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
 const AdvancedSearch = () => {
@@ -43,11 +43,11 @@ const AdvancedSearch = () => {
     try {
       let response;
       if (useNLP) {
-        response = await axios.post('/api/search/natural-language', {
+        response = await api.post('/search/natural-language', {
           query: searchQuery
         });
       } else {
-        response = await axios.get('/api/search/universal', {
+        response = await api.get('/search/universal', {
           params: {
             q: searchQuery,
             type: filters.type !== 'all' ? filters.type : undefined,
@@ -78,7 +78,7 @@ const AdvancedSearch = () => {
     if (query.length < 2) return;
 
     try {
-      const response = await axios.get('/api/search/suggestions', {
+      const response = await api.get('/search/suggestions', {
         params: { q: query }
       });
       return response.data;
