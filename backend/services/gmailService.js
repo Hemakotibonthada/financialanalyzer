@@ -7,6 +7,7 @@ const logger = require('../utils/logger');
 const Document = require('../models/Document');
 const Transaction = require('../models/Transaction');
 const { saveTransactions } = require('./documentProcessor');
+const { parseEmailTransaction } = require('./emailTransactionParser');
 
 class GmailService {
   constructor(tokens = null) {
@@ -1125,6 +1126,150 @@ class GmailService {
     };
   }
 
+  /**
+   * Persist general (non-UPI) email-parsed transactions into the database.
+   * Uses the comprehensive emailTransactionParser to extract bank alerts,
+   * credit card charges, NEFT/RTGS/IMPS, salary, EMI, bills, etc.
+   * Skips emails that already have UPI transactions persisted (avoids duplicates).
+   */
+  async persistEmailTransactions(userId, emailData, parsedTx) {
+    if (!parsedTx) return { count: 0, documentId: null, transactionsPreview: [] };
+
+    // Check if a Document already exists for this gmail message
+    let document = await Document.findOne({
+      userId,
+      gmailMessageId: emailData.gmailMessageId,
+      source: 'gmail_email'
+    });
+
+    // If a document already exists, check if a transaction for the same amount+type already exists
+    if (document) {
+      const duplicate = await Transaction.findOne({
+        documentId: document._id,
+        amount: parsedTx.amount,
+        type: parsedTx.type
+      });
+      if (duplicate) {
+        logger.info(`Email transaction already recorded for message ${emailData.gmailMessageId} (amount: ${parsedTx.amount}, type: ${parsedTx.type})`);
+        return { count: 0, documentId: document._id, transactionsPreview: [] };
+      }
+    }
+
+    const safeSubject = (emailData.subject || 'email-tx').replace(/[<>:"/\\|?*]+/g, ' ').trim() || 'email-tx';
+    const safeBase = safeSubject.substring(0, 80).replace(/\s+/g, '_').toLowerCase();
+    const safeUserId = userId.toString();
+    const timestamp = Date.now();
+    const uploadDir = path.join(process.cwd(), 'uploads', 'financial', safeUserId, 'emails');
+    const safeFilename = document?.fileName || `${timestamp}_${safeBase}_${emailData.gmailMessageId}.json`;
+    const filePath = document?.filePath || path.join(uploadDir, safeFilename);
+
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+
+    const payload = {
+      gmailMessageId: emailData.gmailMessageId,
+      subject: emailData.subject,
+      from: emailData.from,
+      date: emailData.date,
+      snippet: emailData.snippet,
+      bodyText: emailData.bodyText,
+      bodyHtml: emailData.body?.html,
+      parsedTransaction: parsedTx
+    };
+
+    const fileContent = JSON.stringify(payload, null, 2);
+    await fs.writeFile(filePath, fileContent, 'utf8');
+    const fileSize = Buffer.byteLength(fileContent);
+
+    if (!document) {
+      document = await Document.create({
+        userId,
+        fileName: safeFilename,
+        originalFileName: `${safeSubject}.json`,
+        fileType: 'json',
+        fileSize,
+        filePath,
+        source: 'gmail_email',
+        gmailMessageId: emailData.gmailMessageId,
+        category: parsedTx.category || 'email_transaction',
+        isProcessed: true,
+        processingStatus: 'completed',
+        passwordHints: emailData.passwordHints,
+        metadata: {
+          dateCreated: emailData.date,
+          subject: emailData.subject,
+          author: emailData.from,
+          keywords: this.extractKeywords(safeBase, emailData.subject),
+          emailSource: emailData.from,
+          labels: emailData.labelIds || [],
+          threadId: emailData.threadId,
+          parsedBank: parsedTx.emailMetadata?.parsedBank,
+          transactionType: parsedTx.type,
+          paymentMethod: parsedTx.paymentMethod
+        }
+      });
+    } else {
+      // Update existing document metadata
+      document.category = parsedTx.category || document.category;
+      document.metadata = {
+        ...(document.metadata || {}),
+        parsedBank: parsedTx.emailMetadata?.parsedBank,
+        transactionType: parsedTx.type,
+        paymentMethod: parsedTx.paymentMethod
+      };
+      document.markModified('metadata');
+      await document.save();
+    }
+
+    // Build full transaction record compatible with Transaction model
+    const transactionRecord = {
+      userId,
+      documentId: document._id,
+      date: parsedTx.date || emailData.date || new Date(),
+      description: parsedTx.description || emailData.subject,
+      amount: parsedTx.amount,
+      type: parsedTx.type,
+      category: parsedTx.category,
+      paymentMethod: parsedTx.paymentMethod || 'other',
+      source: 'gmail_email',
+      merchantName: parsedTx.merchantName,
+      confidence: parsedTx.confidence,
+      tags: parsedTx.tags || ['gmail'],
+      ai_category: parsedTx.ai_category,
+      ai_confidence: parsedTx.ai_confidence,
+      ai_tags: parsedTx.tags,
+      aiProcessed: true,
+      emailMetadata: {
+        ...parsedTx.emailMetadata,
+        accountNumber: parsedTx.accountNumber,
+        referenceNumber: parsedTx.referenceNumber,
+        balance: parsedTx.balance,
+        subcategory: parsedTx.subcategory
+      },
+      enhanced: true,
+    };
+
+    const savedTransactions = await saveTransactions([transactionRecord], document);
+
+    document.transactionCount = (document.transactionCount || 0) + savedTransactions.length;
+    document.isProcessed = true;
+    document.processingStatus = 'completed';
+    await document.save();
+
+    logger.info(`Persisted ${savedTransactions.length} general email transaction(s) from Gmail message ${emailData.gmailMessageId} [${parsedTx.type} ${parsedTx.amount} ${parsedTx.category}]`);
+
+    return {
+      count: savedTransactions.length,
+      documentId: document._id,
+      transactionsPreview: savedTransactions.slice(0, 5).map(t => ({
+        amount: t.amount,
+        type: t.type,
+        description: t.description,
+        category: t.category,
+        date: t.date
+      }))
+    };
+  }
+
   extractEmailAddress(value = '') {
     if (!value) {
       return '';
@@ -1572,6 +1717,8 @@ class GmailService {
         downloadedAttachments: 0,
         upiEmailsProcessed: 0,
         upiTransactionsCreated: 0,
+        emailTransactionsCreated: 0,
+        emailTransactionsSummaries: [],
         duplicatesSkipped: 0,
         downloadedFiles: [],
         upiSummaries: [],
@@ -1621,6 +1768,27 @@ class GmailService {
                 gmailMessageId: emailData.gmailMessageId,
                 transactions: persisted.transactionsPreview
               });
+            }
+          }
+
+          // ── Enhanced Email Transaction Parsing (non-UPI) ──────────────
+          // Parse bank alerts, CC charges, NEFT/RTGS/IMPS, salary, EMI, etc.
+          if (!upiTransactions.length) {
+            try {
+              const parsedTx = parseEmailTransaction(emailData);
+              if (parsedTx && parsedTx.paymentMethod !== 'upi') {
+                const persisted = await this.persistEmailTransactions(userId, emailData, parsedTx);
+                if (persisted.count > 0) {
+                  results.emailTransactionsCreated += persisted.count;
+                  results.emailTransactionsSummaries.push({
+                    documentId: persisted.documentId,
+                    gmailMessageId: emailData.gmailMessageId,
+                    transactions: persisted.transactionsPreview
+                  });
+                }
+              }
+            } catch (parseErr) {
+              logger.warn(`Email parser error for message ${message.id}: ${parseErr.message}`);
             }
           }
           
@@ -1765,6 +1933,8 @@ class GmailService {
         downloadedAttachments: 0,
         upiEmailsProcessed: 0,
         upiTransactionsCreated: 0,
+        emailTransactionsCreated: 0,
+        emailTransactionsSummaries: [],
         duplicatesSkipped: 0,
         downloadedFiles: [],
         upiSummaries: [],
@@ -1817,6 +1987,26 @@ class GmailService {
                 gmailMessageId: emailData.gmailMessageId,
                 transactions: persisted.transactionsPreview
               });
+            }
+          }
+
+          // ── Enhanced Email Transaction Parsing (non-UPI) ──────────────
+          if (!upiTransactions.length) {
+            try {
+              const parsedTx = parseEmailTransaction(emailData);
+              if (parsedTx && parsedTx.paymentMethod !== 'upi') {
+                const persisted = await this.persistEmailTransactions(userId, emailData, parsedTx);
+                if (persisted.count > 0) {
+                  results.emailTransactionsCreated += persisted.count;
+                  results.emailTransactionsSummaries.push({
+                    documentId: persisted.documentId,
+                    gmailMessageId: emailData.gmailMessageId,
+                    transactions: persisted.transactionsPreview
+                  });
+                }
+              }
+            } catch (parseErr) {
+              logger.warn(`Email parser error for message ${message.id}: ${parseErr.message}`);
             }
           }
 

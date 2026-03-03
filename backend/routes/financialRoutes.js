@@ -535,15 +535,20 @@ router.get('/transactions', authenticate, async (req, res) => {
       limit = 10000, // Increase default limit to support all transactions
       category,
       type,
+      source,
+      paymentMethod,
       startDate,
       endDate,
-      search
+      search,
+      sort
     } = req.query;
 
     // Build filter
     const filter = { userId: req.user._id };
     if (category) filter.category = category;
     if (type) filter.type = type;
+    if (source) filter.source = source;
+    if (paymentMethod) filter.paymentMethod = paymentMethod;
     
     if (startDate || endDate) {
       filter.date = {};
@@ -555,9 +560,11 @@ router.get('/transactions', authenticate, async (req, res) => {
       filter.description = { $regex: search, $options: 'i' };
     }
 
+    const sortOrder = sort ? sort : '-date';
+
     const transactions = await Transaction.find(filter)
       .populate('documentId', 'originalFileName category')
-      .sort({ date: -1 })
+      .sort(sortOrder)
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
@@ -573,15 +580,21 @@ router.get('/transactions', authenticate, async (req, res) => {
       success: true,
       transactions: transactions.map(t => ({
         id: t._id,
+        _id: t._id,
         date: t.date,
         description: t.description,
         amount: t.amount,
         type: t.type,
         category: t.category,
         merchantName: t.merchantName,
+        paymentMethod: t.paymentMethod,
+        source: t.source,
         confidence: t.confidence,
         isVerified: t.isVerified,
         isRecurring: t.isRecurring,
+        tags: t.tags,
+        ai_category: t.ai_category,
+        emailMetadata: t.emailMetadata,
         document: t.documentId ? {
           name: t.documentId.originalFileName,
           category: t.documentId.category

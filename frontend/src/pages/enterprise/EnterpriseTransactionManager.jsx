@@ -102,6 +102,9 @@ const TransactionRow = ({ txn, selected, onSelect, onEdit, onDelete, index }) =>
           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{txn.description || txn.merchant || 'Transaction'}</p>
           {txn.isRecurring && <Badge variant="info"><Repeat className="w-3 h-3 mr-0.5" /> Recurring</Badge>}
           {txn.isAnomaly && <Badge variant="warning"><AlertTriangle className="w-3 h-3 mr-0.5" /> Unusual</Badge>}
+          {(txn.source === 'gmail_email' || txn.source === 'gmail_attachment') && (
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">Gmail</span>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-0.5">
           <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -305,7 +308,7 @@ const EnterpriseTransactionManager = () => {
   const [pageSize] = useState(25);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('-date');
-  const [filters, setFilters] = useState({ type: 'all', category: '', paymentMethod: '', dateFrom: '', dateTo: '' });
+  const [filters, setFilters] = useState({ type: 'all', category: '', paymentMethod: '', source: '', dateFrom: '', dateTo: '' });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
@@ -324,6 +327,7 @@ const EnterpriseTransactionManager = () => {
         ...(filters.type !== 'all' && { type: filters.type }),
         ...(filters.category && { category: filters.category }),
         ...(filters.paymentMethod && { paymentMethod: filters.paymentMethod }),
+        ...(filters.source && { source: filters.source }),
         ...(filters.dateFrom && { startDate: filters.dateFrom }),
         ...(filters.dateTo && { endDate: filters.dateTo }),
       };
@@ -523,7 +527,7 @@ const EnterpriseTransactionManager = () => {
 
             {/* Filter panel */}
             {showFilters && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 md:grid-cols-5 gap-3 animate-fade-in-down">
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 md:grid-cols-6 gap-3 animate-fade-in-down">
                 <select value={filters.type} onChange={e => setFilters(f => ({ ...f, type: e.target.value }))}
                   className="px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                   <option value="all">All Types</option>
@@ -539,6 +543,14 @@ const EnterpriseTransactionManager = () => {
                   className="px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                   <option value="">All Methods</option>
                   {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select value={filters.source} onChange={e => setFilters(f => ({ ...f, source: e.target.value }))}
+                  className="px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <option value="">All Sources</option>
+                  <option value="gmail_email">Gmail Email</option>
+                  <option value="gmail_attachment">Gmail Attachment</option>
+                  <option value="manual">Manual Upload</option>
+                  <option value="csv_import">CSV Import</option>
                 </select>
                 <input type="date" value={filters.dateFrom} onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
                   className="px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300" />

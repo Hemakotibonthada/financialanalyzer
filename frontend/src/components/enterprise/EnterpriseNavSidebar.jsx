@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Wallet, TrendingUp, Target,
   CreditCard, Heart, BarChart3, FileText, Settings, MessageSquare,
   LineChart, ChevronDown, ChevronRight, Sparkles, Shield, Zap,
-  Menu, X, Sun, Moon,
+  Menu, X, Sun, Moon, Mail,
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -27,6 +27,7 @@ const NAV_SECTIONS = [
       { path: '/reports-v3', label: 'Reports', icon: FileText },
       { path: '/ai-chat-v3', label: 'AI Assistant', icon: MessageSquare },
       { path: '/cashflow-forecaster', label: 'Cash Flow Forecast', icon: LineChart },
+      { path: '/gmail-browser', label: 'Gmail Intelligence', icon: Mail },
       { path: '/settings-v3', label: 'Settings', icon: Settings },
     ],
   },

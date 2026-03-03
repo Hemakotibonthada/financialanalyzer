@@ -469,4 +469,190 @@ router.post('/auto-sync-settings', authenticate, async (req, res) => {
   }
 });
 
+// ============================================================================
+// AUTO-SYNC SCHEDULER STATS & CONTROL
+// ============================================================================
+
+/**
+ * GET /api/gmail/auto-sync-stats
+ * Returns the auto-sync scheduler's statistics and status.
+ */
+router.get('/auto-sync-stats', authenticate, async (req, res) => {
+  try {
+    const gmailAutoSync = require('../services/gmailAutoSync');
+    const stats = gmailAutoSync.getStats();
+    res.json({ success: true, ...stats });
+  } catch (error) {
+    logger.error('Auto-sync stats error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get auto-sync stats' });
+  }
+});
+
+/**
+ * POST /api/gmail/auto-sync-trigger
+ * Manually trigger a full auto-sync run for all connected users.
+ */
+router.post('/auto-sync-trigger', authenticate, async (req, res) => {
+  try {
+    const gmailAutoSync = require('../services/gmailAutoSync');
+    const results = await gmailAutoSync.syncAll();
+    res.json({ success: true, results });
+  } catch (error) {
+    logger.error('Auto-sync trigger error:', error);
+    res.status(500).json({ success: false, message: 'Failed to trigger auto-sync' });
+  }
+});
+
+// ============================================================================
+// EMAIL TRANSACTION ANALYTICS
+// ============================================================================
+
+/**
+ * GET /api/gmail/email-transactions
+ * Retrieve email-parsed transactions with filters.
+ */
+router.get('/email-transactions', authenticate, async (req, res) => {
+  try {
+    const Transaction = require('../models/Transaction');
+    const { type, category, paymentMethod, startDate, endDate, limit = 100, skip = 0, sort = '-date' } = req.query;
+
+    const query = { userId: req.user._id, source: 'gmail_email' };
+    if (type) query.type = type;
+    if (category) query.category = category;
+    if (paymentMethod) query.paymentMethod = paymentMethod;
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
+    const [transactions, total] = await Promise.all([
+      Transaction.find(query).sort(sort).skip(parseInt(skip)).limit(parseInt(limit)).lean(),
+      Transaction.countDocuments(query),
+    ]);
+
+    // Compute aggregates
+    const aggregates = await Transaction.aggregate([
+      { $match: { userId: req.user._id, source: 'gmail_email' } },
+      {
+        $group: {
+          _id: null,
+          totalIncome: { $sum: { $cond: [{ $eq: ['$type', 'credit'] }, '$amount', 0] } },
+          totalExpenses: { $sum: { $cond: [{ $eq: ['$type', 'debit'] }, '$amount', 0] } },
+          avgAmount: { $avg: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const categoryBreakdown = await Transaction.aggregate([
+      { $match: { userId: req.user._id, source: 'gmail_email' } },
+      { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
+      { $sort: { total: -1 } },
+    ]);
+
+    const paymentMethodBreakdown = await Transaction.aggregate([
+      { $match: { userId: req.user._id, source: 'gmail_email' } },
+      { $group: { _id: '$paymentMethod', total: { $sum: '$amount' }, count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    res.json({
+      success: true,
+      transactions,
+      total,
+      aggregates: aggregates[0] || { totalIncome: 0, totalExpenses: 0, avgAmount: 0, count: 0 },
+      categoryBreakdown,
+      paymentMethodBreakdown,
+    });
+  } catch (error) {
+    logger.error('Email transactions fetch error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch email transactions' });
+  }
+});
+
+/**
+ * POST /api/gmail/retry-parse/:messageId
+ * Re-parse a specific Gmail message using the enhanced parser.
+ */
+router.post('/retry-parse/:messageId', authenticate, async (req, res) => {
+  try {
+    const gmailService = require('../services/gmailService');
+    const { parseEmailTransaction } = require('../services/emailTransactionParser');
+    const Transaction = require('../models/Transaction');
+
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+    if (!profile?.gmailSettings?.isConnected) {
+      return res.status(400).json({ success: false, message: 'Gmail not connected' });
+    }
+
+    const credentials = {
+      access_token: profile.gmailSettings.accessToken,
+      refresh_token: profile.gmailSettings.refreshToken,
+    };
+    gmailService.setCredentials(credentials);
+
+    const emailData = await gmailService.getEmailWithAttachments(req.params.messageId, req.user._id.toString());
+    const parsedTx = parseEmailTransaction(emailData);
+
+    if (!parsedTx) {
+      return res.json({ success: true, message: 'No financial transaction detected in this email', parsed: null });
+    }
+
+    // Check for existing
+    const existing = await Transaction.findOne({
+      userId: req.user._id,
+      'emailMetadata.gmailMessageId': req.params.messageId,
+      amount: parsedTx.amount,
+      type: parsedTx.type,
+    });
+
+    if (existing) {
+      return res.json({ success: true, message: 'Transaction already exists', transaction: existing });
+    }
+
+    const persisted = await gmailService.persistEmailTransactions(req.user._id.toString(), emailData, parsedTx);
+
+    res.json({
+      success: true,
+      message: `Parsed and saved ${persisted.count} transaction(s)`,
+      result: persisted,
+    });
+  } catch (error) {
+    logger.error('Retry parse error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/gmail/sync-history
+ * Get sync history for the current user.
+ */
+router.get('/sync-history', authenticate, async (req, res) => {
+  try {
+    const profile = await FinancialProfile.findOne({ userId: req.user._id });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    const gs = profile.gmailSettings || {};
+    res.json({
+      success: true,
+      history: {
+        lastSync: gs.lastSync,
+        lastFullSync: gs.lastFullSyncAt,
+        initialSyncCompleted: gs.initialSyncCompleted,
+        totalMessagesSynced: gs.totalMessagesSynced || 0,
+        lastAttachmentSyncCount: gs.lastAttachmentSyncCount || 0,
+        lastReadAt: gs.lastReadAt,
+        email: gs.email,
+        isConnected: gs.isConnected,
+      },
+    });
+  } catch (error) {
+    logger.error('Sync history error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get sync history' });
+  }
+});
+
 module.exports = router;

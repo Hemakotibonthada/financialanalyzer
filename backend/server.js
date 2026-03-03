@@ -392,8 +392,10 @@ app.set('wsEngine', wsEngine);
 
 // Start backup scheduler after MongoDB is connected
 const backupScheduler = require('./services/backupScheduler');
+const gmailAutoSync = require('./services/gmailAutoSync');
 mongoose.connection.once('open', () => {
   backupScheduler.start();
+  gmailAutoSync.start();
 });
 
 // Handle EADDRINUSE: kill stale process and retry once

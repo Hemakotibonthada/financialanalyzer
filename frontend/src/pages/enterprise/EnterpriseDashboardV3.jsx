@@ -19,7 +19,7 @@ import {
   Wallet, Building2, Landmark, BrainCircuit, Sparkles, ChevronRight,
   RefreshCw, Calendar, Download, Bell, Zap, AlertTriangle, CheckCircle2,
   Banknote, ArrowRightLeft, Receipt, CircleDollarSign, Clock, Globe,
-  Heart, Award, Flame, LayoutDashboard, Settings, Filter,
+  Heart, Award, Flame, LayoutDashboard, Settings, Filter, Mail, MailCheck,
 } from 'lucide-react';
 import MainLayout from '../../components/MainLayout';
 import api from '../../services/api';
@@ -193,6 +193,88 @@ const ChartTooltip = ({ active, payload, label }) => {
         </p>
       ))}
     </div>
+  );
+};
+
+// ============================================================================
+// §2b  GMAIL SYNC WIDGET
+// ============================================================================
+const GmailSyncWidget = ({ navigate }) => {
+  const [gmailData, setGmailData] = useState({ connected: false, recentTxns: [], stats: null });
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [statusRes, txRes] = await Promise.allSettled([
+          api.get('/gmail/status'),
+          api.get('/financial/transactions', { params: { source: 'gmail_email', limit: 5, sort: '-date' } }),
+        ]);
+        const status = statusRes.status === 'fulfilled' ? statusRes.value.data : {};
+        const txns = txRes.status === 'fulfilled' ? (txRes.value.data?.transactions || txRes.value.data || []) : [];
+        setGmailData({ connected: status.isConnected || status.connected, recentTxns: txns, stats: status });
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try { await api.post('/gmail/sync', { maxResults: 50 }); } catch { /* ignore */ }
+    setSyncing(false);
+  };
+
+  if (!gmailData.connected) return null; // Don't show widget if Gmail not connected
+
+  return (
+    <GlassCard className="p-5 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <MailCheck className="w-4 h-4 text-blue-500" /> Gmail Transactions
+        </h3>
+        <div className="flex items-center gap-2">
+          <button onClick={handleSync} disabled={syncing}
+            className="px-2 py-1 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors flex items-center gap-1">
+            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing' : 'Sync'}
+          </button>
+          <button onClick={() => navigate('/gmail-browser')}
+            className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1">
+            View All <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+
+      {gmailData.recentTxns.length === 0 ? (
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
+          No email transactions found. Sync to import.
+        </p>
+      ) : (
+        <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+          {gmailData.recentTxns.map((tx, i) => (
+            <div key={tx._id || i} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tx.type === 'credit' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                  {tx.type === 'credit' ? <ArrowDownRight className="w-3.5 h-3.5 text-green-600" /> : <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{tx.description}</p>
+                  <p className="text-[10px] text-gray-400">{tx.date ? new Date(tx.date).toLocaleDateString() : ''} • {tx.category || 'General'}</p>
+                </div>
+              </div>
+              <span className={`text-xs font-bold whitespace-nowrap ${tx.type === 'credit' ? 'text-green-600' : 'text-red-500'}`}>
+                {tx.type === 'credit' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {gmailData.stats?.lastSync && (
+        <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-2 text-right">
+          Last sync: {new Date(gmailData.stats.lastSync).toLocaleString()}
+        </p>
+      )}
+    </GlassCard>
   );
 };
 
@@ -579,6 +661,9 @@ const EnterpriseDashboardV3 = () => {
               </GlassCard>
             </div>
           </div>
+
+          {/* ─── GMAIL SYNC WIDGET ─── */}
+          <GmailSyncWidget navigate={navigate} />
 
           {/* ─── FOOTER BAR — Financial Snapshot ─── */}
           <GlassCard className="p-4">
