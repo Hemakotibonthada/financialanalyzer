@@ -23,6 +23,7 @@ import { initializeStorage } from './services/storage';
 import './styles/theme-variables.css';
 import './styles/advanced-animations.css';
 import './styles/enterprise-animations.css';
+import './styles/enterprise-design-system.css';
 
 // Retry wrapper for lazy imports - handles Vite HMR "Failed to fetch dynamically imported module" errors
 const lazyRetry = (importFn, retries = 3, delay = 1000) =>
@@ -194,6 +195,20 @@ const EnhancedFinancialGoalsV2 = lazy(() => import('./pages/EnhancedFinancialGoa
 const EnhancedFinancialPlanningV2 = lazy(() => import('./pages/EnhancedFinancialPlanningV2'));
 const EnhancedSettingsV2 = lazy(() => import('./pages/EnhancedSettingsV2'));
 const EnhancedReportsV2 = lazy(() => import('./pages/EnhancedReportsV2'));
+
+// Enterprise V3 Pages
+const EnterpriseDashboardV3 = lazyRetry(() => import('./pages/enterprise/EnterpriseDashboardV3'));
+const EnterpriseTransactionManager = lazyRetry(() => import('./pages/enterprise/EnterpriseTransactionManager'));
+const EnterpriseBudgetIntelligence = lazyRetry(() => import('./pages/enterprise/EnterpriseBudgetIntelligence'));
+const EnterpriseInvestmentAdvisor = lazyRetry(() => import('./pages/enterprise/EnterpriseInvestmentAdvisor'));
+const EnterpriseGoalsTracker = lazyRetry(() => import('./pages/enterprise/EnterpriseGoalsTracker'));
+const EnterpriseDebtManagement = lazyRetry(() => import('./pages/enterprise/EnterpriseDebtManagement'));
+const EnterpriseFinancialHealth = lazyRetry(() => import('./pages/enterprise/EnterpriseFinancialHealth'));
+const EnterpriseAnalytics = lazyRetry(() => import('./pages/enterprise/EnterpriseAnalytics'));
+const EnterpriseReports = lazyRetry(() => import('./pages/enterprise/EnterpriseReports'));
+const EnterpriseSettings = lazyRetry(() => import('./pages/enterprise/EnterpriseSettings'));
+const EnterpriseAIChat = lazyRetry(() => import('./pages/enterprise/EnterpriseAIChat'));
+const EnterpriseCashflowForecaster = lazyRetry(() => import('./pages/enterprise/EnterpriseCashflowForecaster'));
 
 // AI-Powered Feature Pages
 const MerchantIntelligence = lazy(() => import('./pages/MerchantIntelligence'));
@@ -409,6 +424,20 @@ function App() {
               <Route path="/docs" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
               
+              {/* ========== ENTERPRISE V3 PAGES ========== */}
+              <Route path="/dashboard-v3" element={<ProtectedRoute><EnterpriseDashboardV3 /></ProtectedRoute>} />
+              <Route path="/transactions-v3" element={<ProtectedRoute><EnterpriseTransactionManager /></ProtectedRoute>} />
+              <Route path="/budget-intelligence" element={<ProtectedRoute><EnterpriseBudgetIntelligence /></ProtectedRoute>} />
+              <Route path="/investment-advisor" element={<ProtectedRoute><EnterpriseInvestmentAdvisor /></ProtectedRoute>} />
+              <Route path="/goals-v3" element={<ProtectedRoute><EnterpriseGoalsTracker /></ProtectedRoute>} />
+              <Route path="/debt-management-v3" element={<ProtectedRoute><EnterpriseDebtManagement /></ProtectedRoute>} />
+              <Route path="/financial-health-v3" element={<ProtectedRoute><EnterpriseFinancialHealth /></ProtectedRoute>} />
+              <Route path="/analytics-v3" element={<ProtectedRoute><EnterpriseAnalytics /></ProtectedRoute>} />
+              <Route path="/reports-v3" element={<ProtectedRoute><EnterpriseReports /></ProtectedRoute>} />
+              <Route path="/settings-v3" element={<ProtectedRoute><EnterpriseSettings /></ProtectedRoute>} />
+              <Route path="/ai-chat-v3" element={<ProtectedRoute><EnterpriseAIChat /></ProtectedRoute>} />
+              <Route path="/cashflow-forecaster" element={<ProtectedRoute><EnterpriseCashflowForecaster /></ProtectedRoute>} />
+
               {/* ========== AI-POWERED FEATURE ROUTES ========== */}
               <Route path="/merchant-intelligence" element={<ProtectedRoute><MerchantIntelligence /></ProtectedRoute>} />
               <Route path="/lifestyle-analytics" element={<ProtectedRoute><LifestyleAnalytics /></ProtectedRoute>} />

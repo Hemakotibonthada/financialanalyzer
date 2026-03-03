@@ -301,6 +301,9 @@ app.use('/api/planning', require('./routes/financialPlanningRoutes'));
 // Data Export Engine — CSV/JSON export with templates & aggregation
 const { createExportRoutes, exportEngine } = require('./services/dataExportEngine');
 app.use('/api/export-engine', createExportRoutes(exportEngine));
+// Enterprise AI Services (Prediction, Risk, Tax, Reports)
+app.use('/api/enterprise', require('./routes/enterpriseRoutes'));
+
 // Enterprise Health & Admin Analytics
 app.get('/api/enterprise-health', healthCheckHandler);
 app.get('/api/admin/system-analytics', adminAnalyticsHandler);
