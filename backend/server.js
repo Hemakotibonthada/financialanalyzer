@@ -222,10 +222,32 @@ app.use('/api/transactions', require('./routes/financialRoutes').use ? require('
     }
   });
 
-  // POST /api/transactions — create transaction
+  // POST /api/transactions — create transaction with AI enrichment
   txnRouter.post('/', authenticate, async (req, res) => {
     try {
-      const txn = await Transaction.create({ ...req.body, userId: req.user._id });
+      let txnData = { ...req.body, userId: req.user._id };
+
+      // AI auto-enrichment (non-blocking)
+      try {
+        const enrichment = require('./services/ai/transactionEnrichment');
+        const enriched = await enrichment.enrich(txnData, req.user._id);
+        // Merge AI data without overwriting user-provided fields
+        if (!txnData.category || txnData.category === 'other') txnData.category = enriched.category;
+        txnData.merchantNormalized = enriched.merchantNormalized;
+        txnData.necessityType = enriched.necessityType;
+        txnData.isTaxDeductible = enriched.isTaxDeductible;
+        txnData.isRecurring = enriched.isRecurring;
+        txnData.autoTags = enriched.autoTags;
+        if (enriched.isAnomalous) {
+          txnData.isAnomalous = true;
+          txnData.anomalyScore = enriched.anomalyScore;
+        }
+      } catch (aiErr) {
+        // AI enrichment is optional — don't block transaction creation
+        logger.debug('AI enrichment skipped:', aiErr.message);
+      }
+
+      const txn = await Transaction.create(txnData);
       res.status(201).json({ success: true, data: txn });
     } catch (error) {
       logger.error('Create transaction error:', error);
@@ -481,6 +503,26 @@ mongoose.connection.once('open', () => {
     selfTrainingScheduler.start();
     logger.info('🤖 AI Self-Training Scheduler: Active');
   }
+
+  // Auto-train AI Intelligence Pipeline for all active users
+  setTimeout(async () => {
+    try {
+      const User = require('./models/User');
+      const { getPipeline } = require('./services/ai/selfLearningPipeline');
+      const users = await User.find({ isActive: { $ne: false } }).select('_id').limit(50).lean();
+      let trained = 0;
+      for (const user of users) {
+        try {
+          const pipeline = getPipeline(user._id);
+          const result = await pipeline.train(user._id);
+          if (result.status === 'success') trained++;
+        } catch {}
+      }
+      if (trained > 0) logger.info(`🧠 AI Intelligence: Auto-trained ${trained}/${users.length} user models`);
+    } catch (err) {
+      logger.warn('AI auto-training skipped:', err.message);
+    }
+  }, 10000); // Start 10s after DB connection
 });
 
 // Handle EADDRINUSE: kill stale process and retry once

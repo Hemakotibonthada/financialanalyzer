@@ -80,6 +80,7 @@ const NotificationCenter = lazy(() => import('./components/notifications/Notific
 const AdvancedSearch = lazy(() => import('./components/search/AdvancedSearch'));
 const FinancialHealthDashboard = lazyRetry(() => import('./pages/FinancialHealthDashboard'));
 const AIInsights = lazy(() => import('./pages/AIInsights'));
+const AIInsightsHub = lazy(() => import('./pages/AIInsightsHub'));
 const SpendingInsights = lazy(() => import('./pages/SpendingInsights'));
 const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboard'));
 const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
@@ -367,6 +368,7 @@ function App() {
               
               {/* ========== AI & ML INSIGHTS ========== */}
               <Route path="/ai-insights" element={<ProtectedRoute><AIInsights /></ProtectedRoute>} />
+              <Route path="/ai-hub" element={<ProtectedRoute><AIInsightsHub /></ProtectedRoute>} />
               <Route path="/ai-command-center" element={<ProtectedRoute><AICommandCenter /></ProtectedRoute>} />
               <Route path="/financial-insights-dashboard" element={<ProtectedRoute><FinancialInsightsDashboard /></ProtectedRoute>} />
               <Route path="/ml-dashboard" element={<ProtectedRoute><MLDashboard /></ProtectedRoute>} />

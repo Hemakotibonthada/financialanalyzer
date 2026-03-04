@@ -381,6 +381,70 @@ export const jobsService = {
   stopAll: () => api.post('/jobs/stop'),
 };
 
+// ─── AI Intelligence Service (Local ML Engines) ─────────────────────
+export const aiIntelligenceService = {
+  // Self-Learning Pipeline
+  train: () => api.post('/ai-intelligence/train'),
+  getStatus: () => api.get('/ai-intelligence/status'),
+  categorize: (description, amount) => api.post('/ai-intelligence/categorize', { description, amount }),
+  getPredictions: (months = 3) => api.get(`/ai-intelligence/predictions?months=${months}`),
+  getRecommendations: () => api.get('/ai-intelligence/recommendations'),
+
+  // NLP Chat
+  chat: (message) => api.post('/ai-intelligence/chat', { message }),
+
+  // Transaction Enrichment
+  enrich: (transaction) => api.post('/ai-intelligence/enrich', transaction),
+  enrichBatch: (transactions) => api.post('/ai-intelligence/enrich-batch', { transactions }),
+  detectDuplicates: (transaction) => api.post('/ai-intelligence/detect-duplicates', transaction),
+  getEnrichmentStats: () => api.get('/ai-intelligence/enrichment-stats'),
+
+  // Pattern Recognition
+  getPatterns: () => api.get('/ai-intelligence/patterns'),
+
+  // Financial Goals AI
+  assessGoal: (goalParams) => api.post('/ai-intelligence/goals/assess', goalParams),
+  generateGoalPlan: (goal, monthlyBudget) => api.post('/ai-intelligence/goals/plan', { goal, monthlyBudget }),
+  getGoalPace: (goalId) => api.get(`/ai-intelligence/goals/${goalId}/pace`),
+  prioritizeGoals: () => api.get('/ai-intelligence/goals/prioritize'),
+
+  // Budget Optimizer
+  optimizeBudget: (income) => api.get(`/ai-intelligence/budget/optimize${income ? `?income=${income}` : ''}`),
+  getBudgetAdherence: (months = 3) => api.get(`/ai-intelligence/budget/adherence?months=${months}`),
+  getBudgetReallocation: () => api.get('/ai-intelligence/budget/reallocation'),
+
+  // Debt Payoff
+  analyzeDebt: (extraMonthly = 0) => api.get(`/ai-intelligence/debt/analyze?extraMonthly=${extraMonthly}`),
+  analyzeForeclosure: (emiId) => api.get(`/ai-intelligence/debt/foreclosure/${emiId}`),
+
+  // Cash Flow Projections
+  projectCashFlow: (horizon = 90, balance = 0) => api.get(`/ai-intelligence/cashflow/project?horizon=${horizon}&balance=${balance}`),
+  projectShortTerm: (balance = 0) => api.get(`/ai-intelligence/cashflow/short-term?balance=${balance}`),
+  analyzeBalanceRisk: (balance = 0) => api.get(`/ai-intelligence/cashflow/balance-risk?balance=${balance}`),
+
+  // Investment Advisor
+  analyzeInvestments: () => api.get('/ai-intelligence/invest/analyze'),
+  sipProjection: (monthlyAmount, years, expectedReturn) => api.post('/ai-intelligence/invest/sip-projection', { monthlyAmount, years, expectedReturn }),
+  goalSIP: (targetAmount, years, expectedReturn) => api.post('/ai-intelligence/invest/goal-sip', { targetAmount, years, expectedReturn }),
+
+  // Predictive Alerts
+  getPredictiveAlerts: () => api.get('/ai-intelligence/alerts/predictive'),
+
+  // Financial Literacy
+  getLearningPath: (profile) => api.get('/ai-intelligence/learn/path', { params: profile }),
+  getConcept: (id) => api.get(`/ai-intelligence/learn/concept/${id}`),
+  getAllConcepts: (category) => api.get(`/ai-intelligence/learn/concepts${category ? `?category=${category}` : ''}`),
+  getDailyTip: () => api.get('/ai-intelligence/learn/tip'),
+  generateQuiz: (category, count = 5) => api.post('/ai-intelligence/learn/quiz', { category, count }),
+  evaluateQuiz: (answers, correctAnswers) => api.post('/ai-intelligence/learn/quiz/evaluate', { answers, correctAnswers }),
+  decodeJargon: (term) => api.get(`/ai-intelligence/learn/jargon/${encodeURIComponent(term)}`),
+  searchJargon: (q) => api.get(`/ai-intelligence/learn/jargon?q=${encodeURIComponent(q)}`),
+
+  // Analytics V2
+  getDashboardAnalytics: (days = 30) => api.get(`/analytics-v2/dashboard?days=${days}`),
+  getSpendingAlerts: () => api.get('/analytics-v2/alerts'),
+};
+
 // Debug: log computed API URL at runtime (only in development)
 if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.MODE === 'development')) {
   // eslint-disable-next-line no-console

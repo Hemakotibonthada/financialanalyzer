@@ -187,6 +187,7 @@ const Sidebar = () => {
         { label: 'Risk Assessment', icon: Activity, path: '/risk-assessment', color: 'red', badge: 'AI' },
         { label: 'Deep Insights', icon: Activity, path: '/financial-insights-dashboard', color: 'cyan', badge: 'NEW' },
         { label: 'AI Insights', icon: Brain, path: '/ai-insights', color: 'violet', badge: 'AI' },
+        { label: 'AI Intelligence Hub', icon: Brain, path: '/ai-hub', color: 'indigo', badge: 'NEW' },
         { label: 'Financial Chat', icon: Bot, path: '/financial-chat', color: 'blue' },
         { label: 'Spending Insights', icon: TrendingDown, path: '/spending-insights', color: 'rose' },
         { label: 'Reports Hub', icon: FileBarChart, path: '/reports-hub', color: 'indigo' },

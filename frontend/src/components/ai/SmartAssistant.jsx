@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocation } from 'react-router-dom';
-import api from '../../services/api';
+import api, { aiIntelligenceService } from '../../services/api';
 import {
   Brain, MessageCircle, X, Send, Sparkles, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, Lightbulb, Target, DollarSign, PieChart,
@@ -422,10 +422,28 @@ export default function SmartAssistant() {
     setMessages(prev => [...prev, { role: 'assistant', typing: true }]);
 
     try {
-      // Simulate natural delay
-      await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+      let response;
 
-      const response = await aiEngine.processQuery(query);
+      // Try backend NLP chat first (fully local AI)
+      try {
+        const res = await aiIntelligenceService.chat(query);
+        if (res.data?.success && res.data?.data?.response) {
+          const r = res.data.data.response;
+          response = {
+            content: r.content,
+            metrics: r.metrics,
+            suggestions: r.suggestions,
+          };
+        }
+      } catch {
+        // Backend unavailable — fall back to local engine
+      }
+
+      // Fallback to client-side AI engine
+      if (!response) {
+        await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
+        response = await aiEngine.processQuery(query);
+      }
 
       // Remove typing indicator and add response
       setMessages(prev => [
