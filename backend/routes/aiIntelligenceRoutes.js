@@ -300,4 +300,192 @@ router.get('/cashflow/balance-risk', async (req, res) => {
   }
 });
 
+// ==========================================
+// Advanced NLP Chat
+// ==========================================
+
+// POST /api/ai-intelligence/chat — Process chat message
+router.post('/chat', async (req, res) => {
+  try {
+    const { AdvancedNLPChatEngine } = require('../services/ai/advancedNLPChat');
+    const chatEngine = new AdvancedNLPChatEngine();
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ success: false, message: 'Message required' });
+    const result = await chatEngine.processMessage(req.user._id, message);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Chat error:', error);
+    res.status(500).json({ success: false, message: 'Chat failed', error: error.message });
+  }
+});
+
+// ==========================================
+// Pattern Recognition
+// ==========================================
+
+// GET /api/ai-intelligence/patterns — Full pattern analysis
+router.get('/patterns', async (req, res) => {
+  try {
+    const { PatternRecognitionEngine } = require('../services/ai/patternRecognition');
+    const engine = new PatternRecognitionEngine();
+    const result = await engine.fullAnalysis(req.user._id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Pattern analysis error:', error);
+    res.status(500).json({ success: false, message: 'Pattern analysis failed', error: error.message });
+  }
+});
+
+// ==========================================
+// Smart Investment Advisor
+// ==========================================
+
+// GET /api/ai-intelligence/invest/analyze — Investment analysis
+router.get('/invest/analyze', async (req, res) => {
+  try {
+    const advisor = require('../services/ai/smartInvestmentAdvisor');
+    const result = await advisor.analyze(req.user._id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Investment analysis error:', error);
+    res.status(500).json({ success: false, message: 'Investment analysis failed', error: error.message });
+  }
+});
+
+// POST /api/ai-intelligence/invest/sip-projection — SIP calculator
+router.post('/invest/sip-projection', async (req, res) => {
+  try {
+    const advisor = require('../services/ai/smartInvestmentAdvisor');
+    const { monthlyAmount, years, expectedReturn } = req.body;
+    const result = advisor.calculateSIPProjection(parseFloat(monthlyAmount) || 5000, parseInt(years) || 10, parseFloat(expectedReturn) || 12);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'SIP projection failed', error: error.message });
+  }
+});
+
+// POST /api/ai-intelligence/invest/goal-sip — Goal-based SIP
+router.post('/invest/goal-sip', async (req, res) => {
+  try {
+    const advisor = require('../services/ai/smartInvestmentAdvisor');
+    const { targetAmount, years, expectedReturn } = req.body;
+    const result = advisor.calculateGoalSIP(parseFloat(targetAmount) || 1000000, parseInt(years) || 5, parseFloat(expectedReturn) || 12);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Goal SIP calc failed', error: error.message });
+  }
+});
+
+// ==========================================
+// Predictive Alerts
+// ==========================================
+
+// GET /api/ai-intelligence/alerts/predictive — Proactive alerts
+router.get('/alerts/predictive', async (req, res) => {
+  try {
+    const alertSystem = require('../services/ai/predictiveAlerts');
+    const result = await alertSystem.generateAlerts(req.user._id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Predictive alerts error:', error);
+    res.status(500).json({ success: false, message: 'Alert generation failed', error: error.message });
+  }
+});
+
+// ==========================================
+// Financial Literacy
+// ==========================================
+
+// GET /api/ai-intelligence/learn/path — Learning path
+router.get('/learn/path', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const result = literacy.getLearningPath(req.query);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Learning path failed', error: error.message });
+  }
+});
+
+// GET /api/ai-intelligence/learn/concept/:id — Get concept
+router.get('/learn/concept/:id', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const concept = literacy.getConcept(req.params.id);
+    if (!concept) return res.status(404).json({ success: false, message: 'Concept not found' });
+    res.json({ success: true, data: concept });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Concept fetch failed', error: error.message });
+  }
+});
+
+// GET /api/ai-intelligence/learn/concepts — All concepts
+router.get('/learn/concepts', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const { category } = req.query;
+    const result = category ? literacy.getConceptsByCategory(category) : literacy.getAllConcepts();
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch concepts', error: error.message });
+  }
+});
+
+// GET /api/ai-intelligence/learn/tip — Daily tip
+router.get('/learn/tip', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    res.json({ success: true, data: literacy.getDailyTip() });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Tip failed', error: error.message });
+  }
+});
+
+// POST /api/ai-intelligence/learn/quiz — Generate quiz
+router.post('/learn/quiz', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const { category, count } = req.body;
+    const result = literacy.generateQuiz(category, parseInt(count) || 5);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Quiz generation failed', error: error.message });
+  }
+});
+
+// POST /api/ai-intelligence/learn/quiz/evaluate — Evaluate quiz
+router.post('/learn/quiz/evaluate', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const { answers, correctAnswers } = req.body;
+    const result = literacy.evaluateQuiz(answers || [], correctAnswers || []);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Quiz eval failed', error: error.message });
+  }
+});
+
+// GET /api/ai-intelligence/learn/jargon/:term — Decode jargon
+router.get('/learn/jargon/:term', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const result = literacy.decodeJargon(req.params.term);
+    res.json({ success: true, data: { term: req.params.term, definition: result } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Jargon decode failed', error: error.message });
+  }
+});
+
+// GET /api/ai-intelligence/learn/jargon — Search jargon
+router.get('/learn/jargon', async (req, res) => {
+  try {
+    const literacy = require('../services/ai/financialLiteracy');
+    const { q } = req.query;
+    const result = q ? literacy.searchJargon(q) : Object.entries(require('../services/ai/financialLiteracy')).slice(0, 20);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Jargon search failed', error: error.message });
+  }
+});
+
 module.exports = router;
