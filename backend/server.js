@@ -339,6 +339,8 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/ai-training', require('./routes/aiTrainingRoutes'));
 // AI Model Manager — Enterprise Model Registry, Self-Training, Drift Detection, A/B Testing
 app.use('/api/ai-models', require('./routes/aiModelRoutes'));
+// AI Intelligence — Self-Learning Pipeline, Enrichment, Goals AI, Budget Optimizer, Debt Payoff, Cash Flow
+app.use('/api/ai-intelligence', require('./routes/aiIntelligenceRoutes'));
 // Portfolio Analytics
 app.use('/api/portfolio', require('./routes/portfolio'));
 // Real Estate Management
