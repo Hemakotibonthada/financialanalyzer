@@ -18,12 +18,14 @@ import { EnterpriseErrorBoundary } from './components/enterprise/ErrorBoundary';
 import { ToastProvider } from './components/notifications/EnterpriseNotifications';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import { initializeStorage } from './services/storage';
+import SmartAssistant from './components/ai/SmartAssistant';
 
 // Import enhanced styles
 import './styles/theme-variables.css';
 import './styles/advanced-animations.css';
 import './styles/enterprise-animations.css';
 import './styles/enterprise-design-system.css';
+import './styles/enterprise-animations-v2.css';
 
 // Retry wrapper for lazy imports - handles Vite HMR "Failed to fetch dynamically imported module" errors
 const lazyRetry = (importFn, retries = 3, delay = 1000) =>
@@ -456,6 +458,9 @@ function App() {
             </Routes>
           </Suspense>
           </ErrorBoundary>
+          
+          {/* AI Smart Assistant — floating panel available across all pages */}
+          <SmartAssistant />
           
           <ToastContainer
             position="top-right"

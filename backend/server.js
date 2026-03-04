@@ -259,6 +259,7 @@ app.use('/api/gmail', require('./routes/gmailRoutes'));
 app.use('/api/drive', require('./routes/googleDriveRoutes')); // Google Drive backup/sync
 app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/analytics-v2', require('./routes/analyticsV2Routes')); // Enterprise Analytics V2
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
 app.use('/api/emi', require('./routes/emiRoutes'));
 app.use('/api/cc-bills', require('./routes/creditCardBillRoutes'));
