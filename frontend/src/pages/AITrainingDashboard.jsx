@@ -48,6 +48,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { aiTrainingService, aiModelService } from '../services/api';
 import MainLayout from '../components/MainLayout';
+import SelfTrainingPanel from '../components/ai/SelfTrainingPanel';
 
 // ─── Accent-aware MUI sx helper ─────────────────────────────────────────
 const useAccentSx = () => {
@@ -607,6 +608,7 @@ const AITrainingDashboard = () => {
             <Tab icon={<TrainIcon />} label="Training" iconPosition="start" />
             <Tab icon={<StorageIcon />} label="Model Registry" iconPosition="start" />
             <Tab icon={<ChatIcon />} label="AI Chat" iconPosition="start" />
+            <Tab icon={<SelfIcon />} label="Self-Training" iconPosition="start" />
           </Tabs>
         </Paper>
 
@@ -767,6 +769,15 @@ const AITrainingDashboard = () => {
                 </Paper>
               </Grid>
             </Grid>
+          </Fade>
+        )}
+
+        {/* ── Tab 3: Self-Training ───────────────────────── */}
+        {tab === 3 && (
+          <Fade in>
+            <Box>
+              <SelfTrainingPanel embedded={true} />
+            </Box>
           </Fade>
         )}
       </Box>

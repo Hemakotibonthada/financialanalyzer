@@ -71,7 +71,7 @@ function FormField({ label, value, onChange, type = 'text', placeholder, icon: I
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full p-4 border-2 ${disabled ? `${dk ? 'border-slate-700' : 'border-gray-200'} ${dk ? 'bg-slate-800/50' : 'bg-gray-50'} ${dk ? 'text-slate-400' : 'text-gray-500'}` : `${dk ? 'border-slate-700' : 'border-gray-200'} focus:ring-4 focus:ring-${color}-100 focus:border-${color}-500 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`} rounded-xl transition-all duration-300 font-medium`}
+        className={`w-full p-4 border-2 ${disabled ? `${dk ? `border-slate-700` : `border-gray-200`} ${dk ? `bg-slate-800/50` : `bg-gray-50`} ${dk ? `text-slate-400` : `text-gray-500`}` : `${dk ? `border-slate-700` : `border-gray-200`} focus:ring-4 focus:ring-${color}-100 focus:border-${color}-500 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} ${dk ? `bg-slate-900` : `bg-white`} ${dk ? `text-white` : ``}`} rounded-xl transition-all duration-300 font-medium`}
         {...props}
       />
     </div>
@@ -82,7 +82,7 @@ function ToggleSetting({ label, description, value, onChange }) {
   const { mode: _mode } = useTheme();
   const dk = _mode === 'dark' || _mode === 'black';
   return (
-    <div className={`flex items-center justify-between py-3 px-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl ${dk ? 'hover:border-blue-700' : 'hover:border-blue-300'} transition-all duration-300 cursor-pointer ${dk ? 'bg-slate-800' : 'bg-white'}`} onClick={() => onChange(!value)}>
+    <div className={`flex items-center justify-between py-3 px-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl ${dk ? 'hover:border-blue-700' : 'hover:border-blue-300'} transition-all duration-300 cursor-pointer ${dk ? `bg-slate-800` : `bg-white`}`} onClick={() => onChange(!value)}>
       <div>
         <div className={`text-sm font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>{label}</div>
         {description && <div className={`text-xs ${dk ? 'text-slate-400' : 'text-gray-500'} mt-0.5`}>{description}</div>}
@@ -474,7 +474,7 @@ const Profile = () => {
   return (
     <MainLayout title="Profile & Settings">
       <PageTransition>
-      <div className={`min-h-screen bg-gradient-to-br ${dk ? 'from-slate-950' : 'from-slate-50'} ${dk ? 'via-slate-900' : 'via-blue-50/30'} ${dk ? 'to-slate-950' : 'to-indigo-50/20'}`}>
+      <div className={`min-h-screen bg-gradient-to-br ${dk ? `from-slate-950` : `from-slate-50`} ${dk ? 'via-slate-900' : 'via-blue-50/30'} ${dk ? `to-slate-950` : `to-indigo-50/20`}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ===== HEADER ===== */}
         <div className="mb-6 sm:mb-8">
@@ -530,7 +530,7 @@ const Profile = () => {
         )}
 
         {/* ===== TAB NAVIGATION ===== */}
-        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-xl sm:rounded-2xl ${dk ? 'shadow-slate-900/30' : 'shadow-sm'} border ${dk ? 'border-slate-700' : 'border-gray-200'} mb-6 overflow-hidden`}>
+        <div className={`${dk ? `bg-slate-800` : `bg-white`} rounded-xl sm:rounded-2xl ${dk ? 'shadow-slate-900/30' : 'shadow-sm'} border ${dk ? `border-slate-700` : `border-gray-200`} mb-6 overflow-hidden`}>
           <div className={`border-b ${dk ? 'border-slate-700' : 'border-gray-200'}`}>
             <nav className="flex overflow-x-auto scrollbar-hide profile-tabs-wrapper">
               {tabs.map(tab => {
@@ -580,7 +580,7 @@ const Profile = () => {
                       type="text"
                       value={profile.fullName}
                       onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} ${dk ? `text-white` : ``}`}
                       placeholder="Enter your full name as per PAN"
                       required
                     />
@@ -595,7 +595,7 @@ const Profile = () => {
                       type="date"
                       value={profile.dateOfBirth}
                       onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} ${dk ? `text-white` : ``}`}
                     />
                   </div>
 
@@ -633,7 +633,7 @@ const Profile = () => {
                       type="tel"
                       value={profile.phoneNumber || ''}
                       onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} ${dk ? `text-white` : ``}`}
                       placeholder="10-digit mobile number"
                       maxLength="10"
                       pattern="[0-9]{10}"
@@ -651,7 +651,7 @@ const Profile = () => {
                       type="email"
                       value={user?.email || ''}
                       disabled
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl ${dk ? 'bg-slate-800/50' : 'bg-gray-50'} ${dk ? 'text-slate-400' : 'text-gray-500'} font-medium`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl ${dk ? 'bg-slate-800/50' : 'bg-gray-50'} ${dk ? `text-slate-400` : `text-gray-500`} font-medium`}
                     />
                   </div>
 
@@ -662,7 +662,7 @@ const Profile = () => {
                     <select
                       value={profile.gender || ''}
                       onChange={(e) => handleInputChange('gender', e.target.value)}
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} cursor-pointer ${dk ? 'text-white' : ''}`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} cursor-pointer ${dk ? `text-white` : ``}`}
                     >
                       <option value="">Select gender</option>
                       <option value="male">Male</option>
@@ -683,7 +683,7 @@ const Profile = () => {
                     value={profile.bio || ''}
                     onChange={(e) => handleInputChange('bio', e.target.value)}
                     rows={3}
-                    className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} resize-none ${dk ? 'text-white' : ''}`}
+                    className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} resize-none ${dk ? `text-white` : ``}`}
                     placeholder="Write a short bio..."
                   />
                 </div>
@@ -713,13 +713,13 @@ const Profile = () => {
                       type="number"
                       value={profile.monthlyIncome}
                       onChange={(e) => handleInputChange('monthlyIncome', e.target.value)}
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} ${dk ? `text-white` : ``}`}
                       placeholder="Enter your monthly income"
                       min="0"
                       step="0.01"
                     />
                     {incomeInfo.source === 'salary-transactions' && (
-                      <div className={`mt-3 p-4 bg-gradient-to-br ${dk ? 'from-green-900/20' : 'from-green-50'} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} border-2 ${dk ? 'border-green-800' : 'border-green-200'} rounded-xl text-sm ${dk ? 'text-green-400' : 'text-green-800'} animate-scale-in`}>
+                      <div className={`mt-3 p-4 bg-gradient-to-br ${dk ? `from-green-900/20` : `from-green-50`} ${dk ? `to-emerald-900/20` : `to-emerald-50`} border-2 ${dk ? `border-green-800` : `border-green-200`} rounded-xl text-sm ${dk ? `text-green-400` : `text-green-800`} animate-scale-in`}>
                         <div className="flex items-start gap-3">
                           <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div>
@@ -734,7 +734,7 @@ const Profile = () => {
                       </div>
                     )}
                     {incomeInfo.source === 'profile-setting' && (
-                      <div className={`mt-3 p-4 bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} border-2 ${dk ? 'border-blue-800' : 'border-blue-200'} rounded-xl text-sm ${dk ? 'text-blue-400' : 'text-blue-800'} animate-scale-in`}>
+                      <div className={`mt-3 p-4 bg-gradient-to-br ${dk ? `from-blue-900/20` : `from-blue-50`} ${dk ? `to-cyan-900/20` : `to-cyan-50`} border-2 ${dk ? `border-blue-800` : `border-blue-200`} rounded-xl text-sm ${dk ? `text-blue-400` : `text-blue-800`} animate-scale-in`}>
                         <div className="flex items-start gap-3">
                           <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
                           <span className="font-medium">Manual entry - Connect Gmail to auto-detect from payslips</span>
@@ -742,7 +742,7 @@ const Profile = () => {
                       </div>
                     )}
                     {incomeInfo.source === 'not-set' && (
-                      <div className={`mt-3 p-4 bg-gradient-to-br ${dk ? 'from-yellow-900/20' : 'from-yellow-50'} ${dk ? 'to-orange-900/20' : 'to-orange-50'} border-2 ${dk ? 'border-yellow-800' : 'border-yellow-200'} rounded-xl text-sm ${dk ? 'text-yellow-400' : 'text-yellow-800'} animate-scale-in`}>
+                      <div className={`mt-3 p-4 bg-gradient-to-br ${dk ? `from-yellow-900/20` : `from-yellow-50`} ${dk ? `to-orange-900/20` : `to-orange-50`} border-2 ${dk ? `border-yellow-800` : `border-yellow-200`} rounded-xl text-sm ${dk ? `text-yellow-400` : `text-yellow-800`} animate-scale-in`}>
                         <div className="flex items-start gap-3">
                           <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                           <span className="font-medium">Not set - Enter manually or connect Gmail for auto-detection</span>
@@ -759,7 +759,7 @@ const Profile = () => {
                     <select
                       value={profile.currency}
                       onChange={(e) => handleInputChange('currency', e.target.value)}
-                      className={`w-full p-4 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} cursor-pointer ${dk ? 'text-white' : ''}`}
+                      className={`w-full p-4 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} cursor-pointer ${dk ? `text-white` : ``}`}
                     >
                       {CURRENCIES.map(curr => (
                         <option key={curr.code} value={curr.code}>
@@ -801,7 +801,7 @@ const Profile = () => {
                           type="number"
                           value={profile.budgetLimits[category] || ''}
                           onChange={(e) => handleBudgetLimitChange(category, e.target.value)}
-                          className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 ${dk ? 'hover:border-slate-600' : 'hover:border-gray-300'} font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                          className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 ${dk ? `hover:border-slate-600` : `hover:border-gray-300`} font-medium ${dk ? `bg-slate-900` : `bg-white`} ${dk ? `text-white` : ``}`}
                           placeholder="0"
                           min="0"
                           step="0.01"
@@ -812,7 +812,7 @@ const Profile = () => {
                 </div>
 
                 {/* Custom Expense Categories */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-purple-900/20' : 'from-purple-50'} ${dk ? 'to-pink-900/20' : 'to-pink-50'} rounded-2xl p-6 border-2 ${dk ? 'border-purple-800' : 'border-purple-100'}`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-purple-900/20` : `from-purple-50`} ${dk ? 'to-pink-900/20' : 'to-pink-50'} rounded-2xl p-6 border-2 ${dk ? `border-purple-800` : `border-purple-100`}`}>
                   <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
                     <Target className="w-5 h-5 text-purple-600" />
                     Custom Expense Categories
@@ -831,7 +831,7 @@ const Profile = () => {
                   </div>
 
                   {/* Add New Category Form */}
-                  <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-xl p-6 border-2 ${dk ? 'border-purple-700' : 'border-purple-200'} mb-6 ${dk ? 'shadow-slate-900/30' : 'shadow-sm'}`}>
+                  <div className={`${dk ? `bg-slate-800` : `bg-white`} rounded-xl p-6 border-2 ${dk ? 'border-purple-700' : 'border-purple-200'} mb-6 ${dk ? `shadow-slate-900/30` : `shadow-sm`}`}>
                     <h4 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Add New Category</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
@@ -840,7 +840,7 @@ const Profile = () => {
                           type="text"
                           value={newCategory.name}
                           onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
-                          className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                          className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : ``}`}
                           placeholder="e.g., Rent, Bills, Loans"
                         />
                       </div>
@@ -861,7 +861,7 @@ const Profile = () => {
                           type="text"
                           value={newCategory.keywords}
                           onChange={(e) => setNewCategory({...newCategory, keywords: e.target.value})}
-                          className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                          className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : ``}`}
                           placeholder="rent, lease, apartment"
                         />
                       </div>
@@ -881,7 +881,7 @@ const Profile = () => {
                       <h4 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Your Custom Categories</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {profile.customCategories.map((category, index) => (
-                          <div key={index} className={`${dk ? 'bg-slate-800' : 'bg-white'} border-2 ${dk ? 'border-purple-700' : 'border-purple-200'} rounded-xl p-4 flex items-center justify-between ${dk ? 'hover:shadow-slate-900/30' : 'hover:shadow-lg'} transition-all duration-300 hover:scale-105 animate-scale-in`}>
+                          <div key={index} className={`${dk ? `bg-slate-800` : `bg-white`} border-2 ${dk ? 'border-purple-700' : 'border-purple-200'} rounded-xl p-4 flex items-center justify-between ${dk ? `hover:shadow-slate-900/30` : `hover:shadow-lg`} transition-all duration-300 hover:scale-105 animate-scale-in`}>
                             <div className="flex items-center gap-3">
                               <span className="text-3xl">{category.icon}</span>
                               <div>
@@ -906,7 +906,7 @@ const Profile = () => {
                 </div>
 
                 {/* Savings Goal */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-green-900/20' : 'from-green-50'} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} rounded-2xl p-6 border-2 ${dk ? 'border-green-800' : 'border-green-200'}`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-green-900/20` : `from-green-50`} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} rounded-2xl p-6 border-2 ${dk ? `border-green-800` : `border-green-200`}`}>
                   <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
                     <Target className="w-5 h-5 text-green-600" />
                     Savings Goal
@@ -918,7 +918,7 @@ const Profile = () => {
                         type="number"
                         value={profile.savingsGoal.amount}
                         onChange={(e) => handleInputChange('savingsGoal.amount', e.target.value)}
-                        className={`w-full p-3 border-2 ${dk ? 'border-green-700' : 'border-green-200'} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium ${dk ? 'text-white' : ''}`}
+                        className={`w-full p-3 border-2 ${dk ? `border-green-700` : `border-green-200`} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium ${dk ? `text-white` : ``}`}
                         placeholder="Enter target amount"
                         min="0"
                         step="0.01"
@@ -930,7 +930,7 @@ const Profile = () => {
                         type="date"
                         value={profile.savingsGoal.deadline}
                         onChange={(e) => handleInputChange('savingsGoal.deadline', e.target.value)}
-                        className={`w-full p-3 border-2 ${dk ? 'border-green-700' : 'border-green-200'} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium ${dk ? 'text-white' : ''}`}
+                        className={`w-full p-3 border-2 ${dk ? `border-green-700` : `border-green-200`} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium ${dk ? `text-white` : ``}`}
                       />
                     </div>
                     <div>
@@ -939,7 +939,7 @@ const Profile = () => {
                         type="text"
                         value={profile.savingsGoal.description}
                         onChange={(e) => handleInputChange('savingsGoal.description', e.target.value)}
-                        className={`w-full p-3 border-2 ${dk ? 'border-green-700' : 'border-green-200'} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium ${dk ? 'text-white' : ''}`}
+                        className={`w-full p-3 border-2 ${dk ? `border-green-700` : `border-green-200`} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium ${dk ? `text-white` : ``}`}
                         placeholder="e.g., Emergency fund, Vacation"
                       />
                     </div>
@@ -962,7 +962,7 @@ const Profile = () => {
                 </div>
 
                 {/* AI Provider (backend-saved) */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-indigo-900/20' : 'from-indigo-50'} ${dk ? 'to-purple-900/20' : 'to-purple-50'} rounded-2xl p-6 border-2 ${dk ? 'border-indigo-800' : 'border-indigo-200'}`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-indigo-900/20` : `from-indigo-50`} ${dk ? 'to-purple-900/20' : 'to-purple-50'} rounded-2xl p-6 border-2 ${dk ? `border-indigo-800` : `border-indigo-200`}`}>
                   <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
                     <Zap className="w-5 h-5 text-indigo-600" />
                     AI Analysis Provider
@@ -1006,7 +1006,7 @@ const Profile = () => {
                         type="password"
                         value={profile.preferences.openAIKey}
                         onChange={(e) => handleInputChange('preferences.openAIKey', e.target.value)}
-                        className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-300 font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? 'text-white' : ''}`}
+                        className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-300 font-medium ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : ``}`}
                         placeholder="sk-..."
                       />
                       <p className={`text-sm ${dk ? 'text-slate-400' : 'text-gray-500'} mt-2 flex items-center gap-2`}>
@@ -1018,7 +1018,7 @@ const Profile = () => {
                 </div>
 
                 {/* Auto-fetch settings (backend-saved) */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-green-900/20' : 'from-green-50'} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} rounded-2xl p-6 border-2 ${dk ? 'border-green-800' : 'border-green-200'}`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-green-900/20` : `from-green-50`} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} rounded-2xl p-6 border-2 ${dk ? `border-green-800` : `border-green-200`}`}>
                   <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
                     <RefreshCw className="w-5 h-5 text-green-600" />
                     Auto-fetch Settings
@@ -1042,7 +1042,7 @@ const Profile = () => {
                         <select
                           value={profile.preferences.fetchFrequency}
                           onChange={(e) => handleInputChange('preferences.fetchFrequency', e.target.value)}
-                          className={`w-full p-3 border-2 ${dk ? 'border-green-700' : 'border-green-200'} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium cursor-pointer ${dk ? 'text-white' : ''}`}
+                          className={`w-full p-3 border-2 ${dk ? `border-green-700` : `border-green-200`} ${dk ? 'bg-slate-900' : 'bg-white'} rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 font-medium cursor-pointer ${dk ? `text-white` : ``}`}
                         >
                           <option value="daily">Daily</option>
                           <option value="weekly">Weekly</option>
@@ -1054,7 +1054,7 @@ const Profile = () => {
                 </div>
 
                 {/* Regional Settings (localStorage) */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} rounded-2xl p-6 border-2 ${dk ? 'border-blue-800' : 'border-blue-200'}`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-blue-900/20` : `from-blue-50`} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} rounded-2xl p-6 border-2 ${dk ? `border-blue-800` : `border-blue-200`}`}>
                   <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
                     <Globe className="w-5 h-5 text-blue-600" />
                     Regional Settings
@@ -1062,7 +1062,7 @@ const Profile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Display Currency</label>
-                      <select value={displayPrefs.currency} onChange={(e) => setDisplayPrefs(p => ({ ...p, currency: e.target.value }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.currency} onChange={(e) => setDisplayPrefs(p => ({ ...p, currency: e.target.value }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         {CURRENCIES.map(c => (
                           <option key={c.code} value={c.code}>{c.symbol} {c.name} ({c.code})</option>
                         ))}
@@ -1070,7 +1070,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Language</label>
-                      <select value={displayPrefs.language} onChange={(e) => setDisplayPrefs(p => ({ ...p, language: e.target.value }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.language} onChange={(e) => setDisplayPrefs(p => ({ ...p, language: e.target.value }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         {LANGUAGES.map(l => (
                           <option key={l.code} value={l.code}>{l.flag} {l.name}</option>
                         ))}
@@ -1078,7 +1078,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Date Format</label>
-                      <select value={displayPrefs.dateFormat} onChange={(e) => setDisplayPrefs(p => ({ ...p, dateFormat: e.target.value }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.dateFormat} onChange={(e) => setDisplayPrefs(p => ({ ...p, dateFormat: e.target.value }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                         <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                         <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -1086,7 +1086,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Fiscal Year Start</label>
-                      <select value={displayPrefs.fiscalYearStart} onChange={(e) => setDisplayPrefs(p => ({ ...p, fiscalYearStart: e.target.value }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.fiscalYearStart} onChange={(e) => setDisplayPrefs(p => ({ ...p, fiscalYearStart: e.target.value }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="january">January</option>
                         <option value="april">April (India)</option>
                         <option value="july">July</option>
@@ -1122,7 +1122,7 @@ const Profile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Default Dashboard</label>
-                      <select value={displayPrefs.defaultDashboard} onChange={(e) => setDisplayPrefs(p => ({ ...p, defaultDashboard: e.target.value }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.defaultDashboard} onChange={(e) => setDisplayPrefs(p => ({ ...p, defaultDashboard: e.target.value }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="overview">Overview</option>
                         <option value="analytics">Analytics</option>
                         <option value="goals">Goals</option>
@@ -1131,7 +1131,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Default Time Range</label>
-                      <select value={displayPrefs.defaultTimeRange} onChange={(e) => setDisplayPrefs(p => ({ ...p, defaultTimeRange: e.target.value }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.defaultTimeRange} onChange={(e) => setDisplayPrefs(p => ({ ...p, defaultTimeRange: e.target.value }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="7d">7 Days</option>
                         <option value="30d">30 Days</option>
                         <option value="90d">90 Days</option>
@@ -1140,7 +1140,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Items Per Page</label>
-                      <select value={displayPrefs.itemsPerPage} onChange={(e) => setDisplayPrefs(p => ({ ...p, itemsPerPage: Number(e.target.value) }))} className={`w-full p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={displayPrefs.itemsPerPage} onChange={(e) => setDisplayPrefs(p => ({ ...p, itemsPerPage: Number(e.target.value) }))} className={`w-full p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -1166,7 +1166,7 @@ const Profile = () => {
                 </div>
 
                 {/* Basic alerts (backend-saved) */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} rounded-2xl p-6 border-2 ${dk ? 'border-blue-800' : 'border-blue-200'}`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-blue-900/20` : `from-blue-50`} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} rounded-2xl p-6 border-2 ${dk ? `border-blue-800` : `border-blue-200`}`}>
                   <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
                     <Mail className="w-5 h-5 text-blue-600" />
                     Core Alert Settings
@@ -1265,7 +1265,7 @@ const Profile = () => {
                 </div>
 
                 {/* Gmail Integration */}
-                <div className={`bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} border-2 ${dk ? 'border-blue-800' : 'border-blue-200'} rounded-2xl p-6 mb-6`}>
+                <div className={`bg-gradient-to-br ${dk ? `from-blue-900/20` : `from-blue-50`} ${dk ? 'to-cyan-900/20' : 'to-cyan-50'} border-2 ${dk ? `border-blue-800` : `border-blue-200`} rounded-2xl p-6 mb-6`}>
                   <div className="flex items-start gap-4">
                     <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                     <div>
@@ -1278,7 +1278,7 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl ${dk ? 'shadow-slate-900/30' : 'shadow-lg'} border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} p-8`}>
+                <div className={`${dk ? `bg-slate-800` : `bg-white`} rounded-2xl ${dk ? 'shadow-slate-900/30' : 'shadow-lg'} border-2 ${dk ? `border-slate-700` : `border-gray-200`} p-8`}>
                   {gmailStatus.isConnected ? (
                     <div>
                       <div className={`flex items-center justify-between mb-6 pb-6 border-b-2 ${dk ? 'border-slate-700' : 'border-gray-100'}`}>
@@ -1317,7 +1317,7 @@ const Profile = () => {
 
                       <div className="mt-6 space-y-4">
                         {!hasReadonlyScope && (
-                          <div className={`bg-gradient-to-br ${dk ? 'from-yellow-900/20' : 'from-yellow-50'} ${dk ? 'to-orange-900/20' : 'to-orange-50'} border-2 ${dk ? 'border-yellow-800' : 'border-yellow-300'} rounded-xl p-5 animate-scale-in`}>
+                          <div className={`bg-gradient-to-br ${dk ? `from-yellow-900/20` : `from-yellow-50`} ${dk ? 'to-orange-900/20' : 'to-orange-50'} border-2 ${dk ? `border-yellow-800` : `border-yellow-300`} rounded-xl p-5 animate-scale-in`}>
                             <div className="flex items-start gap-3">
                               <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" />
                               <div>
@@ -1395,7 +1395,7 @@ const Profile = () => {
                     <ToggleSetting label="Data Encryption" description="Encrypt sensitive financial data" value={privacy.dataEncryption} onChange={(v) => setPrivacy(p => ({ ...p, dataEncryption: v }))} />
                     <div className="pt-2">
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Session Timeout</label>
-                      <select value={privacy.sessionTimeout} onChange={(e) => setPrivacy(p => ({ ...p, sessionTimeout: Number(e.target.value) }))} className={`w-full max-w-xs p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={privacy.sessionTimeout} onChange={(e) => setPrivacy(p => ({ ...p, sessionTimeout: Number(e.target.value) }))} className={`w-full max-w-xs p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="15">15 minutes</option>
                         <option value="30">30 minutes</option>
                         <option value="60">1 hour</option>
@@ -1415,7 +1415,7 @@ const Profile = () => {
                   <div className="space-y-3">
                     <div className="pt-2">
                       <label className={`block text-sm font-semibold ${dk ? 'text-slate-300' : 'text-gray-700'} mb-2`}>Profile Visibility</label>
-                      <select value={privacy.profileVisibility} onChange={(e) => setPrivacy(p => ({ ...p, profileVisibility: e.target.value }))} className={`w-full max-w-xs p-3 border-2 ${dk ? 'border-slate-700' : 'border-gray-200'} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? 'text-white' : ''}`}>
+                      <select value={privacy.profileVisibility} onChange={(e) => setPrivacy(p => ({ ...p, profileVisibility: e.target.value }))} className={`w-full max-w-xs p-3 border-2 ${dk ? `border-slate-700` : `border-gray-200`} rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all ${dk ? 'bg-slate-900' : 'bg-white'} font-medium cursor-pointer ${dk ? `text-white` : ``}`}>
                         <option value="private">Private - Only me</option>
                         <option value="friends">Friends only</option>
                         <option value="public">Public</option>
@@ -1433,21 +1433,21 @@ const Profile = () => {
                     Password & Authentication
                   </h3>
                   <div className="space-y-3">
-                    <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-slate-900' : 'bg-gray-50'} ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group border-2 ${dk ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <button className={`w-full text-left p-4 rounded-xl ${dk ? `bg-slate-900` : `bg-gray-50`} ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group border-2 ${dk ? `border-slate-700` : `border-gray-200`}`}>
                       <div>
                         <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Change Password</div>
                         <div className={`text-xs ${dk ? 'text-slate-400' : 'text-gray-500'}`}>Update your account password</div>
                       </div>
                       <span className="text-gray-400 group-hover:text-blue-600 transition-colors text-xl">→</span>
                     </button>
-                    <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-slate-900' : 'bg-gray-50'} ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group border-2 ${dk ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <button className={`w-full text-left p-4 rounded-xl ${dk ? `bg-slate-900` : `bg-gray-50`} ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group border-2 ${dk ? `border-slate-700` : `border-gray-200`}`}>
                       <div>
                         <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Active Sessions</div>
                         <div className={`text-xs ${dk ? 'text-slate-400' : 'text-gray-500'}`}>Manage your logged-in devices</div>
                       </div>
                       <span className="text-gray-400 group-hover:text-blue-600 transition-colors text-xl">→</span>
                     </button>
-                    <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-slate-900' : 'bg-gray-50'} ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group border-2 ${dk ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <button className={`w-full text-left p-4 rounded-xl ${dk ? `bg-slate-900` : `bg-gray-50`} ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group border-2 ${dk ? `border-slate-700` : `border-gray-200`}`}>
                       <div>
                         <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Connected Accounts</div>
                         <div className={`text-xs ${dk ? 'text-slate-400' : 'text-gray-500'}`}>Google, GitHub</div>
@@ -1880,7 +1880,7 @@ function DataManagementTab() {
 
       {/* Status Message */}
       {message && (
-        <div className={`p-4 rounded-xl text-sm font-medium animate-fade-in ${message.type === 'success' ? `${dk ? 'bg-green-900/20' : 'bg-green-100'} ${dk ? 'text-green-400' : 'text-green-700'} border-2 ${dk ? 'border-green-800' : 'border-green-200'}` : `${dk ? 'bg-red-900/20' : 'bg-red-100'} ${dk ? 'text-red-400' : 'text-red-700'} border-2 ${dk ? 'border-red-800' : 'border-red-200'}`}`}>
+        <div className={`p-4 rounded-xl text-sm font-medium animate-fade-in ${message.type === `success` ? `${dk ? `bg-green-900/20` : `bg-green-100`} ${dk ? `text-green-400` : `text-green-700`} border-2 ${dk ? `border-green-800` : `border-green-200`}` : `${dk ? `bg-red-900/20` : `bg-red-100`} ${dk ? `text-red-400` : `text-red-700`} border-2 ${dk ? `border-red-800` : 'border-red-200'}`}`}>
           {message.type === 'success' ? '✅' : '❌'} {message.text}
         </div>
       )}
@@ -1926,7 +1926,7 @@ function DataManagementTab() {
           <button
             onClick={createDatabaseBackup}
             disabled={createBackupLoading}
-            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-indigo-900/20' : 'to-indigo-50'} ${dk ? 'hover:from-blue-900/30' : 'hover:from-blue-100'} ${dk ? 'hover:to-indigo-900/30' : 'hover:to-indigo-100'} border ${dk ? 'border-blue-800' : 'border-blue-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? `from-blue-900/20` : `from-blue-50`} ${dk ? `to-indigo-900/20` : `to-indigo-50`} ${dk ? `hover:from-blue-900/30` : `hover:from-blue-100`} ${dk ? `hover:to-indigo-900/30` : `hover:to-indigo-100`} border ${dk ? `border-blue-800` : `border-blue-200`} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{createBackupLoading ? '⏳' : '💾'}</div>
             <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
@@ -1938,7 +1938,7 @@ function DataManagementTab() {
           <button
             onClick={exportBackup}
             disabled={exportLoading}
-            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-green-900/20' : 'from-green-50'} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} ${dk ? 'hover:from-green-900/30' : 'hover:from-green-100'} ${dk ? 'hover:to-emerald-900/30' : 'hover:to-emerald-100'} border ${dk ? 'border-green-800' : 'border-green-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? `from-green-900/20` : `from-green-50`} ${dk ? `to-emerald-900/20` : `to-emerald-50`} ${dk ? `hover:from-green-900/30` : `hover:from-green-100`} ${dk ? `hover:to-emerald-900/30` : `hover:to-emerald-100`} border ${dk ? `border-green-800` : `border-green-200`} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{exportLoading ? '⏳' : '📤'}</div>
             <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
@@ -1950,7 +1950,7 @@ function DataManagementTab() {
           <button
             onClick={() => setShowUploadRestore(true)}
             disabled={restoreLoading}
-            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-purple-900/20' : 'from-purple-50'} ${dk ? 'to-pink-900/20' : 'to-pink-50'} ${dk ? 'hover:from-purple-900/30' : 'hover:from-purple-100'} ${dk ? 'hover:to-pink-900/30' : 'hover:to-pink-100'} border ${dk ? 'border-purple-800' : 'border-purple-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? `from-purple-900/20` : `from-purple-50`} ${dk ? `to-pink-900/20` : `to-pink-50`} ${dk ? `hover:from-purple-900/30` : `hover:from-purple-100`} ${dk ? `hover:to-pink-900/30` : `hover:to-pink-100`} border ${dk ? `border-purple-800` : `border-purple-200`} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{restoreLoading ? '⏳' : '📥'}</div>
             <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
@@ -1970,7 +1970,7 @@ function DataManagementTab() {
                 <select
                   value={restoreStrategy}
                   onChange={(e) => setRestoreStrategy(e.target.value)}
-                  className={`w-full px-3 py-2 border ${dk ? 'border-gray-600' : ''} rounded-lg ${dk ? 'bg-gray-700' : 'bg-white'} ${dk ? 'text-white' : 'text-gray-900'} text-sm`}
+                  className={`w-full px-3 py-2 border ${dk ? `border-gray-600` : ``} rounded-lg ${dk ? 'bg-gray-700' : 'bg-white'} ${dk ? `text-white` : `text-gray-900`} text-sm`}
                 >
                   <option value="merge">Merge (keep existing + add new)</option>
                   <option value="replace">Replace (overwrite with backup data)</option>
@@ -2186,14 +2186,14 @@ function DataManagementTab() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button onClick={backupToDrive} disabled={backupLoading}
-                className={`p-4 rounded-xl ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} ${dk ? 'hover:bg-blue-900/30' : 'hover:bg-blue-100'} transition-colors text-left disabled:opacity-50 border-2 ${dk ? 'border-blue-800' : 'border-blue-200'}`}>
+                className={`p-4 rounded-xl ${dk ? `bg-blue-900/20` : `bg-blue-50`} ${dk ? 'hover:bg-blue-900/30' : 'hover:bg-blue-100'} transition-colors text-left disabled:opacity-50 border-2 ${dk ? `border-blue-800` : `border-blue-200`}`}>
                 <div className="text-lg mb-1">{backupLoading ? '⏳' : '☁️'} Backup to Drive</div>
                 <div className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-600'}`}>
                   {backupLoading ? 'Backing up...' : 'Save all financial data to Google Drive'}
                 </div>
               </button>
               <button onClick={restoreFromDrive} disabled={restoreLoading || !driveStatus.backup}
-                className={`p-4 rounded-xl ${dk ? 'bg-purple-900/20' : 'bg-purple-50'} ${dk ? 'hover:bg-purple-900/30' : 'hover:bg-purple-100'} transition-colors text-left disabled:opacity-50 border-2 ${dk ? 'border-purple-800' : 'border-purple-200'}`}>
+                className={`p-4 rounded-xl ${dk ? `bg-purple-900/20` : `bg-purple-50`} ${dk ? 'hover:bg-purple-900/30' : 'hover:bg-purple-100'} transition-colors text-left disabled:opacity-50 border-2 ${dk ? `border-purple-800` : `border-purple-200`}`}>
                 <div className="text-lg mb-1">{restoreLoading ? '⏳' : '📥'} Restore from Drive</div>
                 <div className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-600'}`}>
                   {restoreLoading ? 'Restoring...' : driveStatus.backup ? 'Restore data from your Drive backup' : 'No backup available yet'}
@@ -2208,14 +2208,14 @@ function DataManagementTab() {
       <AnimatedCard delay={400} className={`border ${dk ? 'border-red-800' : 'border-red-200'}`}>
         <h3 className="text-lg font-semibold text-red-600 mb-4">⚠️ Danger Zone</h3>
         <div className="space-y-3">
-          <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-red-900/20' : 'bg-red-50'} ${dk ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} transition-colors flex items-center justify-between border-2 ${dk ? 'border-red-800' : 'border-red-200'}`}>
+          <button className={`w-full text-left p-4 rounded-xl ${dk ? `bg-red-900/20` : `bg-red-50`} ${dk ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} transition-colors flex items-center justify-between border-2 ${dk ? `border-red-800` : `border-red-200`}`}>
             <div>
               <div className={`font-medium ${dk ? 'text-red-400' : 'text-red-700'}`}>Clear All Data</div>
               <div className="text-xs text-red-500">Delete all transactions, budgets, and settings</div>
             </div>
             <span className="text-red-400">🗑️</span>
           </button>
-          <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-red-900/20' : 'bg-red-50'} ${dk ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} transition-colors flex items-center justify-between border-2 ${dk ? 'border-red-800' : 'border-red-200'}`}>
+          <button className={`w-full text-left p-4 rounded-xl ${dk ? `bg-red-900/20` : `bg-red-50`} ${dk ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} transition-colors flex items-center justify-between border-2 ${dk ? `border-red-800` : `border-red-200`}`}>
             <div>
               <div className={`font-medium ${dk ? 'text-red-400' : 'text-red-700'}`}>Delete Account</div>
               <div className="text-xs text-red-500">Permanently delete your account and all data</div>

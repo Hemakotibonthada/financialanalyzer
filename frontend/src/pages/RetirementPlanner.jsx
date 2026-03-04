@@ -155,13 +155,13 @@ export default function RetirementPlanner() {
 
   return (
     <MainLayout title="Retirement Planner">
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
+    <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} p-4 md:p-6 space-y-6`}>
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+        <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-slate-800'} flex items-center gap-2`}>
           <Sun className="w-7 h-7 text-amber-500" /> Retirement Planner
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Plan for a comfortable retirement with projections and actionable steps</p>
+        <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>Plan for a comfortable retirement with projections and actionable steps</p>
       </div>
 
       {/* Summary Cards */}
@@ -172,61 +172,61 @@ export default function RetirementPlanner() {
           { label: 'Target Corpus', value: fmt(targetCorpus), icon: Target, color: 'text-amber-600', sub: `for ₹${monthlyExpense.toLocaleString('en-IN')}/mo lifestyle` },
           { label: 'Years to Retire', value: yearsToRetire, icon: Clock, color: 'text-purple-600', sub: `Retire at age ${retireAge}` },
         ].map((c, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div key={i} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-500 dark:text-slate-400">{c.label}</span>
+              <span className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{c.label}</span>
               <c.icon className={`w-5 h-5 ${c.color}`} />
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{c.value}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{c.sub}</p>
+            <p className={`text-3xl font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{c.value}</p>
+            <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>{c.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Readiness Gauge + Retirement Age Slider */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Retirement Readiness Score</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm flex flex-col items-center`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Retirement Readiness Score</h2>
           <div className="relative w-64 h-36">
             <svg viewBox="0 0 200 110" className="w-full">
-              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e2e8f0" strokeWidth="16" strokeLinecap="round" className="dark:stroke-slate-700" />
+              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e2e8f0" strokeWidth="16" strokeLinecap="round" className={`${dk ? 'stroke-slate-700' : ''}`} />
               <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke={readinessScore >= 70 ? '#10B981' : readinessScore >= 40 ? '#F59E0B' : '#EF4444'} strokeWidth="16" strokeLinecap="round"
                 strokeDasharray={`${(gaugeAngle / 180) * 251.2} 251.2`} />
-              <text x="100" y="85" textAnchor="middle" className="text-4xl font-bold fill-slate-800 dark:fill-white" fontSize="32">{readinessScore}</text>
-              <text x="100" y="105" textAnchor="middle" className="fill-slate-500 dark:fill-slate-400" fontSize="12">out of 100</text>
+              <text x="100" y="85" textAnchor="middle" className={`text-4xl font-bold ${dk ? 'fill-white' : 'fill-slate-800'}`} fontSize="32">{readinessScore}</text>
+              <text x="100" y="105" textAnchor="middle" className={`${dk ? 'fill-slate-400' : 'fill-slate-500'}`} fontSize="12">out of 100</text>
             </svg>
           </div>
           <p className={`text-sm font-medium mt-2 ${readinessScore >= 70 ? 'text-green-600' : readinessScore >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
             {readinessScore >= 70 ? 'On Track!' : readinessScore >= 40 ? 'Needs Improvement' : 'Behind Schedule'}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center">
+          <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1 text-center`}>
             Gap: {fmt(Math.max(targetCorpus - projectedCorpus, 0))}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Contribution Calculator</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm space-y-6`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>Contribution Calculator</h2>
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 flex justify-between mb-2">
-              <span>Retirement Age</span><span className="font-semibold text-slate-800 dark:text-white">{retireAge}</span>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} flex justify-between mb-2`}>
+              <span>Retirement Age</span><span className={`font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>{retireAge}</span>
             </label>
             <input type="range" min={45} max={70} value={retireAge} onChange={e => setRetireAge(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 flex justify-between mb-2">
-              <span>Monthly Contribution</span><span className="font-semibold text-slate-800 dark:text-white">₹{monthlyContribution.toLocaleString('en-IN')}</span>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} flex justify-between mb-2`}>
+              <span>Monthly Contribution</span><span className={`font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>₹{monthlyContribution.toLocaleString('en-IN')}</span>
             </label>
             <input type="range" min={5000} max={200000} step={1000} value={monthlyContribution} onChange={e => setMonthlyContribution(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 flex justify-between mb-2">
-              <span>Expected Return</span><span className="font-semibold text-slate-800 dark:text-white">{expectedReturn}%</span>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} flex justify-between mb-2`}>
+              <span>Expected Return</span><span className={`font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>{expectedReturn}%</span>
             </label>
             <input type="range" min={6} max={18} step={0.5} value={expectedReturn} onChange={e => setExpectedReturn(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 flex justify-between mb-2">
-              <span>Monthly Expense (Today)</span><span className="font-semibold text-slate-800 dark:text-white">₹{monthlyExpense.toLocaleString('en-IN')}</span>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} flex justify-between mb-2`}>
+              <span>Monthly Expense (Today)</span><span className={`font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>₹{monthlyExpense.toLocaleString('en-IN')}</span>
             </label>
             <input type="range" min={20000} max={300000} step={5000} value={monthlyExpense} onChange={e => setMonthlyExpense(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
@@ -234,8 +234,8 @@ export default function RetirementPlanner() {
       </div>
 
       {/* Current Savings vs Target */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Current Savings vs Target</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Current Savings vs Target</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={savingsData} layout="vertical">
             <XAxis type="number" tickFormatter={v => fmt(v)} tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -249,13 +249,13 @@ export default function RetirementPlanner() {
       </div>
 
       {/* Retirement Income Projection */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Retirement Income Projection</h2>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>Retirement Income Projection</h2>
           <div className="flex gap-2">
             {['conservative', 'moderate', 'aggressive'].map(s => (
               <button key={s} onClick={() => setActiveScenario(s)}
-                className={`px-3 py-1 rounded-xl text-xs font-medium capitalize ${activeScenario === s ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
+                className={`px-3 py-1 rounded-xl text-xs font-medium capitalize ${activeScenario === s ? `${dk ? `bg-blue-900/20` : `bg-blue-50`} ${dk ? `text-blue-300` : `text-blue-700`}` : `${dk ? `bg-slate-700` : `bg-slate-100`} ${dk ? `text-slate-300` : `text-slate-700`}`}`}>
                 {s}
               </button>
             ))}
@@ -278,23 +278,23 @@ export default function RetirementPlanner() {
 
       {/* Scenarios Comparison + Pension Estimation */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Scenarios Comparison</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Scenarios Comparison</h2>
           <div className="space-y-4">
             {scenarioData.map((s, i) => (
-              <div key={i} className="p-4 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
+              <div key={i} className={`p-4 rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-100'} ${dk ? 'bg-slate-700/30' : 'bg-slate-50'}`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
-                  <h4 className="text-sm font-medium text-slate-800 dark:text-white">{s.label}</h4>
+                  <h4 className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'}`}>{s.label}</h4>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Projected Corpus</p>
-                    <p className="text-lg font-bold text-slate-800 dark:text-white">{fmt(s.corpus)}</p>
+                    <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Projected Corpus</p>
+                    <p className={`text-lg font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(s.corpus)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Monthly Income</p>
-                    <p className="text-lg font-bold text-slate-800 dark:text-white">{fmt(s.monthly)}/mo</p>
+                    <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Monthly Income</p>
+                    <p className={`text-lg font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(s.monthly)}/mo</p>
                   </div>
                 </div>
               </div>
@@ -302,8 +302,8 @@ export default function RetirementPlanner() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Pension & Social Security</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Pension & Social Security</h2>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={pension} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value"
@@ -314,65 +314,65 @@ export default function RetirementPlanner() {
             </PieChart>
           </ResponsiveContainer>
           <div className="text-center mt-2">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Estimated Monthly Pension</p>
-            <p className="text-2xl font-bold text-slate-800 dark:text-white">₹{pensionTotal.toLocaleString('en-IN')}</p>
+            <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Estimated Monthly Pension</p>
+            <p className={`text-2xl font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>₹{pensionTotal.toLocaleString('en-IN')}</p>
           </div>
         </div>
       </div>
 
       {/* Withdrawal Strategy */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Withdrawal Strategy</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Withdrawal Strategy</h2>
         <div className="flex gap-4 mb-4">
           {[
             { key: '4percent', label: '4% Rule', desc: 'Withdraw 4% of corpus annually' },
             { key: 'dynamic', label: 'Dynamic (3.5%)', desc: 'Adjust based on market conditions' },
           ].map(s => (
             <button key={s.key} onClick={() => setWithdrawalStrategy(s.key)}
-              className={`flex-1 p-4 rounded-xl text-left border ${withdrawalStrategy === s.key ? 'border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30'}`}>
-              <p className={`text-sm font-medium ${withdrawalStrategy === s.key ? 'text-blue-700 dark:text-blue-300' : 'text-slate-800 dark:text-white'}`}>{s.label}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{s.desc}</p>
+              className={`flex-1 p-4 rounded-xl text-left border ${withdrawalStrategy === s.key ? `${dk ? `border-blue-600` : `border-blue-300`} ${dk ? `bg-blue-900/20` : `bg-blue-50`}` : `${dk ? `border-slate-700` : `border-slate-200`} ${dk ? `bg-slate-700/30` : `bg-slate-50`}`}`}>
+              <p className={`text-sm font-medium ${withdrawalStrategy === s.key ? `${dk ? 'text-blue-300' : 'text-blue-700'}` : `${dk ? 'text-white' : 'text-slate-800'}`}`}>{s.label}</p>
+              <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>{s.desc}</p>
             </button>
           ))}
         </div>
-        <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-          <p className="text-sm text-green-700 dark:text-green-300">Estimated Monthly Retirement Income</p>
-          <p className="text-3xl font-bold text-green-800 dark:text-green-200">{fmt(monthlyRetirementIncome)}/mo</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">Plus pension income of ₹{pensionTotal.toLocaleString('en-IN')}/mo = Total {fmt(monthlyRetirementIncome + pensionTotal)}/mo</p>
+        <div className={`p-4 rounded-xl ${dk ? 'bg-green-900/20' : 'bg-green-50'} border ${dk ? 'border-green-800' : 'border-green-100'}`}>
+          <p className={`text-sm ${dk ? 'text-green-300' : 'text-green-700'}`}>Estimated Monthly Retirement Income</p>
+          <p className={`text-3xl font-bold ${dk ? 'text-green-200' : 'text-green-800'}`}>{fmt(monthlyRetirementIncome)}/mo</p>
+          <p className={`text-xs ${dk ? 'text-green-400' : 'text-green-600'} mt-1`}>Plus pension income of ₹{pensionTotal.toLocaleString('en-IN')}/mo = Total {fmt(monthlyRetirementIncome + pensionTotal)}/mo</p>
         </div>
       </div>
 
       {/* Expense Forecast */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Expense Forecast</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Expense Forecast</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Category</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Current</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Retired</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Change</th>
-                <th className="text-left py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Note</th>
+              <tr className={`border-b ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+                <th className={`text-left py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Category</th>
+                <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Current</th>
+                <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Retired</th>
+                <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Change</th>
+                <th className={`text-left py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Note</th>
               </tr>
             </thead>
             <tbody>
               {expenseForecast.map((e, i) => {
                 const change = e.retired - e.current;
                 return (
-                  <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50">
-                    <td className="py-3 px-4 text-slate-800 dark:text-white font-medium">{e.category}</td>
-                    <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">₹{e.current.toLocaleString('en-IN')}</td>
-                    <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">₹{e.retired.toLocaleString('en-IN')}</td>
+                  <tr key={i} className={`border-b ${dk ? 'border-slate-700/50' : 'border-slate-100'}`}>
+                    <td className={`py-3 px-4 ${dk ? 'text-white' : 'text-slate-800'} font-medium`}>{e.category}</td>
+                    <td className={`py-3 px-4 text-right ${dk ? 'text-slate-300' : 'text-slate-600'}`}>₹{e.current.toLocaleString('en-IN')}</td>
+                    <td className={`py-3 px-4 text-right ${dk ? 'text-slate-300' : 'text-slate-600'}`}>₹{e.retired.toLocaleString('en-IN')}</td>
                     <td className={`py-3 px-4 text-right font-medium ${change > 0 ? 'text-red-500' : 'text-green-500'}`}>{change > 0 ? '+' : ''}{fmt(change)}</td>
-                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs">{e.note}</td>
+                    <td className={`py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} text-xs`}>{e.note}</td>
                   </tr>
                 );
               })}
               <tr className="font-bold">
-                <td className="py-3 px-4 text-slate-800 dark:text-white">Total</td>
-                <td className="py-3 px-4 text-right text-slate-800 dark:text-white">₹{expenseForecast.reduce((s, e) => s + e.current, 0).toLocaleString('en-IN')}</td>
-                <td className="py-3 px-4 text-right text-slate-800 dark:text-white">₹{expenseForecast.reduce((s, e) => s + e.retired, 0).toLocaleString('en-IN')}</td>
+                <td className={`py-3 px-4 ${dk ? 'text-white' : 'text-slate-800'}`}>Total</td>
+                <td className={`py-3 px-4 text-right ${dk ? 'text-white' : 'text-slate-800'}`}>₹{expenseForecast.reduce((s, e) => s + e.current, 0).toLocaleString('en-IN')}</td>
+                <td className={`py-3 px-4 text-right ${dk ? 'text-white' : 'text-slate-800'}`}>₹{expenseForecast.reduce((s, e) => s + e.retired, 0).toLocaleString('en-IN')}</td>
                 <td className="py-3 px-4 text-right text-red-500">+{fmt(expenseForecast.reduce((s, e) => s + e.retired - e.current, 0))}</td>
                 <td />
               </tr>
@@ -382,25 +382,25 @@ export default function RetirementPlanner() {
       </div>
 
       {/* Action Items Checklist */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} flex items-center gap-2`}>
             <CheckSquare className="w-5 h-5 text-green-500" /> Action Items
           </h2>
-          <span className="text-sm text-slate-500 dark:text-slate-400">{completedCount}/{items.length} completed</span>
+          <span className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{completedCount}/{items.length} completed</span>
         </div>
-        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-4">
+        <div className={`w-full ${dk ? 'bg-slate-700' : 'bg-slate-200'} rounded-full h-2 mb-4`}>
           <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${(completedCount / items.length) * 100}%` }} />
         </div>
         <div className="space-y-2">
           {items.map(item => (
             <div key={item.id} onClick={() => toggleItem(item.id)}
-              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border ${item.done ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-800' : 'bg-slate-50 dark:bg-slate-700/30 border-slate-100 dark:border-slate-700'}`}>
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${item.done ? 'bg-green-500 border-green-500' : 'border-slate-300 dark:border-slate-600'}`}>
+              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border ${item.done ? `${dk ? `bg-green-900/10` : `bg-green-50`} ${dk ? `border-green-800` : `border-green-100`}` : `${dk ? `bg-slate-700/30` : `bg-slate-50`} ${dk ? `border-slate-700` : `border-slate-100`}`}`}>
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${item.done ? 'bg-green-500 border-green-500' : `${dk ? 'border-slate-600' : 'border-slate-300'}`}`}>
                 {item.done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
               </div>
-              <span className={`text-sm flex-1 ${item.done ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>{item.text}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.priority === 'High' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : item.priority === 'Medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+              <span className={`text-sm flex-1 ${item.done ? 'text-slate-400 line-through' : `${dk ? 'text-white' : 'text-slate-800'}`}`}>{item.text}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.priority === `High` ? `bg-red-100 ${dk ? `bg-red-900/30` : `text-red-700`} ${dk ? `text-red-400` : ``}` : item.priority === `Medium` ? `bg-amber-100 ${dk ? `bg-amber-900/30` : `text-amber-700`} ${dk ? `text-amber-400` : ``}` : `bg-green-100 ${dk ? `bg-green-900/30` : `text-green-700`} ${dk ? `text-green-400` : ``}`}`}>
                 {item.priority}
               </span>
             </div>

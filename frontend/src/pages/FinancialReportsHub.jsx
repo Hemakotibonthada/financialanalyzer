@@ -229,7 +229,7 @@ export default function FinancialReportsHub() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center animate-fade-in-up">
           <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400 text-lg">Loading reports...</p>
+          <p className={`text-slate-600 ${dk ? 'text-slate-400' : ''} text-lg`}>Loading reports...</p>
         </div>
       </div>
     );
@@ -240,8 +240,8 @@ export default function FinancialReportsHub() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center animate-fade-in-up max-w-md">
           <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-          <p className="text-slate-700 dark:text-slate-300 text-lg font-medium mb-2">Failed to load reports</p>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{error}</p>
+          <p className={`text-slate-700 ${dk ? 'text-slate-300' : ''} text-lg font-medium mb-2`}>Failed to load reports</p>
+          <p className={`text-slate-500 ${dk ? 'text-slate-400' : ''} text-sm mb-4`}>{error}</p>
           <button onClick={fetchData} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
             Try Again
           </button>
@@ -256,34 +256,34 @@ export default function FinancialReportsHub() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+          <h1 className={`text-2xl md:text-3xl font-bold text-slate-900 ${dk ? 'text-white' : ''} flex items-center gap-3`}>
             <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg shadow-indigo-600/30">
               <FileBarChart2 className="w-6 h-6" />
             </div>
             Financial Reports Hub
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Generate, preview & export financial reports</p>
+          <p className={`text-slate-500 ${dk ? 'text-slate-400' : ''} mt-1`}>Generate, preview & export financial reports</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <input type="date" value={dateRange.start} onChange={e => setDateRange(p => ({ ...p, start: e.target.value }))}
-              className="px-3 py-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 outline-none" />
+              className={`px-3 py-2 bg-white ${dk ? `bg-slate-800` : ``} rounded-xl border border-slate-200 ${dk ? 'border-slate-700' : ''} text-sm text-slate-700 ${dk ? `text-slate-300` : ``} outline-none`} />
             <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
             <input type="date" value={dateRange.end} onChange={e => setDateRange(p => ({ ...p, end: e.target.value }))}
-              className="px-3 py-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 outline-none" />
+              className={`px-3 py-2 bg-white ${dk ? `bg-slate-800` : ``} rounded-xl border border-slate-200 ${dk ? 'border-slate-700' : ''} text-sm text-slate-700 ${dk ? `text-slate-300` : ``} outline-none`} />
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1 animate-fade-in-up">
+      <div className={`flex bg-slate-100 ${dk ? 'bg-slate-700' : ''} rounded-xl p-1 animate-fade-in-up`}>
         {[
           { id: 'templates', label: 'Report Templates', icon: BookOpen },
           { id: 'saved', label: 'Saved Reports', icon: FileText },
           { id: 'scheduled', label: 'Scheduled', icon: Clock },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? `${dk ? 'bg-slate-600 text-blue-400' : 'bg-white text-blue-600'} shadow-sm` : 'text-slate-500 hover:text-slate-700'}`}>
             <tab.icon className="w-4 h-4" /> {tab.label}
           </button>
         ))}
@@ -295,35 +295,35 @@ export default function FinancialReportsHub() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {REPORT_TEMPLATES.map(template => (
               <button key={template.id} onClick={() => handleGeneratePreview(template)}
-                className={`bg-white dark:bg-slate-800 rounded-2xl p-5 border text-left transition-all hover:shadow-lg ${selectedTemplate?.id === template.id ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg' : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}>
-                <div className={`p-2.5 rounded-xl bg-${template.color}-100 dark:bg-${template.color}-900/30 text-${template.color}-600 dark:text-${template.color}-400 w-fit mb-3`}>
+                className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl p-5 border text-left transition-all hover:shadow-lg ${selectedTemplate?.id === template.id ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg' : `border-slate-200 ${dk ? 'border-slate-700' : ''} hover:border-blue-300`}`}>
+                <div className={`p-2.5 rounded-xl bg-${template.color}-100 ${dk ? 'bg-' : ''}${template.color}-900/30 text-${template.color}-600 ${dk ? 'text-' : ''}${template.color}-400 w-fit mb-3`}>
                   <template.icon className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-slate-900 dark:text-white text-sm mb-1">{template.name}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{template.description}</p>
+                <h3 className={`font-semibold text-slate-900 ${dk ? 'text-white' : ''} text-sm mb-1`}>{template.name}</h3>
+                <p className={`text-xs text-slate-500 ${dk ? 'text-slate-400' : ''} line-clamp-2`}>{template.description}</p>
               </button>
             ))}
           </div>
 
           {/* Report Preview */}
           {selectedTemplate && previewLoading && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center animate-fade-in-up">
+            <div className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl border border-slate-200 ${dk ? 'border-slate-700' : ''} p-12 text-center animate-fade-in-up`}>
               <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-slate-400">Generating preview...</p>
+              <p className={`text-slate-500 ${dk ? 'text-slate-400' : ''}`}>Generating preview...</p>
             </div>
           )}
 
           {selectedTemplate && !previewLoading && previewData && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-in">
-              <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+            <div className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl border border-slate-200 ${dk ? 'border-slate-700' : ''} overflow-hidden animate-scale-in`}>
+              <div className={`p-6 border-b border-slate-200 ${dk ? 'border-slate-700' : ''}`}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedTemplate.name}</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{dateRange.start} to {dateRange.end}</p>
+                    <h2 className={`text-xl font-bold text-slate-900 ${dk ? 'text-white' : ''}`}>{selectedTemplate.name}</h2>
+                    <p className={`text-sm text-slate-500 ${dk ? 'text-slate-400' : ''} mt-0.5`}>{dateRange.start} to {dateRange.end}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => setShowScheduleModal(true)}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                      className={`flex items-center gap-1.5 px-3 py-2 bg-slate-100 ${dk ? `bg-slate-700` : ``} text-slate-700 ${dk ? 'text-slate-300' : ''} rounded-lg text-sm font-medium hover:bg-slate-200 ${dk ? `hover:bg-slate-600` : ``} transition-colors`}>
                       <Clock className="w-4 h-4" /> Schedule
                     </button>
                     <button onClick={() => setShowExportModal(true)}
@@ -335,16 +335,16 @@ export default function FinancialReportsHub() {
               </div>
 
               {/* Summary Stats */}
-              <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-4 border-b border-slate-100 dark:border-slate-700/50">
+              <div className={`p-6 grid grid-cols-2 lg:grid-cols-4 gap-4 border-b border-slate-100 ${dk ? 'border-slate-700/50' : ''}`}>
                 {[
                   { label: 'Total Income', value: previewData.summary.totalIncome, color: 'green' },
                   { label: 'Total Expense', value: previewData.summary.totalExpense, color: 'red' },
                   { label: 'Savings', value: previewData.summary.savings, color: 'blue' },
                   { label: 'Savings Rate', value: previewData.summary.savingsRate, color: 'purple', suffix: '%', noPrefix: true },
                 ].map((stat, idx) => (
-                  <div key={idx} className={`p-4 rounded-xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20`}>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">{stat.label}</div>
-                    <div className={`text-xl font-bold text-${stat.color}-700 dark:text-${stat.color}-400 mt-1`}>
+                  <div key={idx} className={`p-4 rounded-xl bg-${stat.color}-50 ${dk ? 'bg-' : ''}${stat.color}-900/20`}>
+                    <div className={`text-sm text-slate-600 ${dk ? 'text-slate-400' : ''}`}>{stat.label}</div>
+                    <div className={`text-xl font-bold text-${stat.color}-700 ${dk ? 'text-' : ''}${stat.color}-400 mt-1`}>
                       {stat.noPrefix ? `${stat.value}${stat.suffix}` : <AnimatedValue end={stat.value} />}
                     </div>
                   </div>
@@ -356,7 +356,7 @@ export default function FinancialReportsHub() {
                 {/* Income vs Expense */}
                 {previewData.monthly.length > 0 ? (
                 <div>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Income vs Expense</h3>
+                  <h3 className={`text-base font-semibold text-slate-900 ${dk ? 'text-white' : ''} mb-4`}>Income vs Expense</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={previewData.monthly}>
@@ -372,7 +372,7 @@ export default function FinancialReportsHub() {
                   </div>
                 </div>
                 ) : (
-                <div className="flex items-center justify-center h-64 text-slate-400 dark:text-slate-500">
+                <div className={`flex items-center justify-center h-64 text-slate-400 ${dk ? 'text-slate-500' : ''}`}>
                   <p className="text-sm">No income/expense data available for this period.</p>
                 </div>
                 )}
@@ -380,7 +380,7 @@ export default function FinancialReportsHub() {
                 {/* Spending Breakdown */}
                 {previewData.spending.length > 0 ? (
                 <div>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Spending Breakdown</h3>
+                  <h3 className={`text-base font-semibold text-slate-900 ${dk ? 'text-white' : ''} mb-4`}>Spending Breakdown</h3>
                   <div className="h-48">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -396,13 +396,13 @@ export default function FinancialReportsHub() {
                       <div key={i} className="flex items-center gap-2 text-xs">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i] }} />
                         <span className="text-slate-500 truncate">{s.name}</span>
-                        <span className="font-medium text-slate-700 dark:text-slate-300 ml-auto">₹{s.value.toLocaleString()}</span>
+                        <span className={`font-medium text-slate-700 ${dk ? 'text-slate-300' : ''} ml-auto`}>₹{s.value.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 ) : (
-                <div className="flex items-center justify-center h-64 text-slate-400 dark:text-slate-500">
+                <div className={`flex items-center justify-center h-64 text-slate-400 ${dk ? 'text-slate-500' : ''}`}>
                   <p className="text-sm">No spending data available for this period.</p>
                 </div>
                 )}
@@ -410,7 +410,7 @@ export default function FinancialReportsHub() {
                 {/* Net Worth Trend */}
                 {previewData.networth.length > 0 && (
                 <div className="lg:col-span-2">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Net Worth Trend</h3>
+                  <h3 className={`text-base font-semibold text-slate-900 ${dk ? 'text-white' : ''} mb-4`}>Net Worth Trend</h3>
                   <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={previewData.networth}>
@@ -446,7 +446,7 @@ export default function FinancialReportsHub() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search reports..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-white" />
+                className={`w-full pl-9 pr-4 py-2.5 bg-white ${dk ? `bg-slate-800` : ``} rounded-xl border border-slate-200 ${dk ? 'border-slate-700' : ''} text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 ${dk ? `text-white` : ``}`} />
             </div>
           </div>
 
@@ -457,29 +457,29 @@ export default function FinancialReportsHub() {
                 const IconComp = template?.icon || FileText;
                 const color = template?.color || 'slate';
                 return (
-                  <div key={report.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center gap-4 hover:shadow-lg transition-all">
-                    <div className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-900/30 text-${color}-600 dark:text-${color}-400 shrink-0`}>
+                  <div key={report.id} className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl p-4 md:p-5 border border-slate-200 ${dk ? 'border-slate-700' : ''} flex flex-col md:flex-row md:items-center gap-4 hover:shadow-lg transition-all`}>
+                    <div className={`p-3 rounded-xl bg-${color}-100 ${dk ? 'bg-' : ''}${color}-900/30 text-${color}-600 ${dk ? 'text-' : ''}${color}-400 shrink-0`}>
                       <IconComp className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-900 dark:text-white truncate">{report.name}</h3>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                      <h3 className={`font-semibold text-slate-900 ${dk ? 'text-white' : ''} truncate`}>{report.name}</h3>
+                      <div className={`text-sm text-slate-500 ${dk ? 'text-slate-400' : ''} flex items-center gap-2 mt-0.5`}>
                         <span>{template?.name || 'Report'}</span>
                         <span>•</span>
                         <span>{new Date(report.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => toggleStar(report.id)} className={`p-2 rounded-lg transition-colors ${report.starred ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'}`}>
+                      <button onClick={() => toggleStar(report.id)} className={`p-2 rounded-lg transition-colors ${report.starred ? 'text-amber-500' : `text-slate-300 ${dk ? 'text-slate-600' : ''} hover:text-amber-400`}`}>
                         {report.starred ? <Star className="w-4 h-4 fill-current" /> : <StarOff className="w-4 h-4" />}
                       </button>
-                      <button className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                      <button className={`p-2 text-blue-500 hover:bg-blue-50 ${dk ? 'hover:bg-blue-900/20' : ''} rounded-lg transition-colors`}>
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
+                      <button className={`p-2 text-green-500 hover:bg-green-50 ${dk ? 'hover:bg-green-900/20' : ''} rounded-lg transition-colors`}>
                         <Download className="w-4 h-4" />
                       </button>
-                      <button onClick={() => deleteReport(report.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <button onClick={() => deleteReport(report.id)} className={`p-2 text-red-500 hover:bg-red-50 ${dk ? 'hover:bg-red-900/20' : ''} rounded-lg transition-colors`}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -488,7 +488,7 @@ export default function FinancialReportsHub() {
               })}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-400 dark:text-slate-500">
+            <div className={`text-center py-12 text-slate-400 ${dk ? 'text-slate-500' : ''}`}>
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-lg font-medium">No saved reports</p>
               <p className="text-sm mt-1">Generate a report from templates to get started.</p>
@@ -507,14 +507,14 @@ export default function FinancialReportsHub() {
                 const IconComp = template?.icon || FileText;
                 const color = template?.color || 'slate';
                 return (
-                  <div key={sched.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center gap-4 hover:shadow-lg transition-all">
-                    <div className={`p-3 rounded-xl bg-${color}-100 dark:bg-${color}-900/30 text-${color}-600 dark:text-${color}-400 shrink-0`}>
+                  <div key={sched.id} className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl p-4 md:p-5 border border-slate-200 ${dk ? 'border-slate-700' : ''} flex flex-col md:flex-row md:items-center gap-4 hover:shadow-lg transition-all`}>
+                    <div className={`p-3 rounded-xl bg-${color}-100 ${dk ? 'bg-' : ''}${color}-900/30 text-${color}-600 ${dk ? 'text-' : ''}${color}-400 shrink-0`}>
                       <IconComp className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-900 dark:text-white">{sched.name}</h3>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full">{sched.frequency}</span>
+                      <h3 className={`font-semibold text-slate-900 ${dk ? 'text-white' : ''}`}>{sched.name}</h3>
+                      <div className={`text-sm text-slate-500 ${dk ? 'text-slate-400' : ''} flex items-center gap-2 mt-0.5 flex-wrap`}>
+                        <span className={`px-2 py-0.5 bg-blue-100 ${dk ? 'bg-blue-900/30' : ''} text-blue-700 ${dk ? 'text-blue-400' : ''} text-xs rounded-full`}>{sched.frequency}</span>
                         <span>•</span>
                         <span>Next: {new Date(sched.nextRun).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                         <span>•</span>
@@ -524,7 +524,7 @@ export default function FinancialReportsHub() {
                         <span className="uppercase text-xs font-medium">{sched.format}</span>
                       </div>
                     </div>
-                    <button onClick={() => deleteSchedule(sched.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors shrink-0">
+                    <button onClick={() => deleteSchedule(sched.id)} className={`p-2 text-red-500 hover:bg-red-50 ${dk ? 'hover:bg-red-900/20' : ''} rounded-lg transition-colors shrink-0`}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -532,7 +532,7 @@ export default function FinancialReportsHub() {
               })}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-400 dark:text-slate-500">
+            <div className={`text-center py-12 text-slate-400 ${dk ? 'text-slate-500' : ''}`}>
               <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-lg font-medium">No scheduled reports</p>
               <p className="text-sm mt-1">Schedule a report from the templates tab.</p>
@@ -544,10 +544,10 @@ export default function FinancialReportsHub() {
       {/* Export Modal */}
       {showExportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowExportModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 ${dk ? 'border-slate-700' : ''} animate-scale-in`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Export Report</h3>
-              <button onClick={() => setShowExportModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold text-slate-900 ${dk ? 'text-white' : ''}`}>Export Report</h3>
+              <button onClick={() => setShowExportModal(false)} className={`p-2 hover:bg-slate-100 ${dk ? 'hover:bg-slate-700' : ''} rounded-lg`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               {[
@@ -556,12 +556,12 @@ export default function FinancialReportsHub() {
                 { format: 'csv', label: 'CSV File', icon: FileText, desc: 'Universal format', color: 'blue' },
               ].map(opt => (
                 <button key={opt.format} onClick={() => handleExport(opt.format)} disabled={exporting}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-${opt.color}-400 dark:hover:border-${opt.color}-600 hover:bg-${opt.color}-50 dark:hover:bg-${opt.color}-900/20 transition-all text-left disabled:opacity-50`}>
-                  <div className={`p-2.5 rounded-lg bg-${opt.color}-100 dark:bg-${opt.color}-900/30 text-${opt.color}-600 dark:text-${opt.color}-400`}>
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border border-slate-200 ${dk ? `border-slate-700` : ``} hover:border-${opt.color}-400 ${dk ? 'hover' : ''}:border-${opt.color}-600 hover:bg-${opt.color}-50 ${dk ? `hover` : ``}:bg-${opt.color}-900/20 transition-all text-left disabled:opacity-50`}>
+                  <div className={`p-2.5 rounded-lg bg-${opt.color}-100 ${dk ? 'bg-' : ''}${opt.color}-900/30 text-${opt.color}-600 ${dk ? 'text-' : ''}${opt.color}-400`}>
                     <opt.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900 dark:text-white text-sm">{opt.label}</div>
+                    <div className={`font-medium text-slate-900 ${dk ? 'text-white' : ''} text-sm`}>{opt.label}</div>
                     <div className="text-xs text-slate-500">{opt.desc}</div>
                   </div>
                   {exporting && <RefreshCw className="w-4 h-4 text-slate-400 animate-spin ml-auto" />}
@@ -575,34 +575,34 @@ export default function FinancialReportsHub() {
       {/* Schedule Modal */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowScheduleModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className={`bg-white ${dk ? 'bg-slate-800' : ''} rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 ${dk ? 'border-slate-700' : ''} animate-scale-in`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Schedule Report</h3>
-              <button onClick={() => setShowScheduleModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold text-slate-900 ${dk ? 'text-white' : ''}`}>Schedule Report</h3>
+              <button onClick={() => setShowScheduleModal(false)} className={`p-2 hover:bg-slate-100 ${dk ? 'hover:bg-slate-700' : ''} rounded-lg`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                <div className="text-sm font-medium text-blue-900 dark:text-blue-100">{selectedTemplate?.name || 'Report'}</div>
-                <div className="text-xs text-blue-600/70 dark:text-blue-400/70">Will be generated and sent automatically</div>
+              <div className={`p-3 bg-blue-50 ${dk ? 'bg-blue-900/20' : ''} rounded-xl`}>
+                <div className={`text-sm font-medium text-blue-900 ${dk ? 'text-blue-100' : ''}`}>{selectedTemplate?.name || 'Report'}</div>
+                <div className={`text-xs text-blue-600/70 ${dk ? 'text-blue-400/70' : ''}`}>Will be generated and sent automatically</div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Frequency</label>
+                <label className={`block text-sm font-medium text-slate-700 ${dk ? 'text-slate-300' : ''} mb-1`}>Frequency</label>
                 <select value={scheduleForm.frequency} onChange={e => setScheduleForm(p => ({ ...p, frequency: e.target.value }))}
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                  className={`w-full p-3 bg-slate-50 ${dk ? `bg-slate-700` : ``} rounded-xl border border-slate-200 ${dk ? 'border-slate-600' : ''} text-slate-900 ${dk ? `text-white` : ``} outline-none focus:ring-2 focus:ring-blue-500`}>
                   {['Daily', 'Weekly', 'Monthly', 'Quarterly'].map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email To</label>
+                <label className={`block text-sm font-medium text-slate-700 ${dk ? 'text-slate-300' : ''} mb-1`}>Email To</label>
                 <input type="email" value={scheduleForm.email} onChange={e => setScheduleForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                  className={`w-full p-3 bg-slate-50 ${dk ? `bg-slate-700` : ``} rounded-xl border border-slate-200 ${dk ? 'border-slate-600' : ''} text-slate-900 ${dk ? `text-white` : ``} outline-none focus:ring-2 focus:ring-blue-500`} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Format</label>
+                <label className={`block text-sm font-medium text-slate-700 ${dk ? 'text-slate-300' : ''} mb-1`}>Format</label>
                 <div className="flex gap-2">
                   {['pdf', 'excel', 'csv'].map(f => (
                     <button key={f} onClick={() => setScheduleForm(p => ({ ...p, format: f }))}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors uppercase ${scheduleForm.format === f ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors uppercase ${scheduleForm.format === f ? `bg-blue-600 text-white shadow-lg shadow-blue-600/30` : `bg-slate-100 ${dk ? 'bg-slate-700' : '`} text-slate-600 ${dk ? `text-slate-400` : `'}`}`}>
                       {f}
                     </button>
                   ))}

@@ -289,8 +289,8 @@ export default function ExportCenter() {
 
         {/* Error Alert */}
         {exportError && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center justify-between">
-            <p className="text-sm text-red-700 dark:text-red-300">⚠️ {exportError}</p>
+          <div className={`${dk ? 'bg-red-900/20 border-red-800' : 'bg-red-50 border-red-200'} border rounded-xl p-4 flex items-center justify-between`}>
+            <p className={`text-sm ${dk ? 'text-red-300' : 'text-red-700'}`}>⚠️ {exportError}</p>
             <button onClick={() => setExportError(null)} className="text-red-400 hover:text-red-600 text-sm">✕</button>
           </div>
         )}
@@ -341,8 +341,8 @@ export default function ExportCenter() {
           {generating ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
-              <h3 className="font-semibold text-gray-900 dark:text-white mt-4">Generating Report...</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mt-4`}>Generating Report...</h3>
+              <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
                 Preparing your {selectedTemplate.name}. This may take a moment.
               </p>
             </div>
@@ -350,31 +350,31 @@ export default function ExportCenter() {
             <div className="space-y-4">
               <div className="text-center py-4">
                 <span className="text-4xl block mb-2">{selectedTemplate.icon}</span>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{selectedTemplate.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{selectedTemplate.description}</p>
+                <h3 className={`text-xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{selectedTemplate.name}</h3>
+                <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'} mt-1`}>{selectedTemplate.description}</p>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sections Included:</h4>
+              <div className={`${dk ? 'bg-gray-800' : 'bg-gray-50'} p-3 rounded-lg`}>
+                <h4 className={`text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Sections Included:</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedTemplate.sections.map(section => (
                     <Badge key={section} variant="info" size="xs">{section.replace(/-/g, ' ')}</Badge>
                   ))}
                 </div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 mt-2">~{selectedTemplate.estimatedPages} pages</div>
+                <div className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'} mt-2`}>~{selectedTemplate.estimatedPages} pages</div>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Export Format:</h4>
+                <h4 className={`text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Export Format:</h4>
                 <div className="grid grid-cols-5 gap-2">
                   {EXPORT_FORMATS.map(format => (
                     <button
                       key={format.id}
                       onClick={() => generateReport(selectedTemplate, format.id)}
-                      className="p-3 rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all border border-gray-200 dark:border-gray-600 group"
+                      className={`p-3 rounded-lg text-center ${dk ? 'hover:bg-gray-700 border-gray-600' : 'hover:bg-gray-50 border-gray-200'} transition-all border group`}
                     >
                       <span className="text-2xl block mb-1 group-hover:scale-110 transition-transform">{format.icon}</span>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{format.label}</span>
+                      <span className={`text-xs font-medium ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{format.label}</span>
                     </button>
                   ))}
                 </div>
@@ -389,6 +389,8 @@ export default function ExportCenter() {
 
 // ======================== REPORT TEMPLATES VIEW ========================
 function ReportTemplatesView({ templates, onSelect }) {
+  const { isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [filterCategory, setFilterCategory] = useState('all');
   const categories = [...new Set(templates.map(t => t.category))];
 
@@ -398,11 +400,11 @@ function ReportTemplatesView({ templates, onSelect }) {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex gap-2">
-        <button onClick={() => setFilterCategory('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterCategory === 'all' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+        <button onClick={() => setFilterCategory('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterCategory === 'all' ? (dk ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700') : (dk ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-600')}`}>
           All
         </button>
         {categories.map(cat => (
-          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${filterCategory === cat ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${filterCategory === cat ? (dk ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700') : (dk ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-600')}`}>
             {cat}
           </button>
         ))}
@@ -411,7 +413,7 @@ function ReportTemplatesView({ templates, onSelect }) {
       {/* Popular Templates */}
       {filterCategory === 'all' && (
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">⭐ Popular Templates</h3>
+          <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-3`}>⭐ Popular Templates</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.filter(t => t.popular).map((template, i) => (
               <AnimatedCard
@@ -423,8 +425,8 @@ function ReportTemplatesView({ templates, onSelect }) {
                 <div className="flex items-start gap-3">
                   <span className="text-3xl group-hover:scale-110 transition-transform">{template.icon}</span>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{template.name}</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{template.description}</p>
+                    <h4 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} text-sm`}>{template.name}</h4>
+                    <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>{template.description}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="info" size="xs">{template.estimatedPages} pages</Badge>
                       <Badge variant="default" size="xs" className="capitalize">{template.category}</Badge>
@@ -439,7 +441,7 @@ function ReportTemplatesView({ templates, onSelect }) {
 
       {/* All Templates */}
       <div>
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{filterCategory === 'all' ? 'All Templates' : `${filterCategory} Templates`}</h3>
+        <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-3`}>{filterCategory === 'all' ? 'All Templates' : `${filterCategory} Templates`}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((template, i) => (
             <AnimatedCard
@@ -451,8 +453,8 @@ function ReportTemplatesView({ templates, onSelect }) {
               <div className="flex items-start gap-3">
                 <span className="text-3xl group-hover:scale-110 transition-transform">{template.icon}</span>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{template.name}</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{template.description}</p>
+                  <h4 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} text-sm`}>{template.name}</h4>
+                  <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'} mt-0.5 line-clamp-2`}>{template.description}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="info" size="xs">{template.estimatedPages} pages</Badge>
                     {template.popular && <Badge variant="warning" size="xs">Popular</Badge>}
@@ -469,6 +471,8 @@ function ReportTemplatesView({ templates, onSelect }) {
 
 // ======================== QUICK EXPORT VIEW ========================
 function QuickExportView({ config, setConfig, onExport, exporting }) {
+  const { isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const toggleCategory = (catId) => {
     setConfig(prev => ({
       ...prev,
@@ -483,7 +487,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
       <div className="lg:col-span-2 space-y-6">
         {/* Step 1: Select Data */}
         <AnimatedCard>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">1️⃣ Select Data to Export</h3>
+          <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>1️⃣ Select Data to Export</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {DATA_CATEGORIES.map(cat => (
               <button
@@ -491,12 +495,12 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
                 onClick={() => toggleCategory(cat.id)}
                 className={`p-4 rounded-xl text-center transition-all ${
                   config.dataCategories.includes(cat.id)
-                    ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-700'
-                    : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? (dk ? 'bg-blue-900/30 border-2 border-blue-700' : 'bg-blue-100 border-2 border-blue-300')
+                    : (dk ? 'bg-gray-800 border-2 border-transparent hover:bg-gray-700' : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100')
                 }`}
               >
                 <span className="text-2xl block mb-1">{cat.icon}</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white block">{cat.label}</span>
+                <span className={`text-sm font-medium ${dk ? 'text-white' : 'text-gray-900'} block`}>{cat.label}</span>
               </button>
             ))}
           </div>
@@ -504,14 +508,14 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
 
         {/* Step 2: Configure */}
         <AnimatedCard delay={100}>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">2️⃣ Configure Export</h3>
+          <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>2️⃣ Configure Export</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
+              <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Date Range</label>
               <select
                 value={config.dateRange}
                 onChange={(e) => setConfig(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
+                className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} border rounded-xl`}
               >
                 <option value="last-week">Last Week</option>
                 <option value="last-month">Last Month</option>
@@ -523,7 +527,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Format</label>
+              <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Format</label>
               <div className="flex gap-2">
                 {EXPORT_FORMATS.map(format => (
                   <button
@@ -532,7 +536,7 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
                     className={`flex-1 p-2 rounded-lg text-center text-xs transition-all ${
                       config.format === format.id
                         ? 'text-white'
-                        : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        : (dk ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-600')
                     }`}
                     style={config.format === format.id ? { backgroundColor: format.color } : {}}
                   >
@@ -549,17 +553,17 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
               type="checkbox"
               checked={config.includeCharts}
               onChange={(e) => setConfig(prev => ({ ...prev, includeCharts: e.target.checked }))}
-              className="rounded border-gray-300 dark:border-gray-600"
+              className={`rounded ${dk ? 'border-gray-600' : 'border-gray-300'}`}
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Include charts and visualizations</span>
+            <span className={`text-sm ${dk ? 'text-gray-300' : 'text-gray-700'}`}>Include charts and visualizations</span>
           </label>
         </AnimatedCard>
 
         {/* Step 3: Export */}
         <AnimatedCard delay={200}>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">3️⃣ Export</h3>
+          <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>3️⃣ Export</h3>
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
               {config.dataCategories.length} categories selected • {config.dateRange.replace(/-/g, ' ')} • {config.format.toUpperCase()}
             </div>
             <button
@@ -582,10 +586,10 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
 
       {/* Preview Panel */}
       <AnimatedCard delay={150}>
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Preview</h3>
+        <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Preview</h3>
         <div className="space-y-3">
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Selected Data</div>
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg`}>
+            <div className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'} mb-1`}>Selected Data</div>
             <div className="flex flex-wrap gap-1">
               {config.dataCategories.map(catId => {
                 const cat = DATA_CATEGORIES.find(c => c.id === catId);
@@ -594,23 +598,23 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
                 ) : null;
               })}
               {config.dataCategories.length === 0 && (
-                <span className="text-xs text-gray-400 dark:text-gray-500">No categories selected</span>
+                <span className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'}`}>No categories selected</span>
               )}
             </div>
           </div>
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Categories</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg`}>
+            <div className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'} mb-1`}>Categories</div>
+            <div className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>
               {config.dataCategories.length}
             </div>
           </div>
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Format</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-white uppercase">{config.format}</div>
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg`}>
+            <div className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'} mb-1`}>Format</div>
+            <div className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} uppercase`}>{config.format}</div>
           </div>
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">Date Range</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg`}>
+            <div className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'} mb-1`}>Date Range</div>
+            <div className={`text-sm font-medium ${dk ? 'text-white' : 'text-gray-900'} capitalize`}>
               {config.dateRange.replace(/-/g, ' ')}
             </div>
           </div>
@@ -622,6 +626,8 @@ function QuickExportView({ config, setConfig, onExport, exporting }) {
 
 // ======================== SCHEDULED EXPORTS VIEW ========================
 function ScheduledExportsView() {
+  const { isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [scheduledExports, setScheduledExports] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -646,7 +652,7 @@ function ScheduledExportsView() {
     <div className="space-y-6">
       <AnimatedCard>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Scheduled Exports</h3>
+          <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Scheduled Exports</h3>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
             ➕ New Schedule
           </button>
@@ -654,27 +660,27 @@ function ScheduledExportsView() {
         {loading ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">Loading scheduled exports...</p>
+            <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Loading scheduled exports...</p>
           </div>
         ) : scheduledExports.length === 0 ? (
           <div className="text-center py-12">
             <span className="text-4xl block mb-3">📅</span>
-            <p className="text-gray-500 dark:text-gray-400 mb-1">No scheduled exports yet</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500">Create a schedule to automatically generate and deliver reports</p>
+            <p className={`${dk ? 'text-gray-400' : 'text-gray-500'} mb-1`}>No scheduled exports yet</p>
+            <p className={`text-sm ${dk ? 'text-gray-500' : 'text-gray-400'}`}>Create a schedule to automatically generate and deliver reports</p>
           </div>
         ) : (
           <div className="space-y-3">
             {scheduledExports.map(schedule => (
-              <div key={schedule.id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <div key={schedule.id} className={`flex items-center gap-4 p-4 rounded-xl ${dk ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border`}>
                 <div className={`w-3 h-3 rounded-full ${schedule.enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white">{schedule.name}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{schedule.name}</div>
+                  <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
                     {schedule.frequency} • Next: {formatDate(schedule.nextRun)} • {(schedule.format || '').toUpperCase()}
                   </div>
                 </div>
                 <Badge variant={schedule.enabled ? 'success' : 'default'}>{schedule.enabled ? 'Active' : 'Paused'}</Badge>
-                <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">⚙️</button>
+                <button className={`p-2 rounded-lg ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors`}>⚙️</button>
               </div>
             ))}
           </div>
@@ -686,13 +692,15 @@ function ScheduledExportsView() {
 
 // ======================== EXPORT HISTORY VIEW ========================
 function ExportHistoryView({ history }) {
+  const { isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   if (history.length === 0) {
     return (
       <AnimatedCard>
         <div className="text-center py-12">
           <span className="text-4xl block mb-3">📚</span>
-          <p className="text-gray-500 dark:text-gray-400 mb-1">No exports yet</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500">Generated reports and exports will appear here</p>
+          <p className={`${dk ? 'text-gray-400' : 'text-gray-500'} mb-1`}>No exports yet</p>
+          <p className={`text-sm ${dk ? 'text-gray-500' : 'text-gray-400'}`}>Generated reports and exports will appear here</p>
         </div>
       </AnimatedCard>
     );
@@ -700,28 +708,28 @@ function ExportHistoryView({ history }) {
 
   return (
     <AnimatedCard>
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Export History</h3>
+      <h3 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Export History</h3>
       <div className="space-y-2">
         {history.map((entry, i) => {
           const formatInfo = EXPORT_FORMATS.find(f => f.id === entry.format) || EXPORT_FORMATS[0];
           return (
             <div
               key={entry.id}
-              className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className={`flex items-center gap-4 p-3 rounded-xl ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors`}
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <span className="text-xl">{formatInfo.icon}</span>
               <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white text-sm">{entry.name}</div>
-                <div className="text-xs text-gray-400 dark:text-gray-500">{formatDate(entry.date)} • {entry.size || 'Unknown'}</div>
+                <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'} text-sm`}>{entry.name}</div>
+                <div className={`text-xs ${dk ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(entry.date)} • {entry.size || 'Unknown'}</div>
               </div>
               <Badge variant={entry.status === 'completed' ? 'success' : 'warning'} size="xs">{entry.status}</Badge>
               <div className="flex gap-1">
                 {entry.downloadUrl && (
-                  <a href={entry.downloadUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Download">📥</a>
+                  <a href={entry.downloadUrl} target="_blank" rel="noopener noreferrer" className={`p-1.5 rounded-lg ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} text-xs transition-colors`} title="Download">📥</a>
                 )}
-                <button className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Share">🔗</button>
-                <button className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-xs transition-colors" title="Delete">🗑️</button>
+                <button className={`p-1.5 rounded-lg ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} text-xs transition-colors`} title="Share">🔗</button>
+                <button className={`p-1.5 rounded-lg ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} text-xs transition-colors`} title="Delete">🗑️</button>
               </div>
             </div>
           );

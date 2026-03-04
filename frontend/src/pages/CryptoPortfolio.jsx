@@ -1,13 +1,33 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+// ============================================================================
+// CryptoPortfolio.jsx — Enterprise Cryptocurrency Portfolio Manager
+// ============================================================================
+// Features:
+//  • Full portfolio tracking with real-time P&L
+//  • AI-powered risk scoring & diversification analysis
+//  • Tax-loss harvesting recommendations
+//  • Portfolio rebalancing engine
+//  • DCA (Dollar-Cost Averaging) calculator with projection charts
+//  • Portfolio health metrics (Sharpe ratio proxy, volatility, beta)
+//  • Sector/chain allocation breakdowns
+//  • Alert thresholds for price movements
+//  • Transaction history log
+//  • Full enterprise dark/black theme support via dk variable
+// ============================================================================
+
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   Bitcoin, Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   IndianRupee, X, Trash2, RefreshCw, AlertTriangle, Newspaper, Calculator,
-  BarChart3, Clock, ArrowRightLeft, Shield, Zap, ChevronDown
+  BarChart3, Clock, ArrowRightLeft, Shield, Zap, ChevronDown, ChevronUp,
+  Bell, Settings, Download, Eye, Target, Info, Layers, PieChart as PieChartIcon,
+  Activity, Award, Scale, Percent, Star, Edit3, Search, Filter, CheckCircle,
+  Wallet, BookOpen, HelpCircle
 } from 'lucide-react';
 import {
-  PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, LineChart, Line,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ReferenceLine, ComposedChart, Scatter
 } from 'recharts';
 import MainLayout from '../components/MainLayout';
 import api from '../services/api';

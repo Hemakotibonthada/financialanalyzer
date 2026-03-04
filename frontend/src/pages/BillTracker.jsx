@@ -220,10 +220,10 @@ export default function BillTracker() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+      <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} flex items-center justify-center`}>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Loading bills...</p>
+          <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Loading bills...</p>
         </div>
       </div>
     );
@@ -231,14 +231,14 @@ export default function BillTracker() {
 
   return (
     <MainLayout title="Bill Tracker">
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
+    <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} p-4 md:p-6 space-y-6`}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-slate-800'} flex items-center gap-2`}>
             <Receipt className="w-7 h-7 text-blue-600" /> Bill Tracker
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Never miss a payment — manage all your bills in one place</p>
+          <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>Never miss a payment — manage all your bills in one place</p>
         </div>
         <button onClick={openAdd} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 flex items-center gap-2 w-fit">
           <Plus className="w-4 h-4" /> Add Bill
@@ -247,20 +247,20 @@ export default function BillTracker() {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center gap-3">
+        <div className={`${dk ? 'bg-amber-900/20' : 'bg-amber-50'} border ${dk ? 'border-amber-800' : 'border-amber-200'} rounded-2xl p-4 flex items-center gap-3`}>
           <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <p className="text-sm text-amber-800 dark:text-amber-200 flex-1">{error}</p>
+          <p className={`text-sm ${dk ? 'text-amber-200' : 'text-amber-800'} flex-1`}>{error}</p>
           <button onClick={fetchBills} className="bg-amber-600 text-white rounded-xl text-xs font-medium px-3 py-1.5">Retry</button>
         </div>
       )}
 
       {/* Overdue Alert */}
       {overdueBills.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-center gap-3">
+        <div className={`${dk ? 'bg-red-900/20' : 'bg-red-50'} border ${dk ? 'border-red-800' : 'border-red-200'} rounded-2xl p-4 flex items-center gap-3`}>
           <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-red-800 dark:text-red-200">{overdueBills.length} Overdue Bill{overdueBills.length > 1 ? 's' : ''}!</p>
-            <p className="text-xs text-red-600 dark:text-red-400">{overdueBills.map(b => b.name).join(', ')} — Total: {fmt(overdueBills.reduce((s, b) => s + b.amount, 0))}</p>
+            <p className={`text-sm font-medium ${dk ? 'text-red-200' : 'text-red-800'}`}>{overdueBills.length} Overdue Bill{overdueBills.length > 1 ? 's' : ''}!</p>
+            <p className={`text-xs ${dk ? 'text-red-400' : 'text-red-600'}`}>{overdueBills.map(b => b.name).join(', ')} — Total: {fmt(overdueBills.reduce((s, b) => s + b.amount, 0))}</p>
           </div>
           <button className="bg-red-600 text-white rounded-xl text-xs font-medium px-3 py-1.5">Pay Now</button>
         </div>
@@ -274,38 +274,38 @@ export default function BillTracker() {
           { label: 'Overdue', value: fmt(overdueBills.reduce((s, b) => s + b.amount, 0)), icon: AlertTriangle, color: 'text-red-600', sub: `${overdueBills.length} bill${overdueBills.length !== 1 ? 's' : ''}` },
           { label: 'Upcoming', value: fmt(upcomingBills.reduce((s, b) => s + b.amount, 0)), icon: Clock, color: 'text-amber-600', sub: `Next: ${upcomingBills[0]?.name || 'None'}` },
         ].map((c, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div key={i} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-500 dark:text-slate-400">{c.label}</span>
+              <span className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{c.label}</span>
               <c.icon className={`w-5 h-5 ${c.color}`} />
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{c.value}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{c.sub}</p>
+            <p className={`text-3xl font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{c.value}</p>
+            <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>{c.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Calendar + Category Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Bills Calendar</h2>
+            <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>Bills Calendar</h2>
             <div className="flex items-center gap-2">
-              <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><ChevronLeft className="w-4 h-4 text-slate-500" /></button>
-              <span className="text-sm font-medium text-slate-800 dark:text-white min-w-[100px] text-center">{monthNames[calMonth]} {calYear}</span>
-              <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><ChevronRight className="w-4 h-4 text-slate-500" /></button>
+              <button onClick={prevMonth} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><ChevronLeft className="w-4 h-4 text-slate-500" /></button>
+              <span className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'} min-w-[100px] text-center`}>{monthNames[calMonth]} {calYear}</span>
+              <button onClick={nextMonth} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><ChevronRight className="w-4 h-4 text-slate-500" /></button>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center">
             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-              <div key={d} className="text-xs text-slate-500 dark:text-slate-400 py-2 font-medium">{d}</div>
+              <div key={d} className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} py-2 font-medium`}>{d}</div>
             ))}
             {Array.from({ length: firstDayOfWeek }).map((_, i) => <div key={`e${i}`} />)}
             {calendarDays.map(day => {
               const hasBill = billDays.has(day);
               const isToday = day === today && calMonth === currentMonth && calYear === currentYear;
               return (
-                <div key={day} className={`py-2 rounded-lg text-sm relative cursor-pointer ${isToday ? 'bg-blue-600 text-white font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+                <div key={day} className={`py-2 rounded-lg text-sm relative cursor-pointer ${isToday ? `bg-blue-600 text-white font-bold` : `${dk ? 'text-slate-300' : 'text-slate-700'} ${dk ? `hover:bg-slate-700` : 'hover:bg-slate-100'}`}`}>
                   {day}
                   {hasBill && <div className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-500'}`} />}
                 </div>
@@ -314,8 +314,8 @@ export default function BillTracker() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Monthly Bill Summary</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Monthly Bill Summary</h2>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={monthlySummary} layout="vertical">
               <XAxis type="number" tickFormatter={v => fmt(v)} tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -330,17 +330,17 @@ export default function BillTracker() {
       </div>
 
       {/* Bill List */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">All Bills</h2>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>All Bills</h2>
           <div className="flex gap-3 flex-wrap">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bills..." className="pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white w-48" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bills..." className={`pl-9 pr-3 py-2 text-sm rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} w-48`} />
             </div>
             <div className="flex gap-1 flex-wrap">
               {categories.map(c => (
-                <button key={c} onClick={() => setFilterCategory(c)} className={`px-3 py-1.5 rounded-xl text-xs font-medium ${filterCategory === c ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
+                <button key={c} onClick={() => setFilterCategory(c)} className={`px-3 py-1.5 rounded-xl text-xs font-medium ${filterCategory === c ? `${dk ? `bg-blue-900/20` : `bg-blue-50`} ${dk ? `text-blue-300` : `text-blue-700`}` : `${dk ? `bg-slate-700` : `bg-slate-100`} ${dk ? `text-slate-300` : `text-slate-700`}`}`}>
                   {c}
                 </button>
               ))}
@@ -353,21 +353,21 @@ export default function BillTracker() {
             const Icon = categoryIcons[b.category] || Receipt;
             const color = categoryColors[b.category] || '#64748b';
             return (
-              <div key={b.id} className={`flex items-center gap-4 p-4 rounded-xl border ${b.paid ? 'bg-green-50/50 dark:bg-green-900/5 border-green-100 dark:border-green-900/30' : isOverdue ? 'bg-red-50/50 dark:bg-red-900/5 border-red-100 dark:border-red-900/30' : 'bg-slate-50 dark:bg-slate-700/30 border-slate-100 dark:border-slate-700'}`}>
+              <div key={b.id} className={`flex items-center gap-4 p-4 rounded-xl border ${b.paid ? `${dk ? `bg-green-900/5` : `bg-green-50/50`} ${dk ? `border-green-900/30` : `border-green-100`}` : isOverdue ? `${dk ? `bg-red-900/5` : `bg-red-50/50`} ${dk ? `border-red-900/30` : `border-red-100`}` : `${dk ? `bg-slate-700/30` : `bg-slate-50`} ${dk ? `border-slate-700` : `border-slate-100`}`}`}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: color + '20' }}>
                   <Icon className="w-5 h-5" style={{ color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{b.name}</p>
+                    <p className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'} truncate`}>{b.name}</p>
                     {b.paid && <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />}
                     {isOverdue && <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />}
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{b.provider} • Due: {b.dueDate}th</p>
+                  <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{b.provider} • Due: {b.dueDate}th</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold text-slate-800 dark:text-white">{fmt(b.amount)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${b.category === 'EMI' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>{b.category}</span>
+                  <p className={`text-sm font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(b.amount)}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${b.category === `EMI` ? `bg-red-100 ${dk ? `bg-red-900/30` : `text-red-700`} ${dk ? `text-red-400` : ``}` : `bg-slate-100 ${dk ? `bg-slate-700` : `text-slate-600`} ${dk ? `text-slate-400` : ''}`}`}>{b.category}</span>
                 </div>
                 <button onClick={() => toggleAutoPay(b.id)} title="Toggle Auto-Pay" className="flex-shrink-0">
                   {b.autoPay ? <ToggleRight className="w-6 h-6 text-green-500" /> : <ToggleLeft className="w-6 h-6 text-slate-400" />}
@@ -385,8 +385,8 @@ export default function BillTracker() {
 
       {/* Payment History + Annual Forecast */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Payment History</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Payment History</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={paymentHistory}>
               <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -399,8 +399,8 @@ export default function BillTracker() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Annual Bill Forecast</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Annual Bill Forecast</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={annualForecast}>
               <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -409,27 +409,27 @@ export default function BillTracker() {
               <Bar dataKey="amount" fill="#3B82F6" name="Estimated" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">Estimated annual total: {fmt(annualForecast.reduce((s, m) => s + m.amount, 0))}</p>
+          <p className={`text-center text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} mt-2`}>Estimated annual total: {fmt(annualForecast.reduce((s, m) => s + m.amount, 0))}</p>
         </div>
       </div>
 
       {/* Reminders Config + Bill Splitting */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4 flex items-center gap-2`}>
             <Bell className="w-5 h-5 text-amber-500" /> Reminder Settings
           </h2>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30">
-              <span className="text-sm text-slate-700 dark:text-slate-300">Remind days before due</span>
-              <select value={reminderDays} onChange={e => setReminderDays(Number(e.target.value))} className="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-white px-2 py-1">
+            <div className={`flex items-center justify-between p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'}`}>
+              <span className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-700'}`}>Remind days before due</span>
+              <select value={reminderDays} onChange={e => setReminderDays(Number(e.target.value))} className={`rounded-lg border ${dk ? `border-slate-600` : `border-slate-200`} ${dk ? 'bg-slate-800' : 'bg-white'} text-sm ${dk ? `text-white` : `text-slate-800`} px-2 py-1`}>
                 {[1, 2, 3, 5, 7].map(d => <option key={d} value={d}>{d} day{d > 1 ? 's' : ''}</option>)}
               </select>
             </div>
             {['Email Reminders', 'Push Notifications', 'SMS Alerts'].map((r, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30">
-                <span className="text-sm text-slate-700 dark:text-slate-300">{r}</span>
-                <button className={`w-10 h-5 rounded-full relative ${i < 2 ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+              <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'}`}>
+                <span className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-700'}`}>{r}</span>
+                <button className={`w-10 h-5 rounded-full relative ${i < 2 ? 'bg-green-500' : `${dk ? 'bg-slate-600' : 'bg-slate-300'}`}`}>
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 ${i < 2 ? 'left-5' : 'left-0.5'}`} />
                 </button>
               </div>
@@ -437,8 +437,8 @@ export default function BillTracker() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4 flex items-center gap-2`}>
             <Users className="w-5 h-5 text-purple-500" /> Bill Splitting
           </h2>
           <div className="space-y-3">
@@ -447,18 +447,18 @@ export default function BillTracker() {
               { bill: 'Electricity', total: 2500, split: 2, your: 1250 },
               { bill: 'Internet', total: 999, split: 2, your: 500 },
             ].map((s, i) => (
-              <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+              <div key={i} className={`p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'} border ${dk ? 'border-slate-700' : 'border-slate-100'}`}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-slate-800 dark:text-white">{s.bill}</span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">{s.split} people</span>
+                  <span className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'}`}>{s.bill}</span>
+                  <span className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{s.split} people</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Total: {fmt(s.total)}</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">Your share: {fmt(s.your)}</span>
+                  <span className={`${dk ? 'text-slate-400' : 'text-slate-500'}`}>Total: {fmt(s.total)}</span>
+                  <span className={`${dk ? 'text-blue-400' : 'text-blue-600'} font-medium`}>Your share: {fmt(s.your)}</span>
                 </div>
               </div>
             ))}
-            <button className="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm py-2 flex items-center justify-center gap-2">
+            <button className={`w-full ${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm py-2 flex items-center justify-center gap-2`}>
               <Plus className="w-4 h-4" /> Add Split Bill
             </button>
           </div>
@@ -468,47 +468,47 @@ export default function BillTracker() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-lg border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-xl`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{editBill ? 'Edit' : 'Add'} Bill</h3>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>{editBill ? 'Edit' : 'Add'} Bill</h3>
+              <button onClick={() => setShowModal(false)} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Bill Name</label>
-                <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Bill Name</label>
+                <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Amount (₹)</label>
-                  <input type="number" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Amount (₹)</label>
+                  <input type="number" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Due Date (Day)</label>
-                  <input type="number" min={1} max={31} value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Due Date (Day)</label>
+                  <input type="number" min={1} max={31} value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Category</label>
-                  <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm">
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Category</label>
+                  <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`}>
                     {Object.keys(categoryIcons).map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Provider</label>
-                  <input value={formData.provider} onChange={e => setFormData({ ...formData, provider: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Provider</label>
+                  <input value={formData.provider} onChange={e => setFormData({ ...formData, provider: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30">
-                <span className="text-sm text-slate-700 dark:text-slate-300">Auto-Pay</span>
-                <button onClick={() => setFormData({ ...formData, autoPay: !formData.autoPay })} className={`w-10 h-5 rounded-full relative ${formData.autoPay ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+              <div className={`flex items-center gap-3 p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'}`}>
+                <span className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-700'}`}>Auto-Pay</span>
+                <button onClick={() => setFormData({ ...formData, autoPay: !formData.autoPay })} className={`w-10 h-5 rounded-full relative ${formData.autoPay ? 'bg-green-500' : `${dk ? 'bg-slate-600' : 'bg-slate-300'}`}`}>
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 ${formData.autoPay ? 'left-5' : 'left-0.5'}`} />
                 </button>
               </div>
             </div>
             <div className="flex gap-3 mt-6 justify-end">
-              <button onClick={() => setShowModal(false)} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm px-4 py-2">Cancel</button>
+              <button onClick={() => setShowModal(false)} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-4 py-2`}>Cancel</button>
               <button onClick={saveBill} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2">Save Bill</button>
             </div>
           </div>

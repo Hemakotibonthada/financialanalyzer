@@ -161,17 +161,17 @@ export default function FixedDeposits() {
 
   return (
     <MainLayout title="Fixed Deposits">
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
+    <div className={`min-h-screen ${dk ? 'bg-gray-900' : 'bg-gray-50'} p-4 md:p-6`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
             <Landmark className="w-7 h-7 text-blue-600" /> Fixed Deposits
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage your fixed deposit investments</p>
+          <p className={`${dk ? 'text-gray-400' : 'text-gray-500'} text-sm mt-1`}>Manage your fixed deposit investments</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowCalc(!showCalc)} className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+          <button onClick={() => setShowCalc(!showCalc)} className={`flex items-center gap-2 px-4 py-2 border ${dk ? `border-gray-600` : `border-gray-300`} ${dk ? 'text-gray-300' : 'text-gray-700'} rounded-lg ${dk ? `hover:bg-gray-700` : `hover:bg-gray-100`}`}>
             <Calculator className="w-4 h-4" /> Calculator
           </button>
           <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -183,38 +183,38 @@ export default function FixedDeposits() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Invested', value: `₹${totalInvested.toLocaleString()}`, icon: <IndianRupee className="w-5 h-5" />, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/40' },
-          { label: 'Total Maturity', value: `₹${totalMaturity.toLocaleString()}`, icon: <TrendingUp className="w-5 h-5" />, color: 'text-green-600 bg-green-100 dark:bg-green-900/40' },
-          { label: 'Total Interest', value: `₹${totalInterest.toLocaleString()}`, icon: <ArrowUpRight className="w-5 h-5" />, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/40' },
-          { label: 'Avg Rate', value: `${avgRate}%`, icon: <BarChart3 className="w-5 h-5" />, color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/40' },
+          { label: 'Total Invested', value: `₹${totalInvested.toLocaleString()}`, icon: <IndianRupee className="w-5 h-5" />, color: `text-blue-600 ${dk ? 'bg-blue-900/40' : 'bg-blue-100'}` },
+          { label: 'Total Maturity', value: `₹${totalMaturity.toLocaleString()}`, icon: <TrendingUp className="w-5 h-5" />, color: `text-green-600 ${dk ? 'bg-green-900/40' : 'bg-green-100'}` },
+          { label: 'Total Interest', value: `₹${totalInterest.toLocaleString()}`, icon: <ArrowUpRight className="w-5 h-5" />, color: `text-purple-600 ${dk ? 'bg-purple-900/40' : 'bg-purple-100'}` },
+          { label: 'Avg Rate', value: `${avgRate}%`, icon: <BarChart3 className="w-5 h-5" />, color: `text-orange-600 ${dk ? 'bg-orange-900/40' : 'bg-orange-100'}` },
         ].map((c, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div key={i} className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">{c.label}</span>
+              <span className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{c.label}</span>
               <span className={`p-2 rounded-lg ${c.color}`}>{c.icon}</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{c.value}</p>
+            <p className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{c.value}</p>
           </div>
         ))}
       </div>
 
       {/* Active FDs Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Active Fixed Deposits</h2>
+      <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Active Fixed Deposits</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"><th className="pb-2 pr-3">Bank</th><th className="pb-2 pr-3">Amount</th><th className="pb-2 pr-3">Rate</th><th className="pb-2 pr-3">Tenure</th><th className="pb-2 pr-3">Maturity Date</th><th className="pb-2 pr-3">Maturity Amt</th><th className="pb-2 pr-3">Auto-Renew</th><th className="pb-2"></th></tr></thead>
+            <thead><tr className={`text-left ${dk ? 'text-gray-400' : 'text-gray-500'} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-3">Bank</th><th className="pb-2 pr-3">Amount</th><th className="pb-2 pr-3">Rate</th><th className="pb-2 pr-3">Tenure</th><th className="pb-2 pr-3">Maturity Date</th><th className="pb-2 pr-3">Maturity Amt</th><th className="pb-2 pr-3">Auto-Renew</th><th className="pb-2"></th></tr></thead>
             <tbody>
               {fds.map(f => (
-                <tr key={f.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="py-3 pr-3 font-medium text-gray-900 dark:text-white">{f.bank}</td>
-                  <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">₹{f.amount.toLocaleString()}</td>
+                <tr key={f.id} className={`border-b ${dk ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} ${dk ? 'border-gray-700' : ''}`}>
+                  <td className={`py-3 pr-3 font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{f.bank}</td>
+                  <td className={`py-3 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>₹{f.amount.toLocaleString()}</td>
                   <td className="py-3 pr-3 text-green-600 font-medium">{f.rate}%</td>
-                  <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">{f.tenure} months</td>
-                  <td className="py-3 pr-3 text-gray-700 dark:text-gray-300">{f.maturityDate}</td>
-                  <td className="py-3 pr-3 font-medium text-gray-900 dark:text-white">₹{f.maturityAmount.toLocaleString()}</td>
+                  <td className={`py-3 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{f.tenure} months</td>
+                  <td className={`py-3 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{f.maturityDate}</td>
+                  <td className={`py-3 pr-3 font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>₹{f.maturityAmount.toLocaleString()}</td>
                   <td className="py-3 pr-3">
-                    <button onClick={() => toggleAutoRenew(f.id)} className={`px-2 py-1 text-xs rounded-full ${f.autoRenew ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                    <button onClick={() => toggleAutoRenew(f.id)} className={`px-2 py-1 text-xs rounded-full ${f.autoRenew ? `${dk ? `bg-green-900/30` : `bg-green-100`} ${dk ? `text-green-300` : `text-green-700`}` : `${dk ? `bg-gray-700` : `bg-gray-100`} ${dk ? `text-gray-400` : `text-gray-500`}`}`}>
                       {f.autoRenew ? <><RefreshCw className="w-3 h-3 inline mr-1" />On</> : 'Off'}
                     </button>
                   </td>
@@ -227,8 +227,8 @@ export default function FixedDeposits() {
       </div>
 
       {/* Invested vs Maturity Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Invested vs Maturity</h2>
+      <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Invested vs Maturity</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={investedVsMaturity}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -244,18 +244,18 @@ export default function FixedDeposits() {
 
       {/* Maturity Calendar & Bank Rate Comparison */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Calendar className="w-5 h-5 text-blue-500" /> FD Maturity Calendar</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Calendar className="w-5 h-5 text-blue-500" /> FD Maturity Calendar</h2>
           <div className="space-y-3">
             {maturityCalendar.map(f => (
-              <div key={f.id} className={`p-3 rounded-lg border-l-4 ${f.daysToMaturity <= 30 ? 'border-l-red-500 bg-red-50 dark:bg-red-900/20' : f.daysToMaturity <= 90 ? 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'border-l-green-500 bg-green-50 dark:bg-green-900/20'}`}>
+              <div key={f.id} className={`p-3 rounded-lg border-l-4 ${f.daysToMaturity <= 30 ? `border-l-red-500 ${dk ? `bg-red-900/20` : `bg-red-50`}` : f.daysToMaturity <= 90 ? `border-l-yellow-500 ${dk ? 'bg-yellow-900/20' : 'bg-yellow-50'}` : `border-l-green-500 ${dk ? `bg-green-900/20` : `bg-green-50`}`}`}>
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{f.bank} - ₹{f.amount.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Maturity: {f.maturityDate}</p>
+                    <p className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{f.bank} - ₹{f.amount.toLocaleString()}</p>
+                    <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Maturity: {f.maturityDate}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">₹{f.maturityAmount.toLocaleString()}</p>
+                    <p className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>₹{f.maturityAmount.toLocaleString()}</p>
                     <p className={`text-xs font-medium ${f.daysToMaturity <= 30 ? 'text-red-600' : f.daysToMaturity <= 90 ? 'text-yellow-600' : 'text-green-600'}`}>
                       {f.daysToMaturity > 0 ? `${f.daysToMaturity} days left` : 'Matured'}
                     </p>
@@ -266,19 +266,19 @@ export default function FixedDeposits() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Interest Rate Comparison (Banks)</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Interest Rate Comparison (Banks)</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"><th className="pb-2 pr-3">Bank</th><th className="pb-2 pr-3">1Y</th><th className="pb-2 pr-3">2Y</th><th className="pb-2 pr-3">3Y</th><th className="pb-2">5Y</th></tr></thead>
+              <thead><tr className={`text-left ${dk ? 'text-gray-400' : 'text-gray-500'} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-3">Bank</th><th className="pb-2 pr-3">1Y</th><th className="pb-2 pr-3">2Y</th><th className="pb-2 pr-3">3Y</th><th className="pb-2">5Y</th></tr></thead>
               <tbody>
                 {bankRates.map(b => (
-                  <tr key={b.bank} className="border-b dark:border-gray-700">
-                    <td className="py-2 pr-3 font-medium text-gray-900 dark:text-white">{b.bank}</td>
-                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">{b['1Y']}%</td>
-                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">{b['2Y']}%</td>
-                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">{b['3Y']}%</td>
-                    <td className="py-2 text-gray-700 dark:text-gray-300">{b['5Y']}%</td>
+                  <tr key={b.bank} className={`border-b ${dk ? 'border-gray-700' : ''}`}>
+                    <td className={`py-2 pr-3 font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{b.bank}</td>
+                    <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{b['1Y']}%</td>
+                    <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{b['2Y']}%</td>
+                    <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{b['3Y']}%</td>
+                    <td className={`py-2 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{b['5Y']}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -289,17 +289,17 @@ export default function FixedDeposits() {
 
       {/* FD Calculator */}
       {showCalc && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><Calculator className="w-5 h-5 text-green-500" /> FD Calculator</h2>
+            <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}><Calculator className="w-5 h-5 text-green-500" /> FD Calculator</h2>
             <button onClick={() => setShowCalc(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (₹)</label><input type="number" value={calcAmount} onChange={e => setCalcAmount(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rate (%)</label><input type="number" step="0.1" value={calcRate} onChange={e => setCalcRate(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tenure (Months)</label><input type="number" value={calcTenure} onChange={e => setCalcTenure(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Maturity Amount</p>
+            <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Amount (₹)</label><input type="number" value={calcAmount} onChange={e => setCalcAmount(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
+            <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Rate (%)</label><input type="number" step="0.1" value={calcRate} onChange={e => setCalcRate(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
+            <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Tenure (Months)</label><input type="number" value={calcTenure} onChange={e => setCalcTenure(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
+            <div className={`${dk ? 'bg-green-900/20' : 'bg-green-50'} rounded-lg p-3`}>
+              <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Maturity Amount</p>
               <p className="text-xl font-bold text-green-600">₹{calcMaturity.maturity.toLocaleString()}</p>
               <p className="text-xs text-gray-500 mt-1">Interest: ₹{calcMaturity.interest.toLocaleString()}</p>
             </div>
@@ -308,9 +308,9 @@ export default function FixedDeposits() {
       )}
 
       {/* Laddering Strategy */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-blue-500" /> FD Laddering Strategy</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Spread investments across different tenures for optimal liquidity and returns</p>
+      <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Shield className="w-5 h-5 text-blue-500" /> FD Laddering Strategy</h2>
+        <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'} mb-4`}>Spread investments across different tenures for optimal liquidity and returns</p>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={ladderingData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -326,39 +326,39 @@ export default function FixedDeposits() {
 
       {/* Tax Info & Comparison */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Info className="w-5 h-5 text-yellow-500" /> Tax on FD Interest</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Info className="w-5 h-5 text-yellow-500" /> Tax on FD Interest</h2>
           <div className="space-y-3">
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Est. Annual Interest</span>
-              <span className="font-semibold text-gray-900 dark:text-white">₹{taxOnInterest.totalInterest.toLocaleString()}</span>
+            <div className={`p-3 ${dk ? 'bg-gray-700/50' : 'bg-gray-50'} rounded-lg flex justify-between`}>
+              <span className={`text-sm ${dk ? 'text-gray-300' : 'text-gray-600'}`}>Est. Annual Interest</span>
+              <span className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>₹{taxOnInterest.totalInterest.toLocaleString()}</span>
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-300">TDS Applicable</span>
+            <div className={`p-3 ${dk ? 'bg-gray-700/50' : 'bg-gray-50'} rounded-lg flex justify-between`}>
+              <span className={`text-sm ${dk ? 'text-gray-300' : 'text-gray-600'}`}>TDS Applicable</span>
               <span className={`font-semibold ${taxOnInterest.tdsApplicable ? 'text-red-600' : 'text-green-600'}`}>{taxOnInterest.tdsApplicable ? 'Yes (>₹40,000)' : 'No'}</span>
             </div>
             {taxOnInterest.tdsApplicable && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg flex justify-between">
-                <span className="text-sm text-red-700 dark:text-red-300">TDS Amount (10%)</span>
+              <div className={`p-3 ${dk ? 'bg-red-900/20' : 'bg-red-50'} rounded-lg flex justify-between`}>
+                <span className={`text-sm ${dk ? 'text-red-300' : 'text-red-700'}`}>TDS Amount (10%)</span>
                 <span className="font-semibold text-red-600">₹{taxOnInterest.tds.toLocaleString()}</span>
               </div>
             )}
-            <p className="text-xs text-gray-500 dark:text-gray-400">TDS is deducted when interest exceeds ₹40,000/year (₹50,000 for senior citizens). Submit Form 15G/15H to avoid TDS if total income is below taxable limit.</p>
+            <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>TDS is deducted when interest exceeds ₹40,000/year (₹50,000 for senior citizens). Submit Form 15G/15H to avoid TDS if total income is below taxable limit.</p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">FD vs Other Instruments</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>FD vs Other Instruments</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"><th className="pb-2 pr-3">Instrument</th><th className="pb-2 pr-3">3Y Returns</th><th className="pb-2 pr-3">5Y Returns</th><th className="pb-2">Risk</th></tr></thead>
+              <thead><tr className={`text-left ${dk ? 'text-gray-400' : 'text-gray-500'} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-3">Instrument</th><th className="pb-2 pr-3">3Y Returns</th><th className="pb-2 pr-3">5Y Returns</th><th className="pb-2">Risk</th></tr></thead>
               <tbody>
                 {comparisonData.map(c => (
-                  <tr key={c.instrument} className="border-b dark:border-gray-700">
-                    <td className="py-2 pr-3 font-medium text-gray-900 dark:text-white">{c.instrument}</td>
-                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">{c['3Y']}%</td>
-                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">{c['5Y']}%</td>
-                    <td className="py-2"><span className={`text-xs px-2 py-1 rounded-full ${c.risk === 'Low' ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : c.risk === 'High' ? 'bg-red-100 text-red-700 dark:bg-red-900/30' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30'}`}>{c.risk}</span></td>
+                  <tr key={c.instrument} className={`border-b ${dk ? 'border-gray-700' : ''}`}>
+                    <td className={`py-2 pr-3 font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{c.instrument}</td>
+                    <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{c['3Y']}%</td>
+                    <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{c['5Y']}%</td>
+                    <td className="py-2"><span className={`text-xs px-2 py-1 rounded-full ${c.risk === `Low` ? `${dk ? 'bg-green-900/30` : `bg-green-100`} text-green-700` : c.risk === `High` ? `${dk ? `bg-red-900/30' : 'bg-red-100'} text-red-700` : `${dk ? `bg-yellow-900/30` : `bg-yellow-100`} text-yellow-700`}`}>{c.risk}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -370,25 +370,25 @@ export default function FixedDeposits() {
       {/* Add FD Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-xl">
+          <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-md shadow-xl`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Fixed Deposit</h2>
+              <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Add Fixed Deposit</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank</label><select value={form.bank} onChange={e => setForm(p => ({ ...p, bank: e.target.value }))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white">{bankRates.map(b => <option key={b.bank} value={b.bank}>{b.bank}</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (₹)</label><input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
+              <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Bank</label><select value={form.bank} onChange={e => setForm(p => ({ ...p, bank: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`}>{bankRates.map(b => <option key={b.bank} value={b.bank}>{b.bank}</option>)}</select></div>
+              <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Amount (₹)</label><input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rate (%)</label><input type="number" step="0.1" value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tenure (Months)</label><input type="number" value={form.tenure} onChange={e => setForm(p => ({ ...p, tenure: e.target.value }))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
+                <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Rate (%)</label><input type="number" step="0.1" value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
+                <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Tenure (Months)</label><input type="number" value={form.tenure} onChange={e => setForm(p => ({ ...p, tenure: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
               </div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label><input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <div><label className={`block text-sm font-medium ${dk ? `text-gray-300` : `text-gray-700`} mb-1`}>Start Date</label><input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
+              <label className={`flex items-center gap-2 text-sm ${dk ? 'text-gray-300' : 'text-gray-700'}`}>
                 <input type="checkbox" checked={form.autoRenew} onChange={e => setForm(p => ({ ...p, autoRenew: e.target.checked }))} className="rounded" /> Auto-Renew on Maturity
               </label>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">Cancel</button>
+              <button onClick={() => setShowForm(false)} className={`flex-1 py-2 border ${dk ? 'border-gray-600' : 'border-gray-300'} rounded-lg ${dk ? 'text-gray-300' : 'text-gray-700'}`}>Cancel</button>
               <button onClick={handleAdd} className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add FD</button>
             </div>
           </div>

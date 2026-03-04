@@ -61,6 +61,8 @@ const AnimatedNumber = ({ value, prefix = '₹' }) => {
 };
 
 const NetWorthGauge = ({ netWorth, totalAssets, totalLiabilities }) => {
+  const { isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const ratio = totalAssets > 0 ? (netWorth / totalAssets) * 100 : 0;
   const circumference = 2 * Math.PI * 80;
   const offset = circumference - (Math.max(0, Math.min(100, ratio)) / 100) * circumference;
@@ -69,7 +71,7 @@ const NetWorthGauge = ({ netWorth, totalAssets, totalLiabilities }) => {
     <div className="flex flex-col items-center">
       <div className="relative w-48 h-48">
         <svg className="w-48 h-48 -rotate-90" viewBox="0 0 180 180">
-          <circle cx="90" cy="90" r="80" fill="none" stroke="currentColor" strokeWidth="12" className="text-slate-200 dark:text-slate-700" />
+          <circle cx="90" cy="90" r="80" fill="none" stroke="currentColor" strokeWidth="12" className={`${dk ? 'text-slate-700' : 'text-slate-200'}`} />
           <circle cx="90" cy="90" r="80" fill="none" stroke="url(#netWorthGradient)" strokeWidth="12"
             strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
             className="transition-all duration-2000 ease-out" />
@@ -82,7 +84,7 @@ const NetWorthGauge = ({ netWorth, totalAssets, totalLiabilities }) => {
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-sm text-slate-500 dark:text-slate-400">Net Worth</p>
+          <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Net Worth</p>
           <p className={`text-2xl font-bold ${netWorth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
             <AnimatedNumber value={netWorth} />
           </p>
@@ -184,13 +186,13 @@ const EnhancedNetWorthTracker = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+      <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} p-6`}>
         <div className="animate-pulse space-y-6">
-          <div className="h-8 w-64 bg-slate-200 dark:bg-slate-700 rounded" />
+          <div className={`h-8 w-64 ${dk ? 'bg-slate-700' : 'bg-slate-200'} rounded`} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1,2,3].map(i => <div key={i} className="h-40 bg-slate-200 dark:bg-slate-700 rounded-2xl" />)}
+            {[1,2,3].map(i => <div key={i} className={`h-40 ${dk ? 'bg-slate-700' : 'bg-slate-200'} rounded-2xl`} />)}
           </div>
-          <div className="h-80 bg-slate-200 dark:bg-slate-700 rounded-2xl" />
+          <div className={`h-80 ${dk ? 'bg-slate-700' : 'bg-slate-200'} rounded-2xl`} />
         </div>
       </div>
     );
@@ -198,15 +200,15 @@ const EnhancedNetWorthTracker = () => {
 
   return (
     <MainLayout title="Enhanced Net Worth Tracker">
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 lg:p-8">
+    <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} p-4 md:p-6 lg:p-8`}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 animate-fade-in-down">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Net Worth Tracker</h1>
-          <p className="text-slate-500 dark:text-slate-400">Track your complete financial picture</p>
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-slate-900'}`}>Net Worth Tracker</h1>
+          <p className={`${dk ? 'text-slate-400' : 'text-slate-500'}`}>Track your complete financial picture</p>
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-0">
-          <button onClick={fetchData} className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all">
+          <button onClick={fetchData} className={`p-2.5 rounded-xl ${dk ? 'bg-slate-800' : 'bg-white'} border ${dk ? 'border-slate-700' : 'border-slate-200'} hover:bg-slate-50 transition-all`}>
             <RefreshCw size={18} className="text-slate-500" />
           </button>
           <button onClick={() => { setAddType('asset'); setShowAddModal(true); }}
@@ -222,13 +224,13 @@ const EnhancedNetWorthTracker = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 dashboard-grid">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
+            <div className={`p-3 ${dk ? 'bg-emerald-900/30' : 'bg-emerald-100'} rounded-xl`}>
               <TrendingUp size={22} className="text-emerald-600" />
             </div>
             <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Total Assets</p>
+              <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Total Assets</p>
               <p className="text-2xl font-bold text-emerald-600"><AnimatedNumber value={totalAssets} /></p>
             </div>
           </div>
@@ -237,13 +239,13 @@ const EnhancedNetWorthTracker = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+            <div className={`p-3 ${dk ? 'bg-red-900/30' : 'bg-red-100'} rounded-xl`}>
               <TrendingDown size={22} className="text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Total Liabilities</p>
+              <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Total Liabilities</p>
               <p className="text-2xl font-bold text-red-600"><AnimatedNumber value={totalLiabilities} /></p>
             </div>
           </div>
@@ -266,11 +268,11 @@ const EnhancedNetWorthTracker = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit mb-6">
+      <div className={`flex gap-1 p-1 ${dk ? 'bg-slate-800' : 'bg-slate-100'} rounded-xl w-fit mb-6`}>
         {['overview', 'assets', 'liabilities', 'history'].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow' : 'text-slate-500 hover:text-slate-700'
+              activeTab === tab ? `${dk ? 'bg-slate-700' : 'bg-white'} ${dk ? 'text-white' : 'text-slate-900'} shadow` : 'text-slate-500 hover:text-slate-700'
             }`}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
         ))}
       </div>
@@ -280,11 +282,11 @@ const EnhancedNetWorthTracker = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Net Worth Gauge + Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+            <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} flex items-center justify-center`}>
               <NetWorthGauge netWorth={netWorth} totalAssets={totalAssets} totalLiabilities={totalLiabilities} />
             </div>
-            <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Net Worth Trend</h3>
+            <div className={`lg:col-span-2 ${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-4`}>Net Worth Trend</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={chartHistory}>
                   <defs>
@@ -312,8 +314,8 @@ const EnhancedNetWorthTracker = () => {
 
           {/* Breakdown Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Asset Allocation</h3>
+            <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-4`}>Asset Allocation</h3>
               {assetBreakdown.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={220}>
@@ -329,9 +331,9 @@ const EnhancedNetWorthTracker = () => {
                       <div key={i} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
-                          <span className="text-slate-600 dark:text-slate-400">{cat.name}</span>
+                          <span className={`${dk ? 'text-slate-400' : 'text-slate-600'}`}>{cat.name}</span>
                         </div>
-                        <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(cat.value)}</span>
+                        <span className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(cat.value)}</span>
                       </div>
                     ))}
                   </div>
@@ -344,8 +346,8 @@ const EnhancedNetWorthTracker = () => {
               )}
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Liability Breakdown</h3>
+            <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-4`}>Liability Breakdown</h3>
               {liabilityBreakdown.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={220}>
@@ -361,9 +363,9 @@ const EnhancedNetWorthTracker = () => {
                       <div key={i} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
-                          <span className="text-slate-600 dark:text-slate-400">{cat.name}</span>
+                          <span className={`${dk ? 'text-slate-400' : 'text-slate-600'}`}>{cat.name}</span>
                         </div>
-                        <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(cat.value)}</span>
+                        <span className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(cat.value)}</span>
                       </div>
                     ))}
                   </div>
@@ -386,27 +388,27 @@ const EnhancedNetWorthTracker = () => {
             const catAssets = assets.filter(a => a.category === cat.id);
             if (!catAssets.length) return null;
             return (
-              <div key={cat.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+              <div key={cat.id} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}>
+                <div className={`flex items-center gap-3 p-4 ${dk ? 'bg-slate-900/50' : 'bg-slate-50'} border-b ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
                   <div className="p-2 rounded-lg" style={{ background: `${cat.color}20` }}>
                     <cat.icon size={18} style={{ color: cat.color }} />
                   </div>
-                  <span className="font-semibold text-slate-900 dark:text-white">{cat.label}</span>
+                  <span className={`font-semibold ${dk ? 'text-white' : 'text-slate-900'}`}>{cat.label}</span>
                   <span className="ml-auto font-bold text-emerald-600">
                     {formatCurrency(catAssets.reduce((s, a) => s + (a.value || a.amount || 0), 0))}
                   </span>
                 </div>
                 {catAssets.map((asset, i) => (
-                  <div key={asset._id || i} className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors">
+                  <div key={asset._id || i} className={`flex items-center justify-between p-4 border-b ${dk ? 'border-slate-700/50' : 'border-slate-100'} last:border-0 ${dk ? 'hover:bg-slate-800/80' : 'hover:bg-slate-50'} transition-colors`}>
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{asset.name}</p>
+                      <p className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{asset.name}</p>
                       {asset.notes && <p className="text-xs text-slate-500">{asset.notes}</p>}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-semibold text-slate-900 dark:text-white">
+                      <span className={`font-semibold ${dk ? 'text-white' : 'text-slate-900'}`}>
                         {formatCurrency(asset.value || asset.amount || 0)}
                       </span>
-                      <button onClick={() => handleDelete(asset._id, 'asset')} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-600">
+                      <button onClick={() => handleDelete(asset._id, 'asset')} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} text-slate-400 hover:text-red-600`}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -416,9 +418,9 @@ const EnhancedNetWorthTracker = () => {
             );
           })}
           {assets.length === 0 && (
-            <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className={`text-center py-16 ${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
               <PiggyBank size={48} className="mx-auto mb-4 text-slate-300" />
-              <h3 className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">No assets tracked</h3>
+              <h3 className={`text-lg font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-2`}>No assets tracked</h3>
               <button onClick={() => { setAddType('asset'); setShowAddModal(true); }}
                 className="mt-3 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700">
                 <Plus size={14} className="inline mr-1" /> Add Your First Asset
@@ -435,20 +437,20 @@ const EnhancedNetWorthTracker = () => {
             const catLiab = liabilities.filter(l => l.category === cat.id);
             if (!catLiab.length) return null;
             return (
-              <div key={cat.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+              <div key={cat.id} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}>
+                <div className={`flex items-center gap-3 p-4 ${dk ? 'bg-slate-900/50' : 'bg-slate-50'} border-b ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
                   <div className="p-2 rounded-lg" style={{ background: `${cat.color}20` }}>
                     <cat.icon size={18} style={{ color: cat.color }} />
                   </div>
-                  <span className="font-semibold text-slate-900 dark:text-white">{cat.label}</span>
+                  <span className={`font-semibold ${dk ? 'text-white' : 'text-slate-900'}`}>{cat.label}</span>
                   <span className="ml-auto font-bold text-red-600">
                     {formatCurrency(catLiab.reduce((s, l) => s + (l.value || l.amount || 0), 0))}
                   </span>
                 </div>
                 {catLiab.map((liab, i) => (
-                  <div key={liab._id || i} className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors">
+                  <div key={liab._id || i} className={`flex items-center justify-between p-4 border-b ${dk ? 'border-slate-700/50' : 'border-slate-100'} last:border-0 ${dk ? 'hover:bg-slate-800/80' : 'hover:bg-slate-50'} transition-colors`}>
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{liab.name}</p>
+                      <p className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{liab.name}</p>
                       {liab.notes && <p className="text-xs text-slate-500">{liab.notes}</p>}
                     </div>
                     <div className="flex items-center gap-3">
@@ -463,9 +465,9 @@ const EnhancedNetWorthTracker = () => {
             );
           })}
           {liabilities.length === 0 && (
-            <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className={`text-center py-16 ${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
               <Shield size={48} className="mx-auto mb-4 text-slate-300" />
-              <h3 className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">No liabilities — great job!</h3>
+              <h3 className={`text-lg font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-2`}>No liabilities — great job!</h3>
             </div>
           )}
         </div>
@@ -474,8 +476,8 @@ const EnhancedNetWorthTracker = () => {
       {/* History Tab */}
       {activeTab === 'history' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Net Worth Over Time</h3>
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+            <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-4`}>Net Worth Over Time</h3>
             <ResponsiveContainer width="100%" height={400}>
               <AreaChart data={chartHistory}>
                 <defs>
@@ -497,12 +499,12 @@ const EnhancedNetWorthTracker = () => {
           </div>
 
           {/* Monthly Breakdown Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white p-6 pb-0 mb-4">Monthly Breakdown</h3>
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl border ${dk ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}>
+            <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'} p-6 pb-0 mb-4`}>Monthly Breakdown</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-700">
+                  <tr className={`${dk ? 'bg-slate-900/50' : 'bg-slate-50'} border-y ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
                     <th className="p-3 text-left text-xs font-semibold text-slate-500">Period</th>
                     <th className="p-3 text-right text-xs font-semibold text-slate-500">Assets</th>
                     <th className="p-3 text-right text-xs font-semibold text-slate-500">Liabilities</th>
@@ -515,14 +517,14 @@ const EnhancedNetWorthTracker = () => {
                     const prevNW = i > 0 ? chartHistory[i - 1].netWorth : row.netWorth;
                     const change = ((row.netWorth - prevNW) / (prevNW || 1)) * 100;
                     return (
-                      <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/80">
-                        <td className="p-3 text-sm font-medium text-slate-900 dark:text-white">{row.date}</td>
+                      <tr key={i} className={`border-b ${dk ? 'border-slate-700/50' : 'border-slate-100'} ${dk ? 'hover:bg-slate-800/80' : 'hover:bg-slate-50'}`}>
+                        <td className={`p-3 text-sm font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{row.date}</td>
                         <td className="p-3 text-sm text-right text-emerald-600 font-medium">{formatCurrency(row.assets)}</td>
                         <td className="p-3 text-sm text-right text-red-600 font-medium">{formatCurrency(row.liabilities)}</td>
-                        <td className="p-3 text-sm text-right font-bold text-slate-900 dark:text-white">{formatCurrency(row.netWorth)}</td>
+                        <td className={`p-3 text-sm text-right font-bold ${dk ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(row.netWorth)}</td>
                         <td className="p-3 text-right">
                           <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-                            change >= 0 ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30' : 'text-red-700 bg-red-50 dark:bg-red-900/30'
+                            change >= 0 ? `text-emerald-700 ${dk ? 'bg-emerald-900/30' : 'bg-emerald-50'}` : `text-red-700 ${dk ? 'bg-red-900/30' : 'bg-red-50'}`
                           }`}>
                             {change >= 0 ? '+' : ''}{change.toFixed(1)}%
                           </span>
@@ -540,27 +542,27 @@ const EnhancedNetWorthTracker = () => {
       {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in`}>
+            <h2 className={`text-xl font-bold ${dk ? 'text-white' : 'text-slate-900'} mb-6`}>
               Add {addType === 'asset' ? 'Asset' : 'Liability'}
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Name</label>
+                <label className={`text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1 block`}>Name</label>
                 <input type="text" value={newItem.name} onChange={e => setNewItem(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                  className={`w-full px-4 py-3 ${dk ? `bg-slate-900` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${dk ? `text-white` : `text-slate-900`}`}
                   placeholder={addType === 'asset' ? 'e.g., Savings Account' : 'e.g., Home Loan'} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Value (₹)</label>
+                  <label className={`text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1 block`}>Value (₹)</label>
                   <input type="number" value={newItem.value} onChange={e => setNewItem(p => ({ ...p, value: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" />
+                    className={`w-full px-4 py-3 ${dk ? `bg-slate-900` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${dk ? `text-white` : `text-slate-900`}`} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Category</label>
+                  <label className={`text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1 block`}>Category</label>
                   <select value={newItem.category} onChange={e => setNewItem(p => ({ ...p, category: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white">
+                    className={`w-full px-4 py-3 ${dk ? `bg-slate-900` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${dk ? `text-white` : `text-slate-900`}`}>
                     <option value="">Select...</option>
                     {(addType === 'asset' ? ASSET_CATEGORIES : LIABILITY_CATEGORIES).map(c => (
                       <option key={c.id} value={c.id}>{c.label}</option>
@@ -569,12 +571,12 @@ const EnhancedNetWorthTracker = () => {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Notes</label>
+                <label className={`text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1 block`}>Notes</label>
                 <textarea value={newItem.notes} onChange={e => setNewItem(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white resize-none" rows={2} />
+                  className={`w-full px-4 py-3 ${dk ? `bg-slate-900` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${dk ? `text-white` : `text-slate-900`} resize-none`} rows={2} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowAddModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600">Cancel</button>
+                <button onClick={() => setShowAddModal(false)} className={`flex-1 py-3 ${dk ? 'bg-slate-700' : 'bg-slate-100'} rounded-xl text-sm font-medium ${dk ? 'hover:bg-slate-600' : 'hover:bg-slate-200'}`}>Cancel</button>
                 <button onClick={handleAdd} disabled={!newItem.name || !newItem.value}
                   className={`flex-1 py-3 text-white rounded-xl text-sm font-medium shadow-lg transition-colors ${
                     addType === 'asset' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30' : 'bg-red-600 hover:bg-red-700 shadow-red-600/30'

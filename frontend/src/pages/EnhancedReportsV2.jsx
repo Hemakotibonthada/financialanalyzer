@@ -2,9 +2,8 @@
 // Enterprise Financial Reports V2 — Comprehensive Report Generation
 // ============================================================================
 
-import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { ThemeContext } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import {
   FileText, Download, Calendar, BarChart3, PieChart, TrendingUp,
@@ -276,9 +275,8 @@ function ReportViewer({ type, data, period, onClose }) {
 // ============================================================================
 
 export default function EnhancedReportsV2() {
-  const { mode, isDark, isBlack } = useTheme();
+  const { mode, isDark, isBlack, theme } = useTheme();
   const dk = isDark || isBlack;
-  const { theme } = useContext(ThemeContext);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);

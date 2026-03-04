@@ -113,14 +113,14 @@ export default function InsurancePlanner() {
 
   return (
     <MainLayout title="Insurance Planner">
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
+    <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} p-4 md:p-6 space-y-6`}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-slate-800'} flex items-center gap-2`}>
             <Shield className="w-7 h-7 text-blue-600" /> Insurance Planner
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your insurance portfolio and identify coverage gaps</p>
+          <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>Manage your insurance portfolio and identify coverage gaps</p>
         </div>
         <button onClick={openAddModal} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 flex items-center gap-2 w-fit">
           <Plus className="w-4 h-4" /> Add Policy
@@ -135,12 +135,12 @@ export default function InsurancePlanner() {
           { label: 'Active Policies', value: activeCount, icon: CheckCircle, color: 'text-emerald-600' },
           { label: 'Claims This Year', value: 2, icon: FileText, color: 'text-orange-600' },
         ].map((c, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div key={i} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-500 dark:text-slate-400">{c.label}</span>
+              <span className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{c.label}</span>
               <c.icon className={`w-5 h-5 ${c.color}`} />
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{c.value}</p>
+            <p className={`text-3xl font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{c.value}</p>
           </div>
         ))}
       </div>
@@ -150,35 +150,35 @@ export default function InsurancePlanner() {
         {policies.map((p, i) => {
           const Icon = p.icon || Shield;
           return (
-            <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div key={i} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: p.color + '20' }}>
                     <Icon className="w-5 h-5" style={{ color: p.color }} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{p.type} Insurance</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{p.provider}</p>
+                    <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>{p.type} Insurance</h3>
+                    <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{p.provider}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : p.status === 'Expired' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.status === `Active` ? `${dk ? 'bg-green-900/30 text-green-400` : `bg-green-100 text-green-700`}` : p.status === `Expired` ? `${dk ? `bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'}` : `${dk ? `bg-slate-700 text-slate-400` : `bg-slate-100 text-slate-600`}`}`}>
                   {p.status}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Premium</p>
-                  <p className="text-lg font-bold text-slate-800 dark:text-white">{fmt(p.premium)}</p>
+                  <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Premium</p>
+                  <p className={`text-lg font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(p.premium)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Coverage</p>
-                  <p className="text-lg font-bold text-slate-800 dark:text-white">{fmt(p.cover)}</p>
+                  <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Coverage</p>
+                  <p className={`text-lg font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(p.cover)}</p>
                 </div>
               </div>
-              {p.expiry && <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Expires: {p.expiry}</p>}
+              {p.expiry && <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mb-3`}>Expires: {p.expiry}</p>}
               <div className="flex gap-2">
-                <button onClick={() => openEditModal(p, i)} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm px-3 py-1.5 flex items-center gap-1"><Edit2 className="w-3 h-3" /> Edit</button>
-                <button onClick={() => deletePolicy(i)} className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm px-3 py-1.5 flex items-center gap-1"><Trash2 className="w-3 h-3" /> Remove</button>
+                <button onClick={() => openEditModal(p, i)} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-3 py-1.5 flex items-center gap-1`}><Edit2 className="w-3 h-3" /> Edit</button>
+                <button onClick={() => deletePolicy(i)} className={`${dk ? 'bg-red-900/20' : 'bg-red-50'} ${dk ? 'text-red-400' : 'text-red-600'} rounded-xl text-sm px-3 py-1.5 flex items-center gap-1`}><Trash2 className="w-3 h-3" /> Remove</button>
               </div>
             </div>
           );
@@ -187,8 +187,8 @@ export default function InsurancePlanner() {
 
       {/* Coverage Gap Analysis + Premium PieChart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4 flex items-center gap-2`}>
             <AlertTriangle className="w-5 h-5 text-amber-500" /> Coverage Gap Analysis
           </h2>
           <div className="space-y-4">
@@ -197,10 +197,10 @@ export default function InsurancePlanner() {
               return (
                 <div key={i}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-slate-700 dark:text-slate-300">{g.category}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{fmt(g.current)} / {fmt(g.recommended)}</span>
+                    <span className={`${dk ? 'text-slate-300' : 'text-slate-700'}`}>{g.category}</span>
+                    <span className={`${dk ? 'text-slate-400' : 'text-slate-500'}`}>{fmt(g.current)} / {fmt(g.recommended)}</span>
                   </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                  <div className={`w-full ${dk ? 'bg-slate-700' : 'bg-slate-200'} rounded-full h-3`}>
                     <div className={`h-3 rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
                   </div>
                   {pct < 100 && <p className="text-xs text-red-500 mt-1">Gap: {fmt(g.recommended - g.current)}</p>}
@@ -210,8 +210,8 @@ export default function InsurancePlanner() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Annual Premium Summary</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Annual Premium Summary</h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie data={premiumData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ₹${value.toLocaleString('en-IN')}`}>
@@ -224,28 +224,28 @@ export default function InsurancePlanner() {
       </div>
 
       {/* Premium Comparison Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Premium Comparison</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Premium Comparison</h2>
           {policies.length === 0 ? (
-            <p className="text-center text-slate-400 dark:text-slate-500 py-8">Add policies to see premium comparison</p>
+            <p className={`text-center ${dk ? 'text-slate-500' : 'text-slate-400'} py-8`}>Add policies to see premium comparison</p>
           ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="text-left py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Type</th>
-                  <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Provider</th>
-                  <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Premium</th>
-                  <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Coverage</th>
+                <tr className={`border-b ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <th className={`text-left py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Type</th>
+                  <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Provider</th>
+                  <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Premium</th>
+                  <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Coverage</th>
                 </tr>
               </thead>
               <tbody>
                 {policies.map((p, i) => (
-                  <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                    <td className="py-3 px-4 text-slate-800 dark:text-white font-medium">{p.type}</td>
-                    <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{p.provider || '-'}</td>
-                    <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">{fmt(p.premium)}</td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-800 dark:text-white">{fmt(p.cover)}</td>
+                  <tr key={i} className={`border-b ${dk ? 'border-slate-700/50' : 'border-slate-100'} ${dk ? 'hover:bg-slate-700/30' : 'hover:bg-slate-50'}`}>
+                    <td className={`py-3 px-4 ${dk ? 'text-white' : 'text-slate-800'} font-medium`}>{p.type}</td>
+                    <td className={`py-3 px-4 text-right ${dk ? 'text-slate-300' : 'text-slate-600'}`}>{p.provider || '-'}</td>
+                    <td className={`py-3 px-4 text-right ${dk ? 'text-slate-300' : 'text-slate-600'}`}>{fmt(p.premium)}</td>
+                    <td className={`py-3 px-4 text-right font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(p.cover)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -256,25 +256,25 @@ export default function InsurancePlanner() {
 
       {/* Claims History + Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4 flex items-center gap-2`}>
             <Calendar className="w-5 h-5 text-blue-500" /> Claims History
           </h2>
           <div className="space-y-4">
             {claims.length === 0 ? (
-              <p className="text-center text-slate-400 dark:text-slate-500 py-8">No claims history yet</p>
+              <p className={`text-center ${dk ? 'text-slate-500' : 'text-slate-400'} py-8`}>No claims history yet</p>
             ) : (
             claims.map((c) => (
-              <div key={c.id} className="flex items-start gap-3 relative pl-6 before:absolute before:left-[9px] before:top-6 before:bottom-0 before:w-px before:bg-slate-200 dark:before:bg-slate-700 last:before:hidden">
-                <div className={`absolute left-0 top-1 w-5 h-5 rounded-full flex items-center justify-center ${c.status === 'Settled' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+              <div key={c.id} className={`flex items-start gap-3 relative pl-6 before:absolute before:left-[9px] before:top-6 before:bottom-0 before:w-px ${dk ? 'before:bg-slate-700' : 'before:bg-slate-200'} last:before:hidden`}>
+                <div className={`absolute left-0 top-1 w-5 h-5 rounded-full flex items-center justify-center ${c.status === `Settled` ? `${dk ? 'bg-green-900/30' : 'bg-green-100'}` : `${dk ? `bg-red-900/30` : 'bg-red-100'}`}`}>
                   {c.status === 'Settled' ? <CheckCircle className="w-3 h-3 text-green-600" /> : <X className="w-3 h-3 text-red-600" />}
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between">
-                    <p className="text-sm font-medium text-slate-800 dark:text-white">{c.description}</p>
-                    <span className="text-sm font-semibold text-slate-800 dark:text-white">₹{c.amount.toLocaleString('en-IN')}</span>
+                    <p className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'}`}>{c.description}</p>
+                    <span className={`text-sm font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>₹{c.amount.toLocaleString('en-IN')}</span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{c.type} • {c.date} • <span className={c.status === 'Settled' ? 'text-green-600' : 'text-red-500'}>{c.status}</span></p>
+                  <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{c.type} • {c.date} • <span className={c.status === 'Settled' ? 'text-green-600' : 'text-red-500'}>{c.status}</span></p>
                 </div>
               </div>
             ))
@@ -282,22 +282,22 @@ export default function InsurancePlanner() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4 flex items-center gap-2`}>
             <TrendingUp className="w-5 h-5 text-green-500" /> Recommendations
           </h2>
           <div className="space-y-3">
             {coverageGaps.filter(g => g.current < g.recommended).length === 0 ? (
-              <p className="text-center text-slate-400 dark:text-slate-500 py-8">Your coverage looks adequate!</p>
+              <p className={`text-center ${dk ? 'text-slate-500' : 'text-slate-400'} py-8`}>Your coverage looks adequate!</p>
             ) : (
               coverageGaps.filter(g => g.current < g.recommended).map((g, i) => (
-                <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                <div key={i} className={`p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'} border ${dk ? 'border-slate-700' : 'border-slate-100'}`}>
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-sm font-medium text-slate-800 dark:text-white">Increase {g.category}</h4>
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Gap</span>
+                    <h4 className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'}`}>Increase {g.category}</h4>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 ${dk ? 'bg-amber-900/30' : 'text-amber-700'} ${dk ? 'text-amber-400' : ''}`}>Gap</span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Current: {fmt(g.current)} → Recommended: {fmt(g.recommended)}</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1"><Info className="w-3 h-3" /> Gap of {fmt(g.recommended - g.current)}</p>
+                  <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Current: {fmt(g.current)} → Recommended: {fmt(g.recommended)}</p>
+                  <p className={`text-xs ${dk ? 'text-blue-400' : 'text-blue-600'} mt-1 flex items-center gap-1`}><Info className="w-3 h-3" /> Gap of {fmt(g.recommended - g.current)}</p>
                 </div>
               ))
             )}
@@ -306,32 +306,32 @@ export default function InsurancePlanner() {
       </div>
 
       {/* Coverage Calculator */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Coverage Calculator</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Coverage Calculator</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 block mb-2">Age: {calcAge}</label>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-2`}>Age: {calcAge}</label>
             <input type="range" min={18} max={70} value={calcAge} onChange={e => setCalcAge(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 block mb-2">Annual Income: {fmt(calcIncome)}</label>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-2`}>Annual Income: {fmt(calcIncome)}</label>
             <input type="range" min={300000} max={10000000} step={100000} value={calcIncome} onChange={e => setCalcIncome(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
           <div>
-            <label className="text-sm text-slate-500 dark:text-slate-400 block mb-2">Dependents: {calcDependents}</label>
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-2`}>Dependents: {calcDependents}</label>
             <input type="range" min={0} max={6} value={calcDependents} onChange={e => setCalcDependents(Number(e.target.value))} className="w-full accent-blue-600" />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
-            <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">Recommended Life Cover</p>
-            <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{fmt(recommendedLifeCover)}</p>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Based on {10 + calcDependents * 2}x annual income</p>
+          <div className={`p-4 rounded-xl ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} border ${dk ? 'border-blue-800' : 'border-blue-100'}`}>
+            <p className={`text-sm ${dk ? 'text-blue-300' : 'text-blue-700'} mb-1`}>Recommended Life Cover</p>
+            <p className={`text-2xl font-bold ${dk ? 'text-blue-200' : 'text-blue-800'}`}>{fmt(recommendedLifeCover)}</p>
+            <p className={`text-xs ${dk ? 'text-blue-400' : 'text-blue-600'} mt-1`}>Based on {10 + calcDependents * 2}x annual income</p>
           </div>
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800">
-            <p className="text-sm text-red-700 dark:text-red-300 mb-1">Recommended Health Cover</p>
-            <p className="text-2xl font-bold text-red-800 dark:text-red-200">{fmt(recommendedHealthCover)}</p>
-            <p className="text-xs text-red-600 dark:text-red-400 mt-1">Includes ₹{(calcDependents * 200000).toLocaleString('en-IN')} for dependents</p>
+          <div className={`p-4 rounded-xl ${dk ? 'bg-red-900/20' : 'bg-red-50'} border ${dk ? 'border-red-800' : 'border-red-100'}`}>
+            <p className={`text-sm ${dk ? 'text-red-300' : 'text-red-700'} mb-1`}>Recommended Health Cover</p>
+            <p className={`text-2xl font-bold ${dk ? 'text-red-200' : 'text-red-800'}`}>{fmt(recommendedHealthCover)}</p>
+            <p className={`text-xs ${dk ? 'text-red-400' : 'text-red-600'} mt-1`}>Includes ₹{(calcDependents * 200000).toLocaleString('en-IN')} for dependents</p>
           </div>
         </div>
       </div>
@@ -339,39 +339,39 @@ export default function InsurancePlanner() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-lg border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-xl`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{editPolicy !== null ? 'Edit' : 'Add'} Insurance Policy</h3>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>{editPolicy !== null ? 'Edit' : 'Add'} Insurance Policy</h3>
+              <button onClick={() => setShowModal(false)} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Type</label>
-                <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm">
+                <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Type</label>
+                <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`}>
                   {['Health', 'Life', 'Vehicle', 'Home', 'Travel'].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Provider</label>
-                <input value={formData.provider} onChange={e => setFormData({ ...formData, provider: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" placeholder="e.g. Star Health" />
+                <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Provider</label>
+                <input value={formData.provider} onChange={e => setFormData({ ...formData, provider: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} placeholder="e.g. Star Health" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Annual Premium (₹)</label>
-                  <input type="number" value={formData.premium} onChange={e => setFormData({ ...formData, premium: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Annual Premium (₹)</label>
+                  <input type="number" value={formData.premium} onChange={e => setFormData({ ...formData, premium: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Coverage (₹)</label>
-                  <input type="number" value={formData.cover} onChange={e => setFormData({ ...formData, cover: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Coverage (₹)</label>
+                  <input type="number" value={formData.cover} onChange={e => setFormData({ ...formData, cover: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
               </div>
               <div>
-                <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Expiry Date</label>
-                <input type="date" value={formData.expiry} onChange={e => setFormData({ ...formData, expiry: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Expiry Date</label>
+                <input type="date" value={formData.expiry} onChange={e => setFormData({ ...formData, expiry: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
               </div>
             </div>
             <div className="flex gap-3 mt-6 justify-end">
-              <button onClick={() => setShowModal(false)} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm px-4 py-2">Cancel</button>
+              <button onClick={() => setShowModal(false)} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-4 py-2`}>Cancel</button>
               <button onClick={savePolicy} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2">Save Policy</button>
             </div>
           </div>

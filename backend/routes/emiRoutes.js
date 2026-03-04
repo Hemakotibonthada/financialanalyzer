@@ -4146,4 +4146,225 @@ router.post('/balance-transfer-request', authenticate, async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// ─── Bank Deduction & Balance Management ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+
+const BankAccount = require('../models/BankAccount');
+
+/**
+ * @route GET /api/emi/bank-deduction-summary
+ * @desc Get all active EMIs mapped to their deduction bank accounts
+ *       with expected balances needed on each deduction date
+ * @access Private
+ */
+router.get('/bank-deduction-summary', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Fetch active EMIs and user bank accounts in parallel
+    const [emis, bankAccounts] = await Promise.all([
+      EMI.find({ userId, status: 'active', remainingInstallments: { $gt: 0 } })
+        .sort({ nextDueDate: 1 })
+        .lean(),
+      BankAccount.find({ userId, isActive: true })
+        .sort({ bankName: 1 })
+        .lean()
+    ]);
+
+    const bankMap = {};
+    bankAccounts.forEach(b => {
+      bankMap[b._id.toString()] = b;
+    });
+
+    // Build per-EMI deduction info
+    const emiDeductions = emis.map(emi => {
+      const bankId = emi.deductionBankAccountId?.toString();
+      const bank = bankId ? bankMap[bankId] : null;
+      const deductionDate = emi.deductionDay || (emi.nextDueDate ? new Date(emi.nextDueDate).getDate() : null);
+
+      return {
+        _id: emi._id,
+        merchantName: emi.merchantName,
+        productDescription: emi.productDescription,
+        cardProvider: emi.cardProvider,
+        cardLastFourDigits: emi.cardLastFourDigits,
+        emiAmount: emi.emiAmountInINR || emi.emiAmount,
+        currency: emi.currency || 'INR',
+        remainingInstallments: emi.remainingInstallments,
+        totalTenure: emi.totalTenure,
+        paidInstallments: emi.paidInstallments,
+        nextDueDate: emi.nextDueDate,
+        deductionDay: deductionDate,
+        autoDebitEnabled: emi.autoDebitEnabled || false,
+        minimumBalanceRequired: emi.minimumBalanceRequired || 0,
+        deductionBank: bank ? {
+          _id: bank._id,
+          bankName: bank.bankName,
+          accountNumber: bank.accountNumber,
+          accountType: bank.accountType,
+          currentBalance: bank.balance,
+          color: bank.color,
+          displayName: `${bank.bankName} - ${bank.accountType} (${bank.accountNumber})`
+        } : (emi.deductionBankName ? {
+          bankName: emi.deductionBankName,
+          accountNumber: emi.deductionAccountNumber || '----',
+          displayName: `${emi.deductionBankName} (${emi.deductionAccountNumber || '----'})`
+        } : null)
+      };
+    });
+
+    // Aggregate per-bank totals for the upcoming month
+    const bankTotals = {};
+    emiDeductions.forEach(ed => {
+      const key = ed.deductionBank?._id?.toString() || ed.deductionBank?.bankName || 'unassigned';
+      if (!bankTotals[key]) {
+        bankTotals[key] = {
+          bank: ed.deductionBank,
+          totalEmiAmount: 0,
+          emiCount: 0,
+          emis: []
+        };
+      }
+      bankTotals[key].totalEmiAmount += ed.emiAmount;
+      bankTotals[key].emiCount += 1;
+      bankTotals[key].emis.push({
+        _id: ed._id,
+        merchantName: ed.merchantName,
+        emiAmount: ed.emiAmount,
+        deductionDay: ed.deductionDay,
+        autoDebitEnabled: ed.autoDebitEnabled
+      });
+    });
+
+    // Compute expected balance & shortfall for each bank
+    const bankSummaries = Object.values(bankTotals).map(bt => {
+      const currentBalance = bt.bank?.currentBalance ?? null;
+      const totalNeeded = bt.totalEmiAmount + (bt.emis.reduce((s, e) => s + (e.minimumBalanceRequired || 0), 0));
+      const shortfall = currentBalance !== null ? Math.max(0, totalNeeded - currentBalance) : null;
+      const sufficient = currentBalance !== null ? currentBalance >= totalNeeded : null;
+
+      return {
+        ...bt,
+        totalNeeded,
+        currentBalance,
+        shortfall,
+        sufficient
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        emiDeductions,
+        bankSummaries,
+        bankAccounts: bankAccounts.map(b => ({
+          _id: b._id,
+          bankName: b.bankName,
+          accountNumber: b.accountNumber,
+          accountType: b.accountType,
+          balance: b.balance,
+          color: b.color,
+          displayName: `${b.bankName} - ${b.accountType} (${b.accountNumber})`
+        })),
+        totalMonthlyEmi: emiDeductions.reduce((s, e) => s + e.emiAmount, 0),
+        unassignedCount: emiDeductions.filter(e => !e.deductionBank).length
+      }
+    });
+  } catch (error) {
+    logger.error('Bank deduction summary error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch bank deduction summary', error: error.message });
+  }
+});
+
+/**
+ * @route PATCH /api/emi/:id/bank-deduction
+ * @desc Assign / update a bank account for EMI deduction
+ * @access Private
+ */
+router.patch('/:id/bank-deduction', authenticate, async (req, res) => {
+  try {
+    const emi = await EMI.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!emi) return res.status(404).json({ success: false, message: 'EMI not found' });
+
+    const { bankAccountId, deductionDay, autoDebitEnabled, minimumBalanceRequired, deductionBankName, deductionAccountNumber } = req.body;
+
+    if (bankAccountId) {
+      const bank = await BankAccount.findOne({ _id: bankAccountId, userId: req.user._id, isActive: true });
+      if (!bank) return res.status(404).json({ success: false, message: 'Bank account not found' });
+      emi.deductionBankAccountId = bank._id;
+      emi.deductionBankName = bank.bankName;
+      emi.deductionAccountNumber = bank.accountNumber;
+    } else if (deductionBankName) {
+      // Allow manual bank name entry when no linked account
+      emi.deductionBankAccountId = undefined;
+      emi.deductionBankName = deductionBankName;
+      emi.deductionAccountNumber = deductionAccountNumber || '';
+    }
+
+    if (deductionDay !== undefined) emi.deductionDay = deductionDay;
+    if (autoDebitEnabled !== undefined) emi.autoDebitEnabled = autoDebitEnabled;
+    if (minimumBalanceRequired !== undefined) emi.minimumBalanceRequired = minimumBalanceRequired;
+
+    await emi.save();
+
+    res.json({
+      success: true,
+      message: 'Bank deduction details updated',
+      data: {
+        _id: emi._id,
+        deductionBankAccountId: emi.deductionBankAccountId,
+        deductionBankName: emi.deductionBankName,
+        deductionAccountNumber: emi.deductionAccountNumber,
+        deductionDay: emi.deductionDay,
+        autoDebitEnabled: emi.autoDebitEnabled,
+        minimumBalanceRequired: emi.minimumBalanceRequired
+      }
+    });
+  } catch (error) {
+    logger.error('Bank deduction update error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update bank deduction', error: error.message });
+  }
+});
+
+/**
+ * @route PATCH /api/emi/bulk-assign-bank
+ * @desc Bulk-assign a bank account to multiple EMIs at once
+ * @access Private
+ */
+router.patch('/bulk-assign-bank', authenticate, async (req, res) => {
+  try {
+    const { emiIds, bankAccountId, deductionDay, autoDebitEnabled, minimumBalanceRequired } = req.body;
+    if (!Array.isArray(emiIds) || emiIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'emiIds array required' });
+    }
+
+    const bank = await BankAccount.findOne({ _id: bankAccountId, userId: req.user._id, isActive: true });
+    if (!bank) return res.status(404).json({ success: false, message: 'Bank account not found' });
+
+    const updateFields = {
+      deductionBankAccountId: bank._id,
+      deductionBankName: bank.bankName,
+      deductionAccountNumber: bank.accountNumber
+    };
+    if (deductionDay) updateFields.deductionDay = deductionDay;
+    if (autoDebitEnabled !== undefined) updateFields.autoDebitEnabled = autoDebitEnabled;
+    if (minimumBalanceRequired !== undefined) updateFields.minimumBalanceRequired = minimumBalanceRequired;
+
+    const result = await EMI.updateMany(
+      { _id: { $in: emiIds }, userId: req.user._id, status: 'active' },
+      { $set: updateFields }
+    );
+
+    res.json({
+      success: true,
+      message: `Updated ${result.modifiedCount} EMIs`,
+      data: { modifiedCount: result.modifiedCount }
+    });
+  } catch (error) {
+    logger.error('Bulk assign bank error:', error);
+    res.status(500).json({ success: false, message: 'Bulk assign failed', error: error.message });
+  }
+});
+
 module.exports = router;

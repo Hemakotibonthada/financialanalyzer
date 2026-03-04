@@ -2,7 +2,7 @@
 // ENTERPRISE REPORTS PAGE — PDF-Ready Financial Report Generation
 // ============================================================================
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/MainLayout';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import {

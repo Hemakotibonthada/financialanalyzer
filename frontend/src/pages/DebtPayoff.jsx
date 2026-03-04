@@ -157,14 +157,14 @@ export default function DebtPayoff() {
 
   return (
     <MainLayout title="Debt Payoff">
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
+    <div className={`min-h-screen ${dk ? 'bg-slate-900' : 'bg-slate-50'} p-4 md:p-6 space-y-6`}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-slate-800'} flex items-center gap-2`}>
             <TrendingDown className="w-7 h-7 text-green-600" /> Debt Payoff Planner
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Strategize your way to becoming debt-free</p>
+          <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>Strategize your way to becoming debt-free</p>
         </div>
         <button onClick={() => setShowAddForm(true)} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 flex items-center gap-2 w-fit">
           <Plus className="w-4 h-4" /> Add Debt
@@ -179,13 +179,13 @@ export default function DebtPayoff() {
           { label: 'Debt-Free Date', value: payoffDate, icon: Calendar, color: 'text-green-600', sub: `${yearsLeft}y ${monthsLeft}m remaining` },
           { label: 'Interest Saved', value: fmt(interestSaved), icon: Target, color: 'text-purple-600', sub: 'vs minimum payments only' },
         ].map((c, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div key={i} className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-500 dark:text-slate-400">{c.label}</span>
+              <span className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{c.label}</span>
               <c.icon className={`w-5 h-5 ${c.color}`} />
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{c.value}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{c.sub}</p>
+            <p className={`text-3xl font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{c.value}</p>
+            <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>{c.sub}</p>
           </div>
         ))}
       </div>
@@ -218,34 +218,34 @@ export default function DebtPayoff() {
       </div>
 
       {/* Debt List */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Your Debts</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Your Debts</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Debt</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Balance</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Rate</th>
-                <th className="text-right py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Min Payment</th>
-                <th className="text-center py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Type</th>
-                <th className="text-center py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">Action</th>
+              <tr className={`border-b ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+                <th className={`text-left py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Debt</th>
+                <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Balance</th>
+                <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Rate</th>
+                <th className={`text-right py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Min Payment</th>
+                <th className={`text-center py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Type</th>
+                <th className={`text-center py-3 px-4 ${dk ? 'text-slate-400' : 'text-slate-500'} font-medium`}>Action</th>
               </tr>
             </thead>
             <tbody>
               {debts.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">No debts added yet. Click &quot;Add Debt&quot; to get started.</td></tr>
+                <tr><td colSpan={6} className={`py-8 text-center ${dk ? 'text-slate-500' : 'text-slate-400'}`}>No debts added yet. Click &quot;Add Debt&quot; to get started.</td></tr>
               )}
               {debts.sort((a, b) => b.rate - a.rate).map((d) => (
-                <tr key={d.id} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                  <td className="py-3 px-4 text-slate-800 dark:text-white font-medium">{d.name}</td>
-                  <td className="py-3 px-4 text-right text-slate-800 dark:text-white font-semibold">{fmt(d.balance)}</td>
+                <tr key={d.id} className={`border-b ${dk ? 'border-slate-700/50' : 'border-slate-100'} ${dk ? 'hover:bg-slate-700/30' : 'hover:bg-slate-50'}`}>
+                  <td className={`py-3 px-4 ${dk ? 'text-white' : 'text-slate-800'} font-medium`}>{d.name}</td>
+                  <td className={`py-3 px-4 text-right ${dk ? 'text-white' : 'text-slate-800'} font-semibold`}>{fmt(d.balance)}</td>
                   <td className="py-3 px-4 text-right">
                     <span className={`font-medium ${d.rate >= 20 ? 'text-red-500' : d.rate >= 10 ? 'text-amber-500' : 'text-green-500'}`}>{d.rate}%</span>
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-300">₹{d.minPayment.toLocaleString('en-IN')}</td>
+                  <td className={`py-3 px-4 text-right ${dk ? 'text-slate-300' : 'text-slate-600'}`}>₹{d.minPayment.toLocaleString('en-IN')}</td>
                   <td className="py-3 px-4 text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${d.type === 'Revolving' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : d.type === 'Secured' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${d.type === `Revolving` ? `${dk ? 'bg-red-900/30 text-red-400` : `bg-red-100 text-red-700`}` : d.type === `Secured` ? `${dk ? `bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'}` : `${dk ? `bg-amber-900/30 text-amber-400` : `bg-amber-100 text-amber-700`}`}`}>
                       {d.type}
                     </span>
                   </td>
@@ -261,47 +261,47 @@ export default function DebtPayoff() {
 
       {/* Strategy Comparison */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Payoff Strategy</h2>
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Payoff Strategy</h2>
           <div className="flex gap-3 mb-4">
             <button onClick={() => setSelectedStrategy('avalanche')}
-              className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 ${selectedStrategy === 'avalanche' ? 'border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30'}`}>
+              className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 ${selectedStrategy === `avalanche` ? `${dk ? 'border-blue-600 bg-blue-900/20' : 'border-blue-300 bg-blue-50'}` : `${dk ? `border-slate-700 bg-slate-700/30` : 'border-slate-200 bg-slate-50'}`}`}>
               <Zap className={`w-6 h-6 ${selectedStrategy === 'avalanche' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span className={`text-sm font-medium ${selectedStrategy === 'avalanche' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>Avalanche</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">Highest rate first</span>
+              <span className={`text-sm font-medium ${selectedStrategy === `avalanche` ? `${dk ? 'text-blue-300' : 'text-blue-700'}` : `${dk ? `text-slate-300` : 'text-slate-700'}`}`}>Avalanche</span>
+              <span className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Highest rate first</span>
             </button>
             <button onClick={() => setSelectedStrategy('snowball')}
-              className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 ${selectedStrategy === 'snowball' ? 'border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30'}`}>
+              className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 ${selectedStrategy === `snowball` ? `${dk ? 'border-blue-600 bg-blue-900/20' : 'border-blue-300 bg-blue-50'}` : `${dk ? `border-slate-700 bg-slate-700/30` : 'border-slate-200 bg-slate-50'}`}`}>
               <Snowflake className={`w-6 h-6 ${selectedStrategy === 'snowball' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span className={`text-sm font-medium ${selectedStrategy === 'snowball' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>Snowball</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">Smallest balance first</span>
+              <span className={`text-sm font-medium ${selectedStrategy === `snowball` ? `${dk ? 'text-blue-300' : 'text-blue-700'}` : `${dk ? `text-slate-300` : 'text-slate-700'}`}`}>Snowball</span>
+              <span className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Smallest balance first</span>
             </button>
           </div>
           <div className="space-y-3">
-            <div className="flex justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30">
-              <span className="text-sm text-slate-600 dark:text-slate-300">Avalanche - Total Interest</span>
-              <span className="text-sm font-bold text-slate-800 dark:text-white">{fmt(avalanche.totalInterest)} ({avalanche.months} months)</span>
+            <div className={`flex justify-between p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'}`}>
+              <span className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-600'}`}>Avalanche - Total Interest</span>
+              <span className={`text-sm font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(avalanche.totalInterest)} ({avalanche.months} months)</span>
             </div>
-            <div className="flex justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30">
-              <span className="text-sm text-slate-600 dark:text-slate-300">Snowball - Total Interest</span>
-              <span className="text-sm font-bold text-slate-800 dark:text-white">{fmt(snowball.totalInterest)} ({snowball.months} months)</span>
+            <div className={`flex justify-between p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'}`}>
+              <span className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-600'}`}>Snowball - Total Interest</span>
+              <span className={`text-sm font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(snowball.totalInterest)} ({snowball.months} months)</span>
             </div>
-            <div className="flex justify-between p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-              <span className="text-sm text-green-700 dark:text-green-300">Interest Difference</span>
-              <span className="text-sm font-bold text-green-700 dark:text-green-300">{fmt(Math.abs(avalanche.totalInterest - snowball.totalInterest))}</span>
+            <div className={`flex justify-between p-3 rounded-xl ${dk ? 'bg-green-900/20' : 'bg-green-50'} border ${dk ? 'border-green-800' : 'border-green-100'}`}>
+              <span className={`text-sm ${dk ? 'text-green-300' : 'text-green-700'}`}>Interest Difference</span>
+              <span className={`text-sm font-bold ${dk ? 'text-green-300' : 'text-green-700'}`}>{fmt(Math.abs(avalanche.totalInterest - snowball.totalInterest))}</span>
             </div>
           </div>
         </div>
 
         {/* Extra Payment Calculator */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4 flex items-center gap-2`}>
             <Calculator className="w-5 h-5 text-blue-500" /> Extra Payment Calculator
           </h2>
           <div className="mb-6">
-            <label className="text-sm text-slate-500 dark:text-slate-400 flex justify-between mb-2">
+            <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} flex justify-between mb-2`}>
               <span>Extra Monthly Payment</span>
-              <span className="font-semibold text-slate-800 dark:text-white">₹{extraPayment.toLocaleString('en-IN')}</span>
+              <span className={`font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>₹{extraPayment.toLocaleString('en-IN')}</span>
             </label>
             <input type="range" min={0} max={50000} step={500} value={extraPayment} onChange={e => setExtraPayment(Number(e.target.value))} className="w-full accent-blue-600" />
             <div className="flex justify-between text-xs text-slate-400 mt-1">
@@ -309,25 +309,25 @@ export default function DebtPayoff() {
             </div>
           </div>
           <div className="space-y-3">
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
-              <p className="text-xs text-blue-600 dark:text-blue-400">With extra payments</p>
-              <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{activeResult.months} months • {fmt(activeResult.totalInterest)} interest</p>
+            <div className={`p-3 rounded-xl ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} border ${dk ? 'border-blue-800' : 'border-blue-100'}`}>
+              <p className={`text-xs ${dk ? 'text-blue-400' : 'text-blue-600'}`}>With extra payments</p>
+              <p className={`text-xl font-bold ${dk ? 'text-blue-200' : 'text-blue-800'}`}>{activeResult.months} months • {fmt(activeResult.totalInterest)} interest</p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Without extra payments</p>
-              <p className="text-xl font-bold text-slate-800 dark:text-white">{noExtra.months} months • {fmt(noExtra.totalInterest)} interest</p>
+            <div className={`p-3 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'} border ${dk ? 'border-slate-700' : 'border-slate-100'}`}>
+              <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Without extra payments</p>
+              <p className={`text-xl font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{noExtra.months} months • {fmt(noExtra.totalInterest)} interest</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-              <p className="text-xs text-green-600 dark:text-green-400">You save</p>
-              <p className="text-xl font-bold text-green-700 dark:text-green-300">{fmt(interestSaved)} & {noExtra.months - activeResult.months} months earlier!</p>
+            <div className={`p-3 rounded-xl ${dk ? 'bg-green-900/20' : 'bg-green-50'} border ${dk ? 'border-green-800' : 'border-green-100'}`}>
+              <p className={`text-xs ${dk ? 'text-green-400' : 'text-green-600'}`}>You save</p>
+              <p className={`text-xl font-bold ${dk ? 'text-green-300' : 'text-green-700'}`}>{fmt(interestSaved)} & {noExtra.months - activeResult.months} months earlier!</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Payoff Timeline Chart */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Payoff Timeline Comparison</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Payoff Timeline Comparison</h2>
         <ResponsiveContainer width="100%" height={320}>
           <AreaChart data={combinedTimeline}>
             <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -341,23 +341,23 @@ export default function DebtPayoff() {
       </div>
 
       {/* Payment Schedule */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Payment Priority ({selectedStrategy === 'avalanche' ? 'Avalanche' : 'Snowball'} Order)</h2>
+      <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'} mb-4`}>Payment Priority ({selectedStrategy === 'avalanche' ? 'Avalanche' : 'Snowball'} Order)</h2>
         <div className="space-y-3">
           {paymentSchedule.map((d, i) => (
-            <div key={d.id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${i === 0 ? 'bg-blue-600' : 'bg-slate-400 dark:bg-slate-600'}`}>
+            <div key={d.id} className={`flex items-center gap-4 p-4 rounded-xl ${dk ? 'bg-slate-700/30' : 'bg-slate-50'} border ${dk ? 'border-slate-700' : 'border-slate-100'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${i === 0 ? 'bg-blue-600' : `${dk ? 'bg-slate-600' : 'bg-slate-400'}`}`}>
                 {d.order}
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-800 dark:text-white">{d.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{d.rate}% APR • Monthly interest: ₹{d.monthlyInterest.toLocaleString('en-IN')}</p>
+                <p className={`text-sm font-medium ${dk ? 'text-white' : 'text-slate-800'}`}>{d.name}</p>
+                <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{d.rate}% APR • Monthly interest: ₹{d.monthlyInterest.toLocaleString('en-IN')}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-bold text-slate-800 dark:text-white">{fmt(d.balance)}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Min: ₹{d.minPayment.toLocaleString('en-IN')}/mo</p>
+                <p className={`text-sm font-bold ${dk ? 'text-white' : 'text-slate-800'}`}>{fmt(d.balance)}</p>
+                <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'}`}>Min: ₹{d.minPayment.toLocaleString('en-IN')}/mo</p>
               </div>
-              {i === 0 && <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Focus</span>}
+              {i === 0 && <span className={`px-2 py-1 rounded-full text-xs font-medium bg-blue-100 ${dk ? 'bg-blue-900/30' : 'text-blue-700'} ${dk ? 'text-blue-400' : ''}`}>Focus</span>}
             </div>
           ))}
         </div>
@@ -366,41 +366,41 @@ export default function DebtPayoff() {
       {/* Add Debt Modal */}
       {showAddForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-lg border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-xl`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Add New Debt</h3>
-              <button onClick={() => setShowAddForm(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>Add New Debt</h3>
+              <button onClick={() => setShowAddForm(false)} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Name</label>
-                <input value={newDebt.name} onChange={e => setNewDebt({ ...newDebt, name: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" placeholder="e.g. Personal Loan" />
+                <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Name</label>
+                <input value={newDebt.name} onChange={e => setNewDebt({ ...newDebt, name: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} placeholder="e.g. Personal Loan" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Balance (₹)</label>
-                  <input type="number" value={newDebt.balance} onChange={e => setNewDebt({ ...newDebt, balance: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Balance (₹)</label>
+                  <input type="number" value={newDebt.balance} onChange={e => setNewDebt({ ...newDebt, balance: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Interest Rate (%)</label>
-                  <input type="number" step="0.1" value={newDebt.rate} onChange={e => setNewDebt({ ...newDebt, rate: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Interest Rate (%)</label>
+                  <input type="number" step="0.1" value={newDebt.rate} onChange={e => setNewDebt({ ...newDebt, rate: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Min Payment (₹)</label>
-                  <input type="number" value={newDebt.minPayment} onChange={e => setNewDebt({ ...newDebt, minPayment: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm" />
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Min Payment (₹)</label>
+                  <input type="number" value={newDebt.minPayment} onChange={e => setNewDebt({ ...newDebt, minPayment: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`} />
                 </div>
                 <div>
-                  <label className="text-sm text-slate-500 dark:text-slate-400 block mb-1">Type</label>
-                  <select value={newDebt.type} onChange={e => setNewDebt({ ...newDebt, type: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white px-3 py-2 text-sm">
+                  <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Type</label>
+                  <select value={newDebt.type} onChange={e => setNewDebt({ ...newDebt, type: e.target.value })} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`}>
                     <option>Secured</option><option>Unsecured</option><option>Revolving</option>
                   </select>
                 </div>
               </div>
             </div>
             <div className="flex gap-3 mt-6 justify-end">
-              <button onClick={() => setShowAddForm(false)} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm px-4 py-2">Cancel</button>
+              <button onClick={() => setShowAddForm(false)} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-4 py-2`}>Cancel</button>
               <button onClick={addDebt} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2">Add Debt</button>
             </div>
           </div>

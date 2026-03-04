@@ -2,7 +2,7 @@
 // ENTERPRISE FINANCIAL HEALTH PAGE — Comprehensive Health Score & Analysis
 // ============================================================================
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/MainLayout';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import {

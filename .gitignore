@@ -49,3 +49,8 @@ last_email_id.txt
 *.dll
 *.so
 *.dylib
+
+script-output.txt
+*.transform.js
+add-theme-to-pages.js
+

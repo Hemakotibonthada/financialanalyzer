@@ -138,17 +138,17 @@ export default function NPS() {
 
   return (
     <MainLayout title="NPS">
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
+    <div className={`min-h-screen ${dk ? 'bg-gray-900' : 'bg-gray-50'} p-4 md:p-6`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
             <Landmark className="w-7 h-7 text-indigo-600" /> NPS Tracker
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">National Pension System management</p>
+          <p className={`${dk ? 'text-gray-400' : 'text-gray-500'} text-sm mt-1`}>National Pension System management</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowCalc(!showCalc)} className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+          <button onClick={() => setShowCalc(!showCalc)} className={`flex items-center gap-2 px-4 py-2 border ${dk ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'} rounded-lg`}>
             <Calculator className="w-4 h-4" /> Calculator
           </button>
           <button onClick={() => setShowContribForm(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
@@ -194,38 +194,38 @@ export default function NPS() {
       {/* Subscriber Details & Tax Benefits */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Current Age', value: `${currentAge} years`, sub: `Retire at ${calcRetireAge}`, icon: <Users className="w-5 h-5" />, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/40' },
-          { label: 'Years to Retire', value: yearsToRetire, icon: <Clock className="w-5 h-5" />, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/40' },
-          { label: 'Tax Benefit (80CCD)', value: `₹${taxBenefit.total.toLocaleString()}`, sub: 'Total deductions/yr', icon: <Shield className="w-5 h-5" />, color: 'text-green-600 bg-green-100 dark:bg-green-900/40' },
-          { label: 'Total Corpus', value: `₹${totalBalance.toLocaleString()}`, icon: <IndianRupee className="w-5 h-5" />, color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/40' },
+          { label: 'Current Age', value: `${currentAge} years`, sub: `Retire at ${calcRetireAge}`, icon: <Users className="w-5 h-5" />, color: dk ? 'text-blue-600 bg-blue-900/40' : 'text-blue-600 bg-blue-100' },
+          { label: 'Years to Retire', value: yearsToRetire, icon: <Clock className="w-5 h-5" />, color: dk ? 'text-purple-600 bg-purple-900/40' : 'text-purple-600 bg-purple-100' },
+          { label: 'Tax Benefit (80CCD)', value: `₹${taxBenefit.total.toLocaleString()}`, sub: 'Total deductions/yr', icon: <Shield className="w-5 h-5" />, color: dk ? 'text-green-600 bg-green-900/40' : 'text-green-600 bg-green-100' },
+          { label: 'Total Corpus', value: `₹${totalBalance.toLocaleString()}`, icon: <IndianRupee className="w-5 h-5" />, color: dk ? 'text-orange-600 bg-orange-900/40' : 'text-orange-600 bg-orange-100' },
         ].map((c, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div key={i} className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-4 shadow-sm border`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{c.label}</span>
+              <span className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{c.label}</span>
               <span className={`p-1.5 rounded-lg ${c.color}`}>{c.icon}</span>
             </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{c.value}</p>
+            <p className={`text-xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{c.value}</p>
             {c.sub && <p className="text-xs text-gray-500 mt-1">{c.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* Tax Benefit Breakdown */}
-      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6">
-        <h3 className="font-medium text-green-800 dark:text-green-200 mb-3 flex items-center gap-2"><Shield className="w-5 h-5" /> Tax Benefit Calculation (80CCD)</h3>
+      <div className={`${dk ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200'} border rounded-xl p-4 mb-6`}>
+        <h3 className={`font-medium ${dk ? 'text-green-200' : 'text-green-800'} mb-3 flex items-center gap-2`}><Shield className="w-5 h-5" /> Tax Benefit Calculation (80CCD)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-          <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-500 dark:text-gray-400">80CCD(1) - Self</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">₹{taxBenefit.section80CCD1.toLocaleString()}</p>
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-white'} rounded-lg`}>
+            <p className={dk ? 'text-gray-400' : 'text-gray-500'}>80CCD(1) - Self</p>
+            <p className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>₹{taxBenefit.section80CCD1.toLocaleString()}</p>
             <p className="text-xs text-gray-400">Within 80C limit of ₹1.5L</p>
           </div>
-          <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-500 dark:text-gray-400">80CCD(1B) - Additional</p>
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-white'} rounded-lg`}>
+            <p className={dk ? 'text-gray-400' : 'text-gray-500'}>80CCD(1B) - Additional</p>
             <p className="text-lg font-bold text-green-600">₹{taxBenefit.section80CCD1B.toLocaleString()}</p>
             <p className="text-xs text-gray-400">Extra ₹50K over 80C</p>
           </div>
-          <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-500 dark:text-gray-400">80CCD(2) - Employer</p>
+          <div className={`p-3 ${dk ? 'bg-gray-800' : 'bg-white'} rounded-lg`}>
+            <p className={dk ? 'text-gray-400' : 'text-gray-500'}>80CCD(2) - Employer</p>
             <p className="text-lg font-bold text-blue-600">₹{taxBenefit.section80CCD2.toLocaleString()}</p>
             <p className="text-xs text-gray-400">No upper limit cap</p>
           </div>
@@ -234,9 +234,9 @@ export default function NPS() {
 
       {/* Asset Allocation PieCharts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Tier 1 Allocation (E/C/G/A)</h2>
+            <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Tier 1 Allocation (E/C/G/A)</h2>
             <button onClick={() => setShowRebalance(true)} className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Rebalance</button>
           </div>
           <ResponsiveContainer width="100%" height={220}>
@@ -249,8 +249,8 @@ export default function NPS() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tier 2 Allocation</h2>
+        <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Tier 2 Allocation</h2>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={tier2AllocationData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name.split(' ')[0]} ${percent}%`}>
@@ -263,8 +263,8 @@ export default function NPS() {
       </div>
 
       {/* NAV History */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-blue-500" /> NAV History (Per Fund)</h2>
+      <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><TrendingUp className="w-5 h-5 text-blue-500" /> NAV History (Per Fund)</h2>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={navHistory}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -278,8 +278,8 @@ export default function NPS() {
       </div>
 
       {/* Monthly Contributions */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Calendar className="w-5 h-5 text-purple-500" /> Monthly Contributions</h2>
+      <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Calendar className="w-5 h-5 text-purple-500" /> Monthly Contributions</h2>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={monthlyContributions}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -294,17 +294,17 @@ export default function NPS() {
       </div>
 
       {/* Fund Manager Comparison */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Fund Manager Comparison</h2>
+      <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Fund Manager Comparison</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"><th className="pb-2 pr-3">Fund Manager</th><th className="pb-2 pr-3">Tier 1 NAV</th><th className="pb-2 pr-3">Tier 2 NAV</th><th className="pb-2 pr-3">1Y Returns</th><th className="pb-2">3Y Returns</th></tr></thead>
+            <thead><tr className={`text-left ${dk ? 'text-gray-400 border-gray-700' : 'text-gray-500'} border-b`}><th className="pb-2 pr-3">Fund Manager</th><th className="pb-2 pr-3">Tier 1 NAV</th><th className="pb-2 pr-3">Tier 2 NAV</th><th className="pb-2 pr-3">1Y Returns</th><th className="pb-2">3Y Returns</th></tr></thead>
             <tbody>
               {fundManagers.map((fm, i) => (
-                <tr key={i} className={`border-b dark:border-gray-700 ${fm.name === account.fundManager ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}>
-                  <td className="py-2 pr-3 font-medium text-gray-900 dark:text-white">{fm.name} {fm.name === account.fundManager && <span className="text-xs text-indigo-500 ml-1">(Current)</span>}</td>
-                  <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">₹{fm.tier1NAV}</td>
-                  <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">₹{fm.tier2NAV}</td>
+                <tr key={i} className={`${dk ? 'border-gray-700' : ''} border-b ${fm.name === account.fundManager ? (dk ? 'bg-indigo-900/20' : 'bg-indigo-50') : ''}`}>
+                  <td className={`py-2 pr-3 font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{fm.name} {fm.name === account.fundManager && <span className="text-xs text-indigo-500 ml-1">(Current)</span>}</td>
+                  <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>₹{fm.tier1NAV}</td>
+                  <td className={`py-2 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>₹{fm.tier2NAV}</td>
                   <td className="py-2 pr-3 text-green-600 font-medium">{fm.returns1Y}%</td>
                   <td className="py-2 text-green-600 font-medium">{fm.returns3Y}%</td>
                 </tr>
@@ -316,13 +316,13 @@ export default function NPS() {
 
       {/* Partial Withdrawal & Annuity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">{partialWithdrawalEligible ? <Unlock className="w-5 h-5 text-green-500" /> : <Lock className="w-5 h-5 text-red-500" />}Partial Withdrawal</h2>
-          <div className={`p-3 rounded-lg mb-3 ${partialWithdrawalEligible ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-            <p className="font-medium text-gray-900 dark:text-white">{partialWithdrawalEligible ? 'Eligible for partial withdrawal' : 'Not eligible yet'}</p>
+        <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>{partialWithdrawalEligible ? <Unlock className="w-5 h-5 text-green-500" /> : <Lock className="w-5 h-5 text-red-500" />}Partial Withdrawal</h2>
+          <div className={`p-3 rounded-lg mb-3 ${partialWithdrawalEligible ? (dk ? 'bg-green-900/20' : 'bg-green-50') : (dk ? 'bg-red-900/20' : 'bg-red-50')}`}>
+            <p className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{partialWithdrawalEligible ? 'Eligible for partial withdrawal' : 'Not eligible yet'}</p>
             <p className="text-xs text-gray-500 mt-1">Requires minimum 3 years of contribution</p>
           </div>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <div className={`space-y-2 text-sm ${dk ? 'text-gray-300' : 'text-gray-600'}`}>
             <p>• Max 25% of own contributions (Tier 1)</p>
             <p>• Allowed for: children's education, marriage, home purchase, medical treatment</p>
             <p>• Maximum 3 times during entire tenure</p>
@@ -330,25 +330,25 @@ export default function NPS() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-indigo-500" /> Annuity Estimator at Retirement</h2>
+        <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Target className="w-5 h-5 text-indigo-500" /> Annuity Estimator at Retirement</h2>
           <div className="space-y-3">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Projected Corpus at {calcRetireAge}</p>
+            <div className={`p-3 ${dk ? 'bg-indigo-900/20' : 'bg-indigo-50'} rounded-lg`}>
+              <p className={`text-sm ${dk ? 'text-gray-300' : 'text-gray-600'}`}>Projected Corpus at {calcRetireAge}</p>
               <p className="text-2xl font-bold text-indigo-600">₹{annuityEstimate.corpus.toLocaleString()}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className={`p-3 ${dk ? 'bg-green-900/20' : 'bg-green-50'} rounded-lg`}>
                 <p className="text-xs text-gray-500">Lump Sum (60%)</p>
                 <p className="font-bold text-green-600">₹{annuityEstimate.lumpSum.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div className={`p-3 ${dk ? 'bg-purple-900/20' : 'bg-purple-50'} rounded-lg`}>
                 <p className="text-xs text-gray-500">Annuity (40%)</p>
                 <p className="font-bold text-purple-600">₹{annuityEstimate.annuityCorpus.toLocaleString()}</p>
               </div>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Estimated Monthly Pension</p>
+            <div className={`p-3 ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} rounded-lg text-center`}>
+              <p className={`text-sm ${dk ? 'text-gray-300' : 'text-gray-600'}`}>Estimated Monthly Pension</p>
               <p className="text-2xl font-bold text-blue-600">₹{annuityEstimate.monthlyPension.toLocaleString()}</p>
               <p className="text-xs text-gray-500">@ 6% annuity rate</p>
             </div>
@@ -358,15 +358,15 @@ export default function NPS() {
 
       {/* Calculator */}
       {showCalc && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+        <div className={`${dk ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-5 shadow-sm border mb-6`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><Calculator className="w-5 h-5 text-indigo-500" /> NPS Calculator</h2>
+            <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}><Calculator className="w-5 h-5 text-indigo-500" /> NPS Calculator</h2>
             <button onClick={() => setShowCalc(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly Contribution (₹)</label><input type="number" value={calcMonthly} onChange={e => setCalcMonthly(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Return (%)</label><input type="number" value={calcRate} onChange={e => setCalcRate(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Retirement Age</label><input type="number" value={calcRetireAge} onChange={e => setCalcRetireAge(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
+            <div><label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Monthly Contribution (₹)</label><input type="number" value={calcMonthly} onChange={e => setCalcMonthly(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? 'border-gray-600 bg-gray-700 text-white' : ''}`} /></div>
+            <div><label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Expected Return (%)</label><input type="number" value={calcRate} onChange={e => setCalcRate(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? 'border-gray-600 bg-gray-700 text-white' : ''}`} /></div>
+            <div><label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Retirement Age</label><input type="number" value={calcRetireAge} onChange={e => setCalcRetireAge(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? 'border-gray-600 bg-gray-700 text-white' : ''}`} /></div>
           </div>
         </div>
       )}
@@ -374,28 +374,28 @@ export default function NPS() {
       {/* Rebalance Modal */}
       {showRebalance && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-xl">
+          <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-md shadow-xl`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><RefreshCw className="w-5 h-5" /> Rebalance Tier 1</h2>
+              <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}><RefreshCw className="w-5 h-5" /> Rebalance Tier 1</h2>
               <button onClick={() => setShowRebalance(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
               {ASSET_CLASSES.map(a => (
                 <div key={a.key}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-700 dark:text-gray-300">{a.label}</span>
-                    <span className="text-gray-500 dark:text-gray-400">Max: {a.maxTier1}%</span>
+                    <span className={dk ? 'text-gray-300' : 'text-gray-700'}>{a.label}</span>
+                    <span className={dk ? 'text-gray-400' : 'text-gray-500'}>Max: {a.maxTier1}%</span>
                   </div>
                   <input type="range" min={0} max={a.maxTier1} value={newAllocation[a.key]} onChange={e => setNewAllocation(p => ({ ...p, [a.key]: Number(e.target.value) }))} className="w-full" />
                   <p className="text-xs text-right text-gray-500">{newAllocation[a.key]}%</p>
                 </div>
               ))}
-              <div className={`p-2 rounded text-center text-sm font-medium ${Object.values(newAllocation).reduce((s, v) => s + v, 0) === 100 ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : 'bg-red-100 text-red-700 dark:bg-red-900/30'}`}>
+              <div className={`p-2 rounded text-center text-sm font-medium ${Object.values(newAllocation).reduce((s, v) => s + v, 0) === 100 ? (dk ? 'bg-green-900/30 text-green-700' : 'bg-green-100 text-green-700') : (dk ? 'bg-red-900/30 text-red-700' : 'bg-red-100 text-red-700')}`}>
                 Total: {Object.values(newAllocation).reduce((s, v) => s + v, 0)}% {Object.values(newAllocation).reduce((s, v) => s + v, 0) === 100 ? '✓' : '(must be 100%)'}
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowRebalance(false)} className="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">Cancel</button>
+              <button onClick={() => setShowRebalance(false)} className={`flex-1 py-2 border ${dk ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} rounded-lg`}>Cancel</button>
               <button onClick={handleRebalance} disabled={Object.values(newAllocation).reduce((s, v) => s + v, 0) !== 100} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">Rebalance</button>
             </div>
           </div>
@@ -405,14 +405,14 @@ export default function NPS() {
       {/* Add Contribution Modal */}
       {showContribForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
+          <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-sm shadow-xl`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Contribution</h2>
+              <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>Add Contribution</h2>
               <button onClick={() => setShowContribForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (₹)</label><input type="number" value={contribAmount} onChange={e => setContribAmount(e.target.value)} className="w-full px-3 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-white" /></div>
+            <div><label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Amount (₹)</label><input type="number" value={contribAmount} onChange={e => setContribAmount(e.target.value)} className={`w-full px-3 py-2 rounded-lg border ${dk ? 'border-gray-600 bg-gray-700 text-white' : ''}`} /></div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowContribForm(false)} className="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">Cancel</button>
+              <button onClick={() => setShowContribForm(false)} className={`flex-1 py-2 border ${dk ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} rounded-lg`}>Cancel</button>
               <button onClick={handleAddContribution} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Add</button>
             </div>
           </div>

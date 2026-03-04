@@ -234,6 +234,35 @@ const emiSchema = new mongoose.Schema({
     default: 'auto'
   },
   
+  // ─── Bank Deduction Details ─────────────────────────────────────
+  deductionBankAccountId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BankAccount',
+    index: true
+  },
+  deductionBankName: {
+    type: String,
+    trim: true
+  },
+  deductionAccountNumber: {
+    type: String,   // masked, e.g. XXXX1234
+    trim: true
+  },
+  deductionDay: {
+    type: Number,    // day-of-month the EMI auto-debits (1–31)
+    min: 1,
+    max: 31
+  },
+  autoDebitEnabled: {
+    type: Boolean,
+    default: false
+  },
+  minimumBalanceRequired: {
+    type: Number,    // user-specified or bank-specified min balance to keep
+    default: 0,
+    min: 0
+  },
+
   // Audit
   createdAt: {
     type: Date,

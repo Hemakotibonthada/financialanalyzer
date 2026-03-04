@@ -75,7 +75,8 @@ function getLocalAIEngine() {
 
 let authMiddleware;
 try {
-  authMiddleware = require('../middleware/auth');
+  const auth = require('../middleware/auth');
+  authMiddleware = auth.authenticate || auth;
 } catch {
   // Fallback: pass through
   authMiddleware = (req, res, next) => next();

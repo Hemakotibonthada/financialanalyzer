@@ -165,6 +165,20 @@ const EMITracker = () => {
   const [monthlyTrends, setMonthlyTrends] = useState(null);
   const [trendsMonths, setTrendsMonths] = useState(6);
   const [trendsLoading, setTrendsLoading] = useState(false);
+
+  // Bank & Balance State
+  const [bankDeductionData, setBankDeductionData] = useState(null);
+  const [bankDeductionLoading, setBankDeductionLoading] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assigningEmi, setAssigningEmi] = useState(null);
+  const [assignForm, setAssignForm] = useState({
+    bankAccountId: '',
+    deductionDay: '',
+    autoDebitEnabled: false,
+    minimumBalanceRequired: '',
+    deductionBankName: '',
+    deductionAccountNumber: ''
+  });
   
   // Manual EMI Dialog State
   const [manualEMIDialogOpen, setManualEMIDialogOpen] = useState(false);
@@ -469,6 +483,10 @@ const EMITracker = () => {
     // Fetch CC bills when tab 9 is active
     if (activeTab === 9) {
       fetchCCBills();
+    }
+    // Fetch bank deduction data when tab 10 is active
+    if (activeTab === 10) {
+      fetchBankDeductionSummary();
     }
   }, [activeTab]);
 
@@ -1198,6 +1216,56 @@ const EMITracker = () => {
       console.error('Error fetching CC bills:', err);
     } finally {
       setCcBillsLoading(false);
+    }
+  };
+
+  // ─── Bank & Balance helpers ────────────────────────────────────
+  const fetchBankDeductionSummary = async () => {
+    setBankDeductionLoading(true);
+    try {
+      const res = await api.get('/emi/bank-deduction-summary');
+      setBankDeductionData(res.data.data || null);
+    } catch (err) {
+      console.error('Error fetching bank deduction summary:', err);
+    } finally {
+      setBankDeductionLoading(false);
+    }
+  };
+
+  const openAssignDialog = (emi) => {
+    setAssigningEmi(emi);
+    setAssignForm({
+      bankAccountId: emi.deductionBank?._id || '',
+      deductionDay: emi.deductionDay || '',
+      autoDebitEnabled: emi.autoDebitEnabled || false,
+      minimumBalanceRequired: emi.minimumBalanceRequired || '',
+      deductionBankName: emi.deductionBank?.bankName || '',
+      deductionAccountNumber: emi.deductionBank?.accountNumber || ''
+    });
+    setAssignDialogOpen(true);
+  };
+
+  const handleAssignBank = async () => {
+    if (!assigningEmi) return;
+    try {
+      const payload = {
+        deductionDay: Number(assignForm.deductionDay) || undefined,
+        autoDebitEnabled: assignForm.autoDebitEnabled,
+        minimumBalanceRequired: Number(assignForm.minimumBalanceRequired) || 0
+      };
+      if (assignForm.bankAccountId) {
+        payload.bankAccountId = assignForm.bankAccountId;
+      } else if (assignForm.deductionBankName) {
+        payload.deductionBankName = assignForm.deductionBankName;
+        payload.deductionAccountNumber = assignForm.deductionAccountNumber;
+      }
+      await api.patch(`/emi/${assigningEmi._id}/bank-deduction`, payload);
+      showSnackbar('Bank deduction details updated!');
+      setAssignDialogOpen(false);
+      setAssigningEmi(null);
+      fetchBankDeductionSummary();
+    } catch (err) {
+      showSnackbar(err.response?.data?.message || 'Failed to update', 'error');
     }
   };
 
@@ -3232,6 +3300,11 @@ const EMITracker = () => {
           <Tab 
             label="Credit Card Bills" 
             icon={<CreditCardIcon />} 
+            iconPosition="start"
+          />
+          <Tab 
+            label="Bank & Balance" 
+            icon={<AccountBalanceIcon />} 
             iconPosition="start"
           />
         </Tabs>
@@ -9819,6 +9892,584 @@ const EMITracker = () => {
             }}
           >
             {editEMILoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ════════ TAB 10 — Bank & Balance ════════ */}
+      {activeTab === 10 && (
+        <Box sx={{ mt: 3 }}>
+          {bankDeductionLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : bankDeductionData ? (
+            <Grid container spacing={3}>
+              {/* ── Summary Cards ──────────────────────────── */}
+              <Grid size={12}>
+                <Grid container spacing={2}>
+                  {/* Total Monthly EMI */}
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card elevation={0} sx={{ ...chartCardHoverEffect, p: 0 }}>
+                      <CardContent>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          Total Monthly EMI
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, background: 'linear-gradient(135deg, #667eea, #764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                          ₹{(bankDeductionData.totalMonthlyEmi || 0).toLocaleString('en-IN')}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  {/* Active EMIs */}
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card elevation={0} sx={{ ...chartCardHoverEffect, p: 0 }}>
+                      <CardContent>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          Active EMIs
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: 'primary.main' }}>
+                          {bankDeductionData.emiDeductions?.length || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  {/* Bank Accounts Linked */}
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card elevation={0} sx={{ ...chartCardHoverEffect, p: 0 }}>
+                      <CardContent>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          Banks Linked
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: 'success.main' }}>
+                          {bankDeductionData.bankAccounts?.length || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  {/* Unassigned EMIs */}
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card elevation={0} sx={{ ...chartCardHoverEffect, p: 0 }}>
+                      <CardContent>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          Unassigned EMIs
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 800, mt: 1, color: bankDeductionData.unassignedCount > 0 ? 'warning.main' : 'success.main' }}>
+                          {bankDeductionData.unassignedCount || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* ── Bank-wise Balance Summary ─────────────── */}
+              {bankDeductionData.bankSummaries?.filter(bs => bs.bank).length > 0 && (
+                <Grid size={12}>
+                  <Card elevation={0} sx={chartCardHoverEffect}>
+                    <CardContent>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AccountBalanceIcon sx={{ color: 'primary.main' }} />
+                        Expected Balance by Bank
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                        Ensure each bank account has sufficient balance before EMI deduction dates
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {bankDeductionData.bankSummaries.filter(bs => bs.bank).map((bs, idx) => (
+                          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={idx}>
+                            <Box sx={{
+                              p: 3, borderRadius: 3,
+                              border: '2px solid',
+                              borderColor: bs.sufficient === false ? 'error.main' : bs.sufficient === true ? 'success.main' : 'divider',
+                              bgcolor: bs.sufficient === false
+                                ? (isDark ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.04)')
+                                : (isDark ? 'rgba(16,185,129,0.06)' : 'rgba(16,185,129,0.03)'),
+                              transition: 'all 0.3s ease',
+                              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
+                            }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <Box sx={{
+                                  width: 12, height: 12, borderRadius: '50%',
+                                  bgcolor: bs.bank?.color || '#4F46E5'
+                                }} />
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                  {bs.bank?.bankName || 'Unknown'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', ml: 'auto' }}>
+                                  {bs.bank?.accountNumber || ''}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Current Balance</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                  {bs.currentBalance !== null ? `₹${bs.currentBalance.toLocaleString('en-IN')}` : 'N/A'}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>EMI Outflow ({bs.emiCount} EMIs)</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
+                                  −₹{bs.totalEmiAmount.toLocaleString('en-IN')}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Balance Needed</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                                  ₹{bs.totalNeeded.toLocaleString('en-IN')}
+                                </Typography>
+                              </Box>
+                              {bs.shortfall > 0 && (
+                                <Box sx={{
+                                  mt: 2, p: 1.5, borderRadius: 2,
+                                  bgcolor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',
+                                  display: 'flex', alignItems: 'center', gap: 1
+                                }}>
+                                  <WarningIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>
+                                    Shortfall: ₹{bs.shortfall.toLocaleString('en-IN')}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {bs.sufficient && (
+                                <Box sx={{
+                                  mt: 2, p: 1.5, borderRadius: 2,
+                                  bgcolor: isDark ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.06)',
+                                  display: 'flex', alignItems: 'center', gap: 1
+                                }}>
+                                  <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                    Sufficient balance ✓
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
+
+              {/* ── EMI Deduction Details Table ───────────── */}
+              <Grid size={12}>
+                <Card elevation={0} sx={chartCardHoverEffect}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CreditCardIcon sx={{ color: 'primary.main' }} />
+                        EMI Deduction Details
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={fetchBankDeductionSummary}
+                        startIcon={<RefreshIcon />}
+                        sx={{ borderRadius: 3, textTransform: 'none' }}
+                      >
+                        Refresh
+                      </Button>
+                    </Box>
+
+                    <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: tableHeaderBg }}>
+                            <TableCell sx={{ fontWeight: 700 }}>EMI / Product</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Card / Provider</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="right">EMI Amount</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Deduction Bank</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Deduction Day</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Auto-Debit</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="right">Min Balance</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Progress</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }} align="center">Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {bankDeductionData.emiDeductions?.map((emi) => (
+                            <TableRow
+                              key={emi._id}
+                              sx={{
+                                '&:hover': { bgcolor: tableHoverBg },
+                                transition: 'background 0.2s ease'
+                              }}
+                            >
+                              <TableCell>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{emi.merchantName}</Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>{emi.productDescription}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  size="small"
+                                  label={`${emi.cardProvider} •••${emi.cardLastFourDigits}`}
+                                  sx={{ fontWeight: 600, borderRadius: 2 }}
+                                />
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  ₹{emi.emiAmount?.toLocaleString('en-IN')}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                {emi.deductionBank ? (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: emi.deductionBank.color || '#4F46E5' }} />
+                                    <Box>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{emi.deductionBank.bankName}</Typography>
+                                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{emi.deductionBank.accountNumber}</Typography>
+                                    </Box>
+                                  </Box>
+                                ) : (
+                                  <Chip
+                                    size="small"
+                                    label="Not Assigned"
+                                    color="warning"
+                                    variant="outlined"
+                                    sx={{ borderRadius: 2 }}
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell align="center">
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {emi.deductionDay ? `${emi.deductionDay}${['st','nd','rd'][((emi.deductionDay+90)%100-10)%10-1]||'th'}` : '—'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center">
+                                {emi.autoDebitEnabled ? (
+                                  <Chip size="small" label="ON" color="success" sx={{ fontWeight: 700, minWidth: 50 }} />
+                                ) : (
+                                  <Chip size="small" label="OFF" variant="outlined" sx={{ fontWeight: 600, minWidth: 50 }} />
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {emi.minimumBalanceRequired ? `₹${emi.minimumBalanceRequired.toLocaleString('en-IN')}` : '—'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={((emi.paidInstallments / emi.totalTenure) * 100)}
+                                    sx={{ flex: 1, height: 6, borderRadius: 3 }}
+                                  />
+                                  <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 45 }}>
+                                    {emi.paidInstallments}/{emi.totalTenure}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Tooltip title="Assign Bank / Edit">
+                                  <IconButton size="small" onClick={() => openAssignDialog(emi)} sx={{ color: 'primary.main' }}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!bankDeductionData.emiDeductions || bankDeductionData.emiDeductions.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                  No active EMIs found. Add EMIs to see bank deduction details.
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* ── Monthly Deduction Calendar View ────────── */}
+              <Grid size={12}>
+                <Card elevation={0} sx={chartCardHoverEffect}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarIcon sx={{ color: 'primary.main' }} />
+                      Deduction Calendar — This Month
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                      Days when EMI amounts will be debited from your bank accounts
+                    </Typography>
+
+                    {(() => {
+                      // Group EMIs by deduction day
+                      const byDay = {};
+                      (bankDeductionData.emiDeductions || []).forEach(emi => {
+                        const day = emi.deductionDay || (emi.nextDueDate ? new Date(emi.nextDueDate).getDate() : null);
+                        if (day) {
+                          if (!byDay[day]) byDay[day] = { emis: [], total: 0 };
+                          byDay[day].emis.push(emi);
+                          byDay[day].total += emi.emiAmount;
+                        }
+                      });
+
+                      const sortedDays = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+
+                      if (sortedDays.length === 0) {
+                        return (
+                          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
+                            No deduction dates set. Assign bank accounts to your EMIs to see the calendar.
+                          </Typography>
+                        );
+                      }
+
+                      return (
+                        <Grid container spacing={2}>
+                          {sortedDays.map(day => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={day}>
+                              <Box sx={{
+                                p: 2.5, borderRadius: 3,
+                                border: '1px solid', borderColor: 'divider',
+                                bgcolor: surface,
+                                transition: 'all 0.3s ease',
+                                '&:hover': { borderColor: 'primary.main', transform: 'translateY(-2px)' }
+                              }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                  <Box sx={{
+                                    width: 48, height: 48, borderRadius: 2,
+                                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                  }}>
+                                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 800 }}>{day}</Typography>
+                                  </Box>
+                                  <Box sx={{ textAlign: 'right' }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Outflow</Typography>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'error.main' }}>
+                                      −₹{byDay[day].total.toLocaleString('en-IN')}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                {byDay[day].emis.map((emi, i) => (
+                                  <Box key={i} sx={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    py: 0.5, borderTop: i > 0 ? '1px solid' : 'none', borderColor: 'divider'
+                                  }}>
+                                    <Box>
+                                      <Typography variant="caption" sx={{ fontWeight: 600 }}>{emi.merchantName}</Typography>
+                                      {emi.deductionBank && (
+                                        <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontSize: '0.65rem' }}>
+                                          via {emi.deductionBank.bankName}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                      ₹{emi.emiAmount?.toLocaleString('en-IN')}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <AccountBalanceIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+                No bank deduction data available
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.disabled', mb: 3 }}>
+                Add active EMIs and link bank accounts to see deduction details
+              </Typography>
+              <Button variant="contained" onClick={fetchBankDeductionSummary} startIcon={<RefreshIcon />}
+                sx={{ borderRadius: 3, textTransform: 'none' }}>
+                Retry
+              </Button>
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {/* ── Bank Assignment Dialog ──────────────────── */}
+      <Dialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 4 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccountBalanceIcon sx={{ color: 'primary.main' }} />
+          Assign Deduction Bank
+          {assigningEmi && (
+            <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+              — {assigningEmi.merchantName}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+            {/* Select from linked bank accounts */}
+            {bankDeductionData?.bankAccounts?.length > 0 && (
+              <FormControl fullWidth>
+                <InputLabel>Select Bank Account</InputLabel>
+                <Select
+                  value={assignForm.bankAccountId}
+                  label="Select Bank Account"
+                  onChange={(e) => {
+                    const ba = bankDeductionData.bankAccounts.find(b => b._id === e.target.value);
+                    setAssignForm(prev => ({
+                      ...prev,
+                      bankAccountId: e.target.value,
+                      deductionBankName: ba?.bankName || '',
+                      deductionAccountNumber: ba?.accountNumber || ''
+                    }));
+                  }}
+                  sx={{ borderRadius: 3 }}
+                >
+                  <MenuItem value="">
+                    <em>Enter manually below</em>
+                  </MenuItem>
+                  {bankDeductionData.bankAccounts.map(ba => (
+                    <MenuItem key={ba._id} value={ba._id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: ba.color || '#4F46E5' }} />
+                        {ba.displayName}
+                        <Typography variant="caption" sx={{ ml: 'auto', color: 'text.secondary' }}>
+                          ₹{ba.balance?.toLocaleString('en-IN')}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* Or enter manually */}
+            {!assignForm.bankAccountId && (
+              <Grid container spacing={2}>
+                <Grid size={8}>
+                  <TextField
+                    fullWidth
+                    label="Bank Name"
+                    value={assignForm.deductionBankName}
+                    onChange={(e) => setAssignForm(prev => ({ ...prev, deductionBankName: e.target.value }))}
+                    placeholder="e.g. HDFC Bank"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                  />
+                </Grid>
+                <Grid size={4}>
+                  <TextField
+                    fullWidth
+                    label="Account (last 4)"
+                    value={assignForm.deductionAccountNumber}
+                    onChange={(e) => setAssignForm(prev => ({ ...prev, deductionAccountNumber: e.target.value }))}
+                    placeholder="1234"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                  />
+                </Grid>
+              </Grid>
+            )}
+
+            <Grid container spacing={2}>
+              <Grid size={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Deduction Day (1–31)"
+                  value={assignForm.deductionDay}
+                  onChange={(e) => setAssignForm(prev => ({ ...prev, deductionDay: e.target.value }))}
+                  inputProps={{ min: 1, max: 31 }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                />
+              </Grid>
+              <Grid size={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Min Balance Required (₹)"
+                  value={assignForm.minimumBalanceRequired}
+                  onChange={(e) => setAssignForm(prev => ({ ...prev, minimumBalanceRequired: e.target.value }))}
+                  inputProps={{ min: 0 }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                />
+              </Grid>
+            </Grid>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={assignForm.autoDebitEnabled}
+                  onChange={(e) => setAssignForm(prev => ({ ...prev, autoDebitEnabled: e.target.checked }))}
+                  color="primary"
+                />
+              }
+              label="Auto-Debit / Standing Instruction Enabled"
+            />
+
+            {/* Balance Preview */}
+            {assignForm.bankAccountId && assigningEmi && (() => {
+              const selectedBank = bankDeductionData.bankAccounts.find(b => b._id === assignForm.bankAccountId);
+              if (!selectedBank) return null;
+              const needed = assigningEmi.emiAmount + Number(assignForm.minimumBalanceRequired || 0);
+              const hasEnough = selectedBank.balance >= needed;
+              return (
+                <Box sx={{
+                  p: 2, borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: hasEnough ? 'success.main' : 'error.main',
+                  bgcolor: hasEnough
+                    ? (isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.04)')
+                    : (isDark ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.04)')
+                }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                    Balance Preview
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Current Balance</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{selectedBank.balance?.toLocaleString('en-IN')}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>EMI Amount</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>−₹{assigningEmi.emiAmount?.toLocaleString('en-IN')}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Min Balance</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(assignForm.minimumBalanceRequired || 0).toLocaleString('en-IN')}</Typography>
+                  </Box>
+                  <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 1, mt: 1, display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>After Deduction</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: hasEnough ? 'success.main' : 'error.main' }}>
+                      ₹{(selectedBank.balance - assigningEmi.emiAmount).toLocaleString('en-IN')}
+                    </Typography>
+                  </Box>
+                  {!hasEnough && (
+                    <Alert severity="warning" sx={{ mt: 1.5, borderRadius: 2 }}>
+                      Insufficient balance — shortfall of ₹{(needed - selectedBank.balance).toLocaleString('en-IN')}
+                    </Alert>
+                  )}
+                </Box>
+              );
+            })()}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setAssignDialogOpen(false)} sx={{ borderRadius: 3, textTransform: 'none' }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAssignBank}
+            startIcon={<SaveIcon />}
+            sx={{
+              borderRadius: 3,
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              '&:hover': { background: 'linear-gradient(135deg, #5a6fd6, #6a4298)' }
+            }}
+          >
+            Save Bank Details
           </Button>
         </DialogActions>
       </Dialog>

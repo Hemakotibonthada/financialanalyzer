@@ -20,7 +20,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend as RLegend,
   ComposedChart, Scatter as RScatter, Brush, ReferenceLine,
 } from 'recharts';
-import { useInView } from '../components/ui/AnimatedComponents';
+import { useInView } from '../ui/AnimatedComponents';
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement,
@@ -830,17 +830,7 @@ export function MiniChart({
   );
 }
 
-export default {
-  FinancialAreaChart,
-  FinancialBarChart,
-  FinancialDonutChart,
-  MultiLineChart,
-  FinancialRadarChart,
-  IncomeExpenseChart,
-  SpendingHeatmap,
-  WaterfallChart,
-  ChartCard,
-  MiniChart,
+export {
   CHART_COLORS,
   currencyFormatter,
 };

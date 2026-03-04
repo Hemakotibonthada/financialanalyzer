@@ -151,7 +151,7 @@ export default function SplitExpenses() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center animate-fade-in-up">
           <div className="w-16 h-16 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400 text-lg">Loading split expenses...</p>
+          <p className={`${dk ? 'text-slate-400' : 'text-slate-600'} text-lg`}>Loading split expenses...</p>
         </div>
       </div>
     );
@@ -163,13 +163,13 @@ export default function SplitExpenses() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+          <h1 className={`text-2xl md:text-3xl font-bold ${dk ? 'text-white' : 'text-slate-900'} flex items-center gap-3`}>
             <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl text-white shadow-lg shadow-violet-600/30">
               <Users className="w-6 h-6" />
             </div>
             Split Expenses
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Split bills & settle up with friends</p>
+          <p className={`${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>Split bills & settle up with friends</p>
         </div>
         <button onClick={() => setShowGroupModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">
@@ -183,7 +183,7 @@ export default function SplitExpenses() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search groups..."
-              className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-white" />
+              className={`w-full pl-9 pr-4 py-2.5 ${dk ? `bg-slate-800` : `bg-white`} rounded-xl border ${dk ? 'border-slate-700' : 'border-slate-200'} text-sm focus:ring-2 focus:ring-blue-500 outline-none ${dk ? `text-white` : `text-slate-900`}`} />
           </div>
 
           {filteredGroups.map(group => {
@@ -191,21 +191,21 @@ export default function SplitExpenses() {
             return (
               <div key={group.id}
                 onClick={() => setSelectedGroup(group.id)}
-                className={`bg-white dark:bg-slate-800 rounded-2xl p-4 border cursor-pointer transition-all hover:shadow-lg ${selectedGroup === group.id ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg' : 'border-slate-200 dark:border-slate-700'}`}>
+                className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-4 border cursor-pointer transition-all hover:shadow-lg ${selectedGroup === group.id ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg' : `${dk ? 'border-slate-700' : 'border-slate-200'}`}`}>
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{group.avatar}</span>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-900 dark:text-white truncate">{group.name}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{group.members.length} members • {group.expenses.length} expenses</p>
+                    <h3 className={`font-semibold ${dk ? 'text-white' : 'text-slate-900'} truncate`}>{group.name}</h3>
+                    <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{group.members.length} members • {group.expenses.length} expenses</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-bold text-slate-900 dark:text-white">₹{total.toLocaleString()}</div>
+                    <div className={`font-bold ${dk ? 'text-white' : 'text-slate-900'}`}>₹{total.toLocaleString()}</div>
                     <div className="text-xs text-slate-500">total</div>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-1">
                   {group.members.slice(0, 4).map((m, i) => (
-                    <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs font-bold flex items-center justify-center -ml-1 first:ml-0 border-2 border-white dark:border-slate-800">
+                    <div key={i} className={`w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs font-bold flex items-center justify-center -ml-1 first:ml-0 border-2 ${dk ? 'border-slate-800' : 'border-white'}`}>
                       {m.charAt(0)}
                     </div>
                   ))}
@@ -228,45 +228,45 @@ export default function SplitExpenses() {
           {selectedGroupData ? (
             <>
               {/* Group Header */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up">
+              <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-fade-in-up`}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-4xl">{selectedGroupData.avatar}</span>
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedGroupData.name}</h2>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{selectedGroupData.members.join(', ')}</p>
+                      <h2 className={`text-xl font-bold ${dk ? 'text-white' : 'text-slate-900'}`}>{selectedGroupData.name}</h2>
+                      <p className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>{selectedGroupData.members.join(', ')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setShowShareModal(true)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                    <button onClick={() => setShowShareModal(true)} className={`p-2 text-blue-500 ${dk ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50'} rounded-lg transition-colors`}>
                       <Share2 className="w-5 h-5" />
                     </button>
-                    <button onClick={() => handleDeleteGroup(selectedGroupData.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                    <button onClick={() => handleDeleteGroup(selectedGroupData.id)} className={`p-2 text-red-500 ${dk ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} rounded-lg transition-colors`}>
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
-                    <div className="text-lg font-bold text-blue-700 dark:text-blue-400"><AnimatedValue end={totalGroupExpense} /></div>
-                    <div className="text-xs text-blue-600/70 dark:text-blue-400/70">Total Expenses</div>
+                  <div className={`p-3 ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} rounded-xl text-center`}>
+                    <div className={`text-lg font-bold ${dk ? 'text-blue-400' : 'text-blue-700'}`}><AnimatedValue end={totalGroupExpense} /></div>
+                    <div className={`text-xs ${dk ? 'text-blue-400/70' : 'text-blue-600/70'}`}>Total Expenses</div>
                   </div>
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                    <div className="text-lg font-bold text-green-700 dark:text-green-400">₹{Math.round(totalGroupExpense / selectedGroupData.members.length).toLocaleString()}</div>
-                    <div className="text-xs text-green-600/70 dark:text-green-400/70">Per Person</div>
+                  <div className={`p-3 ${dk ? 'bg-green-900/20' : 'bg-green-50'} rounded-xl text-center`}>
+                    <div className={`text-lg font-bold ${dk ? 'text-green-400' : 'text-green-700'}`}>₹{Math.round(totalGroupExpense / selectedGroupData.members.length).toLocaleString()}</div>
+                    <div className={`text-xs ${dk ? 'text-green-400/70' : 'text-green-600/70'}`}>Per Person</div>
                   </div>
-                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-center">
-                    <div className="text-lg font-bold text-purple-700 dark:text-purple-400">{selectedGroupData.expenses.length}</div>
-                    <div className="text-xs text-purple-600/70 dark:text-purple-400/70">Transactions</div>
+                  <div className={`p-3 ${dk ? 'bg-purple-900/20' : 'bg-purple-50'} rounded-xl text-center`}>
+                    <div className={`text-lg font-bold ${dk ? 'text-purple-400' : 'text-purple-700'}`}>{selectedGroupData.expenses.length}</div>
+                    <div className={`text-xs ${dk ? 'text-purple-400/70' : 'text-purple-600/70'}`}>Transactions</div>
                   </div>
                 </div>
               </div>
 
               {/* Paid by Chart */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Paid by Each</h3>
+                <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-fade-in-up`}>
+                  <h3 className={`text-base font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-4`}>Paid by Each</h3>
                   <div className="h-48">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -282,32 +282,32 @@ export default function SplitExpenses() {
                       <div key={i} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.color }} />
-                          <span className="text-slate-600 dark:text-slate-400">{m.name}</span>
+                          <span className={`${dk ? 'text-slate-400' : 'text-slate-600'}`}>{m.name}</span>
                         </div>
-                        <span className="font-medium text-slate-900 dark:text-white">₹{m.total.toLocaleString()}</span>
+                        <span className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>₹{m.total.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Settlements */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-fade-in-up`}>
+                  <h3 className={`text-base font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-4 flex items-center gap-2`}>
                     <Calculator className="w-4 h-4 text-green-500" /> Settlements
                   </h3>
                   {settlements.length > 0 ? (
                     <div className="space-y-3">
                       {settlements.map((s, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                        <div key={i} className={`flex items-center gap-3 p-3 ${dk ? 'bg-slate-700/50' : 'bg-slate-50'} rounded-xl`}>
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-500 text-white text-xs font-bold flex items-center justify-center">{s.from.charAt(0)}</div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 text-sm">
-                              <span className="font-medium text-slate-900 dark:text-white">{s.from}</span>
+                              <span className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{s.from}</span>
                               <ArrowRight className="w-4 h-4 text-slate-400" />
-                              <span className="font-medium text-slate-900 dark:text-white">{s.to}</span>
+                              <span className={`font-medium ${dk ? 'text-white' : 'text-slate-900'}`}>{s.to}</span>
                             </div>
                           </div>
-                          <span className="font-bold text-red-600 dark:text-red-400">₹{s.amount.toLocaleString()}</span>
+                          <span className={`font-bold ${dk ? 'text-red-400' : 'text-red-600'}`}>₹{s.amount.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
@@ -319,11 +319,11 @@ export default function SplitExpenses() {
                   )}
 
                   {/* Balances */}
-                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Balances</h4>
+                  <div className={`mt-4 pt-4 border-t ${dk ? 'border-slate-700' : 'border-slate-200'}`}>
+                    <h4 className={`text-sm font-medium ${dk ? 'text-slate-400' : 'text-slate-500'} mb-2`}>Balances</h4>
                     {Object.entries(balances).map(([name, amount]) => (
                       <div key={name} className="flex items-center justify-between py-1.5 text-sm">
-                        <span className="text-slate-700 dark:text-slate-300">{name}</span>
+                        <span className={`${dk ? 'text-slate-300' : 'text-slate-700'}`}>{name}</span>
                         <span className={`font-semibold ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {amount >= 0 ? '+' : ''}₹{Math.round(amount).toLocaleString()}
                         </span>
@@ -334,9 +334,9 @@ export default function SplitExpenses() {
               </div>
 
               {/* Expenses List */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up">
+              <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-fade-in-up`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h3 className={`text-base font-semibold ${dk ? 'text-white' : 'text-slate-900'} flex items-center gap-2`}>
                     <Receipt className="w-4 h-4 text-blue-500" /> Expenses
                   </h3>
                   <button onClick={() => setShowExpenseModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -345,20 +345,20 @@ export default function SplitExpenses() {
                 </div>
                 <div className="space-y-2">
                   {selectedGroupData.expenses.map(exp => (
-                    <div key={exp.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
+                    <div key={exp.id} className={`flex items-center gap-3 p-3 ${dk ? 'bg-slate-700/30' : 'bg-slate-50'} rounded-xl ${dk ? 'hover:bg-slate-700/50' : 'hover:bg-slate-100'} transition-colors`}>
+                      <div className={`p-2 ${dk ? 'bg-blue-900/30' : 'bg-blue-100'} text-blue-600 rounded-lg`}>
                         <CreditCard className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-slate-900 dark:text-white text-sm truncate">{exp.description}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                        <div className={`font-medium ${dk ? 'text-white' : 'text-slate-900'} text-sm truncate`}>{exp.description}</div>
+                        <div className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} flex items-center gap-2`}>
                           <span>Paid by <span className="font-medium">{exp.paidBy}</span></span>
                           <span>•</span>
                           <span>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                         </div>
                       </div>
-                      <span className="font-bold text-slate-900 dark:text-white">₹{exp.amount.toLocaleString()}</span>
-                      <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <span className={`font-bold ${dk ? 'text-white' : 'text-slate-900'}`}>₹{exp.amount.toLocaleString()}</span>
+                      <button onClick={() => handleDeleteExpense(exp.id)} className={`p-1.5 text-red-400 hover:text-red-600 ${dk ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} rounded-lg transition-colors`}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -373,10 +373,10 @@ export default function SplitExpenses() {
               </div>
             </>
           ) : (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 border border-slate-200 dark:border-slate-700 text-center animate-fade-in-up">
-              <Users className="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Select a Group</h3>
-              <p className="text-slate-500 dark:text-slate-400">Choose a group from the left to view expenses and settlements.</p>
+            <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-12 border ${dk ? 'border-slate-700' : 'border-slate-200'} text-center animate-fade-in-up`}>
+              <Users className={`w-16 h-16 mx-auto mb-4 ${dk ? 'text-slate-600' : 'text-slate-300'}`} />
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'} mb-2`}>Select a Group</h3>
+              <p className={`${dk ? 'text-slate-400' : 'text-slate-500'}`}>Choose a group from the left to view expenses and settlements.</p>
             </div>
           )}
         </div>
@@ -385,32 +385,32 @@ export default function SplitExpenses() {
       {/* Create Group Modal */}
       {showGroupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowGroupModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-md shadow-2xl border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-scale-in`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Create Group</h3>
-              <button onClick={() => setShowGroupModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'}`}>Create Group</h3>
+              <button onClick={() => setShowGroupModal(false)} className={`p-2 ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} rounded-lg`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Group Emoji</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Group Emoji</label>
                 <div className="flex gap-2 flex-wrap">
                   {['👥', '🏖️', '🏠', '🍕', '✈️', '🎉', '💼', '🎮'].map(e => (
                     <button key={e} onClick={() => setGroupForm(p => ({ ...p, avatar: e }))}
-                      className={`text-2xl p-2 rounded-lg transition-colors ${groupForm.avatar === e ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+                      className={`text-2xl p-2 rounded-lg transition-colors ${groupForm.avatar === e ? `${dk ? 'bg-blue-900/30' : 'bg-blue-100'} ring-2 ring-blue-500` : `${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}`}>
                       {e}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Group Name</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Group Name</label>
                 <input value={groupForm.name} onChange={e => setGroupForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Goa Trip"
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                  className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Members (comma-separated)</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Members (comma-separated)</label>
                 <input value={groupForm.members} onChange={e => setGroupForm(p => ({ ...p, members: e.target.value }))} placeholder="Rahul, Priya, Amit"
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                  className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`} />
                 <p className="text-xs text-slate-500 mt-1">You will be added automatically</p>
               </div>
               <button onClick={handleCreateGroup}
@@ -425,45 +425,45 @@ export default function SplitExpenses() {
       {/* Add Expense Modal */}
       {showExpenseModal && selectedGroupData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowExpenseModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-md shadow-2xl border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-scale-in`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Add Expense</h3>
-              <button onClick={() => setShowExpenseModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'}`}>Add Expense</h3>
+              <button onClick={() => setShowExpenseModal(false)} className={`p-2 ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} rounded-lg`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Description</label>
                 <input value={expenseForm.description} onChange={e => setExpenseForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Hotel booking"
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                  className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount (₹)</label>
+                  <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Amount (₹)</label>
                   <input type="number" value={expenseForm.amount} onChange={e => setExpenseForm(p => ({ ...p, amount: e.target.value }))} placeholder="1000"
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                    className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Paid By</label>
+                  <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Paid By</label>
                   <select value={expenseForm.paidBy} onChange={e => setExpenseForm(p => ({ ...p, paidBy: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`}>
                     {selectedGroupData.members.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Split Type</label>
+                  <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Split Type</label>
                   <select value={expenseForm.splitType} onChange={e => setExpenseForm(p => ({ ...p, splitType: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`}>
                     <option value="equal">Equal Split</option>
                     <option value="percentage">By Percentage</option>
                     <option value="exact">Exact Amounts</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date</label>
+                  <label className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1`}>Date</label>
                   <input type="date" value={expenseForm.date} onChange={e => setExpenseForm(p => ({ ...p, date: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                    className={`w-full p-3 ${dk ? `bg-slate-700` : `bg-slate-50`} rounded-xl border ${dk ? 'border-slate-600' : 'border-slate-200'} ${dk ? `text-white` : `text-slate-900`} outline-none focus:ring-2 focus:ring-blue-500`} />
                 </div>
               </div>
               <button onClick={handleAddExpense}
@@ -478,17 +478,17 @@ export default function SplitExpenses() {
       {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowShareModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700 animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-sm shadow-2xl border ${dk ? 'border-slate-700' : 'border-slate-200'} animate-scale-in`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Share Group</h3>
-              <button onClick={() => setShowShareModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-900'}`}>Share Group</h3>
+              <button onClick={() => setShowShareModal(false)} className={`p-2 ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} rounded-lg`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-700 rounded-xl">
+              <div className={`flex items-center gap-2 p-3 ${dk ? 'bg-slate-700' : 'bg-slate-50'} rounded-xl`}>
                 <Link2 className="w-4 h-4 text-slate-400 shrink-0" />
                 <input readOnly value={`https://financialapp.com/split/${selectedGroup}`}
-                  className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 outline-none" />
-                <button onClick={handleCopyLink} className={`p-1.5 rounded-lg transition-colors ${copySuccess ? 'text-green-500 bg-green-50 dark:bg-green-900/20' : 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}>
+                  className={`flex-1 bg-transparent text-sm ${dk ? 'text-slate-300' : 'text-slate-700'} outline-none`} />
+                <button onClick={handleCopyLink} className={`p-1.5 rounded-lg transition-colors ${copySuccess ? `text-green-500 ${dk ? 'bg-green-900/20' : 'bg-green-50'}` : `text-blue-500 ${dk ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50'}`}`}>
                   {copySuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>

@@ -166,6 +166,7 @@ const AICommandCenter = lazy(() => import('./pages/AICommandCenter'));
 const FinancialInsightsDashboard = lazy(() => import('./pages/FinancialInsightsDashboard'));
 const SystemDashboard = lazy(() => import('./pages/SystemDashboard'));
 const AITrainingDashboard = lazy(() => import('./pages/AITrainingDashboard'));
+const SelfTrainingPage = lazy(() => import('./pages/SelfTrainingPage'));
 const SmartBudgetOptimizer = lazy(() => import('./pages/SmartBudgetOptimizer'));
 const RiskAssessment = lazy(() => import('./pages/RiskAssessment'));
 
@@ -371,6 +372,7 @@ function App() {
               <Route path="/spending-insights" element={<ProtectedRoute><SpendingInsights /></ProtectedRoute>} />
               <Route path="/financial-chat" element={<ProtectedRoute><FinancialChat /></ProtectedRoute>} />
               <Route path="/ai-training" element={<ProtectedRoute><AITrainingDashboard /></ProtectedRoute>} />
+              <Route path="/self-training" element={<ProtectedRoute><SelfTrainingPage /></ProtectedRoute>} />
               <Route path="/smart-budget-optimizer" element={<ProtectedRoute><SmartBudgetOptimizer /></ProtectedRoute>} />
               <Route path="/risk-assessment" element={<ProtectedRoute><RiskAssessment /></ProtectedRoute>} />
               

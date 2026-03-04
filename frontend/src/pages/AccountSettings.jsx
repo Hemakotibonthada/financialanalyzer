@@ -868,7 +868,7 @@ function DataManagementTab() {
     <div className="space-y-6">
       {/* Status Message */}
       {message && (
-        <div className={`p-4 rounded-xl text-sm font-medium animate-fadeIn ${message.type === 'success' ? `${dk ? 'bg-green-900/20' : 'bg-green-100'} ${dk ? 'text-green-400' : 'text-green-700'}` : `${dk ? 'bg-red-900/20' : 'bg-red-100'} ${dk ? 'text-red-400' : 'text-red-700'}`}`}>
+        <div className={`p-4 rounded-xl text-sm font-medium animate-fadeIn ${message.type === `success` ? `${dk ? `bg-green-900/20` : `bg-green-100`} ${dk ? `text-green-400` : `text-green-700`}` : `${dk ? `bg-red-900/20` : `bg-red-100`} ${dk ? `text-red-400` : 'text-red-700'}`}`}>
           {message.type === 'success' ? '✅' : '❌'} {message.text}
         </div>
       )}
@@ -914,7 +914,7 @@ function DataManagementTab() {
           <button
             onClick={createDatabaseBackup}
             disabled={createBackupLoading}
-            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-indigo-900/20' : 'to-indigo-50'} ${dk ? 'hover:from-blue-900/30' : 'hover:from-blue-100'} ${dk ? 'hover:to-indigo-900/30' : 'hover:to-indigo-100'} border ${dk ? 'border-blue-800' : 'border-blue-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? `from-blue-900/20` : `from-blue-50`} ${dk ? `to-indigo-900/20` : `to-indigo-50`} ${dk ? `hover:from-blue-900/30` : `hover:from-blue-100`} ${dk ? `hover:to-indigo-900/30` : `hover:to-indigo-100`} border ${dk ? `border-blue-800` : `border-blue-200`} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{createBackupLoading ? '⏳' : '💾'}</div>
             <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
@@ -928,7 +928,7 @@ function DataManagementTab() {
           <button
             onClick={exportBackup}
             disabled={exportLoading}
-            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-green-900/20' : 'from-green-50'} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} ${dk ? 'hover:from-green-900/30' : 'hover:from-green-100'} ${dk ? 'hover:to-emerald-900/30' : 'hover:to-emerald-100'} border ${dk ? 'border-green-800' : 'border-green-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? `from-green-900/20` : `from-green-50`} ${dk ? `to-emerald-900/20` : `to-emerald-50`} ${dk ? `hover:from-green-900/30` : `hover:from-green-100`} ${dk ? `hover:to-emerald-900/30` : `hover:to-emerald-100`} border ${dk ? `border-green-800` : `border-green-200`} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{exportLoading ? '⏳' : '📤'}</div>
             <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
@@ -942,7 +942,7 @@ function DataManagementTab() {
           <button
             onClick={() => setShowUploadRestore(true)}
             disabled={restoreLoading}
-            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-purple-900/20' : 'from-purple-50'} ${dk ? 'to-pink-900/20' : 'to-pink-50'} ${dk ? 'hover:from-purple-900/30' : 'hover:from-purple-100'} ${dk ? 'hover:to-pink-900/30' : 'hover:to-pink-100'} border ${dk ? 'border-purple-800' : 'border-purple-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? `from-purple-900/20` : `from-purple-50`} ${dk ? `to-pink-900/20` : `to-pink-50`} ${dk ? `hover:from-purple-900/30` : `hover:from-purple-100`} ${dk ? `hover:to-pink-900/30` : `hover:to-pink-100`} border ${dk ? `border-purple-800` : `border-purple-200`} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{restoreLoading ? '⏳' : '📥'}</div>
             <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
@@ -964,7 +964,7 @@ function DataManagementTab() {
                 <select
                   value={restoreStrategy}
                   onChange={(e) => setRestoreStrategy(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg ${dk ? 'bg-gray-700' : 'bg-white'} ${dk ? 'border-gray-600' : ''} ${dk ? 'text-white' : 'text-gray-900'} text-sm`}
+                  className={`w-full px-3 py-2 border rounded-lg ${dk ? `bg-gray-700` : `bg-white`} ${dk ? 'border-gray-600' : ''} ${dk ? `text-white` : `text-gray-900`} text-sm`}
                 >
                   <option value="merge">Merge (keep existing + add new)</option>
                   <option value="replace">Replace (overwrite with backup data)</option>

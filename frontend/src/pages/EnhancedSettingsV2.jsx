@@ -2,10 +2,9 @@
 // Enterprise Settings V2 — Comprehensive User Settings & Preferences
 // ============================================================================
 
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { ThemeContext } from '../context/ThemeContext';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import MainLayout from '../components/MainLayout';
 import {
   Settings, User, Bell, Palette, Shield, Lock, Globe, Database,
@@ -59,7 +58,7 @@ function Toggle({ enabled, onChange, label, description }) {
 // ============================================================================
 
 function ProfileTab() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [profile, setProfile] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -140,7 +139,7 @@ function ProfileTab() {
 // ============================================================================
 
 function AppearanceTab() {
-  const { mode, setMode, accentColor, setAccentColor } = useContext(ThemeContext);
+  const { mode, setMode, accentColor, setAccentColor } = useTheme();
 
   const themes = [
     { id: 'light', label: 'Light', icon: Sun, preview: 'bg-white border-gray-200' },
@@ -574,9 +573,8 @@ function DataTab() {
 // ============================================================================
 
 export default function EnhancedSettingsV2() {
-  const { mode, isDark, isBlack } = useTheme();
+  const { mode, isDark, isBlack, theme } = useTheme();
   const dk = isDark || isBlack;
-  const { theme } = useContext(ThemeContext);
   const [activeTab, setActiveTab] = useState('profile');
 
   const renderTab = () => {

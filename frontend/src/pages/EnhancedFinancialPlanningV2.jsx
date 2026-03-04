@@ -2,9 +2,8 @@
 // Enterprise Financial Planning Page — Retirement, Tax, SIP, Wealth
 // ============================================================================
 
-import React, { useState, useCallback, useContext } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { ThemeContext } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import {
   TrendingUp, Calculator, Shield, Landmark, PiggyBank, Target,
@@ -505,9 +504,8 @@ function WealthProjection() {
 // ============================================================================
 
 export default function EnhancedFinancialPlanningV2() {
-  const { mode, isDark, isBlack } = useTheme();
+  const { mode, isDark, isBlack, theme } = useTheme();
   const dk = isDark || isBlack;
-  const { theme } = useContext(ThemeContext);
   const [activeCalc, setActiveCalc] = useState('sip');
 
   const renderCalculator = () => {

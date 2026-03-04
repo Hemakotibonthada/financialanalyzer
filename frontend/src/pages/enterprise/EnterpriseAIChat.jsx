@@ -2,7 +2,7 @@
 // ENTERPRISE AI CHAT — Financial AI Assistant with Self-Training
 // ============================================================================
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/MainLayout';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import {

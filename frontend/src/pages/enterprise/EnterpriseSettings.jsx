@@ -2,7 +2,7 @@
 // ENTERPRISE SETTINGS PAGE — Theme, Security, Preferences & Account Management
 // ============================================================================
 import React, { useState, useEffect, useCallback } from 'react';
-import MainLayout from '../../components/Layout/MainLayout';
+import MainLayout from '../../components/MainLayout';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import {
