@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Landmark, Plus, TrendingUp, Calculator, Calendar, IndianRupee, X,
   Edit2, Trash2, ArrowUpRight, Clock, RefreshCw, Shield, AlertTriangle,
@@ -44,6 +45,8 @@ const comparisonData = [
 const emptyForm = { bank: 'SBI', amount: '', rate: '', tenure: '', startDate: '', autoRenew: false };
 
 export default function FixedDeposits() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [fds, setFDs] = useState(() => loadLocal('fa_fixed_deposits'));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);

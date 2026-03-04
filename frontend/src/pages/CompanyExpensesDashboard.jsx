@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { Tabs, Tab, Box } from '@mui/material';
 import BillOfMaterials from './BillOfMaterials';
 import { 
@@ -22,6 +23,8 @@ import ExpenseFormModal from '../components/ExpenseFormModal';
 import { showPasswordNotification, extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 const CompanyExpensesDashboard = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeTab, setActiveTab] = useState(0);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);

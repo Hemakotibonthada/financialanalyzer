@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -96,6 +97,8 @@ function calcTax(income, slabs) {
 }
 
 export default function TaxEstimator() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [grossIncome, setGrossIncome] = useState(1800000);
   const [deductions, setDeductions] = useState({
     '80C': 120000, '80D': 25000, 'HRA': 100000, 'LTA': 20000, '80E': 0, 'Std Ded': 50000

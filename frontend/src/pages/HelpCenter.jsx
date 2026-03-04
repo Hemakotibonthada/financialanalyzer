@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import { 
   Search, ChevronDown, ChevronRight, BookOpen, HelpCircle, 
@@ -8,6 +9,8 @@ import {
 import MainLayout from '../components/MainLayout';
 
 const HelpCenter = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState(null);
 

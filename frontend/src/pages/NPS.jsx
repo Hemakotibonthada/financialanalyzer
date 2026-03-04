@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Landmark, Plus, TrendingUp, Calculator, IndianRupee, X, RefreshCw,
   ArrowUpRight, Clock, BarChart3, Users, Shield, PieChart as PieIcon,
@@ -67,6 +68,8 @@ const monthlyContributions = [
 ];
 
 export default function NPS() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [account, setAccount] = useState(initialAccount);
   const [showCalc, setShowCalc] = useState(false);
   const [calcMonthly, setCalcMonthly] = useState(5000);

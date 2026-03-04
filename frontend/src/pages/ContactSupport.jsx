@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 import { 
@@ -7,6 +8,8 @@ import {
 } from 'lucide-react';
 
 const ContactSupport = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [formData, setFormData] = useState({
     name: '',
     email: '',

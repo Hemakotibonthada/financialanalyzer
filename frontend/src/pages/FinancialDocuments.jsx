@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   FileText, Upload, FolderOpen, Search, Eye, Download, Trash2,
   Grid, List, Share2, Clock, AlertTriangle, Plus, X, Filter,
@@ -20,6 +21,8 @@ const categoryList = [
 ];
 
 export default function FinancialDocuments() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [documents, setDocuments] = useState([]);

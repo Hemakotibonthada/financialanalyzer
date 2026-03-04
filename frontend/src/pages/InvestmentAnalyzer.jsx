@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, RadarChart, Radar,
@@ -25,6 +26,8 @@ const fmt = (n) => {
 };
 
 export default function InvestmentAnalyzer() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [showAddForm, setShowAddForm] = useState(false);
   const [newInv, setNewInv] = useState({ name: '', type: 'Stock', invested: '', current: '', units: '', sector: '' });
   const [holdingsList, setHoldingsList] = useState(() => loadLocal('fa_investments'));

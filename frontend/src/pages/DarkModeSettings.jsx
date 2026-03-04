@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Palette, Sun, Moon, Monitor, Droplets, Type, LayoutGrid, GripVertical,
   RotateCcw, Save, Check, Eye, ChevronDown, Minus, Plus, X,
@@ -66,6 +67,8 @@ const PREVIEW_PIE = [
 ];
 
 export default function DarkModeSettings() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState('system');

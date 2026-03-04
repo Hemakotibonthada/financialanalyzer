@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Building2, Plus, CreditCard, ArrowRightLeft, Wallet, TrendingUp,
   TrendingDown, Search, Filter, MoreVertical, X, Check, RefreshCw,
@@ -27,6 +28,8 @@ const CATEGORIES = ['Personal', 'Business', 'Joint'];
 const BANK_COLORS = { 'SBI': '#1a237e', 'HDFC': '#004b87', 'ICICI': '#f37b21', 'Axis': '#800020', 'Kotak': '#ed1c24', 'PNB': '#0d47a1', 'Default': '#3b82f6' };
 
 export default function BankAccountManager() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);

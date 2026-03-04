@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Shield, ShieldCheck, ShieldAlert, Smartphone, Laptop, Monitor,
   MapPin, Clock, Trash2, LogOut, Key, Lock, Unlock, Eye, EyeOff,
@@ -46,6 +47,8 @@ const DEFAULT_SCORE_DATA = [
 ];
 
 export default function SecurityCenter() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sessions, setSessions] = useState([]);

@@ -6,7 +6,7 @@
 // and model training status.
 // ============================================================================
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, RadarChart,
@@ -23,6 +23,7 @@ import {
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 import { useTheme } from '../context/ThemeContext';
+import { ThemeGradientText, ThemeButton, PageLoader, EmptyPlaceholder } from '../components/ui/ThemePageComponents';
 import { FadeIn, StaggerChildren, PageTransition, AnimatedCounter, AnimatedProgress, CardSkeleton, GlassCard, AnimatedBadge } from '../components/ui/AnimatedComponents';
 
 // ─── Constants ──────────────────────────────────────────────────────
@@ -93,9 +94,9 @@ function StatMini({ icon: Icon, label, value, sub, color = 'blue', isDark }) {
 // ─── Anomaly Card ───────────────────────────────────────────────────
 function AnomalyCard({ anomaly, isDark }) {
   const sev = {
-    high: { bg: isDark ? 'bg-red-900/20 border-red-800/50' : 'bg-red-50 border-red-200', icon: 'text-red-500', badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
-    medium: { bg: isDark ? 'bg-amber-900/20 border-amber-800/50' : 'bg-amber-50 border-amber-200', icon: 'text-amber-500', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
-    low: { bg: isDark ? 'bg-blue-900/20 border-blue-800/50' : 'bg-blue-50 border-blue-200', icon: 'text-blue-500', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' },
+    high: { bg: isDark ? 'bg-red-900/20 border-red-800/50' : 'bg-red-50 border-red-200', icon: 'text-red-500', badge: isDark ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-700' },
+    medium: { bg: isDark ? 'bg-amber-900/20 border-amber-800/50' : 'bg-amber-50 border-amber-200', icon: 'text-amber-500', badge: isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-100 text-amber-700' },
+    low: { bg: isDark ? 'bg-blue-900/20 border-blue-800/50' : 'bg-blue-50 border-blue-200', icon: 'text-blue-500', badge: isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-700' },
   };
   const s = sev[anomaly.severity] || sev.low;
   return (
@@ -157,7 +158,7 @@ function RecCard({ rec, index, isDark }) {
             </div>
           )}
           {(rec.potentialSavings > 0 || rec.impact) && (
-            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+            <div className={`flex items-center gap-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'} font-semibold text-sm`}>
               <DollarSign className="w-4 h-4" />
               {rec.potentialSavings > 0 ? `Potential Savings: ₹${rec.potentialSavings.toLocaleString()}` : rec.impact}
             </div>
@@ -192,7 +193,34 @@ const AICommandCenter = () => {
   const [training, setTraining] = useState(false);
   const [trainResult, setTrainResult] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const { isDark } = useTheme();
+  const { mode } = useTheme();
+  const isDark = mode === 'dark' || mode === 'black';
+  const isBlack = mode === 'black';
+
+  /* ── 3-mode palette tokens ─────────────────────────────── */
+  const p = useMemo(() => {
+    const dk = mode === 'dark' || mode === 'black';
+    const bk = mode === 'black';
+    return {
+      dk, bk,
+      bg: bk ? 'bg-black' : dk ? 'bg-slate-900' : 'bg-gray-50',
+      card: bk ? 'bg-gray-950 border border-gray-800' : dk ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white border-gray-200',
+      cardHover: bk ? 'hover:border-gray-700' : dk ? 'hover:border-slate-600' : 'hover:border-gray-300',
+      text: dk ? 'text-white' : 'text-gray-900',
+      textSub: dk ? 'text-slate-400' : 'text-gray-600',
+      textMuted: dk ? 'text-slate-500' : 'text-gray-400',
+      border: dk ? 'border-slate-700/50' : 'border-gray-200',
+      gridStroke: dk ? '#334155' : '#e5e7eb',
+      tickFill: dk ? '#94a3b8' : '#6b7280',
+      tooltipBg: bk ? '#0a0a0a' : dk ? '#1e293b' : '#fff',
+      tabBg: bk ? 'bg-gray-950' : dk ? 'bg-slate-800/50' : 'bg-gray-100',
+      tabInactive: dk ? 'text-slate-400 hover:text-white hover:bg-slate-700/50' : 'text-gray-600 hover:text-gray-900 hover:bg-white',
+      refreshBtn: bk ? 'bg-gray-900 hover:bg-gray-800 text-gray-200 border border-gray-700' : dk ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300',
+      emptyIcon: dk ? 'text-slate-600' : 'text-gray-300',
+      tinted: (c) => dk ? `bg-${c}-900/20 border-${c}-800/50` : `bg-${c}-50 border-${c}-200`,
+      tintedBadge: (c) => dk ? `bg-${c}-900/40 text-${c}-400` : `bg-${c}-100 text-${c}-700`,
+    };
+  }, [mode]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -263,15 +291,7 @@ const AICommandCenter = () => {
   if (loading) {
     return (
       <MainLayout title="AI Command Center">
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <CardSkeleton key={i} lines={2} />)}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CardSkeleton lines={8} />
-            <CardSkeleton lines={8} />
-          </div>
-        </div>
+        <PageLoader message="Loading AI intelligence..." />
       </MainLayout>
     );
   }
@@ -279,16 +299,12 @@ const AICommandCenter = () => {
   if (error) {
     return (
       <MainLayout title="AI Command Center">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className={`text-center p-8 rounded-2xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
-            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Failed to Load AI Data</h3>
-            <p className={`mb-4 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{error}</p>
-            <button onClick={fetchAll} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-medium">
-              <RefreshCw className="w-4 h-4 inline mr-2" /> Retry
-            </button>
-          </div>
-        </div>
+        <EmptyPlaceholder
+          icon={AlertTriangle}
+          title="Failed to Load AI Data"
+          message={error}
+          action={<ThemeButton onClick={fetchAll}><RefreshCw className="w-4 h-4 mr-2" /> Retry</ThemeButton>}
+        />
       </MainLayout>
     );
   }
@@ -296,13 +312,12 @@ const AICommandCenter = () => {
   // ─── Header actions ────────────────────────────────────────────
   const headerActions = (
     <div className="flex items-center gap-3">
-      <button onClick={handleTrain} disabled={training}
-        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${training ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isDark ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}>
+      <ThemeButton onClick={handleTrain} disabled={training} className={training ? 'opacity-50 cursor-not-allowed' : ''}>
         <Cpu className={`w-4 h-4 ${training ? 'animate-spin' : ''}`} />
         {training ? 'Training...' : 'Train Models'}
-      </button>
+      </ThemeButton>
       <button onClick={fetchAll}
-        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:shadow-lg ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'}`}>
+        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:shadow-lg ${p.refreshBtn}`}>
         <RefreshCw className="w-4 h-4" /> Refresh
       </button>
     </div>
@@ -324,7 +339,7 @@ const AICommandCenter = () => {
         )}
 
         {/* Tabs */}
-        <div className={`mb-6 flex flex-wrap gap-2 p-1.5 rounded-2xl ${isDark ? 'bg-slate-800/50' : 'bg-gray-100'}`}>
+        <div className={`mb-6 flex flex-wrap gap-2 p-1.5 rounded-2xl ${p.tabBg}`}>
           {tabs.map(tab => {
             const TabIcon = tab.icon;
             const active = activeTab === tab.id;
@@ -332,7 +347,7 @@ const AICommandCenter = () => {
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${active
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                  : isDark ? 'text-slate-400 hover:text-white hover:bg-slate-700/50' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}>
+                  : p.tabInactive}`}>
                 <TabIcon className="w-4 h-4" /> {tab.label}
                 {tab.id === 'anomalies' && anomalies.length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">{anomalies.length}</span>

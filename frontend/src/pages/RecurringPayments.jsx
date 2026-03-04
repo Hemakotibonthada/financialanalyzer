@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Repeat, Plus, Edit3, Trash2, Pause, Play, Calendar, CreditCard, Wifi, Tv,
   Home, Car, Heart, Music, Cloud, Shield, X, Check, ChevronLeft, ChevronRight,
@@ -36,6 +37,8 @@ const FREQUENCIES = ['Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function RecurringPayments() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState([]);
   const [showModal, setShowModal] = useState(false);

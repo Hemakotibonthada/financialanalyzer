@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { Upload, FileText, Search, Star, Clock, Filter, Trash2, Eye, Download } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import api from '../services/api';
 
 const Documents = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);

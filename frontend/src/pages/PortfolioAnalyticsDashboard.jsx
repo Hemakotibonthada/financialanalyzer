@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   TrendingUp,
@@ -48,6 +49,8 @@ ChartJS.register(
 );
 
 const PortfolioAnalyticsDashboard = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [portfolioData, setPortfolioData] = useState(null);
   const [timeframe, setTimeframe] = useState('1Y');

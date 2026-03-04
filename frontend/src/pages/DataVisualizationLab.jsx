@@ -4,6 +4,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { AnimatedCard, StatCard, AnimatedTabs, SearchInput, Modal, Badge, DropdownMenu } from '../components/ui/ComponentLibrary';
 import { EnhancedLineChart, EnhancedBarChart, EnhancedDoughnutChart, FinancialRadarChart, ScatterPlot, HeatmapChart, WaterfallChart, TreemapChart, GaugeChart, ComparisonChart } from '../components/ui/ChartComponents';
 import { formatCurrency, formatDate } from '../utils/helpers';
@@ -69,6 +70,8 @@ const COLOR_THEMES = {
 };
 
 export default function DataVisualizationLab() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeTab, setActiveTab] = useState('gallery');
   const [selectedChart, setSelectedChart] = useState(null);
   const [selectedSource, setSelectedSource] = useState('transactions');

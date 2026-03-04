@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Users, UserPlus, Wallet, PiggyBank, Target, Receipt, ChevronRight,
   Edit3, Trash2, Plus, X, Check, Star, TrendingUp, TrendingDown,
@@ -34,6 +35,8 @@ const AVATARS = ['👨', '👩', '👦', '👧', '👴', '👶'];
 
 
 export default function FamilyFinance() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState(() => loadLocal('fa_family_members'));
   const [bills, setBills] = useState(() => loadLocal('fa_family_bills'));

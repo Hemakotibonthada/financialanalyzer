@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
-import { Plus, RefreshCw, Mail } from 'lucide-react';
+import { Plus, RefreshCw, Mail, AlertCircle } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
+import {
+  PageShell, PageLoader, EmptyPlaceholder, ThemeButton
+} from '../components/ui/ThemePageComponents';
 import FinancialSummary from '../components/FinancialSummary';
 import MonthlyTrends from '../components/MonthlyTrends';
 import CategoryBreakdown from '../components/CategoryBreakdown';
@@ -22,11 +26,25 @@ import { FadeIn, StaggerChildren, CardSkeleton, PageTransition } from '../compon
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const { mode, accent } = useTheme();
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  const isDark = mode === 'dark' || mode === 'black';
+  const isBlack = mode === 'black';
+  const p = useMemo(() => ({
+    bg: isBlack ? 'bg-black' : isDark ? 'bg-slate-950' : 'bg-gray-50',
+    card: isBlack ? 'bg-zinc-900 border-zinc-800' : isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200',
+    text: isBlack ? 'text-zinc-100' : isDark ? 'text-slate-100' : 'text-gray-900',
+    textSub: isBlack ? 'text-zinc-400' : isDark ? 'text-slate-400' : 'text-gray-600',
+    textMuted: isBlack ? 'text-zinc-500' : isDark ? 'text-slate-500' : 'text-gray-500',
+    border: isBlack ? 'border-zinc-800' : isDark ? 'border-slate-700' : 'border-gray-200',
+    btnBg: isBlack ? 'bg-zinc-800 hover:bg-zinc-700' : isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-white hover:bg-gray-50',
+    btnBorder: isBlack ? 'border-zinc-700' : isDark ? 'border-slate-600' : 'border-gray-300',
+  }), [isDark, isBlack]);
 
   useEffect(() => {
     fetchDashboardData(true); // Always fetch fresh data on page load
@@ -153,8 +171,8 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <PageShell>
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => <CardSkeleton key={i} lines={2} />)}
           </div>
@@ -164,30 +182,28 @@ const Dashboard = () => {
             <CardSkeleton lines={8} />
           </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 mb-4">
-            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      <PageShell>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <EmptyPlaceholder
+              icon={AlertCircle}
+              title="Unable to Load Dashboard"
+              message={error}
+            />
+            <div className="flex justify-center mt-6">
+              <ThemeButton onClick={fetchDashboardData} icon={RefreshCw}>
+                Try Again
+              </ThemeButton>
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Unable to Load Dashboard</h3>
-          <p className="text-gray-600 dark:text-slate-400 mb-4">{error}</p>
-          <button
-            onClick={fetchDashboardData}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Try Again
-          </button>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -197,7 +213,7 @@ const Dashboard = () => {
       <button
         onClick={handleRefresh}
         disabled={refreshing}
-        className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-all"
+        className={`inline-flex items-center gap-2 px-3 py-2 border ${p.btnBorder} rounded-lg text-sm font-medium ${p.textSub} ${p.btnBg} disabled:opacity-50 transition-all`}
         title="Refresh Data"
       >
         <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -315,25 +331,25 @@ const Dashboard = () => {
       {/* Recent Activity */}
       {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
         <FadeIn direction="up" delay={400}>
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 transition-all duration-300 hover:shadow-lg dark:hover:shadow-slate-900/50">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Analysis Activity</h3>
+        <div className={`${p.card} border rounded-xl shadow-sm transition-all duration-300 hover:shadow-lg`}>
+          <div className={`px-6 py-4 border-b ${p.border}`}>
+            <h3 className={`text-lg font-medium ${p.text}`}>Recent Analysis Activity</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {dashboardData.recentActivity.slice(0, 5).map((activity) => (
-                <div key={activity._id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-slate-800 last:border-0">
+                <div key={activity._id} className={`flex items-center justify-between py-3 border-b ${p.border} last:border-0`}>
                   <div className="flex items-center gap-3">
                     <div className={`h-2 w-2 rounded-full ${
                       activity.status === 'completed' ? 'bg-green-500' : 
                       activity.status === 'processing' ? 'bg-yellow-500' : 
-                      activity.status === 'failed' ? 'bg-red-500' : 'bg-gray-400 dark:bg-slate-500'
+                      activity.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
                     }`}></div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                      <p className={`text-sm font-medium ${p.text} capitalize`}>
                         {activity.analysisType?.replace(/_/g, ' ')}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                      <p className={`text-xs ${p.textMuted}`}>
                         {activity.status === 'completed' && activity.transactionsAnalyzed ? 
                           `${activity.transactionsAnalyzed} transactions analyzed` : 
                           activity.status === 'processing' ? 'Processing...' :
@@ -344,13 +360,13 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                    <p className={`text-sm ${p.textSub}`}>
                       {activity.status === 'completed' && activity.summary?.totalExpenses ? 
                         `₹${activity.summary.totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 
                         '-'
                       }
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                    <p className={`text-xs ${p.textMuted}`}>
                       {new Date(activity.createdAt).toLocaleDateString('en-IN')}
                     </p>
                   </div>

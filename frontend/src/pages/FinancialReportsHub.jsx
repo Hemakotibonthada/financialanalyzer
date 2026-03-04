@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   FileBarChart2, Download, FileText, Calendar, Clock, Star, StarOff, Plus,
   Filter, Search, Eye, Trash2, Mail, X, Check, ChevronDown, Settings,
@@ -38,6 +39,8 @@ const REPORT_TEMPLATES = [
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 export default function FinancialReportsHub() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('templates');

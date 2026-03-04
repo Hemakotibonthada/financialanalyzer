@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
@@ -73,6 +74,8 @@ const PORTFOLIO_IMPACT = [
 ];
 
 export default function MarketInsights() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeTab, setActiveTab] = useState('overview');
   const [sentimentScore, setSentimentScore] = useState(62);
   const [indices, setIndices] = useState(MARKET_INDICES);

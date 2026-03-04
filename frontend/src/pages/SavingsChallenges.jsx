@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { AnimatedCard, StatCard, Badge, ProgressRing, AnimatedTabs, EmptyState, SearchInput } from '../components/ui/ComponentLibrary';
 import { EnhancedDoughnutChart, EnhancedBarChart, Sparkline } from '../components/ui/ChartComponents';
 import { useLocalStorage, useAnimatedCounter } from '../hooks/useCustomHooks';
@@ -198,6 +199,8 @@ const LeaderboardView = ({ leaderboard }) => {
 
 // ===== Main Component =====
 export default function SavingsChallenges() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);

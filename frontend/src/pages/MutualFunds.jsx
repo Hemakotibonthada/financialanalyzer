@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   TrendingUp, TrendingDown, IndianRupee, Plus, X, Calendar, BarChart3,
   ArrowUpRight, ArrowDownRight, Search, Filter, Calculator, Layers,
@@ -37,6 +38,8 @@ const topPerformingFunds = [
 const emptyForm = { name: '', category: 'equity', amount: '', type: 'sip', units: '', nav: '' };
 
 export default function MutualFunds() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [funds, setFunds] = useState(() => loadLocal('fa_mutual_funds'));
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);

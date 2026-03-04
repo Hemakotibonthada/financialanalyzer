@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, DollarSign,
   CreditCard, TrendingUp, Bell, Check, Clock, Tag, Edit2, Trash2, Repeat,
@@ -86,6 +87,8 @@ const EventForm = ({ event, onSave, onCancel }) => {
 };
 
 export default function FinancialCalendar() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [events, setEvents] = useState([]);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   CreditCard, Plus, X, Calendar, Gift, AlertTriangle, TrendingUp,
   ChevronLeft, ChevronRight, Star, Eye, EyeOff, Wallet, BarChart3,
@@ -48,6 +49,8 @@ const UtilizationRing = ({ used, limit, size = 100 }) => {
 };
 
 export default function CreditCardManager() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(0);

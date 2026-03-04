@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { useParams, Link } from 'react-router-dom';
 import { financialService } from '../services/api';
 import { ArrowLeft, Loader } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 
 const ReportDetail = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const { id } = useParams();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);

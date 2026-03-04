@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, Search } from 'lucide-react';
 
@@ -6,6 +7,8 @@ import { Home, ArrowLeft, Search } from 'lucide-react';
  * 404 Not Found page with helpful navigation options.
  */
 const NotFound = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 px-4">
       <div className="max-w-lg w-full text-center">

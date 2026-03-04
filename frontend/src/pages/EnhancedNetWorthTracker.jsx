@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Minus, RefreshCw, Calendar,
   DollarSign, Home, Car, Briefcase, CreditCard, PiggyBank, BarChart3,
@@ -93,6 +94,8 @@ const NetWorthGauge = ({ netWorth, totalAssets, totalLiabilities }) => {
 };
 
 const EnhancedNetWorthTracker = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [assets, setAssets] = useState([]);
   const [liabilities, setLiabilities] = useState([]);
   const [loading, setLoading] = useState(true);

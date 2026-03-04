@@ -6,6 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import {
   StatCard, SectionHeader, InsightCard, EmptyState,
@@ -262,6 +263,8 @@ const AddTransactionModal = ({ show, onClose, onAdd }) => {
 // ============================================================================
 
 const EnhancedTransactionManagerV2 = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [totalCount, setTotalCount] = useState(0);

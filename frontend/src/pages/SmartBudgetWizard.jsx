@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
@@ -40,6 +41,8 @@ function toMonthly(amount, freq) {
 }
 
 export default function SmartBudgetWizard() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [currentStep, setCurrentStep] = useState(0);
   const [frequency, setFrequency] = useState('monthly');
   const [income, setIncome] = useState({ salary: '', other: '' });

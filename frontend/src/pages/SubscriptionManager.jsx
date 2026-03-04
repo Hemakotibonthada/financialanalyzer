@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   CreditCard, Plus, Edit2, Trash2, Search, Filter, Calendar,
   DollarSign, Bell, TrendingUp, ArrowUpRight, ArrowDownRight,
@@ -95,6 +96,8 @@ const SubscriptionForm = ({ subscription, onSave, onCancel }) => {
 };
 
 export default function SubscriptionManager() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [subscriptions, setSubscriptions] = useState([]);

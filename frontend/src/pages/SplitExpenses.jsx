@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Users, Plus, Edit3, Trash2, UserPlus, DollarSign, ArrowRight, Share2,
   Check, X, Copy, Link2, Calculator, ChevronDown, ChevronRight, Search,
@@ -24,6 +25,8 @@ const AnimatedValue = ({ end, prefix = '₹' }) => {
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#f97316'];
 
 export default function SplitExpenses() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -8,6 +9,8 @@ import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
 const CreditScoreDetail = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [creditData, setcreditData] = useState(null);

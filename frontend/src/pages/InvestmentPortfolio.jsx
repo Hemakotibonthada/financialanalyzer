@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Container,
   Grid,
@@ -68,6 +69,8 @@ const CATEGORIES = ['equity', 'debt', 'hybrid', 'commodity', 'real_estate', 'cry
 const RISK_LEVELS = ['low', 'medium', 'high'];
 
 function InvestmentPortfolio() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeTab, setActiveTab] = useState(0);
   const [investments, setInvestments] = useState([]);
   const [portfolio, setPortfolio] = useState(null);

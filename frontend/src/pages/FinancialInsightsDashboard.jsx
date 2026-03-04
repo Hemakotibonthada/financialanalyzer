@@ -6,6 +6,8 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
+import MainLayout from '../components/MainLayout';
 import {
   TrendingUp, TrendingDown, Activity, DollarSign, BarChart3,
   Target, AlertTriangle, CheckCircle2, Info, Shield, Zap,
@@ -105,6 +107,8 @@ function InsightAlertCard({ insight }) {
 
 // ─── Main Component ─────────────────────────────────────────────────
 export default function FinancialInsightsDashboard() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -193,7 +197,8 @@ export default function FinancialInsightsDashboard() {
   const insights = data?.insights || [];
 
   return (
-    <PageTransition>
+    <MainLayout>
+      <PageTransition>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
         <FadeIn>
@@ -456,5 +461,6 @@ export default function FinancialInsightsDashboard() {
         )}
       </div>
     </PageTransition>
+    </MainLayout>
   );
 }

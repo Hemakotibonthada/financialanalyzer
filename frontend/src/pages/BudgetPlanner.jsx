@@ -5,14 +5,17 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { AnimatedCard, StatCard, Badge, Modal, ProgressRing, Stepper, AnimatedTabs, SearchInput, DropdownMenu, Accordion, EmptyState } from '../components/ui/ComponentLibrary';
 import { EnhancedBarChart, EnhancedDoughnutChart, EnhancedLineChart, GaugeChart, Sparkline } from '../components/ui/ChartComponents';
+import { PageShell, PageLoader, EmptyPlaceholder, ThemeGradientText, ThemeButton, SectionCard, StatusPill, ProgressBar } from '../components/ui/ThemePageComponents';
 import { useScrollReveal, useAnimatedCounter, useLocalStorage, useForm } from '../hooks/useCustomHooks';
 import { formatCurrency, formatPercentage, getCategoryIcon } from '../utils/helpers';
 import '../styles/animations.css';
 import MainLayout from '../components/MainLayout';
 import { FadeIn, StaggerChildren, PageTransition } from '../components/ui/AnimatedComponents';
+import { Wallet, TrendingUp, PieChart, AlertTriangle, Sparkles, Calendar, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const BUDGET_CATEGORIES = [
   { id: 'housing', name: 'Housing/Rent', icon: '🏠', recommended: 30, color: '#667eea' },
@@ -39,6 +42,7 @@ const BUDGET_RULES = {
 
 export default function BudgetPlanner() {
   const { user } = useAuth();
+  const { mode, accent } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -60,6 +64,33 @@ export default function BudgetPlanner() {
     history: [],
     alerts: [],
   });
+
+  // Theme-aware palette
+  const p = useMemo(() => {
+    const isDark = mode === 'dark', isBlack = mode === 'black';
+    return {
+      isDark: isDark || isBlack,
+      bg: isBlack ? 'bg-black' : isDark ? 'bg-gray-900' : 'bg-gray-50',
+      card: isBlack ? 'bg-gray-950 border-gray-800' : isDark ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-gray-200',
+      cardGlass: isBlack ? 'bg-gray-950/80 backdrop-blur-xl border-gray-800'
+        : isDark ? 'bg-gray-800/40 backdrop-blur-xl border-gray-700/50'
+        : 'bg-white/70 backdrop-blur-xl border-gray-200/50',
+      text: isBlack ? 'text-gray-100' : isDark ? 'text-white' : 'text-gray-900',
+      textSub: isBlack ? 'text-gray-400' : isDark ? 'text-gray-300' : 'text-gray-600',
+      textMuted: isBlack ? 'text-gray-500' : isDark ? 'text-gray-400' : 'text-gray-500',
+      border: isBlack ? 'border-gray-800' : isDark ? 'border-gray-700' : 'border-gray-200',
+      inputBg: isBlack ? 'bg-gray-900 border-gray-700' : isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200',
+      hoverBg: isBlack ? 'hover:bg-gray-900' : isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50',
+      alertRed: isBlack ? 'bg-red-950/40 border-red-800/60 text-red-300' : isDark ? 'bg-red-900/20 border-red-800 text-red-300' : 'bg-red-50 border-red-200 text-red-700',
+      alertYellow: isBlack ? 'bg-yellow-950/40 border-yellow-800/60 text-yellow-300' : isDark ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' : 'bg-yellow-50 border-yellow-200 text-yellow-700',
+      alertBlue: isBlack ? 'bg-blue-950/40 border-blue-800/60' : isDark ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200',
+      gradientCard: isBlack ? 'bg-gradient-to-r from-blue-950/30 to-purple-950/30' : isDark ? 'bg-gradient-to-r from-blue-900/20 to-purple-900/20' : 'bg-gradient-to-r from-blue-50 to-purple-50',
+      barBg: isBlack ? 'bg-gray-800' : isDark ? 'bg-gray-700' : 'bg-gray-200',
+      tableRowHover: isBlack ? 'hover:bg-gray-900/50' : isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50',
+      tableBorder: isBlack ? 'border-gray-800' : isDark ? 'border-gray-700' : 'border-gray-200',
+      tableBorderLight: isBlack ? 'border-gray-800/50' : isDark ? 'border-gray-700/50' : 'border-gray-100',
+    };
+  }, [mode]);
 
   // Fetch budget data from API
   useEffect(() => {
@@ -284,63 +315,59 @@ export default function BudgetPlanner() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500 dark:text-gray-400">Loading budget data...</p>
-        </div>
-      </div>
+      <MainLayout>
+        <PageShell>
+          <PageLoader text="Loading budget data..." />
+        </PageShell>
+      </MainLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <span className="text-4xl block mb-4">⚠️</span>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Budgets</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
-          <button
-            onClick={() => setSelectedMonth(prev => prev)} // triggers re-fetch
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+      <MainLayout>
+        <PageShell>
+          <EmptyPlaceholder
+            icon={<AlertTriangle className="w-12 h-12" />}
+            title="Error Loading Budgets"
+            subtitle={error}
           >
-            Retry
-          </button>
-        </div>
-      </div>
+            <ThemeButton onClick={() => setSelectedMonth(prev => prev)}>
+              Try Again
+            </ThemeButton>
+          </EmptyPlaceholder>
+        </PageShell>
+      </MainLayout>
     );
   }
 
   return (
     <MainLayout title="Budget Planner">
     <PageTransition>
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className={`min-h-screen ${p.bg} p-6 transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Budget Planner</h1>
-            <p className="text-gray-500 mt-1">Plan, track, and optimize your spending</p>
+            <h1 className={`text-3xl font-bold ${p.text} flex items-center gap-3`}>
+              <Wallet className="w-8 h-8 text-current opacity-70" />
+              <ThemeGradientText>Budget Planner</ThemeGradientText>
+            </h1>
+            <p className={`${p.textMuted} mt-1`}>Plan, track, and optimize your spending</p>
           </div>
           <div className="flex items-center gap-3">
             <input
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm"
+              className={`px-4 py-2 ${p.inputBg} border rounded-xl text-sm ${p.text}`}
             />
-            <button
-              onClick={() => setShowSuggestions(true)}
-              className="px-4 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-            >
-              🤖 AI Suggestions
-            </button>
-            <button
-              onClick={() => setShowAddBudget(true)}
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
+            <ThemeButton onClick={() => setShowSuggestions(true)} variant="secondary" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> AI Suggestions
+            </ThemeButton>
+            <ThemeButton onClick={() => setShowAddBudget(true)}>
               + Set Budget
-            </button>
+            </ThemeButton>
           </div>
         </div>
 
@@ -363,7 +390,7 @@ export default function BudgetPlanner() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Budget Gauge */}
               <AnimatedCard>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Budget Usage</h3>
+                <h3 className={`text-lg font-semibold ${p.text} mb-4`}>Budget Usage</h3>
                 <GaugeChart
                   value={totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0}
                   max={100}
@@ -388,7 +415,7 @@ export default function BudgetPlanner() {
 
               {/* Category Breakdown Donut */}
               <AnimatedCard>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Spending by Category</h3>
+                <h3 className={`text-lg font-semibold ${p.text} mb-4`}>Spending by Category</h3>
                 <EnhancedDoughnutChart
                   data={budgetData.categories.filter(c => c.spent > 0).map(c => c.spent)}
                   labels={budgetData.categories.filter(c => c.spent > 0).map(c => c.name)}
@@ -401,7 +428,7 @@ export default function BudgetPlanner() {
 
               {/* Budget Alerts */}
               <AnimatedCard>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center justify-between">
+                <h3 className={`text-lg font-semibold ${p.text} mb-4 flex items-center justify-between`}>
                   Budget Alerts
                   {overBudgetCategories.length > 0 && (
                     <Badge variant="danger" dot pulse>{overBudgetCategories.length}</Badge>
@@ -409,12 +436,12 @@ export default function BudgetPlanner() {
                 </h3>
                 <div className="space-y-3">
                   {overBudgetCategories.map((cat, i) => (
-                    <div key={i} className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <div key={i} className={`p-3 ${p.alertRed} rounded-xl border`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span>{cat.icon}</span>
-                        <span className="text-sm font-medium text-red-700 dark:text-red-300">{cat.name}</span>
+                        <span className="text-sm font-medium">{cat.name}</span>
                       </div>
-                      <div className="text-xs text-red-600 dark:text-red-400">
+                      <div className="text-xs opacity-80">
                         Over budget by {formatCurrency(cat.spent - cat.budgeted)}
                       </div>
                     </div>
@@ -422,12 +449,12 @@ export default function BudgetPlanner() {
                   {budgetData.categories
                     .filter(c => c.budgeted > 0 && c.spent / c.budgeted > 0.8 && c.spent <= c.budgeted)
                     .map((cat, i) => (
-                      <div key={`warn-${i}`} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                      <div key={`warn-${i}`} className={`p-3 ${p.alertYellow} rounded-xl border`}>
                         <div className="flex items-center gap-2 mb-1">
                           <span>{cat.icon}</span>
-                          <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">{cat.name}</span>
+                          <span className="text-sm font-medium">{cat.name}</span>
                         </div>
-                        <div className="text-xs text-yellow-600 dark:text-yellow-400">
+                        <div className="text-xs opacity-80">
                           {((cat.spent / cat.budgeted) * 100).toFixed(0)}% used - {formatCurrency(cat.remaining)} remaining
                         </div>
                       </div>
@@ -445,7 +472,7 @@ export default function BudgetPlanner() {
 
             {/* Budget vs Actual */}
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Budget vs Actual Spending</h3>
+              <h3 className={`text-lg font-semibold ${p.text} mb-4`}>Budget vs Actual Spending</h3>
               <EnhancedBarChart
                 labels={budgetData.categories.map(c => c.name.split(' ')[0])}
                 datasets={[
@@ -469,10 +496,10 @@ export default function BudgetPlanner() {
                   <span className="text-3xl">{cat.icon}</span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900 dark:text-white">{cat.name}</span>
+                      <span className={`font-medium ${p.text}`}>{cat.name}</span>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          <span className={`text-sm font-bold ${p.text}`}>
                             {formatCurrency(cat.spent)}
                           </span>
                           <span className="text-xs text-gray-400 ml-1">
@@ -487,7 +514,7 @@ export default function BudgetPlanner() {
                         </Badge>
                       </div>
                     </div>
-                    <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-2.5 ${p.barBg} rounded-full overflow-hidden`}>
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
@@ -506,31 +533,30 @@ export default function BudgetPlanner() {
                       type="number"
                       value={cat.budgeted}
                       onChange={(e) => updateCategoryBudget(cat.id, Number(e.target.value))}
-                      className="w-24 px-2 py-1 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-right"
+                      className={`w-24 px-2 py-1 ${p.inputBg} border rounded-lg text-sm text-right ${p.text}`}
                     />
                   </div>
                 </div>
               </AnimatedCard>
             ))}
 
-            <AnimatedCard className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+            <AnimatedCard className={p.gradientCard}>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-sm text-gray-500">Total Budgeted</span>
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalBudgeted)}</div>
+                  <span className={`text-sm ${p.textMuted}`}>Total Budgeted</span>
+                  <div className={`text-xl font-bold ${p.text}`}>{formatCurrency(totalBudgeted)}</div>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-500">Unallocated</span>
+                  <span className={`text-sm ${p.textMuted}`}>Unallocated</span>
                   <div className={`text-xl font-bold ${budgetData.income - totalBudgeted >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(budgetData.income - totalBudgeted)}
                   </div>
                 </div>
-                <button
+                <ThemeButton
                   onClick={() => {/* Save budgets */}}
-                  className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
                 >
                   Save Budget
-                </button>
+                </ThemeButton>
               </div>
             </AnimatedCard>
           </div>
@@ -541,7 +567,7 @@ export default function BudgetPlanner() {
           <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AnimatedCard>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">50/30/20 Rule Analysis</h3>
+                <h3 className={`text-lg font-semibold ${p.text} mb-4`}>50/30/20 Rule Analysis</h3>
                 <div className="space-y-4">
                   {[
                     { label: 'Needs (50%)', actual: ruleAnalysis.needs, target: 50, color: '#667eea' },
@@ -550,7 +576,7 @@ export default function BudgetPlanner() {
                   ].map((item, i) => (
                     <div key={i}>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
+                        <span className={`${p.textSub}`}>{item.label}</span>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{item.actual}%</span>
                           <Badge variant={Math.abs(item.actual - item.target) <= 5 ? 'success' : 'warning'} size="xs">
@@ -558,13 +584,13 @@ export default function BudgetPlanner() {
                           </Badge>
                         </div>
                       </div>
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
+                      <div className={`h-3 ${p.barBg} rounded-full overflow-hidden relative`}>
                         <div
                           className="h-full rounded-full transition-all duration-700"
                           style={{ width: `${item.actual}%`, backgroundColor: item.color }}
                         />
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-gray-900 dark:bg-white"
+                          className={`absolute top-0 bottom-0 w-0.5 ${p.isDark ? 'bg-white' : 'bg-gray-900'}`}
                           style={{ left: `${item.target}%` }}
                         />
                       </div>
@@ -574,7 +600,7 @@ export default function BudgetPlanner() {
               </AnimatedCard>
 
               <AnimatedCard>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Spending Efficiency</h3>
+                <h3 className={`text-lg font-semibold ${p.text} mb-4`}>Spending Efficiency</h3>
                 <div className="flex items-center justify-center py-4">
                   <GaugeChart
                     value={efficiencyData.score}
@@ -615,7 +641,7 @@ export default function BudgetPlanner() {
             </div>
 
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Budget Adherence</h3>
+              <h3 className={`text-lg font-semibold ${p.text} mb-4`}>Monthly Budget Adherence</h3>
               {budgetData.history.length > 0 ? (
                 <EnhancedLineChart
                   labels={[...budgetData.history].reverse().map(h => h.month.split(' ')[0])}
@@ -643,17 +669,17 @@ export default function BudgetPlanner() {
         {activeTab === 'history' && (
           <div className="space-y-6 animate-fadeIn">
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Budget Performance History</h3>
+              <h3 className={`text-lg font-semibold ${p.text} mb-4`}>Budget Performance History</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="py-3 px-4 text-left text-gray-500 font-medium">Month</th>
-                      <th className="py-3 px-4 text-right text-gray-500 font-medium">Budgeted</th>
-                      <th className="py-3 px-4 text-right text-gray-500 font-medium">Spent</th>
-                      <th className="py-3 px-4 text-right text-gray-500 font-medium">Savings</th>
-                      <th className="py-3 px-4 text-center text-gray-500 font-medium">Status</th>
-                      <th className="py-3 px-4 text-center text-gray-500 font-medium">Adherence</th>
+                    <tr className={`border-b ${p.tableBorder}`}>
+                      <th className={`py-3 px-4 text-left ${p.textMuted} font-medium`}>Month</th>
+                      <th className={`py-3 px-4 text-right ${p.textMuted} font-medium`}>Budgeted</th>
+                      <th className={`py-3 px-4 text-right ${p.textMuted} font-medium`}>Spent</th>
+                      <th className={`py-3 px-4 text-right ${p.textMuted} font-medium`}>Savings</th>
+                      <th className={`py-3 px-4 text-center ${p.textMuted} font-medium`}>Status</th>
+                      <th className={`py-3 px-4 text-center ${p.textMuted} font-medium`}>Adherence</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -661,8 +687,8 @@ export default function BudgetPlanner() {
                       const savings = row.budgeted - row.spent;
                       const adherence = row.budgeted > 0 ? (row.spent / row.budgeted) * 100 : 0;
                       return (
-                        <tr key={i} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                          <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{row.month}</td>
+                        <tr key={i} className={`border-b ${p.tableBorderLight} ${p.tableRowHover}`}>
+                          <td className={`py-3 px-4 font-medium ${p.text}`}>{row.month}</td>
                           <td className="py-3 px-4 text-right">{formatCurrency(row.budgeted)}</td>
                           <td className="py-3 px-4 text-right">{formatCurrency(row.spent)}</td>
                           <td className={`py-3 px-4 text-right font-medium ${savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -675,7 +701,7 @@ export default function BudgetPlanner() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-2">
-                              <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className={`w-16 h-1.5 ${p.barBg} rounded-full overflow-hidden`}>
                                 <div
                                   className="h-full rounded-full"
                                   style={{
@@ -708,7 +734,7 @@ export default function BudgetPlanner() {
       {/* AI Budget Suggestions Modal */}
       <Modal isOpen={showSuggestions} onClose={() => setShowSuggestions(false)} title="🤖 AI Budget Suggestions" size="lg">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className={`text-sm ${p.textSub}`}>
             Based on your spending patterns, here are recommended budget allocations:
           </p>
           
@@ -719,11 +745,11 @@ export default function BudgetPlanner() {
                 onClick={() => { applySuggestion(key); setShowSuggestions(false); }}
                 className={`p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.02] ${
                   budgetRule === key
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                    ? `border-blue-500 ${p.alertBlue}`
+                    : `${p.border} hover:border-blue-300`
                 }`}
               >
-                <div className="font-semibold text-gray-900 dark:text-white mb-2">{rule.name}</div>
+                <div className={`font-semibold ${p.text} mb-2`}>{rule.name}</div>
                 <div className="space-y-1 text-xs text-gray-500">
                   <div>Needs: {rule.needs}% = {formatCurrency((rule.needs / 100) * budgetData.income)}</div>
                   <div>Wants: {rule.wants}% = {formatCurrency((rule.wants / 100) * budgetData.income)}</div>
@@ -733,9 +759,9 @@ export default function BudgetPlanner() {
             ))}
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-            <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">💡 Tips</h4>
-            <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+          <div className={`${p.alertBlue} rounded-xl p-4 border`}>
+            <h4 className={`font-medium ${p.isDark ? 'text-blue-300' : 'text-blue-700'} mb-2`}>💡 Tips</h4>
+            <ul className={`text-sm ${p.isDark ? 'text-blue-400' : 'text-blue-600'} space-y-1`}>
               {overBudgetCategories.length > 0 && (
                 <li>• You are over budget in {overBudgetCategories.length} {overBudgetCategories.length === 1 ? 'category' : 'categories'} — review spending in {overBudgetCategories.map(c => c.name).join(', ')}</li>
               )}

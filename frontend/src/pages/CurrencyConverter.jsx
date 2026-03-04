@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   ArrowLeftRight, Search, Star, StarOff, Bell, BellRing, TrendingUp, TrendingDown,
   RefreshCw, ChevronDown, Globe, DollarSign, Clock, Filter, X, Plus, Trash2, Check
@@ -43,6 +44,8 @@ const POPULAR_CURRENCIES = [
 ];
 
 export default function CurrencyConverter() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [rates, setRates] = useState({});
   const [fromCurrency, setFromCurrency] = useState('USD');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Bitcoin, Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   IndianRupee, X, Trash2, RefreshCw, AlertTriangle, Newspaper, Calculator,
@@ -19,6 +20,8 @@ const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data))
 const emptyForm = { name: '', symbol: '', quantity: '', avgPrice: '', currentPrice: '' };
 
 export default function CryptoPortfolio() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [holdings, setHoldings] = useState(() => loadLocal('fa_crypto_holdings'));
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState(emptyForm);

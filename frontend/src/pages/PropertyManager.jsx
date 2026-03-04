@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Home, Building2, MapPin, Plus, Edit2, Trash2, TrendingUp, TrendingDown,
   DollarSign, Calendar, Wrench, Calculator, BarChart3, ArrowUpRight,
@@ -26,6 +27,8 @@ const PROPERTY_TYPES = [
 const emptyForm = { name: '', type: 'owned', value: '', address: '', area: '', year: '' };
 
 export default function PropertyManager() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [properties, setProperties] = useState(() => loadLocal('fa_properties'));
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(emptyForm);

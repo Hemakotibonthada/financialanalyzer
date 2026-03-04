@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Eye, Plus, Trash2, Bell, Search, Filter, TrendingUp, TrendingDown,
   ArrowUpRight, ArrowDownRight, Star, RefreshCw, BarChart3, Newspaper,
@@ -36,6 +37,8 @@ const SparklineChart = ({ data, positive }) => (
 );
 
 export default function WatchlistDashboard() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [watchlist, setWatchlist] = useState(() => loadLocal('fa_watchlist'));
   const [searchTerm, setSearchTerm] = useState('');

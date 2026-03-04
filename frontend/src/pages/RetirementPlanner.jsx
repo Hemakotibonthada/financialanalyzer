@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   BarChart, Bar, AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -74,6 +75,8 @@ const pensionBreakdown = [
 ];
 
 export default function RetirementPlanner() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [retireAge, setRetireAge] = useState(60);
   const [currentAge] = useState(30);
   const [monthlyContribution, setMonthlyContribution] = useState(25000);

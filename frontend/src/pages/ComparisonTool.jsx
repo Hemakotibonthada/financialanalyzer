@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Scale, CreditCard, Home, Shield, TrendingUp, Star, ChevronDown,
   Plus, X, Check, AlertCircle, Save, BarChart3, RefreshCw, Zap,
@@ -54,6 +55,8 @@ const EMPTY_PRODUCT = {
 };
 
 export default function ComparisonTool() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [productType, setProductType] = useState('credit-cards');
   const [selected, setSelected] = useState([]);
   const [weights, setWeights] = useState({ rewardRate: 5, securityScore: 5, customerService: 5, benefits: 5, flexibility: 5 });

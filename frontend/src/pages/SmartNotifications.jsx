@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Bell, BellOff, BellRing, Check, CheckCheck, X, ChevronDown,
   Settings, Filter, Trash2, AlertTriangle, Target, TrendingUp,
@@ -65,6 +66,8 @@ function normalizeNotification(n) {
 }
 
 export default function SmartNotifications() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notifications, setNotifications] = useState([]);

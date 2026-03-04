@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
@@ -45,6 +46,8 @@ function getLevel(xp) {
 }
 
 export default function Milestones() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeCategory, setActiveCategory] = useState('all');
   const [celebrating, setCelebrating] = useState(null);
   const [shareOpen, setShareOpen] = useState(null);

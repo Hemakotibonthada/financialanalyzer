@@ -335,6 +335,33 @@ export const aiTrainingService = {
   getGoalForecast: () => api.get('/ai-training/goal-forecast'),
 };
 
+// ─── AI Model Manager Service ───────────────────────────────────────
+export const aiModelService = {
+  // Dashboard & Status
+  getDashboard: () => api.get('/ai-models/dashboard'),
+  getRegistry: () => api.get('/ai-models/registry'),
+  getModelVersions: (name) => api.get(`/ai-models/registry/${name}`),
+  getHealth: () => api.get('/ai-models/health'),
+  // Training
+  trainAll: () => api.post('/ai-models/train'),
+  trainModel: (modelName) => api.post(`/ai-models/train/${modelName}`),
+  learnIncremental: (transactions) => api.post('/ai-models/learn', { transactions }),
+  // Scheduler
+  getScheduler: () => api.get('/ai-models/scheduler'),
+  startScheduler: (intervalMs) => api.post('/ai-models/scheduler/start', { intervalMs }),
+  stopScheduler: () => api.post('/ai-models/scheduler/stop'),
+  // Model Lifecycle
+  promoteModel: (modelName, version) => api.post('/ai-models/promote', { modelName, version }),
+  compareModels: (model, versionA, versionB) =>
+    api.get('/ai-models/compare', { params: { model, versionA, versionB } }),
+  // Drift Detection
+  getDrift: (name) => api.get(`/ai-models/drift/${name}`),
+  // A/B Testing
+  createABTest: (testName, modelA, modelB, trafficSplit) =>
+    api.post('/ai-models/ab-test', { testName, modelA, modelB, trafficSplit }),
+  getABTestResults: (name) => api.get(`/ai-models/ab-test/${name}`),
+};
+
 // ─── Data Export Service ────────────────────────────────────────────
 export const dataExportService = {
   exportTransactions: (params) => api.get('/data-export/transactions', { params, responseType: 'blob' }),

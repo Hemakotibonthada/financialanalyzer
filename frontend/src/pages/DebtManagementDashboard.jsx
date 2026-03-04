@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   TrendingDown,
@@ -45,6 +46,8 @@ ChartJS.register(
 );
 
 const DebtManagementDashboard = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [debtData, setDebtData] = useState(null);
   const [comparison, setComparison] = useState(null);

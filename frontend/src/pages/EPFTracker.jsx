@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Briefcase, Plus, TrendingUp, Calculator, Calendar, IndianRupee, X,
   Upload, ArrowUpRight, Clock, BarChart3, Users, Shield, FileText,
@@ -68,6 +69,8 @@ const withdrawalRules = [
 ];
 
 export default function EPFTracker() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [account] = useState(initialAccount);
   const [showCalc, setShowCalc] = useState(false);
   const [vpfAmount, setVpfAmount] = useState(0);

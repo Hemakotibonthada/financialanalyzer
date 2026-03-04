@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Camera, Upload, Image, FileText, Edit3, Trash2, Check, X, Save, Eye,
   RotateCcw, ZoomIn, Search, Filter, Calendar, Tag, Store, Plus, Download,
@@ -25,6 +26,8 @@ const CATEGORIES = ['Food & Dining', 'Groceries', 'Shopping', 'Transport', 'Util
 const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#64748b'];
 
 export default function ReceiptScanner() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [receipts, setReceipts] = useState([]);

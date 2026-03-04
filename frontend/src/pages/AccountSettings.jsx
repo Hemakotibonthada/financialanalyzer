@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatedCard, AnimatedTabs, Badge, Modal, Avatar } from '../components/ui/ComponentLibrary';
 import { useTheme } from '../context/ThemeContext';
+import { ThemeGradientText, ThemeButton } from '../components/ui/ThemePageComponents';
 import { useAuth } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useCustomHooks';
 import api from '../services/api';
@@ -37,7 +38,8 @@ const FONT_SIZES = [
 ];
 
 export default function AccountSettings() {
-  const { darkMode, toggleTheme } = useTheme();
+  const { mode, darkMode, toggleTheme } = useTheme();
+  const dk = mode === 'dark' || mode === 'black';
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -118,11 +120,11 @@ export default function AccountSettings() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className={`min-h-screen ${dk ? 'bg-gray-900' : 'bg-gray-50'} p-6`}>
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Account Settings</h1>
+          <h1 className={`text-3xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>Account Settings</h1>
           <p className="text-gray-500 mt-1">Manage your profile, preferences, and privacy</p>
         </div>
 
@@ -154,7 +156,7 @@ export default function AccountSettings() {
                   </button>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <h2 className={`text-xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>
                     {profileData.firstName} {profileData.lastName}
                   </h2>
                   <p className="text-gray-500">{profileData.email}</p>
@@ -170,11 +172,11 @@ export default function AccountSettings() {
                 <FormField label="Phone" value={profileData.phone} type="tel" onChange={(v) => setProfileData(p => ({ ...p, phone: v }))} />
                 <FormField label="Date of Birth" value={profileData.dateOfBirth} type="date" onChange={(v) => setProfileData(p => ({ ...p, dateOfBirth: v }))} />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender</label>
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Gender</label>
                   <select
                     value={profileData.gender}
                     onChange={(e) => setProfileData(p => ({ ...p, gender: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
+                    className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -188,12 +190,12 @@ export default function AccountSettings() {
                 <FormField label="State" value={profileData.state} onChange={(v) => setProfileData(p => ({ ...p, state: v }))} />
               </div>
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Bio</label>
                 <textarea
                   value={profileData.bio}
                   onChange={(e) => setProfileData(p => ({ ...p, bio: e.target.value }))}
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl resize-none"
+                  className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl resize-none`}
                 />
               </div>
               <div className="flex justify-end mt-4">
@@ -209,35 +211,35 @@ export default function AccountSettings() {
         {activeTab === 'preferences' && (
           <div className="space-y-6">
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Regional Settings</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Regional Settings</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
-                  <select value={preferences.currency} onChange={(e) => setPreferences(p => ({ ...p, currency: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Currency</label>
+                  <select value={preferences.currency} onChange={(e) => setPreferences(p => ({ ...p, currency: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     {CURRENCIES.map(c => (
                       <option key={c.code} value={c.code}>{c.symbol} {c.name} ({c.code})</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Language</label>
-                  <select value={preferences.language} onChange={(e) => setPreferences(p => ({ ...p, language: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Language</label>
+                  <select value={preferences.language} onChange={(e) => setPreferences(p => ({ ...p, language: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     {LANGUAGES.map(l => (
                       <option key={l.code} value={l.code}>{l.flag} {l.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Format</label>
-                  <select value={preferences.dateFormat} onChange={(e) => setPreferences(p => ({ ...p, dateFormat: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Date Format</label>
+                  <select value={preferences.dateFormat} onChange={(e) => setPreferences(p => ({ ...p, dateFormat: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                     <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                     <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiscal Year Start</label>
-                  <select value={preferences.fiscalYearStart} onChange={(e) => setPreferences(p => ({ ...p, fiscalYearStart: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Fiscal Year Start</label>
+                  <select value={preferences.fiscalYearStart} onChange={(e) => setPreferences(p => ({ ...p, fiscalYearStart: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     <option value="january">January</option>
                     <option value="april">April (India)</option>
                     <option value="july">July</option>
@@ -248,7 +250,7 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={100}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Display Preferences</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Display Preferences</h3>
               <div className="space-y-4">
                 <ToggleSetting label="Compact Numbers" description="Show 1.2L instead of 1,20,000" value={preferences.compactNumbers} onChange={(v) => setPreferences(p => ({ ...p, compactNumbers: v }))} />
                 <ToggleSetting label="Show Decimals" description="Display paisa/cents in amounts" value={preferences.showDecimal} onChange={(v) => setPreferences(p => ({ ...p, showDecimal: v }))} />
@@ -261,11 +263,11 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={200}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Default Settings</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Default Settings</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Dashboard</label>
-                  <select value={preferences.defaultDashboard} onChange={(e) => setPreferences(p => ({ ...p, defaultDashboard: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Default Dashboard</label>
+                  <select value={preferences.defaultDashboard} onChange={(e) => setPreferences(p => ({ ...p, defaultDashboard: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     <option value="overview">Overview</option>
                     <option value="analytics">Analytics</option>
                     <option value="goals">Goals</option>
@@ -273,8 +275,8 @@ export default function AccountSettings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Time Range</label>
-                  <select value={preferences.defaultTimeRange} onChange={(e) => setPreferences(p => ({ ...p, defaultTimeRange: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Default Time Range</label>
+                  <select value={preferences.defaultTimeRange} onChange={(e) => setPreferences(p => ({ ...p, defaultTimeRange: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     <option value="7d">7 Days</option>
                     <option value="30d">30 Days</option>
                     <option value="90d">90 Days</option>
@@ -282,8 +284,8 @@ export default function AccountSettings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Items Per Page</label>
-                  <select value={preferences.itemsPerPage} onChange={(e) => setPreferences(p => ({ ...p, itemsPerPage: Number(e.target.value) }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Items Per Page</label>
+                  <select value={preferences.itemsPerPage} onChange={(e) => setPreferences(p => ({ ...p, itemsPerPage: Number(e.target.value) }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl`}>
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
@@ -304,11 +306,11 @@ export default function AccountSettings() {
         {activeTab === 'notifications' && (
           <div className="space-y-6">
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📧 Email Notifications</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>📧 Email Notifications</h3>
               <div className="space-y-3">
                 <ToggleSetting label="Email Notifications" description="Master toggle for email notifications" value={notifications.email.enabled} onChange={(v) => setNotifications(p => ({ ...p, email: { ...p.email, enabled: v } }))} />
                 {notifications.email.enabled && (
-                  <div className="pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className={`pl-4 border-l-2 ${dk ? 'border-gray-700' : 'border-gray-200'} space-y-3`}>
                     <ToggleSetting label="Bill Reminders" description="Get reminders before bills are due" value={notifications.email.billReminders} onChange={(v) => setNotifications(p => ({ ...p, email: { ...p.email, billReminders: v } }))} />
                     <ToggleSetting label="Budget Alerts" description="Alerts when approaching budget limits" value={notifications.email.budgetAlerts} onChange={(v) => setNotifications(p => ({ ...p, email: { ...p.email, budgetAlerts: v } }))} />
                     <ToggleSetting label="Weekly Report" description="Weekly financial summary" value={notifications.email.weeklyReport} onChange={(v) => setNotifications(p => ({ ...p, email: { ...p.email, weeklyReport: v } }))} />
@@ -322,11 +324,11 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={100}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔔 Push Notifications</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>🔔 Push Notifications</h3>
               <div className="space-y-3">
                 <ToggleSetting label="Push Notifications" description="Browser/mobile push notifications" value={notifications.push.enabled} onChange={(v) => setNotifications(p => ({ ...p, push: { ...p.push, enabled: v } }))} />
                 {notifications.push.enabled && (
-                  <div className="pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className={`pl-4 border-l-2 ${dk ? 'border-gray-700' : 'border-gray-200'} space-y-3`}>
                     <ToggleSetting label="Bill Reminders" value={notifications.push.billReminders} onChange={(v) => setNotifications(p => ({ ...p, push: { ...p.push, billReminders: v } }))} />
                     <ToggleSetting label="Budget Alerts" value={notifications.push.budgetAlerts} onChange={(v) => setNotifications(p => ({ ...p, push: { ...p.push, budgetAlerts: v } }))} />
                     <ToggleSetting label="Transaction Alerts" value={notifications.push.transactionAlerts} onChange={(v) => setNotifications(p => ({ ...p, push: { ...p.push, transactionAlerts: v } }))} />
@@ -337,11 +339,11 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={200}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📱 SMS Notifications</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>📱 SMS Notifications</h3>
               <div className="space-y-3">
                 <ToggleSetting label="SMS Notifications" description="Text message alerts" value={notifications.sms.enabled} onChange={(v) => setNotifications(p => ({ ...p, sms: { ...p.sms, enabled: v } }))} />
                 {notifications.sms.enabled && (
-                  <div className="pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className={`pl-4 border-l-2 ${dk ? 'border-gray-700' : 'border-gray-200'} space-y-3`}>
                     <ToggleSetting label="Bill Reminders" value={notifications.sms.billReminders} onChange={(v) => setNotifications(p => ({ ...p, sms: { ...p.sms, billReminders: v } }))} />
                     <ToggleSetting label="Security Alerts" value={notifications.sms.securityAlerts} onChange={(v) => setNotifications(p => ({ ...p, sms: { ...p.sms, securityAlerts: v } }))} />
                   </div>
@@ -361,15 +363,15 @@ export default function AccountSettings() {
         {activeTab === 'privacy' && (
           <div className="space-y-6">
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔒 Security</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>🔒 Security</h3>
               <div className="space-y-3">
                 <ToggleSetting label="Two-Factor Authentication" description="Extra security with OTP on login" value={privacy.twoFactorAuth} onChange={(v) => setPrivacy(p => ({ ...p, twoFactorAuth: v }))} />
                 <ToggleSetting label="Biometric Login" description="Use fingerprint or face recognition" value={privacy.biometricLogin} onChange={(v) => setPrivacy(p => ({ ...p, biometricLogin: v }))} />
                 <ToggleSetting label="Login Notifications" description="Get alerted on new device logins" value={privacy.loginNotifications} onChange={(v) => setPrivacy(p => ({ ...p, loginNotifications: v }))} />
                 <ToggleSetting label="Data Encryption" description="Encrypt sensitive financial data" value={privacy.dataEncryption} onChange={(v) => setPrivacy(p => ({ ...p, dataEncryption: v }))} />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Session Timeout (minutes)</label>
-                  <select value={privacy.sessionTimeout} onChange={(e) => setPrivacy(p => ({ ...p, sessionTimeout: Number(e.target.value) }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl max-w-xs">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Session Timeout (minutes)</label>
+                  <select value={privacy.sessionTimeout} onChange={(e) => setPrivacy(p => ({ ...p, sessionTimeout: Number(e.target.value) }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl max-w-xs`}>
                     <option value="15">15 minutes</option>
                     <option value="30">30 minutes</option>
                     <option value="60">1 hour</option>
@@ -381,11 +383,11 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={100}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">👁️ Privacy</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>👁️ Privacy</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Visibility</label>
-                  <select value={privacy.profileVisibility} onChange={(e) => setPrivacy(p => ({ ...p, profileVisibility: e.target.value }))} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl max-w-xs">
+                  <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Profile Visibility</label>
+                  <select value={privacy.profileVisibility} onChange={(e) => setPrivacy(p => ({ ...p, profileVisibility: e.target.value }))} className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl max-w-xs`}>
                     <option value="private">Private - Only me</option>
                     <option value="friends">Friends only</option>
                     <option value="public">Public</option>
@@ -397,25 +399,25 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={200}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔑 Password & Authentication</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>🔑 Password & Authentication</h3>
               <div className="space-y-3">
-                <button className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group">
+                <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-gray-800' : 'bg-gray-50'} ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group`}>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">Change Password</div>
+                    <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>Change Password</div>
                     <div className="text-xs text-gray-500">Last changed 45 days ago</div>
                   </div>
                   <span className="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
                 </button>
-                <button className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group">
+                <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-gray-800' : 'bg-gray-50'} ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group`}>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">Active Sessions</div>
+                    <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>Active Sessions</div>
                     <div className="text-xs text-gray-500">2 active sessions</div>
                   </div>
                   <span className="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
                 </button>
-                <button className="w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group">
+                <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-gray-800' : 'bg-gray-50'} ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition-colors flex items-center justify-between group`}>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">Connected Accounts</div>
+                    <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>Connected Accounts</div>
                     <div className="text-xs text-gray-500">Google, GitHub</div>
                   </div>
                   <span className="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
@@ -435,7 +437,7 @@ export default function AccountSettings() {
         {activeTab === 'appearance' && (
           <div className="space-y-6">
             <AnimatedCard>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🌓 Theme</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>🌓 Theme</h3>
               <div className="grid grid-cols-3 gap-4">
                 {[
                   { value: 'light', label: 'Light', icon: '☀️', bg: 'bg-white border-gray-200', textColor: 'text-gray-900' },
@@ -451,18 +453,18 @@ export default function AccountSettings() {
                     className={`p-6 rounded-xl text-center border-2 transition-all ${
                       (darkMode && theme.value === 'dark') || (!darkMode && theme.value === 'light')
                         ? 'ring-2 ring-blue-500 border-blue-300'
-                        : 'border-gray-200 dark:border-gray-700'
+                        : `${dk ? 'border-gray-700' : 'border-gray-200'}`
                     }`}
                   >
                     <span className="text-3xl block mb-2">{theme.icon}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{theme.label}</span>
+                    <span className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{theme.label}</span>
                   </button>
                 ))}
               </div>
             </AnimatedCard>
 
             <AnimatedCard delay={100}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔤 Font Size</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>🔤 Font Size</h3>
               <div className="grid grid-cols-3 gap-4">
                 {FONT_SIZES.map(size => (
                   <button
@@ -470,11 +472,11 @@ export default function AccountSettings() {
                     onClick={() => setPreferences(p => ({ ...p, fontSize: size.value }))}
                     className={`p-4 rounded-xl text-center transition-all border-2 ${
                       preferences.fontSize === size.value
-                        ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700'
+                        ? `border-blue-300 ${dk ? 'bg-blue-900/20' : 'bg-blue-50'}`
+                        : `${dk ? 'border-gray-700' : 'border-gray-200'}`
                     }`}
                   >
-                    <span style={{ fontSize: `${size.px}px` }} className="font-medium text-gray-900 dark:text-white block mb-1">Aa</span>
+                    <span style={{ fontSize: `${size.px}px` }} className={`font-medium ${dk ? 'text-white' : 'text-gray-900'} block mb-1`}>Aa</span>
                     <span className="text-xs text-gray-500">{size.label}</span>
                   </button>
                 ))}
@@ -482,7 +484,7 @@ export default function AccountSettings() {
             </AnimatedCard>
 
             <AnimatedCard delay={200}>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🎨 Accent Color</h3>
+              <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>🎨 Accent Color</h3>
               <div className="flex gap-3">
                 {['#3B82F6', '#8B5CF6', '#10B981', '#EF4444', '#F59E0B', '#EC4899', '#6366F1', '#14B8A6'].map(color => (
                   <button
@@ -508,31 +510,35 @@ export default function AccountSettings() {
 
 // ======================== HELPER COMPONENTS ========================
 function FormField({ label, value, onChange, type = 'text', placeholder }) {
+  const { mode } = useTheme();
+  const dk = mode === 'dark' || mode === 'black';
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+      <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+        className={`w-full px-4 py-2.5 ${dk ? 'bg-gray-700' : 'bg-gray-50'} border ${dk ? 'border-gray-600' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all`}
       />
     </div>
   );
 }
 
 function ToggleSetting({ label, description, value, onChange }) {
+  const { mode } = useTheme();
+  const dk = mode === 'dark' || mode === 'black';
   return (
     <div className="flex items-center justify-between py-2">
       <div>
-        <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
+        <div className={`text-sm font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{label}</div>
         {description && <div className="text-xs text-gray-500">{description}</div>}
       </div>
       <button
         onClick={() => onChange(!value)}
         className={`relative w-11 h-6 rounded-full transition-colors ${
-          value ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+          value ? 'bg-blue-600' : `${dk ? 'bg-gray-600' : 'bg-gray-300'}`
         }`}
       >
         <div
@@ -547,6 +553,8 @@ function ToggleSetting({ label, description, value, onChange }) {
 
 // ======================== DATA MANAGEMENT TAB ========================
 function DataManagementTab() {
+  const { mode } = useTheme();
+  const dk = mode === 'dark' || mode === 'black';
   const [driveStatus, setDriveStatus] = useState({ configured: false, connected: false, backup: null });
   const [dataCounts, setDataCounts] = useState({ transactions: 0, documents: 0, budgets: 0 });
   const [loading, setLoading] = useState(true);
@@ -837,11 +845,11 @@ function DataManagementTab() {
 
   const getTypeColor = (type) => {
     const colors = {
-      manual: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      daily: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      weekly: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-      monthly: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-      export: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+      manual: `${dk ? 'bg-blue-900/30' : 'bg-blue-100'} ${dk ? 'text-blue-400' : 'text-blue-700'}`,
+      daily: `${dk ? 'bg-green-900/30' : 'bg-green-100'} ${dk ? 'text-green-400' : 'text-green-700'}`,
+      weekly: `${dk ? 'bg-purple-900/30' : 'bg-purple-100'} ${dk ? 'text-purple-400' : 'text-purple-700'}`,
+      monthly: `${dk ? 'bg-orange-900/30' : 'bg-orange-100'} ${dk ? 'text-orange-400' : 'text-orange-700'}`,
+      export: `${dk ? 'bg-gray-800' : 'bg-gray-100'} ${dk ? 'text-gray-400' : 'text-gray-700'}`
     };
     return colors[type] || colors.manual;
   };
@@ -850,7 +858,7 @@ function DataManagementTab() {
     return (
       <div className="text-center py-12">
         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-gray-500 dark:text-gray-400">Loading data management...</p>
+        <p className={`${dk ? 'text-gray-400' : 'text-gray-500'}`}>Loading data management...</p>
       </div>
     );
   }
@@ -860,29 +868,29 @@ function DataManagementTab() {
     <div className="space-y-6">
       {/* Status Message */}
       {message && (
-        <div className={`p-4 rounded-xl text-sm font-medium animate-fadeIn ${message.type === 'success' ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
+        <div className={`p-4 rounded-xl text-sm font-medium animate-fadeIn ${message.type === 'success' ? `${dk ? 'bg-green-900/20' : 'bg-green-100'} ${dk ? 'text-green-400' : 'text-green-700'}` : `${dk ? 'bg-red-900/20' : 'bg-red-100'} ${dk ? 'text-red-400' : 'text-red-700'}`}`}>
           {message.type === 'success' ? '✅' : '❌'} {message.text}
         </div>
       )}
 
       {/* Data Overview */}
       <AnimatedCard>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Data Overview</h3>
+        <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>📊 Data Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.transactions.toLocaleString()}</div>
+          <div className={`p-4 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl text-center`}>
+            <div className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{dataCounts.transactions.toLocaleString()}</div>
             <div className="text-xs text-gray-500">Transactions</div>
           </div>
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{dataCounts.budgets}</div>
+          <div className={`p-4 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl text-center`}>
+            <div className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{dataCounts.budgets}</div>
             <div className="text-xs text-gray-500">Budgets</div>
           </div>
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{backups.length}</div>
+          <div className={`p-4 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl text-center`}>
+            <div className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{backups.length}</div>
             <div className="text-xs text-gray-500">Saved Backups</div>
           </div>
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className={`p-4 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl text-center`}>
+            <div className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>
               {backupSchedule.enabled ? '🟢' : '⚪'}
             </div>
             <div className="text-xs text-gray-500">{backupSchedule.enabled ? `Auto: ${backupSchedule.frequency}` : 'Auto-backup Off'}</div>
@@ -894,8 +902,8 @@ function DataManagementTab() {
       <AnimatedCard delay={100}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">💾 Database Backup & Restore</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>💾 Database Backup & Restore</h3>
+            <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
               Full database backup of all your financial data — transactions, budgets, loans, investments, and more.
             </p>
           </div>
@@ -906,13 +914,13 @@ function DataManagementTab() {
           <button
             onClick={createDatabaseBackup}
             disabled={createBackupLoading}
-            className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 border border-blue-200 dark:border-blue-800 transition-all duration-300 text-left disabled:opacity-50 group"
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-blue-900/20' : 'from-blue-50'} ${dk ? 'to-indigo-900/20' : 'to-indigo-50'} ${dk ? 'hover:from-blue-900/30' : 'hover:from-blue-100'} ${dk ? 'hover:to-indigo-900/30' : 'hover:to-indigo-100'} border ${dk ? 'border-blue-800' : 'border-blue-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{createBackupLoading ? '⏳' : '💾'}</div>
-            <div className="font-semibold text-gray-900 dark:text-white">
+            <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
               {createBackupLoading ? 'Creating Backup...' : 'Create Backup'}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
               Save a snapshot of all your data to the server
             </div>
           </button>
@@ -920,13 +928,13 @@ function DataManagementTab() {
           <button
             onClick={exportBackup}
             disabled={exportLoading}
-            className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border border-green-200 dark:border-green-800 transition-all duration-300 text-left disabled:opacity-50 group"
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-green-900/20' : 'from-green-50'} ${dk ? 'to-emerald-900/20' : 'to-emerald-50'} ${dk ? 'hover:from-green-900/30' : 'hover:from-green-100'} ${dk ? 'hover:to-emerald-900/30' : 'hover:to-emerald-100'} border ${dk ? 'border-green-800' : 'border-green-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{exportLoading ? '⏳' : '📤'}</div>
-            <div className="font-semibold text-gray-900 dark:text-white">
+            <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
               {exportLoading ? 'Exporting...' : 'Export & Download'}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
               Download your entire database as a JSON file
             </div>
           </button>
@@ -934,13 +942,13 @@ function DataManagementTab() {
           <button
             onClick={() => setShowUploadRestore(true)}
             disabled={restoreLoading}
-            className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 border border-purple-200 dark:border-purple-800 transition-all duration-300 text-left disabled:opacity-50 group"
+            className={`p-4 rounded-xl bg-gradient-to-br ${dk ? 'from-purple-900/20' : 'from-purple-50'} ${dk ? 'to-pink-900/20' : 'to-pink-50'} ${dk ? 'hover:from-purple-900/30' : 'hover:from-purple-100'} ${dk ? 'hover:to-pink-900/30' : 'hover:to-pink-100'} border ${dk ? 'border-purple-800' : 'border-purple-200'} transition-all duration-300 text-left disabled:opacity-50 group`}
           >
             <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{restoreLoading ? '⏳' : '📥'}</div>
-            <div className="font-semibold text-gray-900 dark:text-white">
+            <div className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>
               {restoreLoading ? 'Restoring...' : 'Restore from File'}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
               Upload a backup file to restore data
             </div>
           </button>
@@ -948,22 +956,22 @@ function DataManagementTab() {
 
         {/* Upload Restore Panel */}
         {showUploadRestore && (
-          <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 animate-fadeIn">
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">📥 Restore from Uploaded File</h4>
+          <div className={`mb-6 p-4 ${dk ? 'bg-purple-900/20' : 'bg-purple-50'} rounded-xl border ${dk ? 'border-purple-800' : 'border-purple-200'} animate-fadeIn`}>
+            <h4 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-3`}>📥 Restore from Uploaded File</h4>
             <div className="flex flex-col sm:flex-row gap-4 items-start">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Restore Strategy</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Restore Strategy</label>
                 <select
                   value={restoreStrategy}
                   onChange={(e) => setRestoreStrategy(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-white text-sm"
+                  className={`w-full px-3 py-2 border rounded-lg ${dk ? 'bg-gray-700' : 'bg-white'} ${dk ? 'border-gray-600' : ''} ${dk ? 'text-white' : 'text-gray-900'} text-sm`}
                 >
                   <option value="merge">Merge (keep existing + add new)</option>
                   <option value="replace">Replace (overwrite with backup data)</option>
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Backup File (.json or .json.gz)</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Backup File (.json or .json.gz)</label>
                 <input
                   type="file"
                   accept=".json,.gz"
@@ -980,7 +988,7 @@ function DataManagementTab() {
         {/* Backup History */}
         {backups.length > 0 && (
           <div>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <h4 className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-3 flex items-center gap-2`}>
               📋 Backup History
               <Badge variant="default" className="text-xs">{backups.length}</Badge>
             </h4>
@@ -988,20 +996,20 @@ function DataManagementTab() {
               {backups.map((b) => (
                 <div
                   key={b.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
+                  className={`flex items-center justify-between p-3 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl ${dk ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} transition-colors group`}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="text-xl">{b.fileExists ? '💾' : '⚠️'}</div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <span className={`text-sm font-medium ${dk ? 'text-white' : 'text-gray-900'} truncate`}>
                           {new Date(b.createdAt).toLocaleString()}
                         </span>
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getTypeColor(b.type)}`}>
                           {b.type}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
                         {b.totalDocuments} docs · {b.totalCollections} collections · {formatBytes(b.sizeBytes)}
                         {b.uncompressedSizeBytes && ` (${formatBytes(b.uncompressedSizeBytes)} uncompressed)`}
                       </div>
@@ -1012,19 +1020,19 @@ function DataManagementTab() {
                       <>
                         <button
                           onClick={() => downloadBackup(b.id, b.filename)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          className={`p-2 text-blue-600 ${dk ? 'hover:bg-blue-900/30' : 'hover:bg-blue-100'} rounded-lg transition-colors`}
                           title="Download"
                         >⬇️</button>
                         <button
                           onClick={() => { setRestoreId(b.id); setShowRestoreModal(true); }}
-                          className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                          className={`p-2 text-green-600 ${dk ? 'hover:bg-green-900/30' : 'hover:bg-green-100'} rounded-lg transition-colors`}
                           title="Restore"
                         >🔄</button>
                       </>
                     )}
                     <button
                       onClick={() => deleteBackup(b.id)}
-                      className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      className={`p-2 text-red-500 ${dk ? 'hover:bg-red-900/30' : 'hover:bg-red-100'} rounded-lg transition-colors`}
                       title="Delete"
                     >🗑️</button>
                   </div>
@@ -1035,7 +1043,7 @@ function DataManagementTab() {
         )}
 
         {backups.length === 0 && (
-          <div className="text-center py-6 text-gray-400 dark:text-gray-500">
+          <div className={`text-center py-6 ${dk ? 'text-gray-500' : 'text-gray-400'}`}>
             <div className="text-3xl mb-2">📭</div>
             <p className="text-sm">No backups yet. Create your first backup above!</p>
           </div>
@@ -1044,22 +1052,22 @@ function DataManagementTab() {
 
       {/* ===== AUTOMATIC BACKUP SCHEDULE ===== */}
       <AnimatedCard delay={200}>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">⏰ Automatic Backup Schedule</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-2`}>⏰ Automatic Backup Schedule</h3>
+        <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'} mb-4`}>
           Configure automatic scheduled backups to protect your data without manual effort.
         </p>
 
-        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-4">
+        <div className={`p-4 ${dk ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl space-y-4`}>
           {/* Enable/Disable Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-gray-900 dark:text-white">Enable Auto-Backup</div>
+              <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>Enable Auto-Backup</div>
               <div className="text-xs text-gray-500">Automatically create backups on a schedule</div>
             </div>
             <button
               onClick={() => updateSchedule({ ...backupSchedule, enabled: !backupSchedule.enabled })}
               disabled={scheduleLoading}
-              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${backupSchedule.enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'} disabled:opacity-50`}
+              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${backupSchedule.enabled ? 'bg-green-500' : `${dk ? 'bg-gray-600' : 'bg-gray-300'}`} disabled:opacity-50`}
             >
               <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${backupSchedule.enabled ? 'translate-x-8' : 'translate-x-1'}`} />
             </button>
@@ -1069,7 +1077,7 @@ function DataManagementTab() {
           {backupSchedule.enabled && (
             <div className="animate-fadeIn space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Backup Frequency</label>
+                <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Backup Frequency</label>
                 <div className="grid grid-cols-3 gap-2">
                   {['daily', 'weekly', 'monthly'].map(freq => (
                     <button
@@ -1078,8 +1086,8 @@ function DataManagementTab() {
                       disabled={scheduleLoading}
                       className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 border-2 ${
                         backupSchedule.frequency === freq
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 shadow-md'
-                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          ? `border-blue-500 ${dk ? 'bg-blue-900/30' : 'bg-blue-50'} ${dk ? 'text-blue-400' : 'text-blue-700'} shadow-md`
+                          : `${dk ? 'border-gray-700' : 'border-gray-200'} ${dk ? 'text-gray-400' : 'text-gray-600'} hover:border-gray-300 ${dk ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`
                       } disabled:opacity-50`}
                     >
                       <div className="text-lg mb-1">{freq === 'daily' ? '📅' : freq === 'weekly' ? '📆' : '🗓️'}</div>
@@ -1093,8 +1101,8 @@ function DataManagementTab() {
               </div>
 
               {/* Retention Settings */}
-              <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Retention Policy</div>
+              <div className={`p-3 ${dk ? 'bg-gray-900' : 'bg-white'} rounded-lg border ${dk ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className={`text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Retention Policy</div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { key: 'daily', label: 'Daily', count: backupSchedule.retentionCount?.daily || 7 },
@@ -1103,7 +1111,7 @@ function DataManagementTab() {
                   ].map(r => (
                     <div key={r.key} className="text-center">
                       <div className="text-xs text-gray-500 mb-1">{r.label} backups</div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-white">Keep {r.count}</div>
+                      <div className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>Keep {r.count}</div>
                     </div>
                   ))}
                 </div>
@@ -1111,12 +1119,12 @@ function DataManagementTab() {
 
               {/* Schedule Info */}
               {backupSchedule.lastRun && (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
                   Last auto-backup: {new Date(backupSchedule.lastRun).toLocaleString()}
                 </div>
               )}
               {backupSchedule.nextRun && (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
                   Next auto-backup: {new Date(backupSchedule.nextRun).toLocaleString()}
                 </div>
               )}
@@ -1127,22 +1135,22 @@ function DataManagementTab() {
 
       {/* Google Drive Integration */}
       <AnimatedCard delay={300}>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">☁️ Google Drive Sync</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-2`}>☁️ Google Drive Sync</h3>
+        <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'} mb-4`}>
           Backup your financial data to Google Drive and access it from any device.
         </p>
 
         {!driveStatus.configured ? (
-          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
-            <p className="text-sm text-yellow-700 dark:text-yellow-400">
+          <div className={`p-4 ${dk ? 'bg-yellow-900/20' : 'bg-yellow-50'} rounded-xl`}>
+            <p className={`text-sm ${dk ? 'text-yellow-400' : 'text-yellow-700'}`}>
               Google Drive integration requires Google OAuth credentials. Ask your administrator to set
               GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_DRIVE_REDIRECT_URI in the server .env file.
             </p>
           </div>
         ) : !driveStatus.connected ? (
           <div className="space-y-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-              <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+            <div className={`p-4 ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} rounded-xl`}>
+              <p className={`text-sm ${dk ? 'text-blue-400' : 'text-blue-700'} mb-3`}>
                 Connect your Google Drive to enable cloud backup and cross-device data sync.
               </p>
               <button onClick={connectDrive}
@@ -1156,13 +1164,13 @@ function DataManagementTab() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+            <div className={`flex items-center justify-between p-4 ${dk ? 'bg-green-900/20' : 'bg-green-50'} rounded-xl`}>
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
                 <div>
-                  <div className="text-sm font-medium text-green-700 dark:text-green-400">Google Drive Connected</div>
+                  <div className={`text-sm font-medium ${dk ? 'text-green-400' : 'text-green-700'}`}>Google Drive Connected</div>
                   {driveStatus.backup && (
-                    <div className="text-xs text-green-600 dark:text-green-500">
+                    <div className={`text-xs ${dk ? 'text-green-500' : 'text-green-600'}`}>
                       Last backup: {new Date(driveStatus.backup.lastModified).toLocaleString()}
                       {driveStatus.backup.size && ` (${(parseInt(driveStatus.backup.size) / 1024).toFixed(1)} KB)`}
                     </div>
@@ -1176,16 +1184,16 @@ function DataManagementTab() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button onClick={backupToDrive} disabled={backupLoading}
-                className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-left disabled:opacity-50">
+                className={`p-4 rounded-xl ${dk ? 'bg-blue-900/20' : 'bg-blue-50'} ${dk ? 'hover:bg-blue-900/30' : 'hover:bg-blue-100'} transition-colors text-left disabled:opacity-50`}>
                 <div className="text-lg mb-1">{backupLoading ? '⏳' : '☁️'} Backup to Drive</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-600'}`}>
                   {backupLoading ? 'Backing up...' : 'Save all financial data to Google Drive'}
                 </div>
               </button>
               <button onClick={restoreFromDrive} disabled={restoreLoading || !driveStatus.backup}
-                className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-left disabled:opacity-50">
+                className={`p-4 rounded-xl ${dk ? 'bg-purple-900/20' : 'bg-purple-50'} ${dk ? 'hover:bg-purple-900/30' : 'hover:bg-purple-100'} transition-colors text-left disabled:opacity-50`}>
                 <div className="text-lg mb-1">{restoreLoading ? '⏳' : '📥'} Restore from Drive</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-600'}`}>
                   {restoreLoading ? 'Restoring...' : driveStatus.backup ? 'Restore data from your Drive backup' : 'No backup available yet'}
                 </div>
               </button>
@@ -1195,19 +1203,19 @@ function DataManagementTab() {
       </AnimatedCard>
 
       {/* Danger Zone */}
-      <AnimatedCard delay={400} className="border border-red-200 dark:border-red-800">
+      <AnimatedCard delay={400} className={`border ${dk ? 'border-red-800' : 'border-red-200'}`}>
         <h3 className="text-lg font-semibold text-red-600 mb-4">⚠️ Danger Zone</h3>
         <div className="space-y-3">
-          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-between">
+          <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-red-900/20' : 'bg-red-50'} ${dk ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} transition-colors flex items-center justify-between`}>
             <div>
-              <div className="font-medium text-red-700 dark:text-red-400">Clear All Data</div>
+              <div className={`font-medium ${dk ? 'text-red-400' : 'text-red-700'}`}>Clear All Data</div>
               <div className="text-xs text-red-500">Delete all transactions, budgets, and settings</div>
             </div>
             <span className="text-red-400">🗑️</span>
           </button>
-          <button className="w-full text-left p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center justify-between">
+          <button className={`w-full text-left p-4 rounded-xl ${dk ? 'bg-red-900/20' : 'bg-red-50'} ${dk ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} transition-colors flex items-center justify-between`}>
             <div>
-              <div className="font-medium text-red-700 dark:text-red-400">Delete Account</div>
+              <div className={`font-medium ${dk ? 'text-red-400' : 'text-red-700'}`}>Delete Account</div>
               <div className="text-xs text-red-500">Permanently delete your account and all data</div>
             </div>
             <span className="text-red-400">❌</span>
@@ -1219,18 +1227,18 @@ function DataManagementTab() {
       {showRestoreModal && (
         <Modal onClose={() => setShowRestoreModal(false)} title="Restore from Backup">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-600'}`}>
               Choose how to restore data from this backup:
             </p>
             <div className="space-y-2">
-              <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <label className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors`}>
                 <input type="radio" name="strategy" value="merge" checked={restoreStrategy === 'merge'} onChange={(e) => setRestoreStrategy(e.target.value)} className="mt-1" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Merge</div>
+                  <div className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>Merge</div>
                   <div className="text-xs text-gray-500">Keep existing data and add missing items from the backup. Safest option.</div>
                 </div>
               </label>
-              <label className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <label className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-colors`}>
                 <input type="radio" name="strategy" value="replace" checked={restoreStrategy === 'replace'} onChange={(e) => setRestoreStrategy(e.target.value)} className="mt-1" />
                 <div>
                   <div className="font-medium text-red-600">Replace</div>
@@ -1240,7 +1248,7 @@ function DataManagementTab() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowRestoreModal(false)}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                className={`px-4 py-2 text-sm ${dk ? 'text-gray-400' : 'text-gray-600'} ${dk ? 'hover:text-white' : 'hover:text-gray-900'}`}>
                 Cancel
               </button>
               <button onClick={restoreFromServerBackup}

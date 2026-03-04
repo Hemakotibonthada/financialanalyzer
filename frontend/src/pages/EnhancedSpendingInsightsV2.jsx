@@ -6,6 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import {
@@ -48,6 +49,8 @@ const CATEGORY_ICONS = {
 // ============================================================================
 
 const EnhancedSpendingInsightsV2 = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30');

@@ -3,6 +3,7 @@
 // ============================================================================
 
 import React, { useState, useCallback, useContext } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { ThemeContext } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import {
@@ -504,6 +505,8 @@ function WealthProjection() {
 // ============================================================================
 
 export default function EnhancedFinancialPlanningV2() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const { theme } = useContext(ThemeContext);
   const [activeCalc, setActiveCalc] = useState('sip');
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { Upload, FileText } from 'lucide-react';
 import SpendingDashboard from '../components/SpendingDashboard';
 import DocumentSummary from '../components/DocumentSummary';
@@ -6,6 +7,8 @@ import MainLayout from '../components/MainLayout';
 import '../styles/animations.css';
 
 const Analyzer = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   return (
     <MainLayout title="Add Expense" subtitle="Upload & analyze your financial documents">
       <div className="max-w-7xl mx-auto space-y-8">

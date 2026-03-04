@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Layout, Star, Download, Eye, Plus, X, Search, Filter, Heart,
   BookOpen, Home, Briefcase, Users, Target, ShieldCheck, Sparkles,
@@ -130,6 +131,8 @@ const TEMPLATES = [
 ];
 
 export default function FinancialTemplate() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

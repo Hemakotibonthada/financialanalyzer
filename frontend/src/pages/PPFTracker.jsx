@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Shield, Plus, TrendingUp, Calculator, Calendar, IndianRupee, X,
   ArrowUpRight, Clock, Target, BarChart3, PiggyBank, Award,
@@ -59,6 +60,8 @@ const comparisonData = [
 const emptyForm = { amount: '', year: new Date().getFullYear().toString() };
 
 export default function PPFTracker() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [account, setAccount] = useState(initialAccount);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(emptyForm);

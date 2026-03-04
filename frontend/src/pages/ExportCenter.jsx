@@ -4,6 +4,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { AnimatedCard, StatCard, Badge, Modal, AnimatedTabs, ProgressRing } from '../components/ui/ComponentLibrary';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import api from '../services/api';
@@ -133,6 +134,8 @@ const DATA_CATEGORIES = [
 ];
 
 export default function ExportCenter() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeTab, setActiveTab] = useState('reports');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   MessageSquare, Send, Mic, MicOff, Plus, X, Download, Trash2,
   Sparkles, TrendingUp, Wallet, PiggyBank, Receipt, CreditCard,
@@ -131,6 +132,8 @@ const ChatMessage = ({ message, onCopy }) => {
 };
 
 export default function FinancialChat() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([
     { id: 1, role: 'assistant', text: 'Hello! 👋 I\'m your AI Financial Assistant. I can help you track spending, manage budgets, check savings goals, and more. What would you like to know?', time: '10:00 AM', chart: null },

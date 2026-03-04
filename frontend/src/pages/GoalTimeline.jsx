@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Target, Plus, Edit, Trash2, X, Check, Calendar, TrendingUp,
   Home, Car, GraduationCap, Umbrella, Plane, Heart, Briefcase,
@@ -71,6 +72,8 @@ const Confetti = () => (
 );
 
 export default function GoalTimeline() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [goals, setGoals] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);

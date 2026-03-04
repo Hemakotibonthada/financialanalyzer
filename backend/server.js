@@ -270,6 +270,8 @@ app.use('/api/ml', require('./routes/ml'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 // AI Model Training & NLP Chat
 app.use('/api/ai-training', require('./routes/aiTrainingRoutes'));
+// AI Model Manager — Enterprise Model Registry, Self-Training, Drift Detection, A/B Testing
+app.use('/api/ai-models', require('./routes/aiModelRoutes'));
 // Portfolio Analytics
 app.use('/api/portfolio', require('./routes/portfolio'));
 // Real Estate Management
@@ -393,9 +395,23 @@ app.set('wsEngine', wsEngine);
 // Start backup scheduler after MongoDB is connected
 const backupScheduler = require('./services/backupScheduler');
 const gmailAutoSync = require('./services/gmailAutoSync');
+
+// AI Self-Training Scheduler — automated model retraining
+let selfTrainingScheduler = null;
+try {
+  const schedulerModule = require('./services/selfTrainingScheduler');
+  selfTrainingScheduler = schedulerModule.selfTrainingScheduler || schedulerModule;
+} catch (err) {
+  logger.warn('Self-training scheduler not available:', err.message);
+}
+
 mongoose.connection.once('open', () => {
   backupScheduler.start();
   gmailAutoSync.start();
+  if (selfTrainingScheduler) {
+    selfTrainingScheduler.start();
+    logger.info('🤖 AI Self-Training Scheduler: Active');
+  }
 });
 
 // Handle EADDRINUSE: kill stale process and retry once
@@ -441,6 +457,8 @@ server.listen(PORT, '0.0.0.0', () => {
   logger.info(`✅ Server running on port ${PORT}`);
   logger.info(`🏠 Local: http://localhost:${PORT}`);
   logger.info(`💾 Backup Scheduler: Active`);
+  logger.info(`🤖 AI Engine: Ready (7 modules loaded)`);
+  logger.info(`📡 AI Model Routes: /api/ai-models`);
   
   if (networkIPs.length > 0) {
     networkIPs.forEach(ip => {
@@ -457,8 +475,11 @@ server.listen(PORT, '0.0.0.0', () => {
 const gracefulShutdown = (signal) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
   
-  // Stop backup scheduler
+  // Stop schedulers
   backupScheduler.stop();
+  if (selfTrainingScheduler) {
+    try { selfTrainingScheduler.stop(); } catch (e) { /* ignore */ }
+  }
   
   server.close(() => {
     logger.info('HTTP server closed.');

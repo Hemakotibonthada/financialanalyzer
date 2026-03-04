@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer, LineChart, Line
@@ -57,6 +58,8 @@ function calcPayoff(debts, extraPayment, strategy) {
 }
 
 export default function DebtPayoff() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [debts, setDebts] = useState(() => loadLocal('fa_debts'));
   const [extraPayment, setExtraPayment] = useState(5000);
   const [showAddForm, setShowAddForm] = useState(false);

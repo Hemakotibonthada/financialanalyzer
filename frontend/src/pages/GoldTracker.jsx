@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Gem, Plus, TrendingUp, TrendingDown, IndianRupee, BarChart3, Bell,
   X, Edit2, Trash2, ArrowUpRight, ArrowDownRight, Clock, PieChart as PieIcon,
@@ -37,6 +38,8 @@ const comparisonData = [
 const emptyForm = { type: 'physical', name: '', weight: '', unit: 'grams', purchasePrice: '', purchaseDate: '', purity: '24K' };
 
 export default function GoldTracker() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [holdings, setHoldings] = useState(() => loadLocal('fa_gold_holdings'));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);

@@ -6,6 +6,7 @@
 // ============================================================================
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import { useAIChat } from '../services/aiService';
 import { FadeIn, PageTransition, GlassCard } from '../components/ui/AnimatedComponents';
@@ -154,6 +155,8 @@ function SuggestionChip({ text, onClick, icon }) {
 // ============================================================================
 
 const EnhancedFinancialChatPage = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const { messages, loading, sendMessage, clearChat, suggestedQueries } = useAIChat();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);

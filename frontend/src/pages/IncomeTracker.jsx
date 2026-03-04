@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Wallet, Plus, Edit3, Trash2, TrendingUp, TrendingDown, DollarSign, Briefcase,
   Code, BarChart3, PiggyBank, Building2, Gift, X, Check, Calendar, Filter,
@@ -44,6 +45,8 @@ const TAX_SLABS = [
 ];
 
 export default function IncomeTracker() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [incomes, setIncomes] = useState([]);
   const [showModal, setShowModal] = useState(false);

@@ -29,7 +29,7 @@ import {
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ComposedChart, ReferenceLine
+  ResponsiveContainer, ComposedChart, ReferenceLine, Cell
 } from 'recharts';
 import { useTheme } from '../context/ThemeContext';
 import { aiTrainingService } from '../services/api';

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -32,6 +33,8 @@ import MainLayout from '../components/MainLayout';
 import { FadeIn, PageTransition } from '../components/ui/AnimatedComponents';
 
 const Reports = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState(null);
   const [dateRange, setDateRange] = useState({

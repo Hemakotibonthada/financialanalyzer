@@ -6,6 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import {
   StatCard, SectionHeader, InsightCard, EmptyState,
@@ -244,6 +245,8 @@ const AddGoalModal = ({ show, onClose, onAdd }) => {
 // ============================================================================
 
 const EnhancedFinancialGoalsV2 = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [goals, setGoals] = useState([]);
   const [recommendations, setRecommendations] = useState([]);

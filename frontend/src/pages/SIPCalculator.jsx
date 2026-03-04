@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   TrendingUp, IndianRupee, Percent, Clock, Target, ArrowUpRight,
   BarChart3, Layers, Calculator, Zap, ShieldCheck, ChevronDown, ChevronUp
@@ -54,6 +55,8 @@ function calcGoalSIP(target, rate, years) {
 }
 
 export default function SIPCalculator() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [sipAmount, setSipAmount] = useState(10000);
   const [returnRate, setReturnRate] = useState(12);

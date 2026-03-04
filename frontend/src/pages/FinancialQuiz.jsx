@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
@@ -54,6 +55,8 @@ const QUESTIONS = {
 const LEADERBOARD_DATA = [];
 
 export default function FinancialQuiz() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [view, setView] = useState('menu'); // menu | quiz | results | leaderboard | certificate
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [difficulty, setDifficulty] = useState('beginner');

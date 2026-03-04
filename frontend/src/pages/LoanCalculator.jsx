@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Calculator, IndianRupee, Percent, Clock, Download, Plus, Trash2,
   TrendingDown, BarChart3, ArrowRight, ChevronDown, ChevronUp, FileSpreadsheet, Scale
@@ -49,6 +50,8 @@ function generateSchedule(P, annualRate, tenureMonths, prepayMonth = 0, prepayAm
 }
 
 export default function LoanCalculator() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [loanAmount, setLoanAmount] = useState(2500000);
   const [interestRate, setInterestRate] = useState(8.5);

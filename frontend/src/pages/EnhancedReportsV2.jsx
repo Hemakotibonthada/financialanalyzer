@@ -3,6 +3,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { ThemeContext } from '../context/ThemeContext';
 import MainLayout from '../components/MainLayout';
 import {
@@ -275,6 +276,8 @@ function ReportViewer({ type, data, period, onClose }) {
 // ============================================================================
 
 export default function EnhancedReportsV2() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const { theme } = useContext(ThemeContext);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportData, setReportData] = useState(null);

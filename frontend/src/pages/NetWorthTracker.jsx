@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Container,
   Grid,
@@ -58,6 +59,8 @@ import MainLayout from '../components/MainLayout';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 function NetWorthTracker() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [activeTab, setActiveTab] = useState(0);
   const [latestSnapshot, setLatestSnapshot] = useState(null);
   const [history, setHistory] = useState([]);

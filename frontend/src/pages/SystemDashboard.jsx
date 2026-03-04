@@ -5,6 +5,8 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
+import MainLayout from '../components/MainLayout';
 import {
   Server, Clock, Play, Square, RefreshCw, CheckCircle2, XCircle,
   AlertTriangle, Activity, Database, Download, FileText, Trash2,
@@ -109,6 +111,8 @@ function ExportCard({ icon: Icon, title, description, onClick, loading }) {
 
 // ─── Main Component ─────────────────────────────────────────────────
 export default function SystemDashboard() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [jobsData, setJobsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState({});
@@ -186,7 +190,8 @@ export default function SystemDashboard() {
   const history = jobsData?.history || [];
 
   return (
-    <PageTransition>
+    <MainLayout>
+      <PageTransition>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
         <FadeIn>
@@ -323,5 +328,6 @@ export default function SystemDashboard() {
         )}
       </div>
     </PageTransition>
+    </MainLayout>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   Container,
   Card,
@@ -47,6 +48,8 @@ import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
 const BillOfMaterials = () => {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend,
@@ -21,6 +22,8 @@ const CATEGORY_ICONS = {
 };
 
 export default function FinancialScorecard() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [scoreData, setScoreData] = useState({
     categoryScores: [],

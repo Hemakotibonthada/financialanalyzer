@@ -3,6 +3,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { AuthContext } from '../context/AuthContext';
 import MainLayout from '../components/MainLayout';
@@ -573,6 +574,8 @@ function DataTab() {
 // ============================================================================
 
 export default function EnhancedSettingsV2() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const { theme } = useContext(ThemeContext);
   const [activeTab, setActiveTab] = useState('profile');
 

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
   Legend, ResponsiveContainer
@@ -19,6 +20,8 @@ const saveLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data))
 const fmt = (n) => n >= 100000 ? `₹${(n / 100000).toFixed(1)}L` : `₹${n.toLocaleString('en-IN')}`;
 
 export default function InsurancePlanner() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [showModal, setShowModal] = useState(false);
   const [editPolicy, setEditPolicy] = useState(null);
   const [policies, setPolicies] = useState(() => loadLocal('fa_insurance_policies'));

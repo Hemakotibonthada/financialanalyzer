@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -56,6 +57,8 @@ const tips = [
 ];
 
 export default function EmergencyFund() {
+  const { mode, isDark, isBlack } = useTheme();
+  const dk = isDark || isBlack;
   const [targetMonths, setTargetMonths] = useState(6);
   const [currentFund, setCurrentFund] = useState(260000);
   const [autoSaveAmount, setAutoSaveAmount] = useState(10000);
