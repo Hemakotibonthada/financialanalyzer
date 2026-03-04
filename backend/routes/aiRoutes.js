@@ -36,6 +36,9 @@ router.get('/patterns/merchants', authenticate, aiController.getMerchantAnalysis
 router.get('/patterns/velocity', authenticate, aiController.getVelocityAnalysis);
 router.get('/patterns/spending', authenticate, aiController.getSpendingPatterns);
 
+// ─── Aliases for frontend compatibility ──────────────────────
+router.get('/merchant-analysis', authenticate, aiController.getMerchantAnalysis);
+
 // ─── NLP & Entity Extraction ────────────────────────────────
 router.post('/query', authenticate, aiController.processQuery);
 router.post('/entities', authenticate, aiController.extractEntities);

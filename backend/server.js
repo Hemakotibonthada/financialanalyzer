@@ -189,6 +189,72 @@ app.use('/api/cache', require('./routes/cacheRoutes')); // Cache management
 app.use('/api/recurring', require('./routes/recurringRoutes')); // Recurring transactions
 app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/financial', require('./routes/financialRoutes'));
+app.use('/api/transactions', require('./routes/financialRoutes').use ? require('./routes/financialRoutes') : (() => {
+  // Mount financialRoutes at /api/transactions so /api/transactions/* maps to
+  // financialRoutes /transactions/* handlers. We create a sub-router that strips /transactions prefix.
+  const txnRouter = require('express').Router();
+  const { authenticate } = require('./middleware/auth');
+  const Transaction = require('./models/Transaction');
+  const logger = require('./utils/logger');
+
+  // GET /api/transactions — list transactions
+  txnRouter.get('/', authenticate, async (req, res) => {
+    try {
+      const { limit = 50, sort = '-date', days, startDate, endDate, category, type } = req.query;
+      const query = { userId: req.user._id };
+      if (days) {
+        const d = new Date(); d.setDate(d.getDate() - parseInt(days));
+        query.date = { $gte: d };
+      }
+      if (startDate && endDate) {
+        query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+      }
+      if (category) query.category = category;
+      if (type) query.type = type;
+      const sortObj = {};
+      const sortField = sort.startsWith('-') ? sort.slice(1) : sort;
+      sortObj[sortField] = sort.startsWith('-') ? -1 : 1;
+      const transactions = await Transaction.find(query).sort(sortObj).limit(parseInt(limit));
+      res.json({ success: true, data: transactions, count: transactions.length });
+    } catch (error) {
+      logger.error('Get transactions error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch transactions', error: error.message });
+    }
+  });
+
+  // POST /api/transactions — create transaction
+  txnRouter.post('/', authenticate, async (req, res) => {
+    try {
+      const txn = await Transaction.create({ ...req.body, userId: req.user._id });
+      res.status(201).json({ success: true, data: txn });
+    } catch (error) {
+      logger.error('Create transaction error:', error);
+      res.status(500).json({ success: false, message: 'Failed to create transaction', error: error.message });
+    }
+  });
+
+  // GET /api/transactions/analytics
+  txnRouter.get('/analytics', authenticate, async (req, res) => {
+    try {
+      const { days = 30 } = req.query;
+      const since = new Date(); since.setDate(since.getDate() - parseInt(days));
+      const transactions = await Transaction.find({ userId: req.user._id, date: { $gte: since } });
+      const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
+      const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amount || 0), 0);
+      const byCategory = {};
+      transactions.filter(t => t.type === 'expense').forEach(t => {
+        const cat = t.category || 'other';
+        byCategory[cat] = (byCategory[cat] || 0) + (t.amount || 0);
+      });
+      res.json({ success: true, data: { income, expenses, net: income - expenses, byCategory, count: transactions.length } });
+    } catch (error) {
+      logger.error('Transaction analytics error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch analytics', error: error.message });
+    }
+  });
+
+  return txnRouter;
+})());
 app.use('/api/gmail', require('./routes/gmailRoutes'));
 app.use('/api/drive', require('./routes/googleDriveRoutes')); // Google Drive backup/sync
 app.use('/api/documents', require('./routes/documentRoutes'));

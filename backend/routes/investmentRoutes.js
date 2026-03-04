@@ -196,6 +196,57 @@ router.get('/maturities', async (req, res) => {
 });
 
 /**
+ * @route   GET /api/investments/summary
+ * @desc    Get investment portfolio summary
+ * @access  Private
+ */
+router.get('/summary', async (req, res) => {
+  try {
+    const investments = await Investment.find({ userId: req.user._id });
+    
+    const summary = {
+      totalInvestments: investments.length,
+      totalInvested: 0,
+      currentValue: 0,
+      totalReturns: 0,
+      returnPercentage: 0,
+      byType: {},
+      byStatus: { active: 0, matured: 0, sold: 0 }
+    };
+
+    investments.forEach(inv => {
+      const invested = inv.investedAmount || inv.amount || 0;
+      const current = inv.currentValue || invested;
+      summary.totalInvested += invested;
+      summary.currentValue += current;
+
+      // By type
+      const type = inv.type || inv.investmentType || 'other';
+      if (!summary.byType[type]) {
+        summary.byType[type] = { count: 0, invested: 0, currentValue: 0 };
+      }
+      summary.byType[type].count++;
+      summary.byType[type].invested += invested;
+      summary.byType[type].currentValue += current;
+
+      // By status
+      const status = inv.status || 'active';
+      if (summary.byStatus[status] !== undefined) summary.byStatus[status]++;
+    });
+
+    summary.totalReturns = summary.currentValue - summary.totalInvested;
+    summary.returnPercentage = summary.totalInvested > 0
+      ? ((summary.totalReturns / summary.totalInvested) * 100).toFixed(2)
+      : 0;
+
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    logger.error('Get investment summary error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch summary', error: error.message });
+  }
+});
+
+/**
  * @route   GET /api/investments/:id
  * @desc    Get single investment
  * @access  Private
