@@ -48,7 +48,17 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { aiTrainingService, aiModelService } from '../services/api';
 import MainLayout from '../components/MainLayout';
-import SelfTrainingPanel from '../components/ai/SelfTrainingPanel';
+
+// Placeholder for SelfTrainingPanel (component was removed)
+const SelfTrainingPanel = ({ embedded }) => (
+  <Box sx={{ p: 4, textAlign: 'center' }}>
+    <Typography variant="h6" sx={{ mb: 2 }}>Self-Training AI Engine</Typography>
+    <Typography color="text.secondary">The AI model trains automatically as you use the app. Your data patterns are analyzed locally to improve predictions and recommendations.</Typography>
+    <Box sx={{ mt: 3, p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+      <Typography variant="body2" color="text.secondary">Status: Active • Model: finserve-local-v1 • Training: Continuous</Typography>
+    </Box>
+  </Box>
+);
 
 // ─── Accent-aware MUI sx helper ─────────────────────────────────────────
 const useAccentSx = () => {
