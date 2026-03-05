@@ -143,11 +143,17 @@ class BillReminderService {
     
     // Email notification if enabled
     if (bill.reminderSettings?.emailReminder && user.email) {
-      await notificationService.sendEmail({
-        to: user.email,
-        subject: `Bill Reminder: ${bill.title}`,
-        html: this.generateReminderEmail(bill, daysUntilDue)
-      }).catch(err => logger.warn('Email send failed:', err.message));
+      try {
+        // Use advancedNotificationService if available, otherwise skip email
+        const advNotification = require('./advancedNotificationService');
+        if (advNotification && typeof advNotification.sendEmail === 'function') {
+          await advNotification.sendEmail(user, `Bill Reminder: ${bill.title}`, this.generateReminderEmail(bill, daysUntilDue));
+        } else {
+          logger.info(`Email reminder skipped for bill ${bill._id} — email service not configured`);
+        }
+      } catch (err) {
+        logger.warn(`Email send failed for bill ${bill._id}: ${err.message}`);
+      }
     }
     
     logger.info(`Reminder sent for bill ${bill._id} to user ${user._id || user}`);
