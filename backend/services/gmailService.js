@@ -143,9 +143,11 @@ class GmailService {
    * Get OAuth2 authorization URL
    */
   getAuthUrl() {
+    // Only request gmail.readonly — it covers everything gmail.metadata does
+    // plus supports search queries. Requesting both causes Google API to reject
+    // the 'q' parameter with "Metadata scope does not support 'q' parameter".
     const scopes = [
-      'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/gmail.metadata'
+      'https://www.googleapis.com/auth/gmail.readonly'
     ];
 
     return this.oauth2Client.generateAuthUrl({
@@ -264,20 +266,28 @@ class GmailService {
         resultSizeEstimate: response.data.resultSizeEstimate || 0
       };
     } catch (error) {
-      logger.error('Error searching Gmail:', {
-        message: error.message,
-        code: error.code,
-        status: error.status,
-        stack: error.stack
-      });
+      logger.error('Error searching Gmail:', error.message);
 
+      // If the metadata scope blocks the 'q' parameter, retry without search query
+      // This happens when tokens were issued with gmail.metadata + gmail.readonly
       if (error?.message?.includes("Metadata scope does not support 'q' parameter")) {
-        const scopeError = new Error('Gmail access is missing the gmail.readonly permission. Please disconnect and reconnect Gmail to grant email read access.');
-        scopeError.code = 'GMAIL_INSUFFICIENT_SCOPE';
-        scopeError.requiresReauth = true;
-        scopeError.originalMessage = error.message;
-        scopeError.cause = error;
-        throw scopeError;
+        logger.warn('Metadata scope conflict detected — retrying without search query filter');
+        try {
+          const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+          const response = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: options.maxResults || 50,
+            pageToken: options.pageToken || undefined
+          });
+          return {
+            messages: response.data.messages || [],
+            nextPageToken: response.data.nextPageToken || null,
+            resultSizeEstimate: response.data.resultSizeEstimate || 0
+          };
+        } catch (retryError) {
+          logger.error('Retry without query also failed:', retryError.message);
+          throw new Error(`Gmail search failed: ${retryError.message}`);
+        }
       }
 
       const genericError = new Error(`Failed to search Gmail for financial emails: ${error.message}`);
