@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -73,16 +73,29 @@ const Sidebar = () => {
   const location = useLocation();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    enterprise: false,
-    money: false,
-    invest: false,
-    debt: false,
-    plan: false,
-    insights: false,
-    wealth: false,
-    more: false,
+  const [expandedSections, setExpandedSections] = useState(() => {
+    // On initial load, restore from localStorage if available
+    const saved = localStorage.getItem('sidebarExpandedSections');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { /* fall through */ }
+    }
+    return {
+      enterprise: false,
+      money: false,
+      invest: false,
+      debt: false,
+      plan: false,
+      insights: false,
+      wealth: false,
+      ailab: false,
+      more: false,
+    };
   });
+
+  // Persist expanded state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebarExpandedSections', JSON.stringify(expandedSections));
+  }, [expandedSections]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -220,6 +233,26 @@ const Sidebar = () => {
       ]
     },
     {
+      id: 'ailab',
+      label: 'AI Lab',
+      icon: Brain,
+      items: [
+        { label: 'AI Command V3', icon: Brain, path: '/ai-command-center-v3', color: 'violet', badge: 'AI' },
+        { label: 'AI Chatbot', icon: Bot, path: '/ai-chatbot', color: 'blue', badge: 'AI' },
+        { label: 'RL Optimizer', icon: Target, path: '/rl-optimizer', color: 'purple', badge: 'AI' },
+        { label: 'Model Observatory', icon: Activity, path: '/ai-observatory', color: 'cyan', badge: 'AI' },
+        { label: 'Anomaly Lab', icon: Shield, path: '/advanced-anomaly-detector', color: 'red', badge: 'AI' },
+        { label: 'Financial Planner', icon: Calculator, path: '/smart-financial-planner', color: 'green', badge: 'AI' },
+        { label: 'Spending Intel', icon: BarChart3, path: '/spending-intelligence', color: 'orange', badge: 'AI' },
+        { label: 'Portfolio AI', icon: Briefcase, path: '/portfolio-optimizer', color: 'indigo', badge: 'AI' },
+        { label: 'Credit Predictor', icon: CreditCard, path: '/credit-score-predictor', color: 'teal', badge: 'AI' },
+        { label: 'Cash Flow AI', icon: TrendingUp, path: '/cashflow-intelligence', color: 'emerald', badge: 'AI' },
+        { label: 'Sub Manager', icon: Boxes, path: '/subscription-manager', color: 'pink', badge: 'AI' },
+        { label: 'Goal & Tax AI', icon: Target, path: '/goal-tax-optimizer', color: 'amber', badge: 'AI' },
+        { label: 'Wellness AI', icon: Heart, path: '/financial-wellness-ai', color: 'rose', badge: 'AI' },
+      ]
+    },
+    {
       id: 'more',
       label: 'More',
       icon: Zap,
@@ -236,6 +269,25 @@ const Sidebar = () => {
       ]
     },
   ];
+
+  // Auto-expand the section that contains the currently active route.
+  // This ensures that when a user clicks a sub-item (navigates), the parent
+  // section stays expanded instead of collapsing.
+  useEffect(() => {
+    const currentPath = location.pathname;
+    for (const section of navigationSections) {
+      const hasActive = section.items?.some(item => item.path === currentPath);
+      if (hasActive) {
+        setExpandedSections(prev => {
+          // Only update if not already expanded (prevents unnecessary re-renders)
+          if (prev[section.id]) return prev;
+          return { ...prev, [section.id]: true };
+        });
+        break;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   // — Bottom pinned items (always visible) —
   const bottomLinks = [
@@ -399,13 +451,6 @@ const Sidebar = () => {
               ))}
           </div>
         )}
-      </div>
-
-      {/* Pinned bottom: Settings + Profile */}
-      <div className="border-t border-gray-200 dark:border-gray-700 px-2 py-2 space-y-0.5">
-        {bottomLinks.map((item) => (
-          <NavItem key={item.path} item={item} collapsed={collapsed} />
-        ))}
       </div>
 
       {/* Collapse Toggle Button (Desktop Only) */}

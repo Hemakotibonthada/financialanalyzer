@@ -270,7 +270,17 @@ const AICommandCenter = () => {
 
   // ─── Derived data ──────────────────────────────────────────────
   const healthScore = data.health?.score ?? data.dashboard?.healthScore?.score ?? 0;
-  const healthComponents = data.health?.components || data.dashboard?.healthScore?.components || [];
+  const rawComponents = data.health?.components || data.dashboard?.healthScore?.components || [];
+  // Normalize: components may come as an object {savings: 70, debt: 40} or an array [{name, score}]
+  const healthComponents = Array.isArray(rawComponents)
+    ? rawComponents
+    : typeof rawComponents === 'object' && rawComponents !== null
+      ? Object.entries(rawComponents).map(([key, val]) => ({
+          name: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+          score: typeof val === 'number' ? val : (val?.score ?? val?.value ?? 0),
+          ...(typeof val === 'object' && val !== null ? val : {})
+        }))
+      : [];
   const recs = data.recommendations?.recommendations || data.dashboard?.recommendations || [];
   const forecastData = data.forecast?.forecast || data.forecast?.monthly || [];
   const anomalies = data.anomalies?.anomalies || data.dashboard?.anomalies || [];
@@ -498,6 +508,7 @@ const AICommandCenter = () => {
             </FadeIn>
 
             {/* Component Details */}
+            {Array.isArray(healthComponents) && healthComponents.length > 0 && (
             <FadeIn direction="up" delay={100}>
               <StaggerChildren staggerMs={80} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {healthComponents.map((c, i) => (
@@ -515,6 +526,7 @@ const AICommandCenter = () => {
                 ))}
               </StaggerChildren>
             </FadeIn>
+            )}
 
             {/* All Recommendations */}
             <FadeIn direction="up" delay={200}>

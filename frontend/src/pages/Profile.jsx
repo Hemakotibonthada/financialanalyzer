@@ -13,7 +13,7 @@ import {
   User, Mail, Phone, CreditCard, DollarSign, Calendar,
   Settings, Bell, Shield, CheckCircle, AlertCircle,
   TrendingUp, Target, Plus, Trash2, Save, RefreshCw,
-  Eye, EyeOff, Lock, Globe, Zap, Link, XCircle, Database
+  Eye, EyeOff, Lock, Globe, Zap, Link, XCircle, Database, Sparkles
 } from 'lucide-react';
 import '../styles/animations.css';
 import { ThemeGradientText, ThemeButton } from '../components/ui/ThemePageComponents';
@@ -339,6 +339,40 @@ const Profile = () => {
         [category]: parseFloat(amount) || 0
       }
     }));
+  };
+
+  // Auto-fill budget limits based on monthly income using Indian spending benchmarks
+  const handleAutoFillBudgets = () => {
+    const income = parseFloat(profile.monthlyIncome);
+    if (!income || income <= 0) {
+      setMessage({ type: 'error', text: 'Please set your monthly income in the Financial tab first' });
+      return;
+    }
+
+    // Budget allocation based on 50/30/20 rule adapted for Indian households
+    // 50% Needs, 30% Wants, 20% Savings/Investments
+    const budgets = {
+      food_dining:      Math.round(income * 0.08),   // 8% eating out
+      groceries:        Math.round(income * 0.10),   // 10% groceries
+      transportation:   Math.round(income * 0.05),   // 5% transport
+      fuel:             Math.round(income * 0.04),   // 4% fuel
+      utilities:        Math.round(income * 0.05),   // 5% electricity/water/gas/internet
+      rent_mortgage:    Math.round(income * 0.25),   // 25% housing (biggest chunk)
+      insurance:        Math.round(income * 0.05),   // 5% health + life + vehicle
+      healthcare:       Math.round(income * 0.03),   // 3% medical
+      entertainment:    Math.round(income * 0.05),   // 5% movies/subscriptions/hobbies
+      shopping:         Math.round(income * 0.05),   // 5% clothes/household
+      education:        Math.round(income * 0.03),   // 3% courses/books
+      travel:           Math.round(income * 0.03),   // 3% trips
+      subscriptions:    Math.round(income * 0.02),   // 2% streaming/apps
+      investment:       Math.round(income * 0.10),   // 10% SIP/FD/stocks
+      emi:              Math.round(income * 0.05),   // 5% EMIs (adjust if loans exist)
+      loan:             Math.round(income * 0.00),   // 0% default (user adjusts)
+      other:            Math.round(income * 0.02),   // 2% miscellaneous
+    };
+
+    setProfile(prev => ({ ...prev, budgetLimits: budgets }));
+    setMessage({ type: 'success', text: `Budget limits auto-filled based on ₹${income.toLocaleString()} monthly income (50/30/20 rule)` });
   };
 
   const handleAddCustomCategory = () => {
@@ -787,10 +821,24 @@ const Profile = () => {
 
                 {/* Budget Limits */}
                 <div>
-                  <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}>
-                    <DollarSign className="w-5 h-5 text-purple-600" />
-                    Monthly Budget Limits
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-bold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
+                      <DollarSign className="w-5 h-5 text-purple-600" />
+                      Monthly Budget Limits
+                    </h3>
+                    <button
+                      onClick={handleAutoFillBudgets}
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Auto-fill from Salary
+                    </button>
+                  </div>
+                  {profile.monthlyIncome > 0 && (
+                    <p className={`text-sm ${dk ? 'text-slate-400' : 'text-gray-500'} mb-4`}>
+                      Based on your salary of ₹{parseFloat(profile.monthlyIncome).toLocaleString()}/month — click "Auto-fill" to set recommended budgets using the 50/30/20 rule
+                    </p>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {BUDGET_CATEGORIES.map(category => (
                       <div key={category} className="group">

@@ -1,0 +1,17 @@
+{
+  "merchants": [
+    {
+      "name": "food",
+      "count": 1,
+      "avgAmount": 230,
+      "category": "food_dining"
+    },
+    {
+      "name": "coffee",
+      "count": 1,
+      "avgAmount": 16,
+      "category": "food_dining"
+    }
+  ],
+  "trainedAt": "2026-03-05T17:51:03.535Z"
+}

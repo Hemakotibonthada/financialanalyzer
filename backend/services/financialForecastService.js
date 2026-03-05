@@ -29,7 +29,19 @@ class FinancialForecastService {
       
       // Generate forecasts
       const forecast = [];
-      const lastMonthData = monthlyData[monthlyData.length - 1] || { income: 85000, expense: 55000 };
+      const lastMonthData = monthlyData[monthlyData.length - 1] || { income: 0, expense: 0 };
+
+      // If no historical data exists, return empty forecast
+      if (monthlyData.length === 0 || (lastMonthData.income === 0 && lastMonthData.expense === 0)) {
+        return {
+          success: true,
+          historicalData: [],
+          forecast: [],
+          trends: { income: { slope: 0, direction: 'stable' }, expense: { slope: 0, direction: 'stable' }, savingsRate: { current: 0, projected: 0 } },
+          summary: { projectedAnnualIncome: 0, projectedAnnualExpense: 0, projectedAnnualSavings: 0, avgMonthlyIncome: 0, avgMonthlyExpense: 0, avgMonthlySavings: 0 },
+          message: 'No transaction history found. Add transactions to generate forecasts.'
+        };
+      }
       
       for (let i = 1; i <= months; i++) {
         const forecastDate = new Date();
@@ -513,7 +525,7 @@ class FinancialForecastService {
       });
     }
 
-    if (monthlySavings < 0.2 * (monthlySavings + 55000)) {
+    if (monthlySavings > 0 && monthlySavings / (monthlySavings + (required / (yearsLeft * 12) || 1)) < 0.2) {
       recommendations.push({
         type: 'action',
         message: 'Try to increase your savings rate to at least 20% of income.',

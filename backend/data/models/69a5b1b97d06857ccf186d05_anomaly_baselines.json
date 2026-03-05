@@ -1,0 +1,11 @@
+{
+  "baselines": {
+    "food_dining": {
+      "mean": 123,
+      "stdDev": 107,
+      "count": 2,
+      "p95": 230
+    }
+  },
+  "trainedAt": "2026-03-05T17:51:03.533Z"
+}

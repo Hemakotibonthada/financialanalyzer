@@ -119,9 +119,9 @@ function InvestmentPortfolio() {
         api.get('/investments/analytics/allocation')
       ]);
       
-      // Debug: log investment fetch shapes and API host
+      // Debug: log investment fetch shapes
       // eslint-disable-next-line no-console
-      console.debug('InvestmentPortfolio fetch - API_URL:', API_URL, {
+      console.debug('InvestmentPortfolio fetch:', {
         investments: investmentsRes.data?.data?.length ?? 0,
         portfolio: portfolioRes.data?.data ? Object.keys(portfolioRes.data.data).length : 0,
         maturities: maturitiesRes.data?.data?.length ?? 0

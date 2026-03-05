@@ -233,6 +233,21 @@ const IncomeForecast = lazy(() => import('./pages/IncomeForecast'));
 const GoalForecaster = lazy(() => import('./pages/GoalForecaster'));
 const AnomalyDetector = lazy(() => import('./pages/AnomalyDetector'));
 
+// Enhanced AI Pages (Local ML modules)
+const EnhancedAICommandCenter = lazy(() => import('./pages/EnhancedAICommandCenter'));
+const EnhancedAIChatbot = lazy(() => import('./pages/EnhancedAIChatbot'));
+const RLOptimizerPage = lazy(() => import('./pages/RLOptimizerPage'));
+const AIModelObservatory = lazy(() => import('./pages/AIModelObservatory'));
+const AdvancedAnomalyDetectorPage = lazy(() => import('./pages/AdvancedAnomalyDetectorPage'));
+const SmartFinancialPlannerPage = lazy(() => import('./pages/SmartFinancialPlannerPage'));
+const SpendingIntelligencePage = lazy(() => import('./pages/SpendingIntelligencePage'));
+const PortfolioOptimizerPage = lazy(() => import('./pages/PortfolioOptimizerPage'));
+const CreditScorePredictorPage = lazy(() => import('./pages/CreditScorePredictorPage'));
+const CashFlowIntelligencePage = lazy(() => import('./pages/CashFlowIntelligencePage'));
+const SubscriptionManagerPage = lazy(() => import('./pages/SubscriptionManagerPage'));
+const GoalAndTaxPage = lazy(() => import('./pages/GoalAndTaxPage'));
+const FinancialWellnessPage = lazy(() => import('./pages/FinancialWellnessPage'));
+
 // Loading component with accessibility
 const LoadingFallback = () => (
   <Box
@@ -472,6 +487,21 @@ function App() {
               <Route path="/tax-optimization" element={<ProtectedRoute><TaxOptimizationCenter /></ProtectedRoute>} />
               <Route path="/expense-intelligence" element={<ProtectedRoute><ExpenseIntelligence /></ProtectedRoute>} />
               <Route path="/fire-tracker" element={<ProtectedRoute><FIRETracker /></ProtectedRoute>} />
+
+              {/* ========== ENHANCED AI PAGES (Local ML) ========== */}
+              <Route path="/ai-command-center-v3" element={<ProtectedRoute><EnhancedAICommandCenter /></ProtectedRoute>} />
+              <Route path="/ai-chatbot" element={<ProtectedRoute><EnhancedAIChatbot /></ProtectedRoute>} />
+              <Route path="/rl-optimizer" element={<ProtectedRoute><RLOptimizerPage /></ProtectedRoute>} />
+              <Route path="/ai-observatory" element={<ProtectedRoute><AIModelObservatory /></ProtectedRoute>} />
+              <Route path="/advanced-anomaly-detector" element={<ProtectedRoute><AdvancedAnomalyDetectorPage /></ProtectedRoute>} />
+              <Route path="/smart-financial-planner" element={<ProtectedRoute><SmartFinancialPlannerPage /></ProtectedRoute>} />
+              <Route path="/spending-intelligence" element={<ProtectedRoute><SpendingIntelligencePage /></ProtectedRoute>} />
+              <Route path="/portfolio-optimizer" element={<ProtectedRoute><PortfolioOptimizerPage /></ProtectedRoute>} />
+              <Route path="/credit-score-predictor" element={<ProtectedRoute><CreditScorePredictorPage /></ProtectedRoute>} />
+              <Route path="/cashflow-intelligence" element={<ProtectedRoute><CashFlowIntelligencePage /></ProtectedRoute>} />
+              <Route path="/subscription-manager" element={<ProtectedRoute><SubscriptionManagerPage /></ProtectedRoute>} />
+              <Route path="/goal-tax-optimizer" element={<ProtectedRoute><GoalAndTaxPage /></ProtectedRoute>} />
+              <Route path="/financial-wellness-ai" element={<ProtectedRoute><FinancialWellnessPage /></ProtectedRoute>} />
 
               {/* ========== 404 CATCH-ALL ========== */}
               <Route path="*" element={<NotFound />} />

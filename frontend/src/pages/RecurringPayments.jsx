@@ -55,7 +55,8 @@ export default function RecurringPayments() {
     setLoading(true);
     try {
       const res = await api.get('/analytics/recurring');
-      setPayments(res.data?.payments || res.data || []);
+      const raw = res.data?.data || res.data?.payments || res.data;
+      setPayments(Array.isArray(raw) ? raw : []);
     } catch {
       setPayments([]);
     } finally {

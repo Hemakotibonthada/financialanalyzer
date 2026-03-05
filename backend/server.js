@@ -192,9 +192,9 @@ app.use('/api/cache', require('./routes/cacheRoutes')); // Cache management
 app.use('/api/recurring', require('./routes/recurringRoutes')); // Recurring transactions
 app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/financial', require('./routes/financialRoutes'));
-app.use('/api/transactions', require('./routes/financialRoutes').use ? require('./routes/financialRoutes') : (() => {
-  // Mount financialRoutes at /api/transactions so /api/transactions/* maps to
-  // financialRoutes /transactions/* handlers. We create a sub-router that strips /transactions prefix.
+app.use('/api/transactions', (() => {
+  // Inline router for /api/transactions — provides a clean GET/POST /api/transactions
+  // without double-prefix issues from mounting financialRoutes.
   const txnRouter = require('express').Router();
   const { authenticate } = require('./middleware/auth');
   const Transaction = require('./models/Transaction');
@@ -287,6 +287,7 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/analytics-v2', require('./routes/analyticsV2Routes')); // Enterprise Analytics V2
 app.use('/api/real-cibil', require('./routes/realCibilRoutes'));
 app.use('/api/emi', require('./routes/emiRoutes'));
+app.use('/api/emis', require('./routes/emiRoutes')); // Alias: plural form used by some frontend pages
 app.use('/api/cc-bills', require('./routes/creditCardBillRoutes'));
 app.use('/api/loans-given', require('./routes/loansGivenRoutes'));
 app.use('/api/personal-loans', require('./routes/personalLoanRoutes'));
@@ -354,6 +355,7 @@ app.use('/api/business', require('./routes/business'));
 app.use('/api/data-management', require('./routes/dataManagement'));
 // Debt Management
 app.use('/api/debt', require('./routes/debt'));
+app.use('/api/debts', require('./routes/debt')); // Alias: plural form used by some frontend pages
 // Insurance Management
 app.use('/api/insurance', require('./routes/insurance'));
 // Machine Learning Models & Predictions
@@ -366,6 +368,14 @@ app.use('/api/ai-training', require('./routes/aiTrainingRoutes'));
 app.use('/api/ai-models', require('./routes/aiModelRoutes'));
 // AI Intelligence — Self-Learning Pipeline, Enrichment, Goals AI, Budget Optimizer, Debt Payoff, Cash Flow
 app.use('/api/ai-intelligence', require('./routes/aiIntelligenceRoutes'));
+// Enhanced AI — RL Optimization, Anomaly Detection, Knowledge Graph, AutoML, XAI, Conversational AI
+app.use('/api/ai-enhanced', require('./routes/aiEnhancedRoutes'));
+// Extended AI — Fraud Detection, NL Reports, Document Intelligence, Behavioral Finance
+app.use('/api/ai-extended', require('./routes/aiExtendedRoutes'));
+// Advanced AI — Portfolio Optimization, Credit Score, Smart Notifications, Peer Comparison, Semantic Search
+app.use('/api/ai-advanced', require('./routes/aiAdvancedRoutes'));
+// Premium AI — Cash Flow Intelligence, Subscription Manager, Tax Harvesting
+app.use('/api/ai-premium', require('./routes/aiPremiumRoutes'));
 // Portfolio Analytics
 app.use('/api/portfolio', require('./routes/portfolio'));
 // Real Estate Management

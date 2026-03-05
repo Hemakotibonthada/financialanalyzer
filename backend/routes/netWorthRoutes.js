@@ -311,6 +311,183 @@ router.get('/projections', async (req, res) => {
   }
 });
 
+// ============================================================================
+// ASSET & LIABILITY ITEM ROUTES
+// These must be defined BEFORE the /:id catch-all route
+// ============================================================================
+
+const ASSET_FIELD_MAP = {
+  savings: 'bankSavings', current: 'bankCurrent', cash: 'cash',
+  stocks: 'stocks', mutual_funds: 'mutualFunds', crypto: 'crypto',
+  bonds: 'bonds', gold: 'gold', fixed_deposits: 'fixedDeposits',
+  ppf: 'ppf', nps: 'nps', epf: 'epf',
+  real_estate: 'primaryHome', rental: 'rentalProperty', land: 'land',
+  vehicles: 'vehicles', business: 'businessValue', loans_given: 'loansGiven',
+  other: 'otherAssets',
+};
+
+const LIABILITY_FIELD_MAP = {
+  home_loan: 'homeLoan', car_loan: 'carLoan', personal_loan: 'personalLoan',
+  education_loan: 'educationLoan', business_loan: 'businessLoan',
+  credit_card: 'creditCardDues', emi: 'emiOutstanding',
+  personal_debt: 'personalDebts', other: 'otherLiabilities',
+};
+
+function snapshotAssetsToArray(assets) {
+  if (!assets) return [];
+  const items = [];
+  for (const [category, field] of Object.entries(ASSET_FIELD_MAP)) {
+    const value = assets[field] || 0;
+    if (value > 0) {
+      items.push({ _id: field, name: field.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim(), value, category, field });
+    }
+  }
+  return items;
+}
+
+function snapshotLiabilitiesToArray(liabilities) {
+  if (!liabilities) return [];
+  const items = [];
+  for (const [category, field] of Object.entries(LIABILITY_FIELD_MAP)) {
+    const value = liabilities[field] || 0;
+    if (value > 0) {
+      items.push({ _id: field, name: field.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim(), value, category, field });
+    }
+  }
+  return items;
+}
+
+/**
+ * @route   GET /api/networth/assets
+ * @desc    Get user assets as array items
+ * @access  Private
+ */
+router.get('/assets', async (req, res) => {
+  try {
+    const snapshot = await NetWorthSnapshot.findOne({ userId: req.user._id }).sort({ date: -1 });
+    const items = snapshot ? snapshotAssetsToArray(snapshot.assets) : [];
+    res.json({ success: true, data: items });
+  } catch (error) {
+    logger.error('Get assets error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch assets', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/networth/liabilities
+ * @desc    Get user liabilities as array items
+ * @access  Private
+ */
+router.get('/liabilities', async (req, res) => {
+  try {
+    const snapshot = await NetWorthSnapshot.findOne({ userId: req.user._id }).sort({ date: -1 });
+    const items = snapshot ? snapshotLiabilitiesToArray(snapshot.liabilities) : [];
+    res.json({ success: true, data: items });
+  } catch (error) {
+    logger.error('Get liabilities error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch liabilities', error: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/networth/assets
+ * @desc    Add/update an asset in the latest snapshot
+ * @access  Private
+ */
+router.post('/assets', async (req, res) => {
+  try {
+    const { name, value, category } = req.body;
+    const field = ASSET_FIELD_MAP[category] || ASSET_FIELD_MAP[name?.toLowerCase()] || 'otherAssets';
+    const amount = parseFloat(value) || 0;
+
+    let snapshot = await NetWorthSnapshot.findOne({ userId: req.user._id }).sort({ date: -1 });
+    if (!snapshot) {
+      snapshot = new NetWorthSnapshot({ userId: req.user._id, date: new Date(), netWorth: 0, assets: {}, liabilities: {} });
+    }
+    snapshot.assets[field] = (snapshot.assets[field] || 0) + amount;
+    snapshot.assets.totalAssets = Object.entries(ASSET_FIELD_MAP).reduce((sum, [, f]) => sum + (snapshot.assets[f] || 0), 0);
+    snapshot.netWorth = (snapshot.assets.totalAssets || 0) - (snapshot.liabilities?.totalLiabilities || 0);
+    await snapshot.save();
+
+    res.json({ success: true, data: { field, value: snapshot.assets[field] }, message: 'Asset added' });
+  } catch (error) {
+    logger.error('Add asset error:', error);
+    res.status(500).json({ success: false, message: 'Failed to add asset', error: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/networth/liabilities
+ * @desc    Add/update a liability in the latest snapshot
+ * @access  Private
+ */
+router.post('/liabilities', async (req, res) => {
+  try {
+    const { name, value, category } = req.body;
+    const field = LIABILITY_FIELD_MAP[category] || LIABILITY_FIELD_MAP[name?.toLowerCase()] || 'otherLiabilities';
+    const amount = parseFloat(value) || 0;
+
+    let snapshot = await NetWorthSnapshot.findOne({ userId: req.user._id }).sort({ date: -1 });
+    if (!snapshot) {
+      snapshot = new NetWorthSnapshot({ userId: req.user._id, date: new Date(), netWorth: 0, assets: {}, liabilities: {} });
+    }
+    snapshot.liabilities[field] = (snapshot.liabilities[field] || 0) + amount;
+    snapshot.liabilities.totalLiabilities = Object.entries(LIABILITY_FIELD_MAP).reduce((sum, [, f]) => sum + (snapshot.liabilities[f] || 0), 0);
+    snapshot.netWorth = (snapshot.assets?.totalAssets || 0) - (snapshot.liabilities.totalLiabilities || 0);
+    await snapshot.save();
+
+    res.json({ success: true, data: { field, value: snapshot.liabilities[field] }, message: 'Liability added' });
+  } catch (error) {
+    logger.error('Add liability error:', error);
+    res.status(500).json({ success: false, message: 'Failed to add liability', error: error.message });
+  }
+});
+
+/**
+ * @route   PUT /api/networth/assets/:field
+ * @desc    Update a specific asset field
+ * @access  Private
+ */
+router.put('/assets/:field', async (req, res) => {
+  try {
+    const snapshot = await NetWorthSnapshot.findOne({ userId: req.user._id }).sort({ date: -1 });
+    if (!snapshot) return res.status(404).json({ success: false, message: 'No snapshot found' });
+
+    const field = req.params.field;
+    snapshot.assets[field] = parseFloat(req.body.value) || 0;
+    snapshot.assets.totalAssets = Object.entries(ASSET_FIELD_MAP).reduce((sum, [, f]) => sum + (snapshot.assets[f] || 0), 0);
+    snapshot.netWorth = (snapshot.assets.totalAssets || 0) - (snapshot.liabilities?.totalLiabilities || 0);
+    await snapshot.save();
+
+    res.json({ success: true, message: 'Asset updated' });
+  } catch (error) {
+    logger.error('Update asset error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @route   DELETE /api/networth/assets/:field
+ * @desc    Clear a specific asset field
+ * @access  Private
+ */
+router.delete('/assets/:field', async (req, res) => {
+  try {
+    const snapshot = await NetWorthSnapshot.findOne({ userId: req.user._id }).sort({ date: -1 });
+    if (!snapshot) return res.status(404).json({ success: false, message: 'No snapshot found' });
+
+    snapshot.assets[req.params.field] = 0;
+    snapshot.assets.totalAssets = Object.entries(ASSET_FIELD_MAP).reduce((sum, [, f]) => sum + (snapshot.assets[f] || 0), 0);
+    snapshot.netWorth = (snapshot.assets.totalAssets || 0) - (snapshot.liabilities?.totalLiabilities || 0);
+    await snapshot.save();
+
+    res.json({ success: true, message: 'Asset removed' });
+  } catch (error) {
+    logger.error('Delete asset error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 /**
  * @route   GET /api/networth/:id
  * @desc    Get specific snapshot

@@ -259,7 +259,7 @@ export default function EmergencyFund() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Contribution History</h2>
         <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={contributionHistory}>
+          <LineChart data={history}>
             <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
             <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
             <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />

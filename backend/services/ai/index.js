@@ -67,6 +67,54 @@ const {
   CrossValidator,
 } = require('./trainingPipeline');
 
+// Reinforcement Learning
+const {
+  QTable, DQN, SimpleNeuralNet, PolicyGradientAgent, ActorCritic,
+  ReplayBuffer, BudgetOptimizationEnv, InvestmentStrategyEnv,
+  DebtPayoffEnv, RLBudgetOptimizer, MultiArmedBandit,
+} = require('./reinforcementLearning');
+
+// Advanced Anomaly Detection
+const {
+  IsolationForest, LocalOutlierFactor, StatisticalProcessControl,
+  Autoencoder, EnsembleAnomalyDetector, FinancialAnomalyAnalyzer,
+  TransactionFeatureExtractor,
+} = require('./advancedAnomalyDetection');
+
+// Knowledge Graph
+const {
+  KnowledgeGraph, FinancialKnowledgeGraphBuilder, GraphReasoningEngine,
+} = require('./knowledgeGraph');
+
+// AutoML Pipeline
+const {
+  FeatureEngineer, LinearRegressionModel, LogisticRegressionModel,
+  KNearestNeighbors, GradientBoostingRegressor, SupportVectorRegressor,
+  AutoMLPipeline, AutoMLModelRegistry,
+} = require('./autoMLPipeline');
+
+// Explainable AI
+const {
+  PermutationFeatureImportance, ShapleyExplainer, LIMEExplainer,
+  CounterfactualExplainer, DecisionAuditTrail, NaturalLanguageExplainer,
+  ConfidenceCalibrator, ExplainabilityService,
+} = require('./explainableAI');
+
+// Conversational AI
+const {
+  ConversationMemory, FinancialIntentClassifier, FinancialEntityExtractor,
+  DialogStateTracker, FinancialResponseGenerator, ConversationalAIEngine,
+} = require('./conversationalAI');
+
+// Model Monitoring
+const {
+  DataDriftDetector, ConceptDriftDetector, PredictionLogger,
+  ABTestManager, ModelMonitoringService,
+} = require('./modelMonitoring');
+
+// AI Orchestrator
+const AIOrchestrator = require('./aiOrchestrator');
+
 module.exports = {
   // Neural Networks
   Matrix,
@@ -118,4 +166,38 @@ module.exports = {
   TrainingScheduler,
   PerformanceTracker,
   CrossValidator,
+
+  // Reinforcement Learning
+  QTable, DQN, SimpleNeuralNet, PolicyGradientAgent, ActorCritic,
+  ReplayBuffer, BudgetOptimizationEnv, InvestmentStrategyEnv,
+  DebtPayoffEnv, RLBudgetOptimizer, MultiArmedBandit,
+
+  // Advanced Anomaly Detection
+  IsolationForest, LocalOutlierFactor, StatisticalProcessControl,
+  Autoencoder, EnsembleAnomalyDetector, FinancialAnomalyAnalyzer,
+  TransactionFeatureExtractor,
+
+  // Knowledge Graph
+  KnowledgeGraph, FinancialKnowledgeGraphBuilder, GraphReasoningEngine,
+
+  // AutoML Pipeline
+  FeatureEngineer, LinearRegressionModel, LogisticRegressionModel,
+  KNearestNeighbors, GradientBoostingRegressor, SupportVectorRegressor,
+  AutoMLPipeline, AutoMLModelRegistry,
+
+  // Explainable AI
+  PermutationFeatureImportance, ShapleyExplainer, LIMEExplainer,
+  CounterfactualExplainer, DecisionAuditTrail, NaturalLanguageExplainer,
+  ConfidenceCalibrator, ExplainabilityService,
+
+  // Conversational AI
+  ConversationMemory, FinancialIntentClassifier, FinancialEntityExtractor,
+  DialogStateTracker, FinancialResponseGenerator, ConversationalAIEngine,
+
+  // Model Monitoring
+  DataDriftDetector, ConceptDriftDetector, PredictionLogger,
+  ABTestManager, ModelMonitoringService,
+
+  // Orchestrator
+  AIOrchestrator,
 };

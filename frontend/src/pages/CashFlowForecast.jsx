@@ -238,10 +238,12 @@ const CashFlowForecast = () => {
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { label: 'Projected Income', value: formatCurrency(totals.totalIncome), icon: <ArrowUpward />, color: '#4CAF50', change: '+8.5%' },
-          { label: 'Projected Expenses', value: formatCurrency(totals.totalExpenses), icon: <ArrowDownward />, color: '#F44336', change: '+5.2%' },
+          { label: 'Projected Income', value: formatCurrency(totals.totalIncome), icon: <ArrowUpward />, color: '#4CAF50',
+            change: forecastData.length >= 2 ? `${((forecastData[forecastData.length - 1].income - forecastData[0].income) / (forecastData[0].income || 1) * 100).toFixed(1)}%` : '—' },
+          { label: 'Projected Expenses', value: formatCurrency(totals.totalExpenses), icon: <ArrowDownward />, color: '#F44336',
+            change: forecastData.length >= 2 ? `${((forecastData[forecastData.length - 1].expenses - forecastData[0].expenses) / (forecastData[0].expenses || 1) * 100).toFixed(1)}%` : '—' },
           { label: 'Net Savings', value: formatCurrency(totals.totalSavings), icon: <TrendingUp />, color: '#2196F3', change: `${totals.avgSavingsRate}% rate` },
-          { label: 'End Balance', value: formatCurrency(totals.endBalance), icon: <AccountBalance />, color: '#9C27B0', change: `+${totals.growthRate}%` },
+          { label: 'End Balance', value: formatCurrency(totals.endBalance), icon: <AccountBalance />, color: '#9C27B0', change: `${Number(totals.growthRate) >= 0 ? '+' : ''}${totals.growthRate}%` },
         ].map((stat, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
             <Card sx={{ ...cardSx, transition: 'all 0.3s', '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : 4 } }}>
@@ -372,7 +374,9 @@ const CashFlowForecast = () => {
                   <YAxis tickFormatter={(v) => formatCurrency(v)} />
                   <RechartsTooltip content={<CustomTooltipContent />} />
                   <Area type="monotone" dataKey="balance" stroke="#9C27B0" fill="url(#balanceGrad)" strokeWidth={2} name="Balance" />
-                  <ReferenceLine y={420000} stroke="#FF9800" strokeDasharray="5 5" label="Emergency Fund Target" />
+                  {avgMonthlyExpense > 0 && (
+                    <ReferenceLine y={avgMonthlyExpense * 6} stroke="#FF9800" strokeDasharray="5 5" label={`6-Month Emergency Fund (${formatCurrency(avgMonthlyExpense * 6)})`} />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -570,7 +574,7 @@ const CashFlowForecast = () => {
                         {cat.projected > cat.current ? '+' : ''}{formatCurrency(cat.projected - cat.current)} change
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {cat.projected > cat.current ? '+' : ''}{(((cat.projected - cat.current) / cat.current) * 100).toFixed(1)}%
+                        {cat.projected > cat.current ? '+' : ''}{cat.current > 0 ? (((cat.projected - cat.current) / cat.current) * 100).toFixed(1) : '0.0'}%
                       </Typography>
                     </Box>
                   </CardContent>

@@ -820,36 +820,49 @@ class AITrainingPipeline {
       logger?.info?.('=== Starting Full AI Training Pipeline ===');
 
       const { transactions = [], users = [], userData = [] } = data;
+      logger?.info?.(`Training data: ${transactions.length} transactions, ${users.length} users, ${userData.length} userData`);
 
-      // 1. Spending Predictor
-      if (transactions.length >= 30) {
+      // 1. Spending Predictor (lowered from 30 → 5)
+      if (transactions.length >= 5) {
         results.spendingPredictor = await this.trainSpendingPredictor(transactions);
+      } else {
+        logger?.info?.(`Skipped spendingPredictor: need ≥5 transactions (have ${transactions.length})`);
       }
 
-      // 2. Anomaly Detector
-      if (transactions.length >= 20) {
+      // 2. Anomaly Detector (lowered from 20 → 5)
+      if (transactions.length >= 5) {
         results.anomalyDetector = await this.trainAnomalyDetector(transactions);
+      } else {
+        logger?.info?.(`Skipped anomalyDetector: need ≥5 transactions (have ${transactions.length})`);
       }
 
-      // 3. Category Classifier
+      // 3. Category Classifier (lowered from 50 → 5)
       const labeled = transactions.filter(t => t.category && t.description);
-      if (labeled.length >= 50) {
+      if (labeled.length >= 5) {
         results.categoryClassifier = await this.trainCategoryClassifier(transactions);
+      } else {
+        logger?.info?.(`Skipped categoryClassifier: need ≥5 labeled transactions (have ${labeled.length})`);
       }
 
       // 4. Risk Classifier
       if (userData.length > 0 || users.length > 0) {
         results.riskClassifier = await this.trainRiskClassifier(userData.length > 0 ? userData : users);
+      } else {
+        logger?.info?.('Skipped riskClassifier: no user/userData provided');
       }
 
-      // 5. Customer Segmentation
-      if (users.length >= 10) {
+      // 5. Customer Segmentation (lowered from 10 → 2)
+      if (users.length >= 2) {
         results.customerSegmentation = await this.trainCustomerSegmentation(users);
+      } else {
+        logger?.info?.(`Skipped customerSegmentation: need ≥2 users (have ${users.length})`);
       }
 
-      // 6. Spending Patterns
-      if (transactions.length >= 30) {
+      // 6. Spending Patterns (lowered from 30 → 5)
+      if (transactions.length >= 5) {
         results.spendingPatterns = await this.trainSpendingPatterns(transactions);
+      } else {
+        logger?.info?.(`Skipped spendingPatterns: need ≥5 transactions (have ${transactions.length})`);
       }
 
       this.lastFullTraining = Date.now();

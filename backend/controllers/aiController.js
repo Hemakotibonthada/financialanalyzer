@@ -282,18 +282,48 @@ const aiController = {
       const userId = req.user._id || req.user.id;
       const results = await localAIEngine.trainModels(userId);
 
+      // Also train via aiModelTrainer (the comprehensive trainer that saves per-user models)
+      let trainerResults = null;
+      try {
+        const aiModelTrainer = require('../services/aiModelTrainer');
+        trainerResults = await aiModelTrainer.trainAllModels(userId);
+      } catch (err) {
+        console.warn('aiModelTrainer training unavailable:', err.message);
+      }
+
       // Also train new AI pipeline if available
       let pipelineResults = null;
       if (aiPipeline) {
         try {
           const transactions = await getUserTransactions(userId, 365);
-          pipelineResults = await aiPipeline.trainAll({ transactions });
+          if (transactions.length > 0) {
+            pipelineResults = await aiPipeline.trainAll({ transactions });
+          } else {
+            pipelineResults = { success: true, message: 'No transactions found — skipped pipeline training', modelsTotal: 0 };
+          }
         } catch (err) {
           console.warn('Pipeline training unavailable:', err.message);
         }
       }
 
-      res.json({ success: true, results, pipelineResults });
+      // Combine all results for the response
+      const totalModels = (results?.models ? Object.keys(results.models).length : 0) +
+        (trainerResults?.successfulModels || 0) +
+        (pipelineResults?.modelsSuccess || 0);
+
+      res.json({ 
+        success: true, 
+        results, 
+        trainerResults,
+        pipelineResults,
+        summary: {
+          totalModelsTrained: totalModels,
+          localEngine: results?.models ? Object.keys(results.models).filter(k => results.models[k]?.success).length : 0,
+          aiTrainer: trainerResults?.successfulModels || 0,
+          pipeline: pipelineResults?.modelsSuccess || 0,
+          totalTransactions: results?.totalTransactions || 0
+        }
+      });
     } catch (error) {
       console.error('Model training error:', error);
       res.status(500).json({ success: false, error: error.message });

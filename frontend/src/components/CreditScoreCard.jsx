@@ -55,23 +55,33 @@ const CreditScoreCard = () => {
           
           if (profileResponse.data.success && profileResponse.data.data?.profile?.creditScore) {
             const creditScore = profileResponse.data.data.profile.creditScore;
+            
+            // Check if the creditScore object actually has any meaningful data
+            // Mongoose may return an empty sub-document {} which is truthy but empty
+            const hasAnyData = creditScore.score || creditScore.totalCreditLimit || 
+              creditScore.creditUtilization || creditScore.grade || 
+              creditScore.accounts?.total || creditScore.creditCards?.length ||
+              creditScore.totalCredit || creditScore.availableCredit ||
+              creditScore.factors?.length || creditScore.recommendations?.length;
+            
             console.log('🎯 Credit score found in profile:', {
               score: creditScore.score,
               totalCreditLimit: creditScore.totalCreditLimit,
               creditUtilization: creditScore.creditUtilization,
-              grade: creditScore.grade
+              grade: creditScore.grade,
+              hasAnyData: !!hasAnyData
             });
             
-            // Always set the credit data if it exists, regardless of score value
-            if (creditScore.score) {
+            if (!hasAnyData) {
+              // Empty credit score sub-document — nothing to show
+              console.log('ℹ️ Credit score object is empty — no data fetched yet. Click "Fetch" to get your score.');
+            } else if (creditScore.score) {
               setCreditData(creditScore);
               console.log('✅ Credit score loaded and set in component state');
-            } else if (creditScore.totalCreditLimit || creditScore.creditUtilization || creditScore.grade || creditScore.accounts) {
+            } else {
               // Has partial data (credit cards, utilization, etc.) but no score yet
               setCreditData({ ...creditScore, score: null });
               console.log('⚠️ Partial credit data loaded (no score value yet)');
-            } else {
-              console.log('⚠️ Credit score exists but has no usable data');
             }
           } else {
             console.log('❌ No credit score found in profile response');

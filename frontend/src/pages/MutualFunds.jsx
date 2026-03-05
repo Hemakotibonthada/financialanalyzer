@@ -159,17 +159,17 @@ export default function MutualFunds() {
 
   return (
     <MainLayout title="Mutual Funds">
-    <div className={`min-h-screen bg-gray-50 ${dk ? 'bg-gray-900' : ''} p-4 md:p-6`}>
+    <div className={`min-h-screen ${dk ? 'bg-gray-900' : 'bg-gray-50'} p-4 md:p-6`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className={`text-2xl font-bold text-gray-900 ${dk ? 'text-white' : ''} flex items-center gap-2`}>
+          <h1 className={`text-2xl font-bold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}>
             <Layers className="w-7 h-7 text-blue-600" /> Mutual Funds
           </h1>
-          <p className={`text-gray-500 ${dk ? 'text-gray-400' : ''} text-sm mt-1`}>Manage SIPs, lump sums, and track fund performance</p>
+          <p className={`${dk ? 'text-gray-400' : 'text-gray-500'} text-sm mt-1`}>Manage SIPs, lump sums, and track fund performance</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowCalc(!showCalc)} className={`flex items-center gap-2 px-4 py-2 border border-gray-300 ${dk ? `border-gray-600` : ``} text-gray-700 ${dk ? 'text-gray-300' : ''} rounded-lg hover:bg-gray-100 ${dk ? `hover:bg-gray-700` : ``}`}>
+          <button onClick={() => setShowCalc(!showCalc)} className={`flex items-center gap-2 px-4 py-2 border border-gray-300 ${dk ? `border-gray-600` : ``} ${dk ? 'text-gray-300' : 'text-gray-700'} rounded-lg hover:bg-gray-100 ${dk ? `hover:bg-gray-700` : ``}`}>
             <Calculator className="w-4 h-4" /> Calculator
           </button>
           <button onClick={() => { setModalType('sip'); setShowAddModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -190,12 +190,12 @@ export default function MutualFunds() {
           { label: 'Monthly SIP', value: `₹${totalSIP.toLocaleString()}`, icon: <Calendar className="w-5 h-5" />, color: `text-purple-600 ${dk ? 'bg-purple-900/40' : 'bg-purple-100'}` },
           { label: 'Active Funds', value: funds.length, icon: <Layers className="w-5 h-5" />, color: `text-indigo-600 ${dk ? 'bg-indigo-900/40' : 'bg-indigo-100'}` },
         ].map((c, i) => (
-          <div key={i} className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-4 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''}`}>
+          <div key={i} className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs text-gray-500 ${dk ? 'text-gray-400' : ''}`}>{c.label}</span>
+              <span className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{c.label}</span>
               <span className={`p-1.5 rounded-lg ${c.color}`}>{c.icon}</span>
             </div>
-            <p className={`text-xl font-bold text-gray-900 ${dk ? 'text-white' : ''}`}>{c.value}</p>
+            <p className={`text-xl font-bold ${dk ? 'text-white' : 'text-gray-900'}`}>{c.value}</p>
             {c.sub && <p className="text-sm text-green-500 mt-1">{c.sub}</p>}
           </div>
         ))}
@@ -217,11 +217,11 @@ export default function MutualFunds() {
       </div>
 
       {/* Holdings Table */}
-      <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''} mb-6`}>
-        <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} mb-4`}>Fund Holdings</h2>
+      <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
+        <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4`}>Fund Holdings</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className={`text-left text-gray-500 ${dk ? 'text-gray-400' : ''} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-3">Fund Name</th><th className="pb-2 pr-3">Category</th><th className="pb-2 pr-3">NAV</th><th className="pb-2 pr-3">Units</th><th className="pb-2 pr-3">Invested</th><th className="pb-2 pr-3">Current</th><th className="pb-2 pr-3">Returns</th><th className="pb-2 pr-3">Rating</th><th className="pb-2"></th></tr></thead>
+            <thead><tr className={`text-left ${dk ? 'text-gray-400' : 'text-gray-500'} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-3">Fund Name</th><th className="pb-2 pr-3">Category</th><th className="pb-2 pr-3">NAV</th><th className="pb-2 pr-3">Units</th><th className="pb-2 pr-3">Invested</th><th className="pb-2 pr-3">Current</th><th className="pb-2 pr-3">Returns</th><th className="pb-2 pr-3">Rating</th><th className="pb-2"></th></tr></thead>
             <tbody>
               {filteredFunds.length === 0 && (
                 <tr><td colSpan={9} className={`py-8 text-center text-gray-400 ${dk ? 'text-gray-500' : ''}`}>No mutual funds added yet. Click &quot;Add SIP&quot; or &quot;Lumpsum&quot; to get started.</td></tr>
@@ -229,14 +229,14 @@ export default function MutualFunds() {
               {filteredFunds.map(f => (
                 <tr key={f.id} className={`border-b ${dk ? 'border-gray-700' : ''} hover:bg-gray-50 ${dk ? 'hover:bg-gray-700/50' : ''} cursor-pointer`} onClick={() => setSelectedFund(f)}>
                   <td className="py-3 pr-3">
-                    <p className={`font-medium text-gray-900 ${dk ? 'text-white' : ''}`}>{f.name}</p>
+                    <p className={`font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>{f.name}</p>
                     {f.sipAmount > 0 && <span className="text-xs text-blue-500">SIP: ₹{f.sipAmount.toLocaleString()}/mo</span>}
                   </td>
                   <td className="py-3 pr-3"><span className={`text-xs px-2 py-1 rounded-full ${f.category === `equity` ? `bg-blue-100 text-blue-700 ${dk ? `bg-blue-900/30` : ``} ${dk ? `text-blue-300` : ``}` : f.category === `debt` ? `bg-green-100 text-green-700 ${dk ? `bg-green-900/30` : ``} ${dk ? `text-green-300` : ``}` : f.category === `elss` ? `bg-purple-100 text-purple-700 ${dk ? `bg-purple-900/30` : ``} ${dk ? `text-purple-300` : ``}` : `bg-gray-100 text-gray-700 ${dk ? `bg-gray-700` : ``} ${dk ? `text-gray-300` : ``}`}`}>{f.category}</span></td>
-                  <td className={`py-3 pr-3 text-gray-700 ${dk ? 'text-gray-300' : ''}`}>₹{f.nav.toFixed(2)}</td>
-                  <td className={`py-3 pr-3 text-gray-700 ${dk ? 'text-gray-300' : ''}`}>{f.units.toFixed(2)}</td>
-                  <td className={`py-3 pr-3 text-gray-700 ${dk ? 'text-gray-300' : ''}`}>₹{f.invested.toLocaleString()}</td>
-                  <td className={`py-3 pr-3 font-medium text-gray-900 ${dk ? 'text-white' : ''}`}>₹{f.current.toLocaleString()}</td>
+                  <td className={`py-3 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>₹{f.nav.toFixed(2)}</td>
+                  <td className={`py-3 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{f.units.toFixed(2)}</td>
+                  <td className={`py-3 pr-3 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>₹{f.invested.toLocaleString()}</td>
+                  <td className={`py-3 pr-3 font-medium ${dk ? 'text-white' : 'text-gray-900'}`}>₹{f.current.toLocaleString()}</td>
                   <td className={`py-3 pr-3 font-medium ${f.returns >= 0 ? 'text-green-600' : 'text-red-600'}`}>{f.returns >= 0 ? '+' : ''}{f.returns}%</td>
                   <td className="py-3 pr-3 text-yellow-500">{'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}</td>
                   <td className="py-3"><button onClick={(e) => { e.stopPropagation(); toggleCompare(f.id); }} className={`p-1 rounded ${compareIds.includes(f.id) ? `bg-purple-100 text-purple-700 ${dk ? 'bg-purple-900/40' : ''}` : 'text-gray-400 hover:text-gray-600'}`}><BarChart3 className="w-4 h-4" /></button></td>
@@ -249,22 +249,22 @@ export default function MutualFunds() {
 
       {/* Performance Chart & Allocation */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className={`lg:col-span-2 bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''}`}>
-          <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} mb-1`}>Performance Chart</h2>
-          <p className={`text-sm text-gray-500 ${dk ? 'text-gray-400' : ''} mb-4`}>{selectedFund ? selectedFund.name : 'Select a fund'}</p>
+        <div className={`lg:col-span-2 ${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-1`}>Performance Chart</h2>
+          <p className={`text-sm ${dk ? 'text-gray-400' : 'text-gray-500'} mb-4`}>{selectedFund ? selectedFund.name : 'Select a fund'}</p>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={performanceData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
+              <CartesianGrid strokeDasharray="3 3" stroke={dk ? '#374151' : '#e5e7eb'} />
+              <XAxis dataKey="month" stroke={dk ? '#6b7280' : '#9ca3af'} />
+              <YAxis stroke={dk ? '#6b7280' : '#9ca3af'} tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
               <Tooltip formatter={v => `₹${Number(v).toLocaleString()}`} />
               <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''}`}>
-          <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} mb-4 flex items-center gap-2`}><PieIcon className="w-5 h-5" /> Asset Allocation</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><PieIcon className="w-5 h-5" /> Asset Allocation</h2>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={allocationData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
@@ -278,21 +278,21 @@ export default function MutualFunds() {
 
       {/* Fund Comparison */}
       {comparedFunds.length >= 2 && (
-        <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''} mb-6`}>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} flex items-center gap-2`}><BarChart3 className="w-5 h-5 text-purple-500" /> Fund Comparison</h2>
+            <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}><BarChart3 className="w-5 h-5 text-purple-500" /> Fund Comparison</h2>
             <button onClick={() => setCompareIds([])} className={`text-sm text-gray-500 hover:text-gray-700 ${dk ? 'text-gray-400' : ''}`}>Clear</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className={`text-left text-gray-500 ${dk ? 'text-gray-400' : ''} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-4">Metric</th>{comparedFunds.map(f => <th key={f.id} className="pb-2 pr-4">{f.name}</th>)}</tr></thead>
+              <thead><tr className={`text-left ${dk ? 'text-gray-400' : 'text-gray-500'} border-b ${dk ? 'border-gray-700' : ''}`}><th className="pb-2 pr-4">Metric</th>{comparedFunds.map(f => <th key={f.id} className="pb-2 pr-4">{f.name}</th>)}</tr></thead>
               <tbody>
                 {['Category', 'NAV', 'Invested', 'Current Value', 'Returns', 'Risk', 'Rating', 'SIP Amount'].map(metric => (
                   <tr key={metric} className={`border-b ${dk ? 'border-gray-700' : ''}`}>
-                    <td className={`py-2 pr-4 font-medium text-gray-700 ${dk ? 'text-gray-300' : ''}`}>{metric}</td>
+                    <td className={`py-2 pr-4 font-medium ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{metric}</td>
                     {comparedFunds.map(f => {
                       const val = metric === 'Category' ? f.category : metric === 'NAV' ? `₹${f.nav}` : metric === 'Invested' ? `₹${f.invested.toLocaleString()}` : metric === 'Current Value' ? `₹${f.current.toLocaleString()}` : metric === 'Returns' ? `${f.returns}%` : metric === 'Risk' ? f.risk : metric === 'Rating' ? '★'.repeat(f.rating) : `₹${f.sipAmount.toLocaleString()}`;
-                      return <td key={f.id} className={`py-2 pr-4 text-gray-700 ${dk ? 'text-gray-300' : ''}`}>{val}</td>;
+                      return <td key={f.id} className={`py-2 pr-4 ${dk ? 'text-gray-300' : 'text-gray-700'}`}>{val}</td>;
                     })}
                   </tr>
                 ))}
@@ -304,14 +304,14 @@ export default function MutualFunds() {
 
       {/* Top Performing Funds */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''}`}>
-          <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} mb-4 flex items-center gap-2`}><Award className="w-5 h-5 text-yellow-500" /> Top Performing Funds</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Award className="w-5 h-5 text-yellow-500" /> Top Performing Funds</h2>
           <div className="space-y-3">
             {topPerformingFunds.length > 0 ? topPerformingFunds.map((f, i) => (
-              <div key={i} className={`flex items-center justify-between p-3 bg-gray-50 ${dk ? 'bg-gray-700/50' : ''} rounded-lg`}>
+              <div key={i} className={`flex items-center justify-between p-3 ${dk ? 'bg-gray-700/50' : 'bg-gray-50'} rounded-lg`}>
                 <div>
-                  <p className={`font-medium text-gray-900 ${dk ? 'text-white' : ''} text-sm`}>{f.name}</p>
-                  <p className={`text-xs text-gray-500 ${dk ? 'text-gray-400' : ''}`}>{f.category} • {'★'.repeat(f.rating)}</p>
+                  <p className={`font-medium ${dk ? 'text-white' : 'text-gray-900'} text-sm`}>{f.name}</p>
+                  <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>{f.category} • {'★'.repeat(f.rating)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-green-600 font-semibold text-sm">+{f.returns1Y}% <span className="text-xs text-gray-400">1Y</span></p>
@@ -328,45 +328,45 @@ export default function MutualFunds() {
         </div>
 
         {/* Monthly SIP Calendar */}
-        <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''}`}>
-          <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} mb-4 flex items-center gap-2`}><Calendar className="w-5 h-5 text-blue-500" /> Monthly SIP Calendar</h2>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} mb-4 flex items-center gap-2`}><Calendar className="w-5 h-5 text-blue-500" /> Monthly SIP Calendar</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={sipCalendarData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#9ca3af" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#9ca3af" tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
+              <CartesianGrid strokeDasharray="3 3" stroke={dk ? '#374151' : '#e5e7eb'} />
+              <XAxis dataKey="month" stroke={dk ? '#6b7280' : '#9ca3af'} tick={{ fontSize: 11 }} />
+              <YAxis stroke={dk ? '#6b7280' : '#9ca3af'} tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} />
               <Tooltip formatter={v => `₹${Number(v).toLocaleString()}`} />
               <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-          <div className={`mt-3 text-center text-sm text-gray-500 ${dk ? 'text-gray-400' : ''}`}>
-            Total monthly SIP: <span className={`font-semibold text-gray-900 ${dk ? 'text-white' : ''}`}>₹{totalSIP.toLocaleString()}</span> across {funds.filter(f => f.sipAmount > 0).length} funds
+          <div className={`mt-3 text-center text-sm ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
+            Total monthly SIP: <span className={`font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>₹{totalSIP.toLocaleString()}</span> across {funds.filter(f => f.sipAmount > 0).length} funds
           </div>
         </div>
       </div>
 
       {/* Returns Calculator */}
       {showCalc && (
-        <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''} mb-6`}>
+        <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-5 shadow-sm border ${dk ? 'border-gray-700' : 'border-gray-100'} mb-6`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} flex items-center gap-2`}><Calculator className="w-5 h-5 text-green-500" /> Returns Calculator (XIRR Estimate)</h2>
+            <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'} flex items-center gap-2`}><Calculator className="w-5 h-5 text-green-500" /> Returns Calculator (XIRR Estimate)</h2>
             <button onClick={() => setShowCalc(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className={`block text-sm font-medium text-gray-700 ${dk ? 'text-gray-300' : ''} mb-1`}>Monthly SIP (₹)</label>
+              <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Monthly SIP (₹)</label>
               <input type="number" value={calcAmount} onChange={e => setCalcAmount(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? 'bg-gray-700' : ''} ${dk ? `text-white` : ``}`} />
             </div>
             <div>
-              <label className={`block text-sm font-medium text-gray-700 ${dk ? 'text-gray-300' : ''} mb-1`}>Expected Return (%)</label>
+              <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Expected Return (%)</label>
               <input type="number" value={calcRate} onChange={e => setCalcRate(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? 'bg-gray-700' : ''} ${dk ? `text-white` : ``}`} />
             </div>
             <div>
-              <label className={`block text-sm font-medium text-gray-700 ${dk ? 'text-gray-300' : ''} mb-1`}>Time Period (Years)</label>
+              <label className={`block text-sm font-medium ${dk ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Time Period (Years)</label>
               <input type="number" value={calcYears} onChange={e => setCalcYears(Number(e.target.value))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? 'bg-gray-700' : ''} ${dk ? `text-white` : ``}`} />
             </div>
             <div className={`bg-green-50 ${dk ? 'bg-green-900/20' : ''} rounded-lg p-3`}>
-              <p className={`text-xs text-gray-500 ${dk ? 'text-gray-400' : ''}`}>Maturity Value</p>
+              <p className={`text-xs ${dk ? 'text-gray-400' : 'text-gray-500'}`}>Maturity Value</p>
               <p className="text-xl font-bold text-green-600">₹{sipCalcResult.maturity.toLocaleString()}</p>
               <p className="text-xs text-gray-500 mt-1">Invested: ₹{sipCalcResult.invested.toLocaleString()} | Gain: ₹{sipCalcResult.gain.toLocaleString()}</p>
             </div>
@@ -377,9 +377,9 @@ export default function MutualFunds() {
       {/* Add SIP / Lumpsum Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-6 w-full max-w-md shadow-xl`}>
+          <div className={`${dk ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-md shadow-xl`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''}`}>{modalType === 'sip' ? 'Add SIP Investment' : 'Add Lumpsum Investment'}</h2>
+              <h2 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-gray-900'}`}>{modalType === 'sip' ? 'Add SIP Investment' : 'Add Lumpsum Investment'}</h2>
               <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
@@ -389,7 +389,7 @@ export default function MutualFunds() {
               <div><label className={`block text-sm font-medium text-gray-700 ${dk ? `text-gray-300` : ``} mb-1`}>Current NAV (₹)</label><input type="number" value={form.nav} onChange={e => setForm(p => ({ ...p, nav: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border ${dk ? `border-gray-600` : ``} ${dk ? `bg-gray-700` : ``} ${dk ? `text-white` : ``}`} /></div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowAddModal(false)} className={`flex-1 py-2 border border-gray-300 ${dk ? 'border-gray-600' : ''} rounded-lg text-gray-700 ${dk ? 'text-gray-300' : ''}`}>Cancel</button>
+              <button onClick={() => setShowAddModal(false)} className={`flex-1 py-2 border border-gray-300 ${dk ? 'border-gray-600' : ''} rounded-lg ${dk ? 'text-gray-300' : 'text-gray-700'}`}>Cancel</button>
               <button onClick={handleAdd} className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{modalType === 'sip' ? 'Start SIP' : 'Invest'}</button>
             </div>
           </div>

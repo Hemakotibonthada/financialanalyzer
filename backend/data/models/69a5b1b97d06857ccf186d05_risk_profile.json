@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "overallRisk": 33,
+  "riskLevel": "high",
+  "riskFactors": {
+    "incomeStability": {
+      "score": 50,
+      "weight": 20
+    },
+    "expenseControl": {
+      "score": 50,
+      "weight": 15
+    },
+    "debtManagement": {
+      "score": 0,
+      "weight": 20
+    },
+    "emergencyPreparedness": {
+      "score": 0,
+      "weight": 15
+    },
+    "diversification": {
+      "score": 100,
+      "weight": 10
+    },
+    "insuranceCoverage": {
+      "score": 0,
+      "weight": 10
+    },
+    "savingsTrend": {
+      "score": 50,
+      "weight": 10
+    }
+  },
+  "stressTests": {
+    "jobLoss": {
+      "scenario": "Job loss (no income for 6 months)",
+      "survivalMonths": 0,
+      "impact": "critical",
+      "recommendation": "Build emergency fund to cover 6 more months"
+    },
+    "interestRateHike": {
+      "scenario": "Interest rate hike (+2%)",
+      "additionalMonthlyBurden": 383,
+      "impact": "significant"
+    },
+    "medicalEmergency": {
+      "scenario": "Medical emergency (₹5 lakh)",
+      "canAbsorb": false,
+      "percentOfSavings": 999,
+      "recommendation": "Get health insurance immediately"
+    },
+    "incomeReduction": {
+      "scenario": "Income reduction (30% cut)",
+      "newSavingsRate": -35043,
+      "canMeetEMIs": false
+    }
+  },
+  "metrics": {
+    "avgMonthlyIncome": 1,
+    "avgMonthlyExpenses": 246,
+    "monthlyEMI": 12899,
+    "totalBalance": 0,
+    "totalInvested": 0,
+    "emergencyMonths": 0,
+    "debtToIncome": 12899
+  },
+  "trainedAt": "2026-03-05T17:51:28.982Z"
+}

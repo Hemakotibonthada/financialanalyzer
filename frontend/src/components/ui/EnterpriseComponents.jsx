@@ -168,21 +168,31 @@ export function MetricComparison({
   label,
   current,
   previous,
+  // Alternate prop names used by some callers
+  label1,
+  value1,
+  label2,
+  value2,
   prefix = '₹',
   format = 'number',
   className = '',
 }) {
-  const diff = current - previous;
-  const percentChange = previous !== 0 ? ((diff / Math.abs(previous)) * 100).toFixed(1) : '∞';
+  // Support both naming conventions: (current/previous) and (value1/value2)
+  const cur = current ?? value1 ?? 0;
+  const prev = previous ?? value2 ?? 0;
+  const displayLabel = label || (label1 && label2 ? `${label1} vs ${label2}` : 'Comparison');
+
+  const diff = cur - prev;
+  const percentChange = prev !== 0 ? ((diff / Math.abs(prev)) * 100).toFixed(1) : (diff === 0 ? '0.0' : '∞');
   const isPositive = diff > 0;
   const isNeutral = diff === 0;
 
   return (
     <div className={`flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700/50 last:border-0 ${className}`}>
-      <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
+      <span className="text-sm text-gray-600 dark:text-gray-400">{displayLabel}</span>
       <div className="flex items-center gap-3">
         <span className="text-sm font-semibold text-gray-900 dark:text-white">
-          {prefix}{current.toLocaleString('en-IN')}
+          {prefix}{Number(cur).toLocaleString('en-IN')}
         </span>
         <div className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
           isNeutral ? 'bg-gray-100 dark:bg-gray-700 text-gray-500' :
