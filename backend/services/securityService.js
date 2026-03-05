@@ -6,7 +6,7 @@
  */
 
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 
