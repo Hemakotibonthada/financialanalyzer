@@ -8,6 +8,7 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const EMI = require('../models/EMI');
 const User = require('../models/User');
+const BankAccount = require('../models/BankAccount');
 const FinancialProfile = require('../models/FinancialProfile');
 const BillReminder = require('../models/BillReminder');
 const PersonalLoan = require('../models/PersonalLoan');
@@ -4149,8 +4150,6 @@ router.post('/balance-transfer-request', authenticate, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════
 // ─── Bank Deduction & Balance Management ─────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-
-const BankAccount = require('../models/BankAccount');
 
 /**
  * @route GET /api/emi/bank-deduction-summary

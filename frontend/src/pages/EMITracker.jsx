@@ -3120,100 +3120,24 @@ const EMITracker = () => {
         </Card>
       )}
 
-      {/* Enhanced Insights Section */}
-      {insights.length > 0 && (
-        <Box mb={4}>
-          <Box 
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              mb: 3,
-              pb: 2,
-              borderBottom: '2px solid',
-              borderImage: 'linear-gradient(to right, #667eea, #764ba2) 1'
-            }}
-          >
-            <Box
-              sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: 2,
-                p: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <InfoIcon sx={{ color: 'white', fontSize: 28 }} />
-            </Box>
-            <Typography 
-              variant="h5" 
-              sx={{
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundClip: 'text',
-                textFillColor: 'transparent',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
-              Smart Insights & Recommendations
-            </Typography>
-          </Box>
-          <Grid container spacing={3}>
-            {insights.map((insight, index) => (
-              <Grid size={{ xs: 12, md: 6 }} key={index}>
-                <Alert
-                  severity={getSeverityColor(insight.severity)}
-                  icon={<InfoIcon sx={{ fontSize: 24 }} />}
-                  action={
-                    insight.action && (
-                      <Chip 
-                        label={insight.action} 
-                        size="small"
-                        sx={{
-                          fontWeight: 600,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                    )
-                  }
-                  sx={{
-                    borderRadius: 3,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': {
-                      transform: 'translateX(8px) translateY(-4px)',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
-                    }
-                  }}
-                >
-                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 0.5 }}>
-                    {insight.title}
-                  </Typography>
-                  <Typography variant="body2">{insight.description}</Typography>
-                </Alert>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      )}
-
-      {/* Enhanced Tabs */}
+      {/* Enhanced Tabs — Sticky at top for easy navigation */}
       <Box 
         sx={{ 
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
           mb: 4,
-          bgcolor: 'background.paper',
-          borderRadius: 4,
+          mx: -3,
+          px: 3,
+          pt: 1.5,
+          pb: 0,
+          bgcolor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid',
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)',
           boxShadow: isDark 
-            ? '0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
-            : '0 2px 12px rgba(0,0,0,0.08)',
-          overflow: 'hidden',
-          border: '1px solid',
-          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent',
-          backdropFilter: isDark ? 'blur(20px)' : 'none'
+            ? '0 4px 20px rgba(0,0,0,0.4)'
+            : '0 4px 20px rgba(0,0,0,0.06)',
         }}
       >
         <Tabs 
@@ -3223,35 +3147,38 @@ const EMITracker = () => {
           scrollButtons="auto"
           allowScrollButtonsMobile
           sx={{
-            px: 2,
+            minHeight: 52,
             '& .MuiTabs-indicator': {
-              height: 4,
-              borderRadius: '4px 4px 0 0',
+              height: 3,
+              borderRadius: '3px 3px 0 0',
               background: isDark 
                 ? 'linear-gradient(135deg, #818cf8 0%, #a78bfa 100%)'
                 : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
             },
+            '& .MuiTabs-scrollButtons': {
+              color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+              '&.Mui-disabled': { opacity: 0.3 }
+            },
             '& .MuiTab-root': {
               fontWeight: 600,
-              fontSize: '0.95rem',
+              fontSize: '0.85rem',
               textTransform: 'none',
-              minHeight: 64,
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'text.secondary',
-              transition: 'all 0.3s ease',
+              minHeight: 48,
+              py: 1,
+              px: 2,
+              color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary',
+              transition: 'all 0.2s ease',
               '&:hover': {
                 color: isDark ? '#818cf8' : '#667eea',
-                transform: 'translateY(-2px)'
               }
             },
             '& .Mui-selected': {
               fontWeight: 700,
               color: isDark ? '#a78bfa !important' : '#667eea !important',
-              background: isDark 
-                ? 'linear-gradient(135deg, rgba(129,140,248,0.1) 0%, rgba(167,139,250,0.1) 100%)'
-                : 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)'
             }
           }}
         >
+
           <Tab 
             label="Overview" 
             icon={<AssessmentIcon />} 
@@ -3309,6 +3236,80 @@ const EMITracker = () => {
           />
         </Tabs>
       </Box>
+
+      {/* Smart Insights Section — below sticky tabs */}
+      {insights.length > 0 && (
+        <Box mb={4}>
+          <Box 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              mb: 2,
+              pb: 1.5,
+              borderBottom: '2px solid',
+              borderImage: 'linear-gradient(to right, #667eea, #764ba2) 1'
+            }}
+          >
+            <Box
+              sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: 2,
+                p: 0.8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <InfoIcon sx={{ color: 'white', fontSize: 22 }} />
+            </Box>
+            <Typography 
+              variant="h6" 
+              sx={{
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                textFillColor: 'transparent',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Smart Insights
+            </Typography>
+          </Box>
+          <Grid container spacing={2}>
+            {insights.map((insight, index) => (
+              <Grid size={{ xs: 12, md: 6 }} key={index}>
+                <Alert
+                  severity={getSeverityColor(insight.severity)}
+                  icon={<InfoIcon sx={{ fontSize: 20 }} />}
+                  action={
+                    insight.action && (
+                      <Chip 
+                        label={insight.action} 
+                        size="small"
+                        sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                      />
+                    )
+                  }
+                  sx={{
+                    borderRadius: 2.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    py: 0.5,
+                    '& .MuiAlert-message': { py: 0.5 }
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 0.25 }}>
+                    {insight.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{insight.description}</Typography>
+                </Alert>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
       {/* Tab Panels */}
       {activeTab === 0 && chartData && (

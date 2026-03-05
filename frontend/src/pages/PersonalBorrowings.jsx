@@ -10,7 +10,9 @@ import {
   Download, ChevronRight, ChevronDown, ChevronUp, Eye, EyeOff, Phone,
   Mail, Star, Shield, Target, Wallet, BarChart3, PieChart, Activity,
   MoreVertical, Hash, Percent, ArrowRight, Info, Zap, Award,
-  CircleDollarSign, Banknote, UserCheck, AlertCircle, History
+  CircleDollarSign, Banknote, UserCheck, AlertCircle, History,
+  Brain, Lightbulb, Heart, Gauge, LineChart, TrendingUp as TrendUp,
+  Calculator, Sparkles, Bot, FileText, ArrowDown, ArrowUp
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -661,6 +663,509 @@ const RepaymentModal = ({ isOpen, onClose, loan, onSubmit, palette }) => {
   );
 };
 
+// ─── AI Analytics Dashboard ──────────────────────────────────────────────────
+
+const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
+  const [activeAITab, setActiveAITab] = useState('overview');
+  
+  if (!analytics) {
+    return (
+      <div className={`${palette.card} rounded-2xl border p-12 text-center`}>
+        <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <p className={`font-medium ${palette.text}`}>Loading AI Analytics...</p>
+        <p className={`text-sm ${palette.textMuted} mt-1`}>Analyzing your borrowing patterns</p>
+      </div>
+    );
+  }
+
+  const aiTabs = [
+    { key: 'overview', label: 'AI Overview', icon: Brain },
+    { key: 'insights', label: 'Insights', icon: Lightbulb },
+    { key: 'risk', label: 'Risk', icon: Shield },
+    { key: 'predictions', label: 'Predictions', icon: TrendingUp },
+    { key: 'recommendations', label: 'Actions', icon: Target },
+    { key: 'patterns', label: 'Patterns', icon: Activity }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* AI Sub-tabs */}
+      <div className="flex flex-wrap gap-2">
+        {aiTabs.map(tab => {
+          const TabIcon = tab.icon;
+          return (
+            <button key={tab.key} onClick={() => setActiveAITab(tab.key)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${activeAITab === tab.key ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md' : `${palette.textSub} border ${palette.btnBorder}`}`}>
+              <TabIcon className="w-3.5 h-3.5" />{tab.label}
+            </button>
+          );
+        })}
+        <button onClick={onRefresh} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium ${palette.textSub} border ${palette.btnBorder} ml-auto`}>
+          <RefreshCw className="w-3.5 h-3.5" /> Train Model
+        </button>
+      </div>
+
+      {/* Health Score Banner */}
+      {analytics.healthScore && (
+        <div className={`${palette.card} rounded-2xl border p-6 relative overflow-hidden`}>
+          {/* Decorative glow */}
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.07]" style={{ background: `radial-gradient(circle, ${analytics.healthScore.color} 0%, transparent 70%)` }} />
+          <div className="relative z-10 flex items-center gap-6">
+            {/* Score gauge */}
+            <div className="relative w-28 h-28 flex-shrink-0">
+              <svg width="112" height="112" viewBox="0 0 112 112">
+                <circle cx="56" cy="56" r="48" fill="none" stroke={palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)'} strokeWidth="7" />
+                <circle cx="56" cy="56" r="48" fill="none" stroke={analytics.healthScore.color} strokeWidth="7" strokeDasharray={`${2 * Math.PI * 48}`} strokeDashoffset={`${2 * Math.PI * 48 * (1 - analytics.healthScore.score / 100)}`} strokeLinecap="round" transform="rotate(-90 56 56)" className="transition-all duration-1000 ease-out" style={{ filter: `drop-shadow(0 0 6px ${analytics.healthScore.color}50)` }} />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-extrabold" style={{ color: analytics.healthScore.color }}>{analytics.healthScore.score}</span>
+                <span className={`text-[10px] font-semibold ${palette.textMuted}`}>{analytics.healthScore.grade}</span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className={`text-lg font-bold ${palette.text}`}>Borrowing Health: {analytics.healthScore.label}</h3>
+                <span className="text-xs px-2.5 py-1 rounded-full font-bold shadow-sm" style={{ backgroundColor: `${analytics.healthScore.color}18`, color: analytics.healthScore.color, border: `1px solid ${analytics.healthScore.color}30` }}>{analytics.healthScore.grade} Grade</span>
+              </div>
+              <div className="grid grid-cols-4 gap-3 mt-3">
+                {(() => {
+                  const breakdownColors = ['#3B82F6', '#8B5CF6', '#F59E0B', '#10B981'];
+                  return Object.entries(analytics.healthScore.breakdown || {}).map(([key, value], idx) => {
+                    const c = breakdownColors[idx % breakdownColors.length];
+                    return (
+                      <div key={key} className="text-center p-3 rounded-xl border transition-all hover:scale-[1.03]" style={{ backgroundColor: `${c}08`, borderColor: `${c}25` }}>
+                        <p className={`text-[11px] font-medium ${palette.textMuted} capitalize`}>{key.replace(/([A-Z])/g, ' $1').trim()}</p>
+                        <p className="text-base font-bold mt-0.5" style={{ color: c }}>{value}<span className={`text-xs font-normal ${palette.textMuted}`}>/25</span></p>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+            {/* Model info */}
+            <div className="flex-shrink-0">
+              <div className="p-3 rounded-xl border" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.04)', borderColor: 'rgba(139,92,246,0.15)' }}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Bot className="w-4 h-4 text-purple-500" />
+                  <span className="text-xs font-semibold text-purple-500">AI Model v{analytics.modelInfo?.version}</span>
+                </div>
+                <p className={`text-[11px] ${palette.textMuted}`}>{analytics.modelInfo?.dataPoints} data points</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <div className="w-12 h-1.5 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                    <div className="h-full rounded-full bg-purple-500 transition-all" style={{ width: `${analytics.modelInfo?.accuracy || 0}%` }} />
+                  </div>
+                  <span className={`text-[10px] font-medium ${palette.textMuted}`}>{analytics.modelInfo?.accuracy}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Overview Tab */}
+      {activeAITab === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Portfolio Stats */}
+          {analytics.portfolio && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-blue-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Portfolio Overview</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Total Borrowed', value: formatCurrency(analytics.portfolio.totalBorrowed), color: 'text-blue-500' },
+                  { label: 'Outstanding', value: formatCurrency(analytics.portfolio.totalOutstanding), color: 'text-red-500' },
+                  { label: 'Total Repaid', value: formatCurrency(analytics.portfolio.totalRepaid), color: 'text-emerald-500' },
+                  { label: 'Total Interest', value: formatCurrency(analytics.portfolio.totalInterest), color: 'text-amber-500' },
+                  { label: 'Avg Loan Size', value: formatCurrency(analytics.portfolio.avgLoanAmount), color: palette.text },
+                  { label: 'Avg Repay Time', value: `${analytics.portfolio.avgRepaymentTimeDays} days`, color: palette.text },
+                  { label: 'Completion Rate', value: `${analytics.portfolio.completionRate}%`, color: analytics.portfolio.completionRate >= 70 ? 'text-emerald-500' : 'text-amber-500' },
+                  { label: 'Unique Lenders', value: String(analytics.portfolio.uniqueLenders), color: 'text-purple-500' }
+                ].map((stat, i) => (
+                  <div key={i} className="p-3 rounded-xl border transition-all hover:shadow-md hover:scale-[1.02]" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.5)' : 'rgba(248,250,252,0.9)', borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.25)' : 'rgba(226,232,240,0.7)' }}>
+                    <p className={`text-[11px] font-medium ${palette.textMuted} mb-0.5`}>{stat.label}</p>
+                    <p className={`text-base font-bold ${stat.color}`}>{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Trends */}
+          {analytics.trends && analytics.trends.monthly?.length > 0 && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <LineChart className="w-5 h-5 text-cyan-500" />
+                  <h3 className={`text-lg font-bold ${palette.text}`}>Borrowing Trends</h3>
+                </div>
+                {analytics.trends.direction !== 'insufficient_data' && (
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    analytics.trends.direction === 'decreasing' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                    analytics.trends.direction === 'increasing' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                    'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+                  }`}>
+                    {analytics.trends.direction === 'increasing' ? `↑ ${analytics.trends.amountChange}%` : analytics.trends.direction === 'decreasing' ? `↓ ${Math.abs(analytics.trends.amountChange)}%` : 'Stable'}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-end gap-1.5 h-40">
+                {analytics.trends.monthly.slice(-12).map((m, i, arr) => {
+                  const maxAmt = Math.max(...arr.map(x => x.amount));
+                  const height = maxAmt > 0 ? (m.amount / maxAmt) * 100 : 0;
+                  const isLast = i === arr.length - 1;
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center group">
+                      {/* Amount tooltip on hover */}
+                      <span className={`text-[9px] font-medium ${palette.textMuted} mb-1 opacity-0 group-hover:opacity-100 transition-opacity`}>{formatCurrency(m.amount)}</span>
+                      <div className="w-full relative" style={{ height: '125px' }}>
+                        <div className={`absolute bottom-0 w-full rounded-t-lg transition-all duration-500 ${isLast ? 'shadow-lg' : ''}`} style={{ height: `${Math.max(4, height)}%`, background: isLast ? 'linear-gradient(to top, #6366f1, #818cf8)' : `linear-gradient(to top, rgba(99,102,241,${0.3 + (i / arr.length) * 0.4}), rgba(129,140,248,${0.3 + (i / arr.length) * 0.4}))` }} />
+                      </div>
+                      <span className={`text-[9px] font-medium ${isLast ? 'text-indigo-400' : palette.textMuted} mt-1.5`}>{m.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Cash Flow Impact */}
+          {analytics.cashFlowImpact && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Wallet className="w-5 h-5 text-emerald-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Cash Flow Impact</h3>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Monthly Income', value: formatCurrency(analytics.cashFlowImpact.monthlyIncome), color: 'text-emerald-500' },
+                  { label: 'Monthly Expenses', value: formatCurrency(analytics.cashFlowImpact.monthlyExpenses), color: 'text-red-500' },
+                  { label: 'Monthly Interest', value: formatCurrency(analytics.cashFlowImpact.monthlyInterest), color: 'text-amber-500' },
+                  { label: 'Recommended Repayment', value: formatCurrency(analytics.cashFlowImpact.recommendedRepayment), color: 'text-blue-500' },
+                  { label: 'Months to Clear Debt', value: analytics.cashFlowImpact.monthsToClear ? `${analytics.cashFlowImpact.monthsToClear} months` : '—', color: palette.text }
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className={`text-sm ${palette.textSub}`}>{item.label}</span>
+                    <span className={`text-sm font-bold ${item.color}`}>{item.value}</span>
+                  </div>
+                ))}
+                <div className="pt-3 mt-3 border-t" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${palette.text}`}>Status</span>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      analytics.cashFlowImpact.healthStatus === 'healthy' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                      analytics.cashFlowImpact.healthStatus === 'manageable' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                      analytics.cashFlowImpact.healthStatus === 'strained' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                    }`}>{analytics.cashFlowImpact.healthStatus?.toUpperCase()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Borrowing Capacity */}
+          {analytics.capacity && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Gauge className="w-5 h-5 text-indigo-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Borrowing Capacity</h3>
+              </div>
+              <div className="mb-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className={palette.textSub}>Utilization</span>
+                  <span className={`font-bold ${analytics.capacity.currentUtilization > 80 ? 'text-red-500' : analytics.capacity.currentUtilization > 50 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                    {analytics.capacity.currentUtilization}%
+                  </span>
+                </div>
+                <div className="w-full h-4 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-700 ${
+                    analytics.capacity.currentUtilization > 80 ? 'bg-red-500' : analytics.capacity.currentUtilization > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`} style={{ width: `${analytics.capacity.currentUtilization}%` }} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10">
+                  <p className={`text-xs ${palette.textMuted}`}>Safe to Borrow</p>
+                  <p className="text-lg font-bold text-emerald-500">{formatCurrency(analytics.capacity.maxSafeBorrowing)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/10">
+                  <p className={`text-xs ${palette.textMuted}`}>Total Limit</p>
+                  <p className="text-lg font-bold text-blue-500">{formatCurrency(analytics.capacity.safeThreshold)}</p>
+                </div>
+              </div>
+              <p className={`text-xs ${palette.textMuted} mt-3`}>{analytics.capacity.recommendation}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Insights Tab */}
+      {activeAITab === 'insights' && analytics.insights && (
+        <div className="space-y-3">
+          {analytics.insights.map((insight, i) => {
+            const sentimentColors = {
+              positive: { bg: 'bg-emerald-50 dark:bg-emerald-900/10', border: 'border-emerald-200 dark:border-emerald-800', icon: 'text-emerald-500' },
+              warning: { bg: 'bg-red-50 dark:bg-red-900/10', border: 'border-red-200 dark:border-red-800', icon: 'text-red-500' },
+              attention: { bg: 'bg-amber-50 dark:bg-amber-900/10', border: 'border-amber-200 dark:border-amber-800', icon: 'text-amber-500' },
+              neutral: { bg: 'bg-blue-50 dark:bg-blue-900/10', border: 'border-blue-200 dark:border-blue-800', icon: 'text-blue-500' }
+            };
+            const colors = sentimentColors[insight.sentiment] || sentimentColors.neutral;
+            const iconMap = { BarChart3, TrendingUp, TrendingDown, Activity, Shield, AlertTriangle, Percent, UserCheck, Calendar, Wallet };
+            const InsightIcon = iconMap[insight.icon] || Info;
+            return (
+              <div key={i} className={`${colors.bg} border ${colors.border} rounded-xl p-4`}>
+                <div className="flex items-start gap-3">
+                  <InsightIcon className={`w-5 h-5 ${colors.icon} flex-shrink-0 mt-0.5`} />
+                  <div>
+                    <h4 className={`font-semibold text-sm ${palette.text}`}>{insight.title}</h4>
+                    <p className={`text-sm ${palette.textSub} mt-1`}>{insight.text}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Risk Tab */}
+      {activeAITab === 'risk' && analytics.riskAssessment && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className={`${palette.card} rounded-2xl border p-6`}>
+            <div className="flex items-center gap-2 mb-6">
+              <Shield className="w-5 h-5 text-purple-500" />
+              <h3 className={`text-lg font-bold ${palette.text}`}>Risk Assessment</h3>
+            </div>
+            <div className="text-center mb-6">
+              <span className={`text-4xl font-bold ${
+                analytics.riskAssessment.overallRisk < 30 ? 'text-emerald-500' :
+                analytics.riskAssessment.overallRisk < 60 ? 'text-amber-500' : 'text-red-500'
+              }`}>{analytics.riskAssessment.overallRisk}</span>
+              <span className={`text-lg ${palette.textMuted}`}>/100</span>
+              <p className={`text-sm mt-1 ${palette.textSub}`}>{analytics.riskAssessment.overallRiskLevel?.toUpperCase()} RISK</p>
+            </div>
+            <div className="space-y-4">
+              {[
+                { label: 'Debt-to-Income', value: `${analytics.riskAssessment.debtToIncome?.value}%`, risk: analytics.riskAssessment.debtToIncome?.risk },
+                { label: 'Concentration', value: `${analytics.riskAssessment.concentration?.value}%`, risk: analytics.riskAssessment.concentration?.risk },
+                { label: 'Interest Burden', value: `${analytics.riskAssessment.interestBurden?.value}%`, risk: analytics.riskAssessment.interestBurden?.risk },
+                { label: 'Overdue Loans', value: String(analytics.riskAssessment.overdueLoans?.count || 0), risk: analytics.riskAssessment.overdueLoans?.risk },
+                { label: 'Borrowing Velocity', value: `${analytics.riskAssessment.velocity?.last90Days || 0} in 90d`, risk: analytics.riskAssessment.velocity?.risk }
+              ].map((metric, i) => {
+                const riskColor = metric.risk === 'low' ? 'text-emerald-500' : metric.risk === 'medium' ? 'text-amber-500' : 'text-red-500';
+                return (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className={`text-sm ${palette.textSub}`}>{metric.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-bold ${palette.text}`}>{metric.value}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${riskColor}`}>{metric.risk?.toUpperCase()}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Interest Analysis */}
+          {analytics.interestAnalysis && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Percent className="w-5 h-5 text-amber-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Interest Burden</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10">
+                  <p className={`text-xs ${palette.textMuted}`}>Monthly Interest</p>
+                  <p className="text-lg font-bold text-amber-500">{formatCurrency(analytics.interestAnalysis.monthlyInterest)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/10">
+                  <p className={`text-xs ${palette.textMuted}`}>Annual Interest</p>
+                  <p className="text-lg font-bold text-red-500">{formatCurrency(analytics.interestAnalysis.annualInterest)}</p>
+                </div>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
+                  <p className={`text-xs ${palette.textMuted}`}>Avg Rate</p>
+                  <p className={`text-lg font-bold ${palette.text}`}>{analytics.interestAnalysis.weightedAvgRate}% p.a.</p>
+                </div>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
+                  <p className={`text-xs ${palette.textMuted}`}>Interest-Free Loans</p>
+                  <p className={`text-lg font-bold text-emerald-500`}>{analytics.interestAnalysis.interestFreeLoans}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Predictions Tab */}
+      {activeAITab === 'predictions' && (
+        <div className="space-y-6">
+          {/* Predictions */}
+          {analytics.predictions?.map((pred, i) => (
+            <div key={i} className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="w-5 h-5 text-purple-500" />
+                <h3 className={`font-bold ${palette.text}`}>{pred.title}</h3>
+                {pred.confidence && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    pred.confidence === 'high' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                  }`}>{pred.confidence} confidence</span>
+                )}
+              </div>
+              <p className={`text-sm ${palette.textSub}`}>{pred.description}</p>
+              {pred.projections && (
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {pred.projections.map((proj, j) => (
+                    <div key={j} className="p-3 rounded-xl text-center" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
+                      <p className={`text-xs ${palette.textMuted}`}>{proj.label}</p>
+                      <p className={`text-sm font-bold text-red-500`}>{formatCurrency(proj.amount)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Repayment Timeline */}
+          {analytics.timeline?.length > 0 && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="w-5 h-5 text-blue-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Recommended Repayment Order</h3>
+              </div>
+              <div className="space-y-3">
+                {analytics.timeline.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">{item.order}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-semibold ${palette.text}`}>{item.lender}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                          item.priority === 'urgent' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                          item.priority === 'high' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                          'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        }`}>{item.priority}</span>
+                      </div>
+                      <p className={`text-xs ${palette.textMuted}`}>{item.reason}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-bold text-red-500`}>{formatCurrency(item.amount)}</p>
+                      {item.interestRate > 0 && <p className={`text-xs ${palette.textMuted}`}>{item.interestRate}% interest</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Recommendations Tab */}
+      {activeAITab === 'recommendations' && analytics.recommendations && (
+        <div className="space-y-3">
+          {analytics.recommendations.map((rec, i) => {
+            const priorityColors = {
+              critical: { bg: 'bg-red-50 dark:bg-red-900/10', border: 'border-red-200 dark:border-red-800', badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+              high: { bg: 'bg-amber-50 dark:bg-amber-900/10', border: 'border-amber-200 dark:border-amber-800', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+              medium: { bg: 'bg-blue-50 dark:bg-blue-900/10', border: 'border-blue-200 dark:border-blue-800', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+              low: { bg: 'bg-gray-50 dark:bg-slate-800/50', border: 'border-gray-200 dark:border-slate-700', badge: 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300' }
+            };
+            const colors = priorityColors[rec.priority] || priorityColors.low;
+            const iconMap = { AlertTriangle, TrendingDown, Target, Users, Percent, Heart, Calculator, Plus, Shield };
+            const RecIcon = iconMap[rec.icon] || Lightbulb;
+            return (
+              <div key={i} className={`${colors.bg} border ${colors.border} rounded-xl p-5`}>
+                <div className="flex items-start gap-3">
+                  <RecIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className={`font-semibold text-sm ${palette.text}`}>{rec.title}</h4>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${colors.badge}`}>{rec.priority.toUpperCase()}</span>
+                    </div>
+                    <p className={`text-sm ${palette.textSub}`}>{rec.description}</p>
+                    {rec.action && <p className={`text-xs ${palette.textMuted} mt-2`}><strong>Action:</strong> {rec.action}</p>}
+                    {rec.impact && <p className={`text-xs text-emerald-500 mt-1`}><strong>Impact:</strong> {rec.impact}</p>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Patterns Tab */}
+      {activeAITab === 'patterns' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Detected Patterns */}
+          {analytics.patterns?.length > 0 && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-5 h-5 text-cyan-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Detected Patterns</h3>
+              </div>
+              <div className="space-y-3">
+                {analytics.patterns.map((pattern, i) => (
+                  <div key={i} className={`p-3 rounded-xl border`} style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300`}>{pattern.type.replace(/_/g, ' ').toUpperCase()}</span>
+                      {pattern.confidence && <span className={`text-xs ${palette.textMuted}`}>({pattern.confidence})</span>}
+                    </div>
+                    <p className={`text-sm ${palette.textSub}`}>{pattern.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Anomalies */}
+          {analytics.anomalies?.length > 0 && (
+            <div className={`${palette.card} rounded-2xl border p-6`}>
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Anomalies</h3>
+              </div>
+              <div className="space-y-3">
+                {analytics.anomalies.map((anomaly, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
+                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className={`text-sm ${palette.textSub}`}>{anomaly.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Seasonality */}
+          {analytics.seasonalAnalysis && (
+            <div className={`${palette.card} rounded-2xl border p-6 lg:col-span-2`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-5 h-5 text-violet-500" />
+                <h3 className={`text-lg font-bold ${palette.text}`}>Seasonal Patterns</h3>
+              </div>
+              <div className="flex items-end gap-1 h-32">
+                {analytics.seasonalAnalysis.monthly?.map((m, i) => {
+                  const maxCount = Math.max(...analytics.seasonalAnalysis.monthly.map(x => x.count));
+                  const height = maxCount > 0 ? (m.count / maxCount) * 100 : 0;
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center">
+                      <span className={`text-[10px] ${palette.textMuted} mb-1`}>{m.count}</span>
+                      <div className="w-full relative" style={{ height: '100px' }}>
+                        <div className="absolute bottom-0 w-full rounded-t-sm bg-violet-500 bg-opacity-60 transition-all" style={{ height: `${height}%` }} />
+                      </div>
+                      <span className={`text-[9px] ${palette.textMuted} mt-1`}>{m.month}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className={`text-xs ${palette.textMuted} mt-3 text-center`}>{analytics.seasonalAnalysis.insight}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main Page Component ─────────────────────────────────────────────────────
 
 const PersonalBorrowings = () => {
@@ -691,6 +1196,8 @@ const PersonalBorrowings = () => {
   const [summary, setSummary] = useState({ totalBorrowed: 0, totalOutstanding: 0, totalRepaid: 0, totalInterest: 0, activeLoansCount: 0 });
   const [lenders, setLenders] = useState([]);
   const [allLoans, setAllLoans] = useState([]);
+  const [loansGiven, setLoansGiven] = useState([]);
+  const [loansGivenSummary, setLoansGivenSummary] = useState(null);
 
   // Modals
   const [loanModalOpen, setLoanModalOpen] = useState(false);
@@ -699,20 +1206,28 @@ const PersonalBorrowings = () => {
   const [repaymentModalOpen, setRepaymentModalOpen] = useState(false);
   const [repayingLoan, setRepayingLoan] = useState(null);
 
+  // AI Analytics
+  const [aiAnalytics, setAIAnalytics] = useState(null);
+  const [aiLoading, setAILoading] = useState(false);
+
   // ─── Data fetching ─────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [summaryRes, lendersRes, loansRes] = await Promise.allSettled([
+      const [summaryRes, lendersRes, loansRes, givenRes, givenSummaryRes] = await Promise.allSettled([
         api.get('/personal-loans/summary'),
         api.get('/personal-loans/lenders'),
-        api.get('/personal-loans')
+        api.get('/personal-loans'),
+        api.get('/loans-given'),
+        api.get('/loans-given/summary')
       ]);
 
       if (summaryRes.status === 'fulfilled') setSummary(summaryRes.value?.data?.summary || {});
       if (lendersRes.status === 'fulfilled') setLenders(lendersRes.value?.data?.lenders || []);
       if (loansRes.status === 'fulfilled') setAllLoans(loansRes.value?.data?.loans || []);
+      if (givenRes.status === 'fulfilled') setLoansGiven(givenRes.value?.data?.data || givenRes.value?.data?.loans || []);
+      if (givenSummaryRes.status === 'fulfilled') setLoansGivenSummary(givenSummaryRes.value?.data?.data || givenSummaryRes.value?.data?.summary || null);
     } catch (err) {
       console.error('Failed to fetch borrowings data:', err);
     } finally {
@@ -722,7 +1237,22 @@ const PersonalBorrowings = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
+  // Fetch AI Analytics
+  const fetchAIAnalytics = useCallback(async () => {
+    try {
+      setAILoading(true);
+      const res = await api.get('/borrowing-intelligence/analytics');
+      setAIAnalytics(res.data?.data || null);
+    } catch (err) {
+      console.error('Failed to fetch AI analytics:', err);
+    } finally {
+      setAILoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (allLoans.length > 0 || lenders.length > 0) fetchAIAnalytics(); }, [allLoans.length, lenders.length]);
+
+  const handleRefresh = async () => { setRefreshing(true); await fetchData(); await fetchAIAnalytics(); setRefreshing(false); };
 
   // ─── CRUD operations ──────────────────────────────────────────────────────
 
@@ -847,14 +1377,17 @@ const PersonalBorrowings = () => {
             { key: 'people', label: 'By People', icon: Users, count: filteredLenders.length },
             { key: 'all', label: 'All Loans', icon: BarChart3, count: allLoans.length },
             { key: 'active', label: 'Active', icon: Activity, count: allLoans.filter(l => l.status === 'active').length },
-            { key: 'repaid', label: 'Repaid', icon: CheckCircle, count: allLoans.filter(l => l.status === 'repaid').length }
+            { key: 'repaid', label: 'Repaid', icon: CheckCircle, count: allLoans.filter(l => l.status === 'repaid').length },
+            { key: 'given', label: 'Loans Given', icon: ArrowUpRight, count: loansGiven.length },
+            { key: 'ai', label: 'AI Analytics', icon: Brain, count: null }
           ].map(tab => {
             const TabIcon = tab.icon;
             return (
               <button key={tab.key} onClick={() => setActiveView(tab.key)} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${activeView === tab.key ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md' : `${palette.textSub} hover:bg-opacity-10 hover:bg-blue-500`}`}>
                 <TabIcon className="w-4 h-4" />
                 {tab.label}
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeView === tab.key ? 'bg-white/20' : `${palette.textMuted}`}`}>{tab.count}</span>
+                {tab.count !== null && <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeView === tab.key ? 'bg-white/20' : `${palette.textMuted}`}`}>{tab.count}</span>}
+                {tab.key === 'ai' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 font-bold">AI</span>}
               </button>
             );
           })}
@@ -911,6 +1444,104 @@ const PersonalBorrowings = () => {
             onEdit={handleEditLoan}
             onDelete={handleDeleteLoan}
           />
+        )}
+
+        {/* ── AI Analytics View ── */}
+        {activeView === 'ai' && (
+          <AIAnalyticsDashboard
+            analytics={aiAnalytics}
+            palette={palette}
+            onRefresh={fetchAIAnalytics}
+          />
+        )}
+
+        {/* ── Loans Given View ── */}
+        {activeView === 'given' && (
+          <div className="space-y-6">
+            {/* Loans Given Summary */}
+            {loansGivenSummary && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Lent', value: formatCurrency(loansGivenSummary.totalLent || loansGivenSummary.totalAmount || 0), color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', icon: ArrowUpRight },
+                  { label: 'Outstanding', value: formatCurrency(loansGivenSummary.totalOutstanding || loansGivenSummary.outstanding || 0), color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', icon: Clock },
+                  { label: 'Received Back', value: formatCurrency(loansGivenSummary.totalReceived || loansGivenSummary.totalRepaid || 0), color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', icon: CheckCircle },
+                  { label: 'Active Loans', value: String(loansGivenSummary.activeCount || loansGiven.filter(l => l.status === 'pending' || l.status === 'partially_paid').length), color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20', icon: Activity }
+                ].map((stat, i) => {
+                  const StatIcon = stat.icon;
+                  return (
+                    <div key={i} className={`${palette.card} rounded-xl border p-4`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}><StatIcon className={`w-5 h-5 ${stat.color}`} /></div>
+                        <div><p className={`text-xs ${palette.textMuted}`}>{stat.label}</p><p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Loans Given List */}
+            {loansGiven.length > 0 ? (
+              <div className={`${palette.card} rounded-2xl border overflow-hidden`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Borrower</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Amount</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Lent Date</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Purpose</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Repaid</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Outstanding</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loansGiven.map((loan, i) => {
+                        const isActive = loan.status === 'pending' || loan.status === 'partially_paid';
+                        const amount = loan.amountInINR || loan.amount || 0;
+                        const repaid = loan.repayments?.reduce((s, r) => s + (r.amountInINR || r.amount || 0), 0) || 0;
+                        const outstanding = amount - repaid;
+                        return (
+                          <tr key={loan._id || i} className={`border-b transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-700/30 ${!isActive ? 'opacity-60' : ''}`} style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.15)' : 'rgba(226,232,240,0.5)' }}>
+                            <td className="px-4 py-3">
+                              <div>
+                                <p className={`text-sm font-medium ${palette.text}`}>{loan.borrowerName}</p>
+                                <p className={`text-[11px] ${palette.textMuted}`}>{loan.relationship || '—'}</p>
+                              </div>
+                            </td>
+                            <td className={`px-4 py-3 text-sm font-semibold ${palette.text}`}>{formatCurrency(amount)}</td>
+                            <td className={`px-4 py-3 text-sm ${palette.textSub}`}>{formatDate(loan.loanDate)}</td>
+                            <td className={`px-4 py-3 text-sm ${palette.textSub}`}>{loan.purpose || '—'}</td>
+                            <td className="px-4 py-3 text-sm font-medium text-emerald-500">{formatCurrency(repaid)}</td>
+                            <td className={`px-4 py-3 text-sm font-semibold ${outstanding > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{formatCurrency(outstanding)}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                loan.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                                loan.status === 'partially_paid' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                                loan.status === 'overdue' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                                loan.status === 'written_off' ? 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300' :
+                                'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                              }`}>{(loan.status || 'pending').replace(/_/g, ' ').toUpperCase()}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className={`${palette.card} rounded-2xl border p-12 text-center`}>
+                <ArrowUpRight className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className={`font-medium text-lg ${palette.text}`}>No loans given yet</p>
+                <p className={`text-sm ${palette.textMuted} mt-1`}>Loans you've lent to others will appear here</p>
+                <a href="/emi-tracker" className="mt-4 inline-block px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium hover:shadow-lg transition-all text-sm">
+                  Go to EMI Tracker → Loans Given
+                </a>
+              </div>
+            )}
+          </div>
         )}
 
         {/* ── Modals ── */}

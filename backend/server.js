@@ -405,6 +405,8 @@ app.use('/api/enterprise', require('./routes/enterpriseRoutes'));
 app.use('/api/wealth', require('./routes/wealthManagementRoutes'));
 // Expense Intelligence — smart spending analysis, anomaly detection
 app.use('/api/expense-intelligence', require('./routes/expenseIntelligenceRoutes'));
+// Borrowing Intelligence — AI-powered loan analysis, predictions, self-training
+app.use('/api/borrowing-intelligence', require('./routes/borrowingIntelligenceRoutes'));
 
 // Enterprise Health & Admin Analytics
 app.get('/api/enterprise-health', healthCheckHandler);
