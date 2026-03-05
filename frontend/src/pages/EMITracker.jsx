@@ -3120,122 +3120,120 @@ const EMITracker = () => {
         </Card>
       )}
 
-      {/* Enhanced Tabs — Sticky at top for easy navigation */}
-      <Box 
-        sx={{ 
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          mb: 4,
-          mx: -3,
-          px: 3,
-          pt: 1.5,
-          pb: 0,
-          bgcolor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid',
-          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)',
-          boxShadow: isDark 
-            ? '0 4px 20px rgba(0,0,0,0.4)'
-            : '0 4px 20px rgba(0,0,0,0.06)',
-        }}
-      >
-        <Tabs 
-          value={activeTab} 
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          sx={{
-            minHeight: 52,
-            '& .MuiTabs-indicator': {
-              height: 3,
-              borderRadius: '3px 3px 0 0',
-              background: isDark 
-                ? 'linear-gradient(135deg, #818cf8 0%, #a78bfa 100%)'
-                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-            },
-            '& .MuiTabs-scrollButtons': {
-              color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
-              '&.Mui-disabled': { opacity: 0.3 }
-            },
-            '& .MuiTab-root': {
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              textTransform: 'none',
-              minHeight: 48,
-              py: 1,
-              px: 2,
-              color: isDark ? 'rgba(255,255,255,0.5)' : 'text.secondary',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                color: isDark ? '#818cf8' : '#667eea',
-              }
-            },
-            '& .Mui-selected': {
-              fontWeight: 700,
-              color: isDark ? '#a78bfa !important' : '#667eea !important',
-            }
+      {/* Side Navigation + Content Layout */}
+      <Box sx={{ display: 'flex', gap: 3 }}>
+        {/* Side Navigation Panel */}
+        <Box 
+          sx={{ 
+            width: 220,
+            flexShrink: 0,
+            position: 'sticky',
+            top: 16,
+            alignSelf: 'flex-start',
+            maxHeight: 'calc(100vh - 32px)',
+            overflowY: 'auto',
+            display: { xs: 'none', md: 'block' },
+            '&::-webkit-scrollbar': { width: 3 },
+            '&::-webkit-scrollbar-thumb': { background: isDark ? '#334155' : '#cbd5e1', borderRadius: 2 }
           }}
         >
+          <Box 
+            sx={{
+              bgcolor: isDark ? 'rgba(15,23,42,0.7)' : 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)',
+              p: 1,
+            }}
+          >
+            {[
+              { label: 'Overview', icon: <AssessmentIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Debt Freedom', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Monthly Trends', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Reports', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Upcoming', icon: <CalendarIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Active EMIs', icon: <CreditCardIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Completed', icon: <CheckCircleIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Loans Given', icon: <PaymentIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Personal Loans', icon: <MoneyIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Credit Cards', icon: <CreditCardIcon sx={{ fontSize: 18 }} /> },
+              { label: 'Bank & Balance', icon: <AccountBalanceIcon sx={{ fontSize: 18 }} /> },
+            ].map((item, idx) => (
+              <Box
+                key={idx}
+                onClick={() => setActiveTab(idx)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  px: 1.5,
+                  py: 1.2,
+                  mb: 0.3,
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  fontWeight: activeTab === idx ? 700 : 500,
+                  fontSize: '0.82rem',
+                  color: activeTab === idx 
+                    ? (isDark ? '#a78bfa' : '#667eea') 
+                    : (isDark ? 'rgba(255,255,255,0.55)' : 'text.secondary'),
+                  bgcolor: activeTab === idx 
+                    ? (isDark ? 'rgba(167,139,250,0.1)' : 'rgba(102,126,234,0.08)') 
+                    : 'transparent',
+                  borderLeft: activeTab === idx ? '3px solid' : '3px solid transparent',
+                  borderColor: activeTab === idx 
+                    ? (isDark ? '#a78bfa' : '#667eea') 
+                    : 'transparent',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: isDark ? 'rgba(167,139,250,0.06)' : 'rgba(102,126,234,0.05)',
+                    color: isDark ? '#818cf8' : '#667eea',
+                  }
+                }}
+              >
+                {item.icon}
+                {item.label}
+              </Box>
+            ))}
+          </Box>
+        </Box>
 
-          <Tab 
-            label="Overview" 
-            icon={<AssessmentIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Debt Freedom Plan" 
-            icon={<TrendingUpIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Monthly Trends" 
-            icon={<TrendingUpIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Reports" 
-            icon={<TrendingUpIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Upcoming Payments" 
-            icon={<CalendarIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Active EMIs" 
-            icon={<CreditCardIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Completed EMIs" 
-            icon={<CheckCircleIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Loans Given" 
-            icon={<PaymentIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Personal Loans" 
-            icon={<MoneyIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Credit Card Bills" 
-            icon={<CreditCardIcon />} 
-            iconPosition="start"
-          />
-          <Tab 
-            label="Bank & Balance" 
-            icon={<AccountBalanceIcon />} 
-            iconPosition="start"
-          />
-        </Tabs>
-      </Box>
+        {/* Mobile horizontal tabs (shown only on small screens) */}
+        <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3, width: '100%' }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              bgcolor: isDark ? 'rgba(15,23,42,0.9)' : 'rgba(255,255,255,0.95)',
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+              minHeight: 44,
+              '& .MuiTab-root': { fontWeight: 600, fontSize: '0.8rem', textTransform: 'none', minHeight: 44, py: 0.5, px: 1.5 },
+              '& .Mui-selected': { fontWeight: 700, color: isDark ? '#a78bfa !important' : '#667eea !important' },
+              '& .MuiTabs-indicator': { height: 2, background: isDark ? '#a78bfa' : '#667eea' }
+            }}
+          >
+            <Tab label="Overview" />
+            <Tab label="Debt Plan" />
+            <Tab label="Trends" />
+            <Tab label="Reports" />
+            <Tab label="Upcoming" />
+            <Tab label="Active" />
+            <Tab label="Completed" />
+            <Tab label="Given" />
+            <Tab label="Personal" />
+            <Tab label="CC Bills" />
+            <Tab label="Bank" />
+          </Tabs>
+        </Box>
+
+        {/* Main Content Area */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
 
       {/* Smart Insights Section — below sticky tabs */}
       {insights.length > 0 && (
@@ -10491,6 +10489,9 @@ const EMITracker = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+    {/* Close content area and flex layout */}
+    </Box>{/* end Main Content Area */}
+    </Box>{/* end Side Nav + Content flex */}
     </Container>
       </Box>
       </PageTransition>

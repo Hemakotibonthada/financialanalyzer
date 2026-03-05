@@ -384,6 +384,7 @@ router.get('/monthly-trends', authenticate, async (req, res) => {
     
     const Transaction = require('../models/Transaction');
     const FinancialProfile = require('../models/FinancialProfile');
+    const mongoose = require('mongoose');
     
     // Calculate date range
     const endDate = new Date();
@@ -397,14 +398,19 @@ router.get('/monthly-trends', authenticate, async (req, res) => {
     // Get all EMIs for the user
     const allEMIs = await EMI.find({ userId }).sort({ startDate: 1 });
     
+    // Cast userId to ObjectId for aggregation pipeline
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    
     // Get all transactions for the user in the date range (Bank statements + Expense Tracker)
-    const transactions = await Transaction.aggregate([
-      {
-        $match: {
-          userId,
-          date: { $gte: startDate, $lte: endDate }
-        }
-      },
+    let transactions = [];
+    try {
+      transactions = await Transaction.aggregate([
+        {
+          $match: {
+            userId: userObjectId,
+            date: { $gte: startDate, $lte: endDate }
+          }
+        },
       {
         $addFields: {
           dateObj: {
@@ -433,6 +439,9 @@ router.get('/monthly-trends', authenticate, async (req, res) => {
         $sort: { '_id.year': 1, '_id.month': 1 }
       }
     ]);
+    } catch (aggErr) {
+      logger.warn('Transaction aggregation failed, continuing with empty data:', aggErr.message);
+    }
     
     // Process monthly data
     const monthlyData = {};
@@ -1489,9 +1498,14 @@ router.get('/insights', authenticate, async (req, res) => {
  * @desc Get details of a specific EMI
  * @access Private
  */
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
+    
+    // Skip if id is not a valid ObjectId — let named routes handle it
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return next();
+    }
     
     logger.info(`Fetching EMI details: ${id}`);
     

@@ -39,6 +39,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { register, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -53,6 +54,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -77,9 +79,17 @@ const Register = () => {
       if (result.success) {
         // Redirect to dashboard after successful registration
         navigate('/dashboard', { replace: true });
+      } else {
+        // Show server-side error message to user
+        const msg = result.message || 'Registration failed. Please try again.';
+        setError(msg);
+        toast.error(msg);
       }
     } catch (error) {
       console.error('Registration error:', error);
+      const errMsg = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -103,6 +113,14 @@ const Register = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
+            {/* Inline error banner */}
+            {error && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
+                <X className="w-4 h-4 flex-shrink-0 mt-0.5 cursor-pointer hover:text-red-300" onClick={() => setError('')} />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            )}
+
             <div>
               <label htmlFor="reg-name" className={`block text-sm font-medium ${dk ? 'text-slate-300' : 'text-slate-700'} mb-1.5 sm:mb-2`}>Full Name</label>
               <div className="relative">
