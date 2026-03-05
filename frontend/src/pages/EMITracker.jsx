@@ -306,7 +306,7 @@ const EMITracker = () => {
   const [earlyPaymentAmount, setEarlyPaymentAmount] = useState('');
   const [selectedEMIForEarlyPayment, setSelectedEMIForEarlyPayment] = useState(null);
   const [earlyPaymentDialogOpen, setEarlyPaymentDialogOpen] = useState(false);
-  const [emergencyFundGoal, setEmergencyFundGoal] = useState(180000); // 6 months of 30k
+  const [emergencyFundGoal, setEmergencyFundGoal] = useState(0); // Computed from actual monthly expenses
   const [currentEmergencyFund, setCurrentEmergencyFund] = useState(0);
   const [emergencyFundSaving, setEmergencyFundSaving] = useState(false);
   const [emergencyFundMessage, setEmergencyFundMessage] = useState(null);
@@ -5114,11 +5114,12 @@ const EMITracker = () => {
                     {(() => {
                       const candidate = [...overview.activeEMIs].sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0))[0];
                       if (!candidate) return <Typography variant="body2">No eligible EMI found.</Typography>;
-                      const offers = [
-                        { provider: 'PrimeBank', rate: 11.5, fee: 999 },
-                        { provider: 'NeoCard', rate: 9.9, fee: 1499 },
-                        { provider: 'SafePay', rate: 12.9, fee: 0 }
-                      ];
+                      const offers = [];
+                      // Balance transfer offers are fetched from API — no hardcoded fake lender offers
+                      if (overview.balanceTransferOffers?.length) {
+                        offers.push(...overview.balanceTransferOffers);
+                      }
+                      if (offers.length === 0) return <Typography variant="body2" color="text.secondary">No balance transfer offers available at this time. Check back later.</Typography>;
                       return (
                         <Grid container spacing={2}>
                           {offers.map((offer) => {

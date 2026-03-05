@@ -59,10 +59,7 @@ export default function LoanCalculator() {
   const [prepayMonth, setPrepayMonth] = useState(0);
   const [prepayAmount, setPrepayAmount] = useState(0);
   const [showSchedule, setShowSchedule] = useState(false);
-  const [compareLoans, setCompareLoans] = useState([
-    { id: 1, name: 'Bank A', amount: 2500000, rate: 8.5, tenure: 240 },
-    { id: 2, name: 'Bank B', amount: 2500000, rate: 9.0, tenure: 240 },
-  ]);
+  const [compareLoans, setCompareLoans] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => { setTimeout(() => setLoading(false), 500); }, []);

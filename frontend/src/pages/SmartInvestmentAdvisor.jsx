@@ -592,10 +592,10 @@ const SmartInvestmentAdvisor = () => {
         setShowQuiz(true);
       }
 
-      if (recsRes.status === 'fulfilled') {
-        setRecommendations(recsRes.value?.data?.data || getDefaultRecommendations());
+      if (recsRes.status === 'fulfilled' && recsRes.value?.data?.data?.length > 0) {
+        setRecommendations(recsRes.value.data.data);
       } else {
-        setRecommendations(getDefaultRecommendations());
+        setRecommendations([]);
       }
 
       if (allocRes.status === 'fulfilled' && allocRes.value?.data?.data) {
@@ -603,7 +603,7 @@ const SmartInvestmentAdvisor = () => {
       }
     } catch (err) {
       console.error('Failed to fetch advisor data:', err);
-      setRecommendations(getDefaultRecommendations());
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }
@@ -611,14 +611,7 @@ const SmartInvestmentAdvisor = () => {
 
   useEffect(() => { fetchAdvisorData(); }, [fetchAdvisorData]);
 
-  const getDefaultRecommendations = () => [
-    { name: 'Nifty 50 Index Fund', type: 'index_fund', expectedReturn: '12-14%', risk: 'moderate', minInvestment: 500, suitabilityScore: 92, description: 'Low-cost index fund tracking Nifty 50. Ideal for passive investors.', reasons: ['Low expense ratio', 'Market-matching returns', 'High liquidity', 'Tax efficient after 1 year'] },
-    { name: 'HDFC Mid-Cap Opportunities', type: 'equity_mid_cap', expectedReturn: '15-18%', risk: 'high', minInvestment: 5000, suitabilityScore: 85, description: 'Consistent mid-cap performer with strong track record.', reasons: ['Consistent outperformance', 'Experienced fund manager', 'Good risk-adjusted returns'] },
-    { name: 'ICICI Pru Balanced Advantage', type: 'hybrid_balanced', expectedReturn: '10-13%', risk: 'moderate', minInvestment: 5000, suitabilityScore: 88, description: 'Dynamic asset allocation adjusting equity/debt based on valuations.', reasons: ['Auto rebalancing', 'Lower volatility', 'Tax efficient'] },
-    { name: 'SBI Liquid Fund', type: 'debt_liquid', expectedReturn: '5-7%', risk: 'low', minInvestment: 1000, suitabilityScore: 75, description: 'Park your emergency fund here for better returns than savings account.', reasons: ['Next-day withdrawal', 'Very low risk', 'Better than savings account'] },
-    { name: 'Axis ELSS Tax Saver', type: 'elss', expectedReturn: '14-16%', risk: 'high', minInvestment: 500, suitabilityScore: 82, description: 'Save tax under Section 80C with equity exposure. 3-year lock-in.', reasons: ['Tax deduction up to ₹1.5L', 'Shortest lock-in among 80C', 'Equity market participation'] },
-    { name: 'SBI Gold ETF', type: 'gold_etf', expectedReturn: '8-10%', risk: 'moderate', minInvestment: 1000, suitabilityScore: 70, description: 'Digital gold investment. Hedge against inflation and currency.', reasons: ['Inflation hedge', 'Portfolio diversifier', 'No storage concerns', 'High liquidity'] }
-  ];
+  // No hardcoded default recommendations — show empty state if API returns no data
 
   const handleQuizComplete = (profile, score) => {
     setRiskProfile(profile);
@@ -692,10 +685,20 @@ const SmartInvestmentAdvisor = () => {
         </div>
 
         {activeTab === 'recommendations' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recommendations.map((rec, i) => (
-              <InvestmentRecommendationCard key={i} recommendation={rec} palette={palette} />
-            ))}
+          <div>
+            {recommendations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recommendations.map((rec, i) => (
+                  <InvestmentRecommendationCard key={i} recommendation={rec} palette={palette} />
+                ))}
+              </div>
+            ) : (
+              <div className={`text-center py-16 rounded-xl border-2 border-dashed ${palette.border}`}>
+                <Target className="w-12 h-12 mx-auto mb-4 text-blue-400 opacity-50" />
+                <h3 className={`text-lg font-semibold ${palette.text} mb-2`}>No Recommendations Yet</h3>
+                <p className={`${palette.textSub} text-sm max-w-md mx-auto`}>Complete your risk profile quiz above to get personalized investment recommendations based on your financial goals.</p>
+              </div>
+            )}
           </div>
         )}
 

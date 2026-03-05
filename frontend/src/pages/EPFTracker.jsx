@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   Briefcase, Plus, TrendingUp, Calculator, Calendar, IndianRupee, X,
@@ -16,48 +16,20 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 const EPF_RATE = 8.15;
 const EPS_RATE = 8.33;
 
-const initialAccount = {
-  uan: '1001 2345 6789',
-  employer: 'TechCorp India Pvt Ltd',
-  dateOfJoining: '2019-04-15',
-  basicSalary: 55000,
-  employeeContribution: 6600, // 12% of basic
-  employerEPF: 3217, // 3.67% to EPF
-  employerEPS: 3383, // 8.33% to EPS (max on 15K)
-  totalBalance: 985000,
-  employeeBalance: 520000,
-  employerBalance: 465000,
-  epsBalance: 185000,
+// Empty default — no hardcoded dummy data
+const emptyAccount = {
+  uan: '',
+  employer: '',
+  dateOfJoining: new Date().toISOString().split('T')[0],
+  basicSalary: 0,
+  employeeContribution: 0,
+  employerEPF: 0,
+  employerEPS: 0,
+  totalBalance: 0,
+  employeeBalance: 0,
+  employerBalance: 0,
+  epsBalance: 0,
 };
-
-const monthlyContributions = [
-  { month: 'Mar 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Apr 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'May 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Jun 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Jul 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Aug 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Sep 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Oct 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Nov 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Dec 25', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Jan 26', employee: 6600, employer: 3217, total: 9817 },
-  { month: 'Feb 26', employee: 6600, employer: 3217, total: 9817 },
-];
-
-const yearlyGrowth = [
-  { year: '2019', balance: 95000 },
-  { year: '2020', balance: 215000 },
-  { year: '2021', balance: 365000 },
-  { year: '2022', balance: 530000 },
-  { year: '2023', balance: 720000 },
-  { year: '2024', balance: 850000 },
-  { year: '2025', balance: 985000 },
-];
-
-const transferHistory = [
-  { id: 1, fromEmployer: 'InfoSys Ltd', toEmployer: 'TechCorp India Pvt Ltd', amount: 285000, date: '2019-04-20', status: 'completed' },
-];
 
 const withdrawalRules = [
   { purpose: 'Medical Emergency', service: '0 years', maxAmount: '6 months basic', earlyAllowed: true },
@@ -71,13 +43,39 @@ const withdrawalRules = [
 export default function EPFTracker() {
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
-  const [account] = useState(initialAccount);
+  const [account, setAccount] = useState(emptyAccount);
+  const [monthlyContributions, setMonthlyContributions] = useState([]);
+  const [yearlyGrowth, setYearlyGrowth] = useState([]);
+  const [transferHistory, setTransferHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showCalc, setShowCalc] = useState(false);
   const [vpfAmount, setVpfAmount] = useState(0);
-  const [calcBasic, setCalcBasic] = useState(account.basicSalary);
+  const [calcBasic, setCalcBasic] = useState(0);
   const [calcYears, setCalcYears] = useState(25);
   const [calcIncrement, setCalcIncrement] = useState(8);
   const [showUpload, setShowUpload] = useState(false);
+
+  // Fetch EPF data from API
+  useEffect(() => {
+    const fetchEPFData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/wealth/epf');
+        const d = res.data?.data || res.data;
+        if (d) {
+          if (d.account) { setAccount(prev => ({ ...prev, ...d.account })); setCalcBasic(d.account.basicSalary || 0); }
+          if (d.monthlyContributions?.length) setMonthlyContributions(d.monthlyContributions);
+          if (d.yearlyGrowth?.length) setYearlyGrowth(d.yearlyGrowth);
+          if (d.transfers?.length) setTransferHistory(d.transfers);
+        }
+      } catch (err) {
+        console.log('EPF data not available:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEPFData();
+  }, []);
 
   const yearsOfService = useMemo(() => {
     const join = new Date(account.dateOfJoining);

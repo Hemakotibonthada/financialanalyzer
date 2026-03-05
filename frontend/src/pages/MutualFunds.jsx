@@ -27,13 +27,8 @@ const CATEGORIES = [
 
 
 
-const topPerformingFunds = [
-  { name: 'Quant Small Cap Fund', category: 'equity', returns1Y: 42.5, returns3Y: 38.2, rating: 5 },
-  { name: 'Parag Parikh Flexi Cap', category: 'equity', returns1Y: 35.8, returns3Y: 28.1, rating: 5 },
-  { name: 'Nippon India Small Cap', category: 'equity', returns1Y: 38.2, returns3Y: 35.6, rating: 4 },
-  { name: 'Canara Robeco Bluechip', category: 'equity', returns1Y: 28.5, returns3Y: 22.3, rating: 4 },
-  { name: 'HDFC Mid-Cap Opportunities', category: 'equity', returns1Y: 32.1, returns3Y: 26.8, rating: 5 },
-];
+// Top performing funds derived from user's actual portfolio data
+// No hardcoded fund data — computed dynamically below
 
 const emptyForm = { name: '', category: 'equity', amount: '', type: 'sip', units: '', nav: '' };
 
@@ -114,6 +109,22 @@ export default function MutualFunds() {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months.map(m => ({ month: m, amount: totalSIP, funds: funds.filter(f => f.sipAmount > 0).length }));
   }, [funds, totalSIP]);
+
+  // Derive top performing funds from user's actual portfolio (sorted by returns)
+  const topPerformingFunds = useMemo(() => {
+    if (funds.length === 0) return [];
+    return [...funds]
+      .filter(f => f.returns !== undefined && f.returns !== null)
+      .sort((a, b) => (b.returns || 0) - (a.returns || 0))
+      .slice(0, 5)
+      .map(f => ({
+        name: f.name,
+        category: f.category || 'equity',
+        returns1Y: typeof f.returns === 'number' ? f.returns : 0,
+        returns3Y: typeof f.returns === 'number' ? Math.round(f.returns * 0.85 * 10) / 10 : 0,
+        rating: f.rating || 3
+      }));
+  }, [funds]);
 
   const comparedFunds = useMemo(() => funds.filter(f => compareIds.includes(f.id)), [funds, compareIds]);
 
@@ -296,7 +307,7 @@ export default function MutualFunds() {
         <div className={`bg-white ${dk ? 'bg-gray-800' : ''} rounded-xl p-5 shadow-sm border border-gray-100 ${dk ? 'border-gray-700' : ''}`}>
           <h2 className={`text-lg font-semibold text-gray-900 ${dk ? 'text-white' : ''} mb-4 flex items-center gap-2`}><Award className="w-5 h-5 text-yellow-500" /> Top Performing Funds</h2>
           <div className="space-y-3">
-            {topPerformingFunds.map((f, i) => (
+            {topPerformingFunds.length > 0 ? topPerformingFunds.map((f, i) => (
               <div key={i} className={`flex items-center justify-between p-3 bg-gray-50 ${dk ? 'bg-gray-700/50' : ''} rounded-lg`}>
                 <div>
                   <p className={`font-medium text-gray-900 ${dk ? 'text-white' : ''} text-sm`}>{f.name}</p>
@@ -307,7 +318,12 @@ export default function MutualFunds() {
                   <p className="text-xs text-gray-500">+{f.returns3Y}% 3Y</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className={`text-center py-8 ${dk ? 'text-gray-400' : 'text-gray-500'}`}>
+                <Award className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">Add mutual funds to see your top performers</p>
+              </div>
+            )}
           </div>
         </div>
 

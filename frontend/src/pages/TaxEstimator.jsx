@@ -63,27 +63,7 @@ const taxCalendar = [
   { date: 'Mar 31, 2027', event: 'Tax Saving Investments Deadline', status: 'upcoming' },
 ];
 
-const monthlyTDS = [
-  { month: 'Apr 25', tds: 12500, salary: 125000 },
-  { month: 'May 25', tds: 12500, salary: 125000 },
-  { month: 'Jun 25', tds: 12500, salary: 125000 },
-  { month: 'Jul 25', tds: 15000, salary: 130000 },
-  { month: 'Aug 25', tds: 15000, salary: 130000 },
-  { month: 'Sep 25', tds: 15000, salary: 130000 },
-  { month: 'Oct 25', tds: 15000, salary: 135000 },
-  { month: 'Nov 25', tds: 15000, salary: 135000 },
-  { month: 'Dec 25', tds: 15000, salary: 135000 },
-  { month: 'Jan 26', tds: 17500, salary: 140000 },
-  { month: 'Feb 26', tds: 17500, salary: 140000 },
-];
-
-const historicalTax = [
-  { year: 'FY22', oldRegime: 280000, newRegime: 310000 },
-  { year: 'FY23', oldRegime: 320000, newRegime: 340000 },
-  { year: 'FY24', oldRegime: 340000, newRegime: 320000 },
-  { year: 'FY25', oldRegime: 380000, newRegime: 330000 },
-  { year: 'FY26', oldRegime: 410000, newRegime: 345000 },
-];
+// Monthly TDS and historical tax — fetched from API, no hardcoded data
 
 function calcTax(income, slabs) {
   let tax = 0;
@@ -99,22 +79,25 @@ function calcTax(income, slabs) {
 export default function TaxEstimator() {
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
-  const [grossIncome, setGrossIncome] = useState(1800000);
+  const [grossIncome, setGrossIncome] = useState(0);
   const [deductions, setDeductions] = useState({
-    '80C': 120000, '80D': 25000, 'HRA': 100000, 'LTA': 20000, '80E': 0, 'Std Ded': 50000
+    '80C': 0, '80D': 0, 'HRA': 0, 'LTA': 0, '80E': 0, 'Std Ded': 50000
   });
   const [selectedRegime, setSelectedRegime] = useState('new');
   const [showSlabs, setShowSlabs] = useState(false);
   const [tips, setTips] = useState(taxSavingTips);
   const [calendar, setCalendar] = useState(taxCalendar);
+  const [monthlyTDS, setMonthlyTDS] = useState([]);
+  const [historicalTax, setHistoricalTax] = useState([]);
 
   useEffect(() => {
     const fetchTaxData = async () => {
       try {
-        const [suggestionsRes, calendarRes, deductionsRes] = await Promise.allSettled([
-          api.post('/tax-optimization/suggestions', { income: grossIncome, deductions }),
+        const [suggestionsRes, calendarRes, deductionsRes, incomeRes] = await Promise.allSettled([
+          api.post('/tax-optimization/suggestions', { income: grossIncome || 0, deductions }),
           api.get('/tax-optimization/calendar'),
           api.get('/tax-optimization/deductions'),
+          api.get('/tax-optimization/income-data'),
         ]);
         if (suggestionsRes.status === 'fulfilled' && suggestionsRes.value.data?.data) {
           setTips(suggestionsRes.value.data.data);
@@ -126,8 +109,14 @@ export default function TaxEstimator() {
           const ded = deductionsRes.value.data.data;
           if (typeof ded === 'object' && !Array.isArray(ded)) setDeductions(prev => ({ ...prev, ...ded }));
         }
+        if (incomeRes.status === 'fulfilled' && incomeRes.value.data?.data) {
+          const inc = incomeRes.value.data.data;
+          if (inc.grossIncome) setGrossIncome(inc.grossIncome);
+          if (inc.monthlyTDS?.length) setMonthlyTDS(inc.monthlyTDS);
+          if (inc.historicalTax?.length) setHistoricalTax(inc.historicalTax);
+        }
       } catch (err) {
-        console.log('Tax data fetch fallback to defaults:', err.message);
+        console.log('Tax data not yet set up:', err.message);
       }
     };
     fetchTaxData();

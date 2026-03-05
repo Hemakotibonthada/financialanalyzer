@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   Shield, Plus, TrendingUp, Calculator, Calendar, IndianRupee, X,
@@ -17,27 +17,20 @@ const PPF_RATE = 7.1;
 const PPF_MAX = 150000;
 const PPF_MIN = 500;
 
-const initialAccount = {
-  balance: 685000,
-  openingYear: 2018,
-  maturityYear: 2033,
-  totalContributed: 600000,
-  interestEarned: 85000,
+// Empty default — no hardcoded dummy data
+const emptyPPFAccount = {
+  balance: 0,
+  openingYear: new Date().getFullYear(),
+  maturityYear: new Date().getFullYear() + 15,
+  totalContributed: 0,
+  interestEarned: 0,
   loansTaken: 0,
   withdrawalsMade: 0,
 };
 
-const contributions = [
-  { year: '2018-19', amount: 50000, interest: 3550, closing: 53550 },
-  { year: '2019-20', amount: 80000, interest: 9472, closing: 143022 },
-  { year: '2020-21', amount: 100000, interest: 17255, closing: 260277 },
-  { year: '2021-22', amount: 100000, interest: 25580, closing: 385857 },
-  { year: '2022-23', amount: 120000, interest: 35916, closing: 541773 },
-  { year: '2023-24', amount: 80000, interest: 44146, closing: 665919 },
-  { year: '2024-25', amount: 70000, interest: 52250, closing: 685000 },
-];
+// Contribution history fetched from API — no hardcoded data
 
-const yearlyBarData = contributions.map(c => ({ year: c.year.split('-')[0], contribution: c.amount, interest: c.interest }));
+// yearlyBarData derived from actual contribution history inside component
 
 function generateProjection(currentBalance, yearlyAmount, rate, startYear, endYear) {
   const data = [];
@@ -62,20 +55,45 @@ const emptyForm = { amount: '', year: new Date().getFullYear().toString() };
 export default function PPFTracker() {
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
-  const [account, setAccount] = useState(initialAccount);
+  const [account, setAccount] = useState(emptyPPFAccount);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [projYears, setProjYears] = useState(20);
   const [projYearlyAmt, setProjYearlyAmt] = useState(100000);
   const [showCalc, setShowCalc] = useState(false);
   const [calcAmount, setCalcAmount] = useState(100000);
-  const [contributionHistory, setContributionHistory] = useState(contributions);
+  const [contributionHistory, setContributionHistory] = useState([]);
   const [showExtension, setShowExtension] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch PPF data from API
+  useEffect(() => {
+    const fetchPPFData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/wealth/ppf');
+        const d = res.data?.data || res.data;
+        if (d) {
+          if (d.account) setAccount(prev => ({ ...prev, ...d.account }));
+          if (d.contributions?.length) setContributionHistory(d.contributions);
+        }
+      } catch (err) {
+        console.log('PPF data not available:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPPFData();
+  }, []);
 
   const yearsCompleted = new Date().getFullYear() - account.openingYear;
   const yearsRemaining = account.maturityYear - new Date().getFullYear();
   const section80cUsed = contributionHistory.length > 0 ? contributionHistory[contributionHistory.length - 1].amount : 0;
   const section80cRemaining = PPF_MAX - section80cUsed;
+
+  const yearlyBarData = useMemo(() =>
+    contributionHistory.map(c => ({ year: (c.year || '').split('-')[0], contribution: c.amount || 0, interest: c.interest || 0 }))
+  , [contributionHistory]);
 
   const projectionData = useMemo(() => {
     return generateProjection(account.balance, projYearlyAmt, PPF_RATE, new Date().getFullYear(), new Date().getFullYear() + projYears);

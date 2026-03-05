@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   Landmark, Plus, TrendingUp, Calculator, IndianRupee, X, RefreshCw,
@@ -21,64 +21,71 @@ const ASSET_CLASSES = [
   { key: 'A', label: 'Alternative (A)', color: '#8b5cf6', maxTier1: 5, description: 'REITs, InvITs, AIF' },
 ];
 
+// Fund manager reference data (public NPS data — not user-specific)
 const fundManagers = [
-  { name: 'SBI Pension Funds', tier1NAV: 42.35, tier2NAV: 38.20, returns1Y: 14.2, returns3Y: 12.8 },
-  { name: 'LIC Pension Fund', tier1NAV: 38.90, tier2NAV: 35.50, returns1Y: 12.5, returns3Y: 11.2 },
-  { name: 'UTI Retirement Solutions', tier1NAV: 40.10, tier2NAV: 36.80, returns1Y: 13.8, returns3Y: 12.1 },
-  { name: 'HDFC Pension Mgmt', tier1NAV: 44.20, tier2NAV: 40.10, returns1Y: 15.1, returns3Y: 13.5 },
-  { name: 'ICICI Pru Pension Fund', tier1NAV: 41.50, tier2NAV: 37.90, returns1Y: 13.5, returns3Y: 12.3 },
-  { name: 'Kotak Pension Fund', tier1NAV: 39.80, tier2NAV: 36.20, returns1Y: 12.8, returns3Y: 11.8 },
-  { name: 'Aditya Birla SL Pension', tier1NAV: 43.10, tier2NAV: 39.50, returns1Y: 14.8, returns3Y: 13.1 },
+  { name: 'SBI Pension Funds', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
+  { name: 'LIC Pension Fund', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
+  { name: 'UTI Retirement Solutions', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
+  { name: 'HDFC Pension Mgmt', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
+  { name: 'ICICI Pru Pension Fund', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
+  { name: 'Kotak Pension Fund', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
+  { name: 'Aditya Birla SL Pension', tier1NAV: 0, tier2NAV: 0, returns1Y: 0, returns3Y: 0 },
 ];
 
-const initialAccount = {
-  pran: '1100 2233 4455',
-  fundManager: 'SBI Pension Funds',
-  tier1Balance: 485000,
-  tier2Balance: 120000,
+// Empty default — no dummy data
+const emptyAccount = {
+  pran: '',
+  fundManager: '',
+  tier1Balance: 0,
+  tier2Balance: 0,
   tier1Allocation: { E: 50, C: 30, G: 15, A: 5 },
   tier2Allocation: { E: 40, C: 35, G: 25, A: 0 },
-  monthlyContribution: 5000,
-  employerContribution: 7000,
-  dob: '1990-06-15',
+  monthlyContribution: 0,
+  employerContribution: 0,
+  dob: '1990-01-01',
 };
 
-const navHistory = [
-  { month: 'Mar 25', E: 38.5, C: 32.1, G: 28.8, A: 22.5 },
-  { month: 'Apr 25', E: 39.2, C: 32.5, G: 29.0, A: 22.8 },
-  { month: 'May 25', E: 40.1, C: 32.8, G: 29.2, A: 23.1 },
-  { month: 'Jun 25', E: 39.8, C: 33.0, G: 29.5, A: 23.3 },
-  { month: 'Jul 25', E: 41.0, C: 33.2, G: 29.7, A: 23.5 },
-  { month: 'Aug 25', E: 41.5, C: 33.5, G: 29.9, A: 23.8 },
-  { month: 'Sep 25', E: 40.8, C: 33.8, G: 30.1, A: 24.0 },
-  { month: 'Oct 25', E: 41.8, C: 34.0, G: 30.3, A: 24.2 },
-  { month: 'Nov 25', E: 42.0, C: 34.2, G: 30.5, A: 24.5 },
-  { month: 'Dec 25', E: 42.5, C: 34.5, G: 30.8, A: 24.7 },
-  { month: 'Jan 26', E: 42.2, C: 34.8, G: 31.0, A: 24.9 },
-  { month: 'Feb 26', E: 42.35, C: 35.0, G: 31.2, A: 25.1 },
-];
-
-const monthlyContributions = [
-  { month: 'Sep 25', self: 5000, employer: 7000 },
-  { month: 'Oct 25', self: 5000, employer: 7000 },
-  { month: 'Nov 25', self: 5000, employer: 7000 },
-  { month: 'Dec 25', self: 5000, employer: 7000 },
-  { month: 'Jan 26', self: 5000, employer: 7000 },
-  { month: 'Feb 26', self: 5000, employer: 7000 },
-];
+// NAV history and contributions fetched from API — no hardcoded data
 
 export default function NPS() {
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
-  const [account, setAccount] = useState(initialAccount);
+  const [account, setAccount] = useState(emptyAccount);
+  const [navHistory, setNavHistory] = useState([]);
+  const [monthlyContributions, setMonthlyContributions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showCalc, setShowCalc] = useState(false);
   const [calcMonthly, setCalcMonthly] = useState(5000);
   const [calcRate, setCalcRate] = useState(10);
   const [calcRetireAge, setCalcRetireAge] = useState(60);
-  const [newAllocation, setNewAllocation] = useState({ ...initialAccount.tier1Allocation });
+  const [newAllocation, setNewAllocation] = useState({ E: 50, C: 30, G: 15, A: 5 });
   const [showRebalance, setShowRebalance] = useState(false);
   const [showContribForm, setShowContribForm] = useState(false);
   const [contribAmount, setContribAmount] = useState('');
+
+  // Fetch NPS data from API
+  useEffect(() => {
+    const fetchNPSData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/wealth/nps');
+        const d = res.data?.data || res.data;
+        if (d) {
+          if (d.account) setAccount(prev => ({ ...prev, ...d.account }));
+          if (d.navHistory?.length) setNavHistory(d.navHistory);
+          if (d.contributions?.length) setMonthlyContributions(d.contributions);
+          if (d.fundManagers) {
+            // Could update fundManagers with live NAV data
+          }
+        }
+      } catch (err) {
+        console.log('NPS data not available:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNPSData();
+  }, []);
 
   const currentAge = useMemo(() => {
     const dob = new Date(account.dob);

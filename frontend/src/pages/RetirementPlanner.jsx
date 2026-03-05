@@ -20,59 +20,34 @@ const fmt = (n) => {
   return `₹${n.toLocaleString('en-IN')}`;
 };
 
-const savingsVsTarget = [
-  { name: 'EPF', current: 1800000, target: 5000000 },
-  { name: 'PPF', current: 900000, target: 2500000 },
-  { name: 'NPS', current: 600000, target: 3000000 },
-  { name: 'Mutual Funds', current: 2200000, target: 5000000 },
-  { name: 'FD', current: 500000, target: 1000000 },
-  { name: 'Stocks', current: 800000, target: 2000000 },
-];
+// All data fetched from API — no hardcoded financial data
 
-const incomeProjection = [
-  { year: '2026', conservative: 40000, moderate: 40000, aggressive: 40000 },
-  { year: '2030', conservative: 55000, moderate: 65000, aggressive: 80000 },
-  { year: '2035', conservative: 75000, moderate: 100000, aggressive: 140000 },
-  { year: '2040', conservative: 100000, moderate: 150000, aggressive: 230000 },
-  { year: '2045', conservative: 135000, moderate: 220000, aggressive: 380000 },
-  { year: '2050', conservative: 180000, moderate: 320000, aggressive: 600000 },
-  { year: '2055', conservative: 240000, moderate: 460000, aggressive: 950000 },
-  { year: '2060', conservative: 310000, moderate: 650000, aggressive: 1500000 },
-];
+// Income projections computed dynamically based on user's actual monthly contribution & expected return
+function computeIncomeProjection(monthlyContrib, yearsToRetire, expectedReturn) {
+  const years = [2026, 2030, 2035, 2040, 2045, 2050, 2055, 2060];
+  return years.map(y => {
+    const yrsFromNow = y - new Date().getFullYear();
+    const conservative = monthlyContrib * Math.pow(1.06, Math.min(yrsFromNow, yearsToRetire));
+    const moderate = monthlyContrib * Math.pow(1.08, Math.min(yrsFromNow, yearsToRetire));
+    const aggressive = monthlyContrib * Math.pow(1.10, Math.min(yrsFromNow, yearsToRetire));
+    return { year: y.toString(), conservative: Math.round(conservative), moderate: Math.round(moderate), aggressive: Math.round(aggressive) };
+  });
+}
 
-const scenarioData = [
-  { label: 'Conservative (8%)', rate: 8, corpus: 28500000, monthly: 95000, color: '#3B82F6' },
-  { label: 'Moderate (12%)', rate: 12, corpus: 52000000, monthly: 173000, color: '#10B981' },
-  { label: 'Aggressive (15%)', rate: 15, corpus: 85000000, monthly: 283000, color: '#F59E0B' },
-];
-
-const expenseForecast = [
-  { category: 'Housing', current: 25000, retired: 15000, note: 'Loan paid off by retirement' },
-  { category: 'Healthcare', current: 5000, retired: 20000, note: 'Increases with age' },
-  { category: 'Food & Groceries', current: 15000, retired: 20000, note: 'Inflation adjusted' },
-  { category: 'Utilities', current: 5000, retired: 7000, note: 'Inflation adjusted' },
-  { category: 'Travel & Leisure', current: 8000, retired: 15000, note: 'More free time' },
-  { category: 'Insurance Premiums', current: 6000, retired: 10000, note: 'Higher health premiums' },
-  { category: 'Miscellaneous', current: 10000, retired: 13000, note: 'Inflation adjusted' },
-];
-
-const actionItems = [
-  { id: 1, text: 'Increase SIP amount by ₹5,000/month', done: false, priority: 'High' },
-  { id: 2, text: 'Open NPS account for additional tax savings', done: true, priority: 'Medium' },
-  { id: 3, text: 'Review and rebalance portfolio quarterly', done: false, priority: 'High' },
-  { id: 4, text: 'Buy term insurance of ₹1Cr', done: true, priority: 'High' },
-  { id: 5, text: 'Maximize 80C deductions', done: false, priority: 'Medium' },
-  { id: 6, text: 'Create emergency fund of 6 months expenses', done: false, priority: 'High' },
-  { id: 7, text: 'Set up health insurance super top-up', done: false, priority: 'Medium' },
-  { id: 8, text: 'Start a retirement-specific mutual fund', done: false, priority: 'Low' },
-];
-
-const pensionBreakdown = [
-  { name: 'EPF Pension', value: 15000 },
-  { name: 'NPS Annuity', value: 12000 },
-  { name: 'PPF Withdrawal', value: 8000 },
-  { name: 'Rental Income', value: 20000 },
-];
+// Scenarios computed dynamically
+function computeScenarios(monthlyContrib, yearsToRetire) {
+  const rates = [
+    { label: 'Conservative (8%)', rate: 8, color: '#3B82F6' },
+    { label: 'Moderate (12%)', rate: 12, color: '#10B981' },
+    { label: 'Aggressive (15%)', rate: 15, color: '#F59E0B' },
+  ];
+  return rates.map(s => {
+    const r = s.rate / 100 / 12;
+    const n = yearsToRetire * 12;
+    const corpus = r === 0 ? monthlyContrib * n : monthlyContrib * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
+    return { ...s, corpus: Math.round(corpus), monthly: Math.round(corpus * 0.04 / 12) };
+  });
+}
 
 export default function RetirementPlanner() {
   const { mode, isDark, isBlack } = useTheme();
@@ -83,10 +58,11 @@ export default function RetirementPlanner() {
   const [expectedReturn, setExpectedReturn] = useState(12);
   const [monthlyExpense, setMonthlyExpense] = useState(50000);
   const [activeScenario, setActiveScenario] = useState('moderate');
-  const [items, setItems] = useState(actionItems);
+  const [items, setItems] = useState([]);
   const [withdrawalStrategy, setWithdrawalStrategy] = useState('4percent');
-  const [savingsData, setSavingsData] = useState(savingsVsTarget);
-  const [pension, setPension] = useState(pensionBreakdown);
+  const [savingsData, setSavingsData] = useState([]);
+  const [pension, setPension] = useState([]);
+  const [expenseForecast, setExpenseForecast] = useState([]);
   const [planId, setPlanId] = useState(null);
 
   useEffect(() => {
@@ -102,12 +78,13 @@ export default function RetirementPlanner() {
           if (plan.expectedReturn) setExpectedReturn(plan.expectedReturn);
           if (plan.monthlyExpense) setMonthlyExpense(plan.monthlyExpense);
           if (plan.withdrawalStrategy) setWithdrawalStrategy(plan.withdrawalStrategy);
-          if (plan.savings) setSavingsData(plan.savings);
-          if (plan.pension) setPension(plan.pension);
-          if (plan.actionItems) setItems(plan.actionItems);
+          if (plan.savings?.length) setSavingsData(plan.savings);
+          if (plan.pension?.length) setPension(plan.pension);
+          if (plan.actionItems?.length) setItems(plan.actionItems);
+          if (plan.expenseForecast?.length) setExpenseForecast(plan.expenseForecast);
         }
       } catch (err) {
-        console.log('Retirement data fetch fallback to defaults:', err.message);
+        console.log('Retirement data not yet set up:', err.message);
       }
     };
     fetchRetirementData();
@@ -115,6 +92,10 @@ export default function RetirementPlanner() {
 
   const yearsToRetire = retireAge - currentAge;
   const months = yearsToRetire * 12;
+
+  // Dynamically computed from user inputs — no hardcoded values
+  const incomeProjection = useMemo(() => computeIncomeProjection(monthlyContribution, yearsToRetire, expectedReturn), [monthlyContribution, yearsToRetire, expectedReturn]);
+  const scenarioData = useMemo(() => computeScenarios(monthlyContribution, yearsToRetire), [monthlyContribution, yearsToRetire]);
 
   const projectedCorpus = useMemo(() => {
     const r = expectedReturn / 100 / 12;

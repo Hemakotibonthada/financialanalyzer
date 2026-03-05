@@ -16,37 +16,28 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 
 const fmt = (n) => `₹${n.toLocaleString('en-IN')}`;
 
-const contributionHistory = [
-  { month: 'Sep 25', amount: 10000, total: 190000 },
-  { month: 'Oct 25', amount: 15000, total: 205000 },
-  { month: 'Nov 25', amount: 10000, total: 215000 },
-  { month: 'Dec 25', amount: 20000, total: 235000 },
-  { month: 'Jan 26', amount: 10000, total: 245000 },
-  { month: 'Feb 26', amount: 15000, total: 260000 },
+// All data fetched from API — no hardcoded contribution/withdrawal history
+
+// Expense breakdown starts empty — populated from user's actual expense data
+const defaultExpenseBreakdown = [
+  { category: 'Rent/EMI', amount: 0, icon: Home, color: '#3B82F6' },
+  { category: 'Groceries', amount: 0, icon: DollarSign, color: '#10B981' },
+  { category: 'Utilities', amount: 0, icon: Lightbulb, color: '#F59E0B' },
+  { category: 'Transportation', amount: 0, icon: Car, color: '#8B5CF6' },
+  { category: 'Insurance', amount: 0, icon: Shield, color: '#EC4899' },
+  { category: 'Healthcare', amount: 0, icon: Heart, color: '#EF4444' },
+  { category: 'Miscellaneous', amount: 0, icon: DollarSign, color: '#06B6D4' },
 ];
 
-const expenseBreakdown = [
-  { category: 'Rent/EMI', amount: 25000, icon: Home, color: '#3B82F6' },
-  { category: 'Groceries', amount: 12000, icon: DollarSign, color: '#10B981' },
-  { category: 'Utilities', amount: 5000, icon: Lightbulb, color: '#F59E0B' },
-  { category: 'Transportation', amount: 6000, icon: Car, color: '#8B5CF6' },
-  { category: 'Insurance', amount: 4000, icon: Shield, color: '#EC4899' },
-  { category: 'Healthcare', amount: 3000, icon: Heart, color: '#EF4444' },
-  { category: 'Miscellaneous', amount: 5000, icon: DollarSign, color: '#06B6D4' },
+// Scenarios — educational reference, amounts calculated from user expenses dynamically
+const defaultScenarios = [
+  { title: 'Job Loss', icon: Briefcase, color: '#EF4444', duration: '6 months', needed: 0, description: 'Full salary replacement for 6 months', covered: false },
+  { title: 'Medical Emergency', icon: Heart, color: '#EC4899', duration: 'One-time', needed: 0, description: 'Deductible + co-pay for major procedure', covered: false },
+  { title: 'Car Repair', icon: Car, color: '#F59E0B', duration: 'One-time', needed: 0, description: 'Major repair (engine, transmission)', covered: false },
+  { title: 'Home Repair', icon: Home, color: '#8B5CF6', duration: 'One-time', needed: 0, description: 'Plumbing, electrical, or roof repair', covered: false },
 ];
 
-const scenarios = [
-  { title: 'Job Loss', icon: Briefcase, color: '#EF4444', duration: '6 months', needed: 360000, description: 'Full salary replacement for 6 months', covered: true },
-  { title: 'Medical Emergency', icon: Heart, color: '#EC4899', duration: 'One-time', needed: 200000, description: 'Deductible + co-pay for major procedure', covered: true },
-  { title: 'Car Repair', icon: Car, color: '#F59E0B', duration: 'One-time', needed: 50000, description: 'Major repair (engine, transmission)', covered: true },
-  { title: 'Home Repair', icon: Home, color: '#8B5CF6', duration: 'One-time', needed: 100000, description: 'Plumbing, electrical, or roof repair', covered: false },
-];
-
-const withdrawalHistory = [
-  { id: 1, date: '2025-08-15', amount: 25000, reason: 'AC Repair', category: 'Home' },
-  { id: 2, date: '2025-04-03', amount: 15000, reason: 'Medical Bills', category: 'Healthcare' },
-  { id: 3, date: '2024-11-20', amount: 30000, reason: 'Car Service', category: 'Vehicle' },
-];
+// No hardcoded withdrawal history
 
 const tips = [
   { title: 'Automate Your Savings', desc: 'Set up auto-transfer on salary day to build your fund consistently.' },
@@ -60,14 +51,16 @@ export default function EmergencyFund() {
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
   const [targetMonths, setTargetMonths] = useState(6);
-  const [currentFund, setCurrentFund] = useState(260000);
-  const [autoSaveAmount, setAutoSaveAmount] = useState(10000);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [currentFund, setCurrentFund] = useState(0);
+  const [autoSaveAmount, setAutoSaveAmount] = useState(0);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [transAmount, setTransAmount] = useState('');
-  const [history, setHistory] = useState(contributionHistory);
-  const [withdrawals, setWithdrawals] = useState(withdrawalHistory);
+  const [history, setHistory] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [expenseBreakdown, setExpenseBreakdown] = useState(defaultExpenseBreakdown);
+  const [scenarios, setScenarios] = useState(defaultScenarios);
 
   useEffect(() => {
     const fetchFundData = async () => {
@@ -79,11 +72,23 @@ export default function EmergencyFund() {
           if (d.targetMonths != null) setTargetMonths(d.targetMonths);
           if (d.autoSaveAmount != null) setAutoSaveAmount(d.autoSaveAmount);
           if (d.autoSaveEnabled != null) setAutoSaveEnabled(d.autoSaveEnabled);
-          if (d.contributions) setHistory(d.contributions);
-          if (d.withdrawals) setWithdrawals(d.withdrawals);
+          if (d.contributions?.length) setHistory(d.contributions);
+          if (d.withdrawals?.length) setWithdrawals(d.withdrawals);
+          if (d.expenseBreakdown?.length) {
+            // Map API expense data to UI format with icons
+            const iconMap = { 'Rent/EMI': Home, 'Groceries': DollarSign, 'Utilities': Lightbulb, 'Transportation': Car, 'Insurance': Shield, 'Healthcare': Heart, 'Miscellaneous': DollarSign };
+            const colorMap = { 'Rent/EMI': '#3B82F6', 'Groceries': '#10B981', 'Utilities': '#F59E0B', 'Transportation': '#8B5CF6', 'Insurance': '#EC4899', 'Healthcare': '#EF4444', 'Miscellaneous': '#06B6D4' };
+            setExpenseBreakdown(d.expenseBreakdown.map(e => ({
+              ...e, icon: iconMap[e.category] || DollarSign, color: colorMap[e.category] || '#06B6D4'
+            })));
+          }
+          if (d.scenarios?.length) setScenarios(d.scenarios.map(s => {
+            const iconMap = { 'Job Loss': Briefcase, 'Medical Emergency': Heart, 'Car Repair': Car, 'Home Repair': Home };
+            return { ...s, icon: iconMap[s.title] || AlertTriangle };
+          }));
         }
       } catch (err) {
-        console.log('Emergency fund fetch fallback to defaults:', err.message);
+        console.log('Emergency fund data not yet set up:', err.message);
       }
     };
     fetchFundData();

@@ -382,21 +382,28 @@ const FIRETracker = () => {
     try {
       setLoading(true);
       const res = await api.get('/wealth/fire-metrics');
-      setFireMetrics(res.data?.data || {
-        fireNumber: 30000000, leanFireNumber: 18000000, fatFireNumber: 45000000,
-        currentNetWorth: 8000000, progressPercent: 26.7, yearsToFIRE: 18,
-        fireAge: 48, coastFireAge: 42, safeWithdrawal: 320000,
-        annualExpenses: 1200000, annualIncome: 2400000, savingsRate: 50,
-        monthlyInvestmentNeeded: 45000
-      });
+      const data = res.data?.data;
+      if (data && Object.keys(data).length > 0) {
+        setFireMetrics(data);
+      } else {
+        // No data from API — show empty state with zeros
+        setFireMetrics({
+          fireNumber: 0, leanFireNumber: 0, fatFireNumber: 0,
+          currentNetWorth: 0, progressPercent: 0, yearsToFIRE: 0,
+          fireAge: 0, coastFireAge: 0, safeWithdrawal: 0,
+          annualExpenses: 0, annualIncome: 0, savingsRate: 0,
+          monthlyInvestmentNeeded: 0
+        });
+      }
     } catch (err) {
       console.error('Failed to fetch FIRE metrics:', err);
+      // On error, show empty state — no dummy data
       setFireMetrics({
-        fireNumber: 30000000, leanFireNumber: 18000000, fatFireNumber: 45000000,
-        currentNetWorth: 8000000, progressPercent: 26.7, yearsToFIRE: 18,
-        fireAge: 48, coastFireAge: 42, safeWithdrawal: 320000,
-        annualExpenses: 1200000, annualIncome: 2400000, savingsRate: 50,
-        monthlyInvestmentNeeded: 45000
+        fireNumber: 0, leanFireNumber: 0, fatFireNumber: 0,
+        currentNetWorth: 0, progressPercent: 0, yearsToFIRE: 0,
+        fireAge: 0, coastFireAge: 0, safeWithdrawal: 0,
+        annualExpenses: 0, annualIncome: 0, savingsRate: 0,
+        monthlyInvestmentNeeded: 0
       });
     } finally {
       setLoading(false);
