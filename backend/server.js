@@ -37,19 +37,22 @@ dirs.forEach(dir => {
   }
 });
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB (must complete before dependent services start)
+connectDB().then(() => {
+  // Initialize Cache Service (after DB is ready)
+  const cacheService = require('./services/cacheService');
+  cacheService.initialize().catch(err => {
+    logger.warn('Cache service initialization failed:', err.message);
+  });
 
-// Initialize Cache Service
-const cacheService = require('./services/cacheService');
-cacheService.initialize().catch(err => {
-  logger.warn('Cache service initialization failed:', err.message);
-});
-
-// Initialize Bill Reminder Service
-const billReminderService = require('./services/billReminderService');
-billReminderService.initialize().catch(err => {
-  logger.warn('Bill Reminder service initialization failed:', err.message);
+  // Initialize Bill Reminder Service (after DB is ready)
+  const billReminderService = require('./services/billReminderService');
+  billReminderService.initialize().catch(err => {
+    logger.warn('Bill Reminder service initialization failed:', err.message);
+  });
+}).catch(err => {
+  logger.error('Failed to start — MongoDB connection could not be established');
+  process.exit(1);
 });
 
 const app = express();
@@ -396,6 +399,12 @@ const { createExportRoutes, exportEngine } = require('./services/dataExportEngin
 app.use('/api/export-engine', createExportRoutes(exportEngine));
 // Enterprise AI Services (Prediction, Risk, Tax, Reports)
 app.use('/api/enterprise', require('./routes/enterpriseRoutes'));
+
+// ========== WEALTH & WELLNESS SERVICES ==========
+// Wealth Management — net worth, assets, projections, FIRE
+app.use('/api/wealth', require('./routes/wealthManagementRoutes'));
+// Expense Intelligence — smart spending analysis, anomaly detection
+app.use('/api/expense-intelligence', require('./routes/expenseIntelligenceRoutes'));
 
 // Enterprise Health & Admin Analytics
 app.get('/api/enterprise-health', healthCheckHandler);

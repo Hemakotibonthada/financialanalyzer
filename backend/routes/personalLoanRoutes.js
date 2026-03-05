@@ -61,6 +61,160 @@ router.get('/summary', authenticate, async (req, res) => {
 });
 
 /**
+ * @route GET /api/personal-loans/lenders
+ * @desc Get lender-level aggregated view (people I can borrow from)
+ * @access Private
+ */
+router.get('/lenders', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const allLoans = await PersonalLoan.find({ userId }).sort({ loanTakenDate: -1 });
+
+    // Aggregate by lender name (case-insensitive)
+    const lenderMap = {};
+    allLoans.forEach(loan => {
+      const key = loan.lenderName.trim().toLowerCase();
+      if (!lenderMap[key]) {
+        lenderMap[key] = {
+          lenderName: loan.lenderName,
+          relationship: loan.relationship,
+          contactDetails: loan.contactDetails || {},
+          loans: [],
+          totalBorrowed: 0,
+          totalRepaid: 0,
+          totalOutstanding: 0,
+          totalInterestAccrued: 0,
+          activeLoansCount: 0,
+          repaidLoansCount: 0,
+          firstLoanDate: loan.loanTakenDate,
+          lastLoanDate: loan.loanTakenDate,
+          lastRepaymentDate: null,
+          priority: loan.priority
+        };
+      }
+      const lender = lenderMap[key];
+      lender.loans.push(loan);
+      lender.totalBorrowed += loan.principalAmount || 0;
+      lender.totalRepaid += loan.totalRepaid || 0;
+      lender.totalOutstanding += loan.outstandingAmount || 0;
+      lender.totalInterestAccrued += loan.currentInterest || 0;
+
+      if (loan.status === 'active') lender.activeLoansCount++;
+      else lender.repaidLoansCount++;
+
+      // Track date boundaries
+      if (new Date(loan.loanTakenDate) < new Date(lender.firstLoanDate)) {
+        lender.firstLoanDate = loan.loanTakenDate;
+      }
+      if (new Date(loan.loanTakenDate) > new Date(lender.lastLoanDate)) {
+        lender.lastLoanDate = loan.loanTakenDate;
+      }
+      if (loan.repaymentDate) {
+        if (!lender.lastRepaymentDate || new Date(loan.repaymentDate) > new Date(lender.lastRepaymentDate)) {
+          lender.lastRepaymentDate = loan.repaymentDate;
+        }
+      }
+
+      // Update contact details if current loan has them
+      if (loan.contactDetails?.phone) lender.contactDetails.phone = loan.contactDetails.phone;
+      if (loan.contactDetails?.email) lender.contactDetails.email = loan.contactDetails.email;
+
+      // Escalate priority
+      const prioOrder = { low: 0, medium: 1, high: 2, urgent: 3 };
+      if (prioOrder[loan.priority] > prioOrder[lender.priority]) lender.priority = loan.priority;
+    });
+
+    const lenders = Object.values(lenderMap).map(l => ({
+      ...l,
+      currentStatus: l.activeLoansCount > 0 ? 'has_active_loans' : 'all_repaid',
+      totalTransactions: l.loans.length,
+      trustScore: Math.min(100, Math.round(
+        (l.repaidLoansCount / Math.max(1, l.loans.length)) * 60 +
+        (l.totalRepaid / Math.max(1, l.totalBorrowed)) * 40
+      )),
+      // Remove full loan objects from response to keep it light
+      loans: l.loans.map(ln => ({
+        _id: ln._id,
+        principalAmount: ln.principalAmount,
+        loanTakenDate: ln.loanTakenDate,
+        repaymentDate: ln.repaymentDate,
+        status: ln.status,
+        totalRepaid: ln.totalRepaid,
+        outstandingAmount: ln.outstandingAmount,
+        currentInterest: ln.currentInterest,
+        interestRate: ln.interestRate,
+        interestType: ln.interestType,
+        purpose: ln.purpose,
+        priority: ln.priority,
+        daysSinceTaken: ln.daysSinceTaken
+      }))
+    }));
+
+    // Sort: active first, then by outstanding amount descending
+    lenders.sort((a, b) => {
+      if (a.activeLoansCount > 0 && b.activeLoansCount === 0) return -1;
+      if (a.activeLoansCount === 0 && b.activeLoansCount > 0) return 1;
+      return b.totalOutstanding - a.totalOutstanding;
+    });
+
+    res.json({
+      success: true,
+      count: lenders.length,
+      lenders
+    });
+  } catch (error) {
+    logger.error('Get lenders summary error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch lenders summary',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @route GET /api/personal-loans/history/:lenderName
+ * @desc Get all loan history with a specific lender
+ * @access Private
+ */
+router.get('/history/:lenderName', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const lenderName = decodeURIComponent(req.params.lenderName);
+    
+    const loans = await PersonalLoan.find({
+      userId,
+      lenderName: { $regex: new RegExp(`^${lenderName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+    }).sort({ loanTakenDate: -1 });
+
+    const totalBorrowed = loans.reduce((s, l) => s + (l.principalAmount || 0), 0);
+    const totalRepaid = loans.reduce((s, l) => s + (l.totalRepaid || 0), 0);
+    const totalOutstanding = loans.reduce((s, l) => s + (l.outstandingAmount || 0), 0);
+    const totalInterest = loans.reduce((s, l) => s + (l.currentInterest || 0), 0);
+
+    res.json({
+      success: true,
+      lenderName: loans[0]?.lenderName || lenderName,
+      relationship: loans[0]?.relationship || 'Other',
+      contactDetails: loans[0]?.contactDetails || {},
+      count: loans.length,
+      totalBorrowed,
+      totalRepaid,
+      totalOutstanding,
+      totalInterest,
+      loans
+    });
+  } catch (error) {
+    logger.error('Get lender history error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch lender history',
+      error: error.message
+    });
+  }
+});
+
+/**
  * @route GET /api/personal-loans/:id
  * @desc Get specific personal loan
  * @access Private

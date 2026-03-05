@@ -58,6 +58,7 @@ import {
   Clock,
   Flame,
   Trophy,
+  Heart,
   Boxes,
   ScrollText,
   Bot,
@@ -73,12 +74,13 @@ const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
-    enterprise: true,
+    enterprise: false,
     money: false,
     invest: false,
     debt: false,
     plan: false,
     insights: false,
+    wealth: false,
     more: false,
   });
 
@@ -157,6 +159,7 @@ const Sidebar = () => {
       icon: Scale,
       items: [
         { label: 'EMI Tracker', icon: CreditCard, path: '/emi-tracker', color: 'yellow' },
+        { label: 'Borrowings', icon: Users, path: '/personal-borrowings', color: 'indigo', badge: 'NEW' },
         { label: 'Debt Management', icon: Target, path: '/debt-management', color: 'red' },
         { label: 'Debt Payoff', icon: TrendingDown, path: '/debt-payoff', color: 'orange' },
         { label: 'Loan Calculator', icon: Calculator, path: '/loan-calculator', color: 'blue' },
@@ -201,6 +204,19 @@ const Sidebar = () => {
         { label: 'Income Forecast', icon: Sparkles, path: '/income-forecast', color: 'green', badge: 'AI' },
         { label: 'Goal Forecaster', icon: Target, path: '/goal-forecaster', color: 'orange', badge: 'AI' },
         { label: 'Anomaly Detector', icon: Shield, path: '/anomaly-detector', color: 'red', badge: 'AI' },
+        { label: 'Expense Intel', icon: Activity, path: '/expense-intelligence', color: 'teal', badge: 'NEW' },
+      ]
+    },
+    {
+      id: 'wealth',
+      label: 'Wealth',
+      icon: Sparkles,
+      items: [
+        { label: 'Wealth Mgmt', icon: TrendingUp, path: '/wealth-management', color: 'emerald', badge: 'NEW' },
+        { label: 'Financial Wellness', icon: Heart, path: '/financial-wellness', color: 'pink', badge: 'NEW' },
+        { label: 'Smart Advisor', icon: Brain, path: '/smart-advisor', color: 'violet', badge: 'AI' },
+        { label: 'Tax Center', icon: Receipt, path: '/tax-optimization', color: 'amber', badge: 'NEW' },
+        { label: 'FIRE Tracker', icon: Flame, path: '/fire-tracker', color: 'orange', badge: 'NEW' },
       ]
     },
     {

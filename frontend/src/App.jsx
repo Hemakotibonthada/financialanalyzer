@@ -173,6 +173,15 @@ const SelfTrainingPage = lazy(() => import('./pages/SelfTrainingPage'));
 const SmartBudgetOptimizer = lazy(() => import('./pages/SmartBudgetOptimizer'));
 const RiskAssessment = lazy(() => import('./pages/RiskAssessment'));
 
+// ========== NEW COMPREHENSIVE MODULES ==========
+const WealthManagement = lazy(() => import('./pages/WealthManagement'));
+const FinancialWellness = lazy(() => import('./pages/FinancialWellness'));
+const SmartInvestmentAdvisor = lazy(() => import('./pages/SmartInvestmentAdvisor'));
+const TaxOptimizationCenter = lazy(() => import('./pages/TaxOptimizationCenter'));
+const ExpenseIntelligence = lazy(() => import('./pages/ExpenseIntelligence'));
+const FIRETracker = lazy(() => import('./pages/FIRETracker'));
+const PersonalBorrowings = lazy(() => import('./pages/PersonalBorrowings'));
+
 // Social & Communication
 const FamilyFinance = lazy(() => import('./pages/FamilyFinance'));
 const FinancialChat = lazy(() => import('./pages/FinancialChat'));
@@ -348,6 +357,7 @@ function App() {
               <Route path="/loan-calculator" element={<ProtectedRoute><LoanCalculator /></ProtectedRoute>} />
               <Route path="/emergency-fund" element={<ProtectedRoute><EmergencyFund /></ProtectedRoute>} />
               <Route path="/emi-tracker" element={<ProtectedRoute><EMITracker /></ProtectedRoute>} />
+              <Route path="/personal-borrowings" element={<ProtectedRoute><PersonalBorrowings /></ProtectedRoute>} />
               
               {/* ========== GOALS & SAVINGS ========== */}
               <Route path="/goals" element={<ProtectedRoute><FinancialGoals /></ProtectedRoute>} />
@@ -455,6 +465,14 @@ function App() {
               <Route path="/goal-forecaster" element={<ProtectedRoute><GoalForecaster /></ProtectedRoute>} />
               <Route path="/anomaly-detector" element={<ProtectedRoute><AnomalyDetector /></ProtectedRoute>} />
               
+              {/* ========== NEW COMPREHENSIVE MODULES ========== */}
+              <Route path="/wealth-management" element={<ProtectedRoute><WealthManagement /></ProtectedRoute>} />
+              <Route path="/financial-wellness" element={<ProtectedRoute><FinancialWellness /></ProtectedRoute>} />
+              <Route path="/smart-advisor" element={<ProtectedRoute><SmartInvestmentAdvisor /></ProtectedRoute>} />
+              <Route path="/tax-optimization" element={<ProtectedRoute><TaxOptimizationCenter /></ProtectedRoute>} />
+              <Route path="/expense-intelligence" element={<ProtectedRoute><ExpenseIntelligence /></ProtectedRoute>} />
+              <Route path="/fire-tracker" element={<ProtectedRoute><FIRETracker /></ProtectedRoute>} />
+
               {/* ========== 404 CATCH-ALL ========== */}
               <Route path="*" element={<NotFound />} />
             </Routes>
