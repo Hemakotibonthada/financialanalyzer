@@ -3,6 +3,7 @@
 // ============================================================================
 
 const AnalyticsEngine = require('../services/analyticsEngine');
+const logger = require('../utils/logger');
 
 const analyticsController = {
   // GET /api/analytics/comprehensive
@@ -12,7 +13,7 @@ const analyticsController = {
       const data = await AnalyticsEngine.getComprehensiveDashboard(req.user.id || req.user._id, days);
       res.json({ success: true, data });
     } catch (err) {
-      console.error('Comprehensive dashboard error:', err);
+      logger.error('Comprehensive dashboard error:', err);
       res.status(500).json({ success: false, message: 'Analytics failed', error: err.message });
     }
   },

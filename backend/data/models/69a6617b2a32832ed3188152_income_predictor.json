@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "avgMonthlyIncome": 212882,
+  "forecast": {
+    "predictions": [
+      {
+        "month": "2026-04",
+        "predicted": 206884
+      },
+      {
+        "month": "2026-05",
+        "predicted": 211246
+      },
+      {
+        "month": "2026-06",
+        "predicted": 215608
+      },
+      {
+        "month": "2026-07",
+        "predicted": 219970
+      },
+      {
+        "month": "2026-08",
+        "predicted": 224332
+      },
+      {
+        "month": "2026-09",
+        "predicted": 228694
+      }
+    ],
+    "trend": "growing",
+    "trendAmount": 4362
+  },
+  "linearTrend": {
+    "slope": -14712,
+    "r2": 0.05
+  },
+  "sourceAnalysis": {
+    "Salary": {
+      "average": 222000,
+      "frequency": "5/6 months",
+      "isRegular": true,
+      "stability": 67,
+      "trend": "growing"
+    },
+    "Freelance": {
+      "average": 41823,
+      "frequency": "4/6 months",
+      "isRegular": false,
+      "stability": 90,
+      "trend": "growing"
+    }
+  },
+  "incomeStability": 49,
+  "diversification": "moderate",
+  "regularSources": 1,
+  "totalSources": 2,
+  "trainedAt": "2026-03-05T18:19:10.698Z"
+}

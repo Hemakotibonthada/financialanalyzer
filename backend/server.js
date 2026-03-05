@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 const logger = require('./utils/logger');
+const morgan = require('morgan');
 const websocketService = require('./services/websocketService');
 const jwt = require('jsonwebtoken');
 
@@ -139,6 +140,10 @@ app.options('*', cors());
 // Body parsing with size limits to prevent DoS via large payloads
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// HTTP request logging via morgan → pipes into Winston file logs
+const morganStream = { write: (message) => logger.http(message.trim()) };
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', { stream: morganStream }));
 
 // Request timeout middleware
 app.use((req, res, next) => {

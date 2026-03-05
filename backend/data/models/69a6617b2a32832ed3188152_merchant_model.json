@@ -1,0 +1,161 @@
+{
+  "merchants": [
+    {
+      "name": "swiggy",
+      "count": 14,
+      "avgAmount": 7312,
+      "category": "Transfer"
+    },
+    {
+      "name": "netflix",
+      "count": 21,
+      "avgAmount": 3649,
+      "category": "Transport"
+    },
+    {
+      "name": "meesho",
+      "count": 21,
+      "avgAmount": 3360,
+      "category": "Investment"
+    },
+    {
+      "name": "zomato",
+      "count": 23,
+      "avgAmount": 2890,
+      "category": "Fuel"
+    },
+    {
+      "name": "bookmyshow",
+      "count": 20,
+      "avgAmount": 3141,
+      "category": "Healthcare"
+    },
+    {
+      "name": "reliance fresh",
+      "count": 20,
+      "avgAmount": 3125,
+      "category": "Shopping"
+    },
+    {
+      "name": "bigbasket",
+      "count": 17,
+      "avgAmount": 3489,
+      "category": "Education"
+    },
+    {
+      "name": "spotify",
+      "count": 23,
+      "avgAmount": 2577,
+      "category": "Gifts"
+    },
+    {
+      "name": "hdfc life",
+      "count": 16,
+      "avgAmount": 3550,
+      "category": "Transfer"
+    },
+    {
+      "name": "hp petrol",
+      "count": 17,
+      "avgAmount": 3038,
+      "category": "Transfer"
+    },
+    {
+      "name": "uber",
+      "count": 15,
+      "avgAmount": 3439,
+      "category": "Travel"
+    },
+    {
+      "name": "irctc",
+      "count": 18,
+      "avgAmount": 2787,
+      "category": "Subscription"
+    },
+    {
+      "name": "lic",
+      "count": 12,
+      "avgAmount": 4040,
+      "category": "Shopping"
+    },
+    {
+      "name": "airtel",
+      "count": 19,
+      "avgAmount": 2413,
+      "category": "Utilities"
+    },
+    {
+      "name": "paytm",
+      "count": 15,
+      "avgAmount": 2867,
+      "category": "Fuel"
+    },
+    {
+      "name": "apollo pharmacy",
+      "count": 19,
+      "avgAmount": 2141,
+      "category": "Entertainment"
+    },
+    {
+      "name": "myntra",
+      "count": 13,
+      "avgAmount": 3109,
+      "category": "EMI"
+    },
+    {
+      "name": "indian oil",
+      "count": 17,
+      "avgAmount": 2307,
+      "category": "Subscription"
+    },
+    {
+      "name": "google pay",
+      "count": 15,
+      "avgAmount": 2552,
+      "category": "Salary"
+    },
+    {
+      "name": "flipkart",
+      "count": 19,
+      "avgAmount": 1792,
+      "category": "Salary"
+    },
+    {
+      "name": "jio",
+      "count": 15,
+      "avgAmount": 2219,
+      "category": "EMI"
+    },
+    {
+      "name": "phonepe",
+      "count": 9,
+      "avgAmount": 3688,
+      "category": "Education"
+    },
+    {
+      "name": "dmart",
+      "count": 14,
+      "avgAmount": 2186,
+      "category": "Healthcare"
+    },
+    {
+      "name": "amazon india",
+      "count": 16,
+      "avgAmount": 1891,
+      "category": "EMI"
+    },
+    {
+      "name": "ola",
+      "count": 11,
+      "avgAmount": 2427,
+      "category": "Salary"
+    },
+    {
+      "name": "croma",
+      "count": 13,
+      "avgAmount": 1993,
+      "category": "Subscription"
+    }
+  ],
+  "trainedAt": "2026-03-05T18:15:23.262Z"
+}

@@ -1,0 +1,415 @@
+{
+  "version": 1,
+  "monthlyTotals": [
+    {
+      "month": "2025-09",
+      "total": 209824
+    },
+    {
+      "month": "2025-10",
+      "total": 205387
+    },
+    {
+      "month": "2025-11",
+      "total": 212153
+    },
+    {
+      "month": "2025-12",
+      "total": 225216
+    },
+    {
+      "month": "2026-01",
+      "total": 199483
+    },
+    {
+      "month": "2026-02",
+      "total": 195683
+    },
+    {
+      "month": "2026-03",
+      "total": 32304
+    }
+  ],
+  "forecast": {
+    "level": 145965,
+    "trend": -8480,
+    "predictions": [
+      {
+        "month": "2026-04",
+        "predicted": 137485
+      },
+      {
+        "month": "2026-05",
+        "predicted": 129005
+      },
+      {
+        "month": "2026-06",
+        "predicted": 120526
+      },
+      {
+        "month": "2026-07",
+        "predicted": 112046
+      },
+      {
+        "month": "2026-08",
+        "predicted": 103566
+      },
+      {
+        "month": "2026-09",
+        "predicted": 95086
+      }
+    ]
+  },
+  "seasonality": null,
+  "categoryTrends": {
+    "Transport": {
+      "trend": "decreasing",
+      "slope": -252,
+      "r2": 0.16,
+      "average": 1988,
+      "latest": 0,
+      "volatility": 62
+    },
+    "Salary": {
+      "trend": "decreasing",
+      "slope": -2179,
+      "r2": 0.51,
+      "average": 10284,
+      "latest": 0,
+      "volatility": 59
+    },
+    "Healthcare": {
+      "trend": "decreasing",
+      "slope": -492,
+      "r2": 0.02,
+      "average": 12551,
+      "latest": 0,
+      "volatility": 61
+    },
+    "Transfer": {
+      "trend": "decreasing",
+      "slope": -1491,
+      "r2": 0.34,
+      "average": 11863,
+      "latest": 0,
+      "volatility": 43
+    },
+    "Investment": {
+      "trend": "decreasing",
+      "slope": -1249,
+      "r2": 0.09,
+      "average": 12952,
+      "latest": 4160,
+      "volatility": 63
+    },
+    "Subscription": {
+      "trend": "decreasing",
+      "slope": -640,
+      "r2": 0.48,
+      "average": 2213,
+      "latest": 0,
+      "volatility": 83
+    },
+    "EMI": {
+      "trend": "decreasing",
+      "slope": -1093,
+      "r2": 0.22,
+      "average": 7142,
+      "latest": 0,
+      "volatility": 66
+    },
+    "Fuel": {
+      "trend": "decreasing",
+      "slope": -1107,
+      "r2": 0.29,
+      "average": 7151,
+      "latest": 0,
+      "volatility": 57
+    },
+    "Gifts": {
+      "trend": "decreasing",
+      "slope": -1589,
+      "r2": 0.19,
+      "average": 12213,
+      "latest": 4900,
+      "volatility": 59
+    },
+    "Recharge": {
+      "trend": "decreasing",
+      "slope": -174,
+      "r2": 0.05,
+      "average": 2372,
+      "latest": 218,
+      "volatility": 65
+    },
+    "Groceries": {
+      "trend": "increasing",
+      "slope": 1080,
+      "r2": 0.07,
+      "average": 10594,
+      "latest": 0,
+      "volatility": 76
+    },
+    "Entertainment": {
+      "trend": "decreasing",
+      "slope": -788,
+      "r2": 0.3,
+      "average": 6906,
+      "latest": 2584,
+      "volatility": 42
+    },
+    "Shopping": {
+      "trend": "decreasing",
+      "slope": -5239,
+      "r2": 0.43,
+      "average": 16284,
+      "latest": 0,
+      "volatility": 98
+    },
+    "Utilities": {
+      "trend": "decreasing",
+      "slope": -734,
+      "r2": 0.09,
+      "average": 8005,
+      "latest": 0,
+      "volatility": 61
+    },
+    "Travel": {
+      "trend": "decreasing",
+      "slope": -2213,
+      "r2": 0.09,
+      "average": 27422,
+      "latest": 16531,
+      "volatility": 54
+    },
+    "Education": {
+      "trend": "decreasing",
+      "slope": -343,
+      "r2": 0,
+      "average": 18884,
+      "latest": 3911,
+      "volatility": 65
+    },
+    "Food & Dining": {
+      "trend": "decreasing",
+      "slope": -251,
+      "r2": 0.05,
+      "average": 3520,
+      "latest": 0,
+      "volatility": 65
+    },
+    "Freelance": {
+      "trend": "decreasing",
+      "slope": -1041,
+      "r2": 0.31,
+      "average": 5015,
+      "latest": 0,
+      "volatility": 75
+    },
+    "Insurance": {
+      "trend": "decreasing",
+      "slope": -371,
+      "r2": 0.04,
+      "average": 5507,
+      "latest": 0,
+      "volatility": 66
+    }
+  },
+  "dayPatterns": [
+    {
+      "day": "Sun",
+      "avgSpend": 3101,
+      "totalSpend": 161244,
+      "transactionCount": 52
+    },
+    {
+      "day": "Mon",
+      "avgSpend": 3257,
+      "totalSpend": 201949,
+      "transactionCount": 62
+    },
+    {
+      "day": "Tue",
+      "avgSpend": 2452,
+      "totalSpend": 156940,
+      "transactionCount": 64
+    },
+    {
+      "day": "Wed",
+      "avgSpend": 2545,
+      "totalSpend": 134909,
+      "transactionCount": 53
+    },
+    {
+      "day": "Thu",
+      "avgSpend": 3161,
+      "totalSpend": 192805,
+      "transactionCount": 61
+    },
+    {
+      "day": "Fri",
+      "avgSpend": 3217,
+      "totalSpend": 189806,
+      "transactionCount": 59
+    },
+    {
+      "day": "Sat",
+      "avgSpend": 2993,
+      "totalSpend": 242397,
+      "transactionCount": 81
+    }
+  ],
+  "hourPatterns": [
+    {
+      "hour": 0,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 1,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 2,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 3,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 4,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 5,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 6,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 7,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 8,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 9,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 10,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 11,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 12,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 13,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 14,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 15,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 16,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 17,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 18,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 19,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 20,
+      "avgSpend": 2963,
+      "totalSpend": 1280050,
+      "transactionCount": 432
+    },
+    {
+      "hour": 21,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 22,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    },
+    {
+      "hour": 23,
+      "avgSpend": 0,
+      "totalSpend": 0,
+      "transactionCount": 0
+    }
+  ],
+  "salaryDay": 1,
+  "salaryBehavior": {
+    "preSalaryAvgSpend": 0,
+    "postSalaryAvgSpend": 45640,
+    "impulseFactor": 0
+  },
+  "trainedAt": "2026-03-05T18:19:10.521Z"
+}

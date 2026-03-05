@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "clusters": [
+    {
+      "id": 0,
+      "label": "Balanced Spender",
+      "essentialRatio": 34,
+      "discretionaryRatio": 25,
+      "avgTransactionSize": 2884,
+      "monthCount": 3
+    },
+    {
+      "id": 1,
+      "label": "Lifestyle Spender",
+      "essentialRatio": 12,
+      "discretionaryRatio": 59,
+      "avgTransactionSize": 4615,
+      "monthCount": 1
+    },
+    {
+      "id": 2,
+      "label": "Balanced Spender",
+      "essentialRatio": 29,
+      "discretionaryRatio": 35,
+      "avgTransactionSize": 3173,
+      "monthCount": 2
+    },
+    {
+      "id": 3,
+      "label": "Balanced Spender",
+      "essentialRatio": 52,
+      "discretionaryRatio": 16,
+      "avgTransactionSize": 2681,
+      "monthCount": 1
+    }
+  ],
+  "currentCluster": 2,
+  "currentLifestyle": "Balanced Spender",
+  "monthlyAssignments": [
+    {
+      "month": "2025-09",
+      "cluster": 2,
+      "label": "Balanced Spender"
+    },
+    {
+      "month": "2025-10",
+      "cluster": 0,
+      "label": "Balanced Spender"
+    },
+    {
+      "month": "2025-11",
+      "cluster": 0,
+      "label": "Balanced Spender"
+    },
+    {
+      "month": "2025-12",
+      "cluster": 0,
+      "label": "Balanced Spender"
+    },
+    {
+      "month": "2026-01",
+      "cluster": 2,
+      "label": "Balanced Spender"
+    },
+    {
+      "month": "2026-02",
+      "cluster": 3,
+      "label": "Balanced Spender"
+    },
+    {
+      "month": "2026-03",
+      "cluster": 1,
+      "label": "Lifestyle Spender"
+    }
+  ],
+  "transitions": [
+    {
+      "month": "2025-10",
+      "from": "Balanced Spender",
+      "to": "Balanced Spender"
+    },
+    {
+      "month": "2026-01",
+      "from": "Balanced Spender",
+      "to": "Balanced Spender"
+    },
+    {
+      "month": "2026-02",
+      "from": "Balanced Spender",
+      "to": "Balanced Spender"
+    },
+    {
+      "month": "2026-03",
+      "from": "Balanced Spender",
+      "to": "Lifestyle Spender"
+    }
+  ],
+  "trainedAt": "2026-03-05T18:19:10.661Z"
+}

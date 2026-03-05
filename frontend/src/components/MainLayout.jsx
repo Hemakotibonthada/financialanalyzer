@@ -25,12 +25,20 @@ import {
   Building2,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Plus,
+  DollarSign,
+  X,
+  Check,
+  Calendar,
+  Tag,
+  Loader2
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import ThemeToggle from './ThemeToggle';
 import ThemePicker from './ThemePicker';
 import NotificationBell from './NotificationBell';
+import api from '../services/api';
 
 /**
  * MainLayout Component
@@ -47,10 +55,45 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef(null);
 
+  // ── Quick Add Expense state ──
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [expenseSaving, setExpenseSaving] = useState(false);
+  const [expenseSuccess, setExpenseSuccess] = useState(false);
+  const expenseRef = useRef(null);
+  const [expenseForm, setExpenseForm] = useState({
+    description: '',
+    amount: '',
+    category: 'other',
+    type: 'expense',
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  const EXPENSE_CATEGORIES = [
+    { value: 'food_dining', label: 'Food & Dining' },
+    { value: 'groceries', label: 'Groceries' },
+    { value: 'transportation', label: 'Transportation' },
+    { value: 'fuel', label: 'Fuel' },
+    { value: 'utilities', label: 'Utilities' },
+    { value: 'rent_mortgage', label: 'Rent / Mortgage' },
+    { value: 'healthcare', label: 'Healthcare' },
+    { value: 'entertainment', label: 'Entertainment' },
+    { value: 'shopping', label: 'Shopping' },
+    { value: 'education', label: 'Education' },
+    { value: 'travel', label: 'Travel' },
+    { value: 'subscriptions', label: 'Subscriptions' },
+    { value: 'investment', label: 'Investment' },
+    { value: 'emi', label: 'EMI' },
+    { value: 'insurance', label: 'Insurance' },
+    { value: 'other', label: 'Other' },
+  ];
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
         setProfileDropdownOpen(false);
+      }
+      if (expenseRef.current && !expenseRef.current.contains(event.target)) {
+        setExpenseOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -59,7 +102,29 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
 
   useEffect(() => {
     setProfileDropdownOpen(false);
+    setExpenseOpen(false);
   }, [location.pathname]);
+
+  const handleAddExpense = async () => {
+    if (!expenseForm.description.trim() || !expenseForm.amount) return;
+    setExpenseSaving(true);
+    try {
+      await api.post('/api/transactions', {
+        ...expenseForm,
+        amount: parseFloat(expenseForm.amount),
+      });
+      setExpenseSuccess(true);
+      setTimeout(() => {
+        setExpenseSuccess(false);
+        setExpenseOpen(false);
+        setExpenseForm({ description: '', amount: '', category: 'other', type: 'expense', date: new Date().toISOString().split('T')[0] });
+      }, 1200);
+    } catch (err) {
+      console.error('Quick expense error:', err);
+    } finally {
+      setExpenseSaving(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -104,6 +169,113 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
 
               {/* Right Side Actions */}
               <div className="flex items-center gap-2 sm:gap-3">
+
+                {/* ── Add Expense Button + Dropdown ── */}
+                <div className="relative" ref={expenseRef}>
+                  <button
+                    onClick={() => setExpenseOpen(!expenseOpen)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+                    title="Quick Add Expense"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add Expense</span>
+                  </button>
+
+                  {expenseOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      {/* Header */}
+                      <div className="px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-5 h-5" />
+                          <span className="font-semibold text-sm">Quick Add Expense</span>
+                        </div>
+                        <button onClick={() => setExpenseOpen(false)} className="hover:bg-white/20 rounded-lg p-1 transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {expenseSuccess ? (
+                        <div className="p-8 flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center">
+                            <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
+                          </div>
+                          <p className="font-semibold text-green-700 dark:text-green-400">Expense Added!</p>
+                        </div>
+                      ) : (
+                        <div className="p-4 space-y-3">
+                          {/* Description */}
+                          <div>
+                            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Description</label>
+                            <input
+                              type="text"
+                              value={expenseForm.description}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                              placeholder="e.g. Coffee, Groceries, Uber..."
+                              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                              autoFocus
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
+                            />
+                          </div>
+
+                          {/* Amount + Date row */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Amount (₹)</label>
+                              <div className="relative">
+                                <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                                <input
+                                  type="number"
+                                  value={expenseForm.amount}
+                                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                                  placeholder="0.00"
+                                  className="w-full pl-8 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                  onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Date</label>
+                              <input
+                                type="date"
+                                value={expenseForm.date}
+                                onChange={(e) => setExpenseForm({ ...expenseForm, date: e.target.value })}
+                                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Category */}
+                          <div>
+                            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Category</label>
+                            <select
+                              value={expenseForm.category}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                            >
+                              {EXPENSE_CATEGORIES.map(c => (
+                                <option key={c.value} value={c.value}>{c.label}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Submit */}
+                          <button
+                            onClick={handleAddExpense}
+                            disabled={!expenseForm.description.trim() || !expenseForm.amount || expenseSaving}
+                            className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl text-sm font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                          >
+                            {expenseSaving ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                            ) : (
+                              <><Plus className="w-4 h-4" /> Add Expense</>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <NotificationBell />
                 <ThemeToggle />
                 <ThemePicker />

@@ -13,6 +13,7 @@ const {
   FinancialPlanGenerator,
   FinancialMath,
 } = require('../services/financialPlanningService');
+const logger = require('../utils/logger');
 
 const financialPlanningController = {
   // POST /api/planning/retirement — Retirement planning
@@ -22,6 +23,7 @@ const financialPlanningController = {
       const result = planner.calculate();
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -33,6 +35,7 @@ const financialPlanningController = {
       const result = InvestmentCalculator.sipReturns(monthlySIP, annualReturn, years, annualStepUp);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -44,6 +47,7 @@ const financialPlanningController = {
       const result = InvestmentCalculator.lumpsumReturns(amount, annualReturn, years);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -55,6 +59,7 @@ const financialPlanningController = {
       const result = InvestmentCalculator.sipForGoal(targetAmount, annualReturn, years);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -66,6 +71,7 @@ const financialPlanningController = {
       const result = InvestmentCalculator.sipDelayCost(monthlySIP, annualReturn, totalYears, delayYears);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -78,6 +84,7 @@ const financialPlanningController = {
       const result = optimizer.compare(extraMonthlyPayment);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -89,6 +96,7 @@ const financialPlanningController = {
       const result = planner.calculate(req.body);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -101,6 +109,7 @@ const financialPlanningController = {
       const result = optimizer.calculateTax(grossIncome, deductions);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -113,6 +122,7 @@ const financialPlanningController = {
       const result = optimizer.getOptimizationTips(income, currentDeductions);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -124,6 +134,7 @@ const financialPlanningController = {
       const result = projector.project(req.body);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -136,6 +147,7 @@ const financialPlanningController = {
       const health = calculator.calculateHealthInsurance(req.body);
       res.json({ success: true, data: { life, health } });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -147,6 +159,7 @@ const financialPlanningController = {
       const result = generator.generate(req.body);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },
@@ -158,6 +171,7 @@ const financialPlanningController = {
       const result = FinancialMath.amortizationSchedule(principal, annualRate, tenureMonths);
       res.json({ success: true, data: result });
     } catch (err) {
+      logger.error('Financial planning error:', err.message);
       res.status(500).json({ success: false, message: err.message });
     }
   },

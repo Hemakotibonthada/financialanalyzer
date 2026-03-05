@@ -54,6 +54,14 @@ const transports = [
     maxFiles: 5,
     tailable: true,
   }),
+  new winston.transports.File({
+    filename: path.join(__dirname, '../logs/http.log'),
+    level: 'http',
+    format: fileFormat,
+    maxsize: 10 * 1024 * 1024,
+    maxFiles: 5,
+    tailable: true,
+  }),
 ];
 
 const logger = winston.createLogger({

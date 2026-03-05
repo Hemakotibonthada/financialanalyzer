@@ -1,0 +1,882 @@
+{
+  "version": 1,
+  "avgIncome": 212882,
+  "categoryAnalysis": {
+    "Transport": {
+      "average": 2319,
+      "median": 2223,
+      "standardDeviation": 1015,
+      "elasticity": 0.44,
+      "necessityScore": 56,
+      "type": "mixed",
+      "optimalBudget": 2319,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -251.64285714285714,
+        "intercept": 2742.5,
+        "r2": 0.16441337698498415
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 3373
+        },
+        {
+          "month": "2025-10",
+          "amount": 1191
+        },
+        {
+          "month": "2025-11",
+          "amount": 3015
+        },
+        {
+          "month": "2025-12",
+          "amount": 1430
+        },
+        {
+          "month": "2026-01",
+          "amount": 1338
+        },
+        {
+          "month": "2026-02",
+          "amount": 3566
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Salary": {
+      "average": 11998,
+      "median": 11175,
+      "standardDeviation": 4751,
+      "elasticity": 0.4,
+      "necessityScore": 60,
+      "type": "mixed",
+      "optimalBudget": 11998,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -2179.3571428571427,
+        "intercept": 16821.642857142855,
+        "r2": 0.5138264672981749
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 10036
+        },
+        {
+          "month": "2025-10",
+          "amount": 15079
+        },
+        {
+          "month": "2025-11",
+          "amount": 20015
+        },
+        {
+          "month": "2025-12",
+          "amount": 12314
+        },
+        {
+          "month": "2026-01",
+          "amount": 9823
+        },
+        {
+          "month": "2026-02",
+          "amount": 4718
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Healthcare": {
+      "average": 14643,
+      "median": 12094,
+      "standardDeviation": 6202,
+      "elasticity": 0.42,
+      "necessityScore": 58,
+      "type": "essential",
+      "optimalBudget": 15375,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -492,
+        "intercept": 14026.857142857143,
+        "r2": 0.016347648962001693
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 10998
+        },
+        {
+          "month": "2025-10",
+          "amount": 8056
+        },
+        {
+          "month": "2025-11",
+          "amount": 13189
+        },
+        {
+          "month": "2025-12",
+          "amount": 26195
+        },
+        {
+          "month": "2026-01",
+          "amount": 10317
+        },
+        {
+          "month": "2026-02",
+          "amount": 19101
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Transfer": {
+      "average": 13840,
+      "median": 14207,
+      "standardDeviation": 1747,
+      "elasticity": 0.13,
+      "necessityScore": 87,
+      "type": "mixed",
+      "optimalBudget": 13840,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -1491.4642857142858,
+        "intercept": 16337.107142857143,
+        "r2": 0.3413150921504202
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 16628
+        },
+        {
+          "month": "2025-10",
+          "amount": 10949
+        },
+        {
+          "month": "2025-11",
+          "amount": 12600
+        },
+        {
+          "month": "2025-12",
+          "amount": 14448
+        },
+        {
+          "month": "2026-01",
+          "amount": 14207
+        },
+        {
+          "month": "2026-02",
+          "amount": 14207
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Investment": {
+      "average": 12952,
+      "median": 11964,
+      "standardDeviation": 8159,
+      "elasticity": 0.63,
+      "necessityScore": 37,
+      "type": "mixed",
+      "optimalBudget": 12952,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -1249.2857142857142,
+        "intercept": 16699.428571428572,
+        "r2": 0.09377299033476438
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 21925
+        },
+        {
+          "month": "2025-10",
+          "amount": 4047
+        },
+        {
+          "month": "2025-11",
+          "amount": 11964
+        },
+        {
+          "month": "2025-12",
+          "amount": 26193
+        },
+        {
+          "month": "2026-01",
+          "amount": 6371
+        },
+        {
+          "month": "2026-02",
+          "amount": 16001
+        },
+        {
+          "month": "2026-03",
+          "amount": 4160
+        }
+      ]
+    },
+    "Subscription": {
+      "average": 3098,
+      "median": 2478,
+      "standardDeviation": 1420,
+      "elasticity": 0.46,
+      "necessityScore": 54,
+      "type": "mixed",
+      "optimalBudget": 3098,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -640.0357142857143,
+        "intercept": 4133.25,
+        "r2": 0.482017940127486
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 5007
+        },
+        {
+          "month": "2025-10",
+          "amount": 1637
+        },
+        {
+          "month": "2025-11",
+          "amount": 4582
+        },
+        {
+          "month": "2025-12",
+          "amount": 1788
+        },
+        {
+          "month": "2026-01",
+          "amount": 0
+        },
+        {
+          "month": "2026-02",
+          "amount": 2478
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "EMI": {
+      "average": 8333,
+      "median": 9352,
+      "standardDeviation": 3982,
+      "elasticity": 0.48,
+      "necessityScore": 52,
+      "type": "essential",
+      "optimalBudget": 8749,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -1093.0714285714287,
+        "intercept": 10421.5,
+        "r2": 0.21628821650173513
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 9810
+        },
+        {
+          "month": "2025-10",
+          "amount": 8894
+        },
+        {
+          "month": "2025-11",
+          "amount": 12743
+        },
+        {
+          "month": "2025-12",
+          "amount": 1181
+        },
+        {
+          "month": "2026-01",
+          "amount": 5381
+        },
+        {
+          "month": "2026-02",
+          "amount": 11987
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Fuel": {
+      "average": 8343,
+      "median": 7904,
+      "standardDeviation": 3111,
+      "elasticity": 0.37,
+      "necessityScore": 63,
+      "type": "mixed",
+      "optimalBudget": 8343,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -1107.1428571428573,
+        "intercept": 10472.714285714286,
+        "r2": 0.2914989264758828
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 9064
+        },
+        {
+          "month": "2025-10",
+          "amount": 10724
+        },
+        {
+          "month": "2025-11",
+          "amount": 5297
+        },
+        {
+          "month": "2025-12",
+          "amount": 6744
+        },
+        {
+          "month": "2026-01",
+          "amount": 13523
+        },
+        {
+          "month": "2026-02",
+          "amount": 4707
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Gifts": {
+      "average": 12213,
+      "median": 11383,
+      "standardDeviation": 7237,
+      "elasticity": 0.59,
+      "necessityScore": 41,
+      "type": "mixed",
+      "optimalBudget": 12213,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -1588.642857142857,
+        "intercept": 16978.64285714286,
+        "r2": 0.1927632133194601
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 7682
+        },
+        {
+          "month": "2025-10",
+          "amount": 19526
+        },
+        {
+          "month": "2025-11",
+          "amount": 25549
+        },
+        {
+          "month": "2025-12",
+          "amount": 11383
+        },
+        {
+          "month": "2026-01",
+          "amount": 4433
+        },
+        {
+          "month": "2026-02",
+          "amount": 12016
+        },
+        {
+          "month": "2026-03",
+          "amount": 4900
+        }
+      ]
+    },
+    "Recharge": {
+      "average": 2372,
+      "median": 2373,
+      "standardDeviation": 1543,
+      "elasticity": 0.65,
+      "necessityScore": 35,
+      "type": "mixed",
+      "optimalBudget": 2372,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -174.39285714285714,
+        "intercept": 2894.8928571428573,
+        "r2": 0.051122517530295286
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 1964
+        },
+        {
+          "month": "2025-10",
+          "amount": 2373
+        },
+        {
+          "month": "2025-11",
+          "amount": 2726
+        },
+        {
+          "month": "2025-12",
+          "amount": 2630
+        },
+        {
+          "month": "2026-01",
+          "amount": 5555
+        },
+        {
+          "month": "2026-02",
+          "amount": 1136
+        },
+        {
+          "month": "2026-03",
+          "amount": 218
+        }
+      ]
+    },
+    "Groceries": {
+      "average": 12359,
+      "median": 9816,
+      "standardDeviation": 7370,
+      "elasticity": 0.6,
+      "necessityScore": 40,
+      "type": "essential",
+      "optimalBudget": 12977,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": 1080.392857142857,
+        "intercept": 7352.535714285715,
+        "r2": 0.07154563830232596
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 5685
+        },
+        {
+          "month": "2025-10",
+          "amount": 7671
+        },
+        {
+          "month": "2025-11",
+          "amount": 6702
+        },
+        {
+          "month": "2025-12",
+          "amount": 11960
+        },
+        {
+          "month": "2026-01",
+          "amount": 14926
+        },
+        {
+          "month": "2026-02",
+          "amount": 27212
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Entertainment": {
+      "average": 6906,
+      "median": 6580,
+      "standardDeviation": 2895,
+      "elasticity": 0.42,
+      "necessityScore": 58,
+      "type": "discretionary",
+      "optimalBudget": 5593,
+      "savingsPotential": 1036,
+      "trend": {
+        "slope": -787.6785714285714,
+        "intercept": 9269.32142857143,
+        "r2": 0.2960913416325237
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 6580
+        },
+        {
+          "month": "2025-10",
+          "amount": 12965
+        },
+        {
+          "month": "2025-11",
+          "amount": 5766
+        },
+        {
+          "month": "2025-12",
+          "amount": 6665
+        },
+        {
+          "month": "2026-01",
+          "amount": 5939
+        },
+        {
+          "month": "2026-02",
+          "amount": 7845
+        },
+        {
+          "month": "2026-03",
+          "amount": 2584
+        }
+      ]
+    },
+    "Shopping": {
+      "average": 18998,
+      "median": 16372,
+      "standardDeviation": 15755,
+      "elasticity": 0.83,
+      "necessityScore": 17,
+      "type": "discretionary",
+      "optimalBudget": 13916,
+      "savingsPotential": 2850,
+      "trend": {
+        "slope": -5239.428571428572,
+        "intercept": 32002.285714285714,
+        "r2": 0.4273486672793735
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 49809
+        },
+        {
+          "month": "2025-10",
+          "amount": 4688
+        },
+        {
+          "month": "2025-11",
+          "amount": 12884
+        },
+        {
+          "month": "2025-12",
+          "amount": 24186
+        },
+        {
+          "month": "2026-01",
+          "amount": 19859
+        },
+        {
+          "month": "2026-02",
+          "amount": 2562
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Utilities": {
+      "average": 9339,
+      "median": 8110,
+      "standardDeviation": 3904,
+      "elasticity": 0.42,
+      "necessityScore": 58,
+      "type": "essential",
+      "optimalBudget": 9806,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -733.5714285714286,
+        "intercept": 10205.285714285714,
+        "r2": 0.09065212965641245
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 8021
+        },
+        {
+          "month": "2025-10",
+          "amount": 3417
+        },
+        {
+          "month": "2025-11",
+          "amount": 13410
+        },
+        {
+          "month": "2025-12",
+          "amount": 15201
+        },
+        {
+          "month": "2026-01",
+          "amount": 8199
+        },
+        {
+          "month": "2026-02",
+          "amount": 7784
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Travel": {
+      "average": 27422,
+      "median": 21195,
+      "standardDeviation": 14918,
+      "elasticity": 0.54,
+      "necessityScore": 46,
+      "type": "discretionary",
+      "optimalBudget": 18016,
+      "savingsPotential": 4113,
+      "trend": {
+        "slope": -2212.6428571428573,
+        "intercept": 34059.642857142855,
+        "r2": 0.0879998228049571
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 19597
+        },
+        {
+          "month": "2025-10",
+          "amount": 48400
+        },
+        {
+          "month": "2025-11",
+          "amount": 40112
+        },
+        {
+          "month": "2025-12",
+          "amount": 4351
+        },
+        {
+          "month": "2026-01",
+          "amount": 41766
+        },
+        {
+          "month": "2026-02",
+          "amount": 21195
+        },
+        {
+          "month": "2026-03",
+          "amount": 16531
+        }
+      ]
+    },
+    "Education": {
+      "average": 18884,
+      "median": 19616,
+      "standardDeviation": 12229,
+      "elasticity": 0.65,
+      "necessityScore": 35,
+      "type": "essential",
+      "optimalBudget": 19829,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -342.89285714285717,
+        "intercept": 19913.107142857145,
+        "r2": 0.003144835841904281
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 13524
+        },
+        {
+          "month": "2025-10",
+          "amount": 30308
+        },
+        {
+          "month": "2025-11",
+          "amount": 1000
+        },
+        {
+          "month": "2025-12",
+          "amount": 33213
+        },
+        {
+          "month": "2026-01",
+          "amount": 19616
+        },
+        {
+          "month": "2026-02",
+          "amount": 30619
+        },
+        {
+          "month": "2026-03",
+          "amount": 3911
+        }
+      ]
+    },
+    "Food & Dining": {
+      "average": 4107,
+      "median": 3401,
+      "standardDeviation": 1943,
+      "elasticity": 0.47,
+      "necessityScore": 53,
+      "type": "mixed",
+      "optimalBudget": 4107,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -251,
+        "intercept": 4273.142857142857,
+        "r2": 0.04754560894546811
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 2913
+        },
+        {
+          "month": "2025-10",
+          "amount": 4475
+        },
+        {
+          "month": "2025-11",
+          "amount": 3706
+        },
+        {
+          "month": "2025-12",
+          "amount": 2276
+        },
+        {
+          "month": "2026-01",
+          "amount": 8175
+        },
+        {
+          "month": "2026-02",
+          "amount": 3096
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Freelance": {
+      "average": 5851,
+      "median": 5153,
+      "standardDeviation": 3383,
+      "elasticity": 0.58,
+      "necessityScore": 42,
+      "type": "mixed",
+      "optimalBudget": 5851,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -1040.5714285714287,
+        "intercept": 8136.428571428572,
+        "r2": 0.309331643597473
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 4272
+        },
+        {
+          "month": "2025-10",
+          "amount": 6033
+        },
+        {
+          "month": "2025-11",
+          "amount": 9928
+        },
+        {
+          "month": "2025-12",
+          "amount": 10453
+        },
+        {
+          "month": "2026-01",
+          "amount": 3160
+        },
+        {
+          "month": "2026-02",
+          "amount": 1257
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    },
+    "Insurance": {
+      "average": 6425,
+      "median": 5925,
+      "standardDeviation": 3109,
+      "elasticity": 0.48,
+      "necessityScore": 52,
+      "type": "essential",
+      "optimalBudget": 6746,
+      "savingsPotential": 0,
+      "trend": {
+        "slope": -371.2142857142858,
+        "intercept": 6620.9285714285725,
+        "r2": 0.04131248279972766
+      },
+      "monthlyValues": [
+        {
+          "month": "2025-09",
+          "amount": 2936
+        },
+        {
+          "month": "2025-10",
+          "amount": 4954
+        },
+        {
+          "month": "2025-11",
+          "amount": 6965
+        },
+        {
+          "month": "2025-12",
+          "amount": 12605
+        },
+        {
+          "month": "2026-01",
+          "amount": 6895
+        },
+        {
+          "month": "2026-02",
+          "amount": 4196
+        },
+        {
+          "month": "2026-03",
+          "amount": 0
+        }
+      ]
+    }
+  },
+  "ruleAnalysis": {
+    "needs": {
+      "actual": 69983,
+      "recommended": 106441,
+      "percentage": 33
+    },
+    "wants": {
+      "actual": 53326,
+      "recommended": 63864,
+      "percentage": 25
+    },
+    "savings": {
+      "actual": 30017,
+      "recommended": 42576,
+      "percentage": 14
+    }
+  },
+  "totalCategories": 19,
+  "totalMonthsAnalyzed": 7,
+  "totalSavingsPotential": 7999,
+  "trainedAt": "2026-03-05T18:19:10.444Z"
+}

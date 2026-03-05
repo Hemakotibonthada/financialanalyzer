@@ -1,4 +1,5 @@
 const ActivityLog = require('../models/ActivityLog');
+const logger = require('../utils/logger');
 
 /**
  * Activity Logging Middleware
@@ -33,16 +34,102 @@ const getResourceFromPath = (path) => {
   
   // Map API paths to resources
   const resourceMap = {
+    // Core financial
     transactions: 'transaction',
     documents: 'document',
     profile: 'profile',
     emi: 'emi',
+    emis: 'emi',
     budgets: 'budget',
-    analytics: 'analysis',
+    analytics: 'analytics',
+    'analytics-v2': 'analytics',
     gmail: 'gmail',
     'real-cibil': 'cibil',
-    auth: 'user',
-    admin: 'other'
+    auth: 'auth',
+    '2fa': 'auth',
+    admin: 'admin',
+    // Investments & wealth
+    investments: 'investment',
+    portfolio: 'portfolio',
+    goals: 'goal',
+    'goal-tracking': 'goal',
+    networth: 'networth',
+    // Debt & loans
+    debt: 'debt',
+    debts: 'debt',
+    'personal-loans': 'loan',
+    'loans-given': 'loan',
+    'cc-bills': 'credit_card',
+    lenders: 'lender',
+    'lender-loans': 'lender',
+    'lender-payments': 'lender',
+    // AI & ML
+    ai: 'ai',
+    'ai-training': 'ai',
+    'ai-models': 'ai',
+    'ai-intelligence': 'ai',
+    'ai-enhanced': 'ai',
+    'ai-extended': 'ai',
+    'ai-advanced': 'ai',
+    'ai-premium': 'ai',
+    ml: 'ml',
+    // Enterprise
+    'company-expenses': 'company_expense',
+    'split-expenses': 'split_expense',
+    receipts: 'receipt',
+    'bank-accounts': 'bank_account',
+    automation: 'automation',
+    family: 'family',
+    templates: 'template',
+    chat: 'chat',
+    market: 'market',
+    // Data & export
+    export: 'export',
+    'export-engine': 'export',
+    'data-export': 'export',
+    'data-management': 'data',
+    csv: 'csv',
+    backup: 'backup',
+    'import-export': 'data',
+    // Insurance, tax, real estate
+    insurance: 'insurance',
+    tax: 'tax',
+    'tax-optimization': 'tax',
+    'real-estate': 'real_estate',
+    retirement: 'retirement',
+    planning: 'planning',
+    // Notifications & security
+    notifications: 'notification',
+    'smart-notifications': 'notification',
+    'enterprise-notifications': 'notification',
+    security: 'security',
+    'security-v2': 'security',
+    // Search & misc
+    search: 'search',
+    'advanced-search': 'search',
+    insights: 'insight',
+    'financial-insights': 'insight',
+    'financial-reports': 'report',
+    forecast: 'forecast',
+    currency: 'currency',
+    'currency-v2': 'currency',
+    recurring: 'recurring',
+    subscriptions: 'subscription',
+    achievements: 'achievement',
+    aggregation: 'aggregation',
+    'budget-optimization': 'budget',
+    categorize: 'categorization',
+    'risk-assessment': 'risk',
+    webhooks: 'webhook',
+    support: 'support',
+    jobs: 'jobs',
+    cache: 'cache',
+    'bill-reminders': 'bill_reminder',
+    'activity-logs': 'activity_log',
+    business: 'business',
+    financial: 'financial',
+    drive: 'drive',
+    health: 'health',
   };
 
   // Find matching resource in path
@@ -65,7 +152,18 @@ const determineAction = (method, path) => {
   if (path.includes('/sync')) return 'gmail_sync';
   if (path.includes('/upload')) return 'document_upload';
   if (path.includes('/export')) return 'export_data';
+  if (path.includes('/import')) return 'import_data';
   if (path.includes('/refresh') && path.includes('cibil')) return 'cibil_refresh';
+  if (path.includes('/train')) return 'ai_train';
+  if (path.includes('/predict')) return 'ai_predict';
+  if (path.includes('/forecast')) return 'forecast_generate';
+  if (path.includes('/backup')) return 'backup_create';
+  if (path.includes('/restore')) return 'backup_restore';
+  if (path.includes('/password')) return 'password_change';
+  if (path.includes('/2fa')) return '2fa_manage';
+  if (path.includes('/categorize')) return 'categorization';
+  if (path.includes('/optimize')) return 'optimization_run';
+  if (path.includes('/download')) return 'file_download';
   
   // Generic action based on resource and method
   const resource = getResourceFromPath(path);
@@ -193,11 +291,21 @@ const activityLogger = (options = {}) => {
 
         // Log to database (async, don't wait)
         ActivityLog.logActivity(logData).catch(err => {
-          console.error('Activity log save failed:', err.message);
+          logger.error('Activity log save failed:', err.message);
         });
 
+        // Also log to Winston file logs for persistent file-based audit trail
+        const logMsg = `[${req.method}] ${req.path} → ${statusCode} (${duration}ms) user=${req.user._id} action=${action}`;
+        if (statusCode >= 500) {
+          logger.error(logMsg);
+        } else if (statusCode >= 400) {
+          logger.warn(logMsg);
+        } else {
+          logger.http(logMsg);
+        }
+
       } catch (error) {
-        console.error('Activity logging error:', error);
+        logger.error('Activity logging error:', error);
       }
     });
 
@@ -220,7 +328,7 @@ const logActivity = async (userId, action, details = {}) => {
       severity: details.severity || 'info'
     });
   } catch (error) {
-    console.error('Manual activity log failed:', error);
+    logger.error('Manual activity log failed:', error);
   }
 };
 
@@ -239,7 +347,7 @@ const logChange = async (userId, action, resource, resourceId, before, after) =>
       severity: 'info'
     });
   } catch (error) {
-    console.error('Change log failed:', error);
+    logger.error('Change log failed:', error);
   }
 };
 

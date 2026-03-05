@@ -10,14 +10,15 @@
 
 const localAIEngine = require('../services/localAIEngine');
 const Transaction = require('../models/Transaction');
+const logger = require('../utils/logger');
 
 let aiPipeline = null;
 try {
   const { AITrainingPipeline } = require('../services/ai/trainingPipeline');
   aiPipeline = new AITrainingPipeline();
-  aiPipeline.initialize().catch(err => console.error('AI Pipeline init error:', err.message));
+  aiPipeline.initialize().catch(err => logger.error('AI Pipeline init error:', err.message));
 } catch (err) {
-  console.warn('AI Pipeline not available:', err.message);
+  logger.warn('AI Pipeline not available:', err.message);
 }
 
 let nlpModules = null;
@@ -31,7 +32,7 @@ try {
     conversations: new ConversationManager(),
   };
 } catch (err) {
-  console.warn('NLP modules not available:', err.message);
+  logger.warn('NLP modules not available:', err.message);
 }
 
 let timeSeriesModules = null;
@@ -45,7 +46,7 @@ try {
     movingAverage: MovingAverage,
   };
 } catch (err) {
-  console.warn('Time series modules not available:', err.message);
+  logger.warn('Time series modules not available:', err.message);
 }
 
 let clusteringModules = null;
@@ -56,7 +57,7 @@ try {
     patternDiscovery: new SpendingPatternDiscovery(),
   };
 } catch (err) {
-  console.warn('Clustering modules not available:', err.message);
+  logger.warn('Clustering modules not available:', err.message);
 }
 
 let riskModules = null;
@@ -66,7 +67,7 @@ try {
     riskClassifier: new FinancialRiskClassifier(),
   };
 } catch (err) {
-  console.warn('Risk modules not available:', err.message);
+  logger.warn('Risk modules not available:', err.message);
 }
 
 // ============================================================
@@ -104,7 +105,7 @@ const aiController = {
         aiPipeline: pipelineStatus,
       });
     } catch (error) {
-      console.error('AI Dashboard error:', error);
+      logger.error('AI Dashboard error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -116,7 +117,7 @@ const aiController = {
       const score = await localAIEngine.health.calculateHealthScore(userId);
       res.json({ success: true, ...score });
     } catch (error) {
-      console.error('Health score error:', error);
+      logger.error('Health score error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -128,7 +129,7 @@ const aiController = {
       const result = await localAIEngine.recommendations.generateRecommendations(userId);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('Recommendations error:', error);
+      logger.error('Recommendations error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -147,7 +148,7 @@ const aiController = {
           const transactions = await getUserTransactions(userId, 365);
           advancedForecast = timeSeriesModules.forecaster.comprehensiveForecast(transactions, Math.ceil(days / 30));
         } catch (err) {
-          console.warn('Advanced forecast unavailable:', err.message);
+          logger.warn('Advanced forecast unavailable:', err.message);
         }
       }
 
@@ -156,7 +157,7 @@ const aiController = {
         advancedForecast,
       });
     } catch (error) {
-      console.error('Spending forecast error:', error);
+      logger.error('Spending forecast error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -169,7 +170,7 @@ const aiController = {
       const result = await localAIEngine.forecast.predictIncome(userId, months);
       res.json(result);
     } catch (error) {
-      console.error('Income forecast error:', error);
+      logger.error('Income forecast error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -181,7 +182,7 @@ const aiController = {
       const result = await localAIEngine.forecast.analyzeSavingsPotential(userId);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('Savings analysis error:', error);
+      logger.error('Savings analysis error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -199,13 +200,13 @@ const aiController = {
           const transactions = await getUserTransactions(userId, 90);
           advancedAnomalies = aiPipeline.detectAnomalies(transactions);
         } catch (err) {
-          console.warn('Advanced anomaly detection unavailable:', err.message);
+          logger.warn('Advanced anomaly detection unavailable:', err.message);
         }
       }
 
       res.json({ success: true, ...result, advancedAnomalies });
     } catch (error) {
-      console.error('Anomaly detection error:', error);
+      logger.error('Anomaly detection error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -218,7 +219,7 @@ const aiController = {
       const result = await localAIEngine.insights.generateInsights(userId, period);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('Insights error:', error);
+      logger.error('Insights error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -237,13 +238,13 @@ const aiController = {
         try {
           advancedRecurring = timeSeriesModules.recurring.detect(transactions);
         } catch (err) {
-          console.warn('Advanced recurring detection unavailable:', err.message);
+          logger.warn('Advanced recurring detection unavailable:', err.message);
         }
       }
 
       res.json({ success: true, patterns, advancedRecurring, count: patterns.length });
     } catch (error) {
-      console.error('Recurring pattern error:', error);
+      logger.error('Recurring pattern error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -256,7 +257,7 @@ const aiController = {
       const merchants = localAIEngine.patterns.analyzeMerchantAffinity(transactions);
       res.json({ success: true, merchants: merchants.slice(0, 30) });
     } catch (error) {
-      console.error('Merchant analysis error:', error);
+      logger.error('Merchant analysis error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -271,7 +272,7 @@ const aiController = {
       const velocity = localAIEngine.patterns.detectVelocityChanges(debitTxns, days);
       res.json({ success: true, ...velocity });
     } catch (error) {
-      console.error('Velocity analysis error:', error);
+      logger.error('Velocity analysis error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -288,7 +289,7 @@ const aiController = {
         const aiModelTrainer = require('../services/aiModelTrainer');
         trainerResults = await aiModelTrainer.trainAllModels(userId);
       } catch (err) {
-        console.warn('aiModelTrainer training unavailable:', err.message);
+        logger.warn('aiModelTrainer training unavailable:', err.message);
       }
 
       // Also train new AI pipeline if available
@@ -302,7 +303,7 @@ const aiController = {
             pipelineResults = { success: true, message: 'No transactions found — skipped pipeline training', modelsTotal: 0 };
           }
         } catch (err) {
-          console.warn('Pipeline training unavailable:', err.message);
+          logger.warn('Pipeline training unavailable:', err.message);
         }
       }
 
@@ -325,7 +326,7 @@ const aiController = {
         }
       });
     } catch (error) {
-      console.error('Model training error:', error);
+      logger.error('Model training error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -343,13 +344,13 @@ const aiController = {
         try {
           advancedCategory = aiPipeline.classifyCategory(description);
         } catch (err) {
-          console.warn('Advanced categorization unavailable:', err.message);
+          logger.warn('Advanced categorization unavailable:', err.message);
         }
       }
 
       res.json({ success: true, ...result, advancedCategory });
     } catch (error) {
-      console.error('Categorization error:', error);
+      logger.error('Categorization error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -371,7 +372,7 @@ const aiController = {
       const result = nlpModules.sentiment.analyzeTransactions(transactions);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('Sentiment analysis error:', error);
+      logger.error('Sentiment analysis error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -389,7 +390,7 @@ const aiController = {
       const result = nlpModules.ner.extract(text);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('Entity extraction error:', error);
+      logger.error('Entity extraction error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -450,7 +451,7 @@ const aiController = {
             responseData = {};
         }
       } catch (err) {
-        console.warn('Query data retrieval error:', err.message);
+        logger.warn('Query data retrieval error:', err.message);
       }
 
       // Generate response
@@ -466,7 +467,7 @@ const aiController = {
         conversationHistory: nlpModules.conversations.getHistory(userId, 5),
       });
     } catch (error) {
-      console.error('Query processing error:', error);
+      logger.error('Query processing error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -486,7 +487,7 @@ const aiController = {
       const projection = timeSeriesModules.cashflow.project(transactions, balance, months);
       res.json({ success: true, ...projection });
     } catch (error) {
-      console.error('Cashflow projection error:', error);
+      logger.error('Cashflow projection error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -516,7 +517,7 @@ const aiController = {
       const result = timeSeriesModules.changepoint.detectSpendingChanges(spendingArray);
       res.json({ success: true, ...result, dates: sortedDays });
     } catch (error) {
-      console.error('Changepoint detection error:', error);
+      logger.error('Changepoint detection error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -562,7 +563,7 @@ const aiController = {
 
       res.json({ success: true, ...risk });
     } catch (error) {
-      console.error('Risk assessment error:', error);
+      logger.error('Risk assessment error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -580,7 +581,7 @@ const aiController = {
       const patterns = clusteringModules.patternDiscovery.discover(transactions);
       res.json({ success: true, ...patterns });
     } catch (error) {
-      console.error('Spending patterns error:', error);
+      logger.error('Spending patterns error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -629,7 +630,7 @@ const aiController = {
         data: { income, expenses, savings: income - expenses, topCategories },
       });
     } catch (error) {
-      console.error('Financial summary error:', error);
+      logger.error('Financial summary error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -646,7 +647,7 @@ const aiController = {
 
       res.json({ success: true, status, dashboard });
     } catch (error) {
-      console.error('Pipeline status error:', error);
+      logger.error('Pipeline status error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },
@@ -684,7 +685,7 @@ const aiController = {
         bollinger: timeSeriesModules.movingAverage.BollingerBands(values, window),
       });
     } catch (error) {
-      console.error('Moving averages error:', error);
+      logger.error('Moving averages error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   },

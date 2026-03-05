@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "overallRisk": 60,
+  "riskLevel": "moderate",
+  "riskFactors": {
+    "incomeStability": {
+      "score": 32,
+      "weight": 20
+    },
+    "expenseControl": {
+      "score": 66,
+      "weight": 15
+    },
+    "debtManagement": {
+      "score": 62,
+      "weight": 20
+    },
+    "emergencyPreparedness": {
+      "score": 100,
+      "weight": 15
+    },
+    "diversification": {
+      "score": 60,
+      "weight": 10
+    },
+    "insuranceCoverage": {
+      "score": 100,
+      "weight": 10
+    },
+    "savingsTrend": {
+      "score": 0,
+      "weight": 10
+    }
+  },
+  "stressTests": {
+    "jobLoss": {
+      "scenario": "Job loss (no income for 6 months)",
+      "survivalMonths": 8,
+      "impact": "manageable",
+      "recommendation": "Emergency fund is adequate"
+    },
+    "interestRateHike": {
+      "scenario": "Interest rate hike (+2%)",
+      "additionalMonthlyBurden": 800,
+      "impact": "minimal"
+    },
+    "medicalEmergency": {
+      "scenario": "Medical emergency (₹5 lakh)",
+      "canAbsorb": true,
+      "percentOfSavings": 36,
+      "recommendation": "Covered by savings + insurance"
+    },
+    "incomeReduction": {
+      "scenario": "Income reduction (30% cut)",
+      "newSavingsRate": -43,
+      "canMeetEMIs": false
+    }
+  },
+  "metrics": {
+    "avgMonthlyIncome": 182470,
+    "avgMonthlyExpenses": 182864,
+    "monthlyEMI": 34850,
+    "totalBalance": 1402000,
+    "totalInvested": 1722090,
+    "emergencyMonths": 7.7,
+    "debtToIncome": 0.19
+  },
+  "trainedAt": "2026-03-05T18:19:10.545Z"
+}

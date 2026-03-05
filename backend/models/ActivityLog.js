@@ -10,37 +10,14 @@ const activityLogSchema = new mongoose.Schema({
   action: {
     type: String,
     required: true,
-    enum: [
-      // Authentication
-      'login', 'logout', 'register', 'password_change', '2fa_enable', '2fa_disable',
-      // Transactions
-      'transaction_create', 'transaction_update', 'transaction_delete', 'transaction_view',
-      // Documents
-      'document_upload', 'document_delete', 'document_download', 'document_analyze',
-      // Profile
-      'profile_update', 'profile_view', 'settings_change',
-      // Financial
-      'analysis_run', 'report_generate', 'export_data',
-      // EMI
-      'emi_create', 'emi_update', 'emi_delete', 'emi_payment_record',
-      // Budget
-      'budget_create', 'budget_update', 'budget_delete', 'budget_alert',
-      // Gmail
-      'gmail_connect', 'gmail_disconnect', 'gmail_sync',
-      // CIBIL
-      'cibil_refresh', 'cibil_view',
-      // Admin
-      'admin_action', 'user_manage',
-      // Other
-      'other'
-    ]
+    // Accept any string — dynamically generated from method + resource path
+    // Common patterns: login, logout, register, transaction_create, emi_update, ai_view, etc.
+    trim: true
   },
   resource: {
     type: String,
-    enum: [
-      'user', 'transaction', 'document', 'profile', 'emi', 'budget',
-      'analysis', 'report', 'gmail', 'cibil', 'settings', 'other'
-    ],
+    // Accept any resource type — new modules add new resources dynamically
+    trim: true,
     required: true
   },
   resourceId: {
