@@ -407,6 +407,8 @@ app.use('/api/wealth', require('./routes/wealthManagementRoutes'));
 app.use('/api/expense-intelligence', require('./routes/expenseIntelligenceRoutes'));
 // Borrowing Intelligence — AI-powered loan analysis, predictions, self-training
 app.use('/api/borrowing-intelligence', require('./routes/borrowingIntelligenceRoutes'));
+// Local AI Engine — chat, categorization, alerts (works offline, Ollama optional)
+app.use('/api/local-ai', require('./routes/localAIRoutes'));
 
 // Enterprise Health & Admin Analytics
 app.get('/api/enterprise-health', healthCheckHandler);
