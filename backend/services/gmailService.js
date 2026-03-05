@@ -204,11 +204,11 @@ class GmailService {
         refresh_token: refreshToken
       });
       
-      const { credentials } = await this.oauth2Client.refreshAccessToken();
+      const { credentials } = await this.oauth2Client.refreshToken(refreshToken);
       return credentials;
     } catch (error) {
-      logger.error('Error refreshing access token:', error);
-      throw new Error('Failed to refresh access token');
+      logger.error('Error refreshing access token:', error.message);
+      throw new Error(`Failed to refresh access token: ${error.message}`);
     }
   }
 

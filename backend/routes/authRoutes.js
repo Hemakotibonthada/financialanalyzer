@@ -603,29 +603,18 @@ router.post('/gmail/save-tokens', authenticate, async (req, res) => {
 
     logger.info('Finding user profile for user:', req.user._id);
 
-    // Update user profile with Gmail settings
+    // Update user profile with Gmail settings — use upsert to handle race conditions
     let profile;
     try {
-      profile = await FinancialProfile.findOne({ userId: req.user._id });
-      logger.info('Profile lookup result:', { found: !!profile, userId: req.user._id });
-    } catch (profileFindError) {
-      logger.error('Error finding profile:', profileFindError);
+      profile = await FinancialProfile.findOneAndUpdate(
+        { userId: req.user._id },
+        { $setOnInsert: { userId: req.user._id, fullName: req.user.name || 'User', monthlyIncome: 0 } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      logger.info('Profile found/created:', { userId: req.user._id });
+    } catch (profileError) {
+      logger.error('Error finding/creating profile:', profileError);
       throw new Error('Database error while looking up user profile');
-    }
-    
-    if (!profile) {
-      logger.info('Creating new profile for user:', req.user._id);
-      try {
-        profile = new FinancialProfile({ 
-          userId: req.user._id,
-          fullName: req.user.name || 'User', // Required field
-          monthlyIncome: 0 // Will be updated by user later
-        });
-        logger.info('New profile created successfully');
-      } catch (profileCreateError) {
-        logger.error('Error creating new profile:', profileCreateError);
-        throw new Error('Failed to create user profile');
-      }
     }
 
     logger.info('Setting Gmail credentials');
@@ -678,7 +667,7 @@ router.post('/gmail/save-tokens', authenticate, async (req, res) => {
     logger.info('Gmail profile retrieved:', userProfile.data.emailAddress);
     
     try {
-      profile.gmailSettings = {
+      const gmailSettings = {
         isConnected: true,
         email: userProfile.data.emailAddress,
         accessToken: tokens.access_token,
@@ -689,7 +678,11 @@ router.post('/gmail/save-tokens', authenticate, async (req, res) => {
       logger.info('Gmail settings updated on profile');
 
       logger.info('Saving profile to database');
-      await profile.save();
+      await FinancialProfile.findOneAndUpdate(
+        { userId: req.user._id },
+        { $set: { gmailSettings } },
+        { upsert: true, new: true }
+      );
       logger.info('Profile saved successfully');
     } catch (profileSaveError) {
       logger.error('Error saving profile:', {

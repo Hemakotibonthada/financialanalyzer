@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import {
   useAIMonitoring, useAutoML, useWhatIfAnalysis, useKnowledgeGraph
-} from '../../hooks/useAIFeatures';
+} from '../hooks/useAIFeatures';
 
 // ============================================================================
 // §1  MODEL MONITORING TAB

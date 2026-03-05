@@ -19,7 +19,7 @@ import {
 import {
   useAIHealthScore, useAIAnomalies, useAIInsights,
   useAIPredictions, useAIMonitoring, useComprehensiveAnalysis
-} from '../../hooks/useAIFeatures';
+} from '../hooks/useAIFeatures';
 
 // ============================================================================
 // §1  HEALTH SCORE CARD

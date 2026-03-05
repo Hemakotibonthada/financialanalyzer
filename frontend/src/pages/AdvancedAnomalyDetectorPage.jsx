@@ -18,7 +18,7 @@ import {
   Analytics, Assessment, ShowChart, Shield, Gavel,
   NotificationImportant, Speed, Visibility, CrisisAlert
 } from '@mui/icons-material';
-import { useAIAnomalies } from '../../hooks/useAIFeatures';
+import { useAIAnomalies } from '../hooks/useAIFeatures';
 
 // ============================================================================
 // §1  ANOMALY SUMMARY CARDS

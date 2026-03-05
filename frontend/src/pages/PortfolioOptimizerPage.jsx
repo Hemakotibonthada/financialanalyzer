@@ -15,7 +15,7 @@ import {
   TrendingUp, ShowChart, PieChart, Psychology, PlayArrow,
   ExpandMore, Assessment, Security, BarChart, Warning
 } from '@mui/icons-material';
-import enhancedAIService from '../../services/enhancedAIService';
+import enhancedAIService from '../services/enhancedAIService';
 
 function PortfolioConfigPanel({ config, setConfig, onOptimize, loading }) {
   return (
@@ -144,7 +144,7 @@ export default function PortfolioOptimizerPage() {
     setLoading(true);
     try {
       // Call the backend API via a generic POST
-      const { PortfolioOptimizationService } = await import('../../services/enhancedAIService');
+      const { PortfolioOptimizationService } = await import('../services/enhancedAIService');
 
       // For now, make a direct API call
       const response = await fetch('/api/ai-advanced/portfolio/optimize', {

@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 import {
   useAIBudgetOptimizer, useAIInvestmentOptimizer, useAIDebtOptimizer
-} from '../../hooks/useAIFeatures';
+} from '../hooks/useAIFeatures';
 
 // ============================================================================
 // §1  BUDGET OPTIMIZER TAB

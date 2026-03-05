@@ -14,7 +14,7 @@ import {
   AutoAwesome, Mic, TrendingUp, AccountBalance, Savings,
   Assessment, ShowChart
 } from '@mui/icons-material';
-import { useAIChat, useAIFeedback } from '../../hooks/useAIFeatures';
+import { useAIChat, useAIFeedback } from '../hooks/useAIFeatures';
 
 // ============================================================================
 // §1  MESSAGE BUBBLE

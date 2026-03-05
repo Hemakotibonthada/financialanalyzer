@@ -237,6 +237,8 @@ const Profile = () => {
     }
 
     if (success && gmailTokens) {
+      // Clear URL immediately to prevent double-call from StrictMode re-mount
+      window.history.replaceState({}, document.title, window.location.pathname);
       try {
         const decodedTokens = JSON.parse(atob(gmailTokens));
         const response = await api.post('/auth/gmail/save-tokens', { tokens: decodedTokens });
@@ -257,7 +259,6 @@ const Profile = () => {
             : (apiMessage || 'Failed to complete Gmail connection')
         });
       }
-      window.history.replaceState({}, document.title, window.location.pathname);
     }
   };
 

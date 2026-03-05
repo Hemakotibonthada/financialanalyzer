@@ -17,7 +17,7 @@ import {
   AccessTime, PieChart, Timeline, Storefront, Subscriptions,
   LocalAtm, Category, Person, FlagCircle, AutoAwesome
 } from '@mui/icons-material';
-import enhancedAIService from '../../services/enhancedAIService';
+import enhancedAIService from '../services/enhancedAIService';
 
 // ============================================================================
 // §1  MERCHANT INTELLIGENCE TAB

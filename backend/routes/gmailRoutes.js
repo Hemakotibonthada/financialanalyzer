@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { google } = require('googleapis');
 const { authenticate } = require('../middleware/auth');
 const GmailService = require('../services/gmailService');
 const FinancialProfile = require('../models/FinancialProfile');
@@ -187,25 +188,57 @@ router.post('/sync', authenticate, async (req, res) => {
     
     const userGmailService = GmailService.getUserInstance(credentials);
 
-    // Check if access token needs refresh
-    if (profile.gmailSettings.refreshToken) {
-      try {
-        logger.info('Attempting to refresh access token');
-        const newTokens = await userGmailService.refreshAccessToken(profile.gmailSettings.refreshToken);
-        profile.gmailSettings.accessToken = newTokens.access_token;
-        await profile.save();
-        logger.info('Access token refreshed successfully');
-        
-        // Update credentials with new token
-        userGmailService.setCredentials({
-          access_token: newTokens.access_token,
-          refresh_token: profile.gmailSettings.refreshToken
-        });
-      } catch (refreshError) {
-        logger.error('Token refresh failed:', refreshError);
+    // Try using the existing access token first; only refresh if it fails
+    // The access token from a fresh OAuth callback is valid for ~1 hour
+    try {
+      // Test the current token with a lightweight API call
+      const testGmail = google.gmail({ version: 'v1', auth: userGmailService.oauth2Client });
+      await testGmail.users.getProfile({ userId: 'me' });
+      logger.info('Current access token is still valid');
+    } catch (testError) {
+      // Token expired or invalid — try to refresh
+      if (profile.gmailSettings.refreshToken) {
+        try {
+          logger.info('Access token expired, attempting refresh');
+          const { credentials: newCreds } = await userGmailService.oauth2Client.refreshToken(
+            profile.gmailSettings.refreshToken
+          );
+          
+          // Update stored tokens
+          await FinancialProfile.findOneAndUpdate(
+            { userId: req.user._id },
+            { 
+              $set: { 
+                'gmailSettings.accessToken': newCreds.access_token,
+                ...(newCreds.refresh_token && { 'gmailSettings.refreshToken': newCreds.refresh_token })
+              }
+            }
+          );
+          
+          userGmailService.setCredentials({
+            access_token: newCreds.access_token,
+            refresh_token: newCreds.refresh_token || profile.gmailSettings.refreshToken
+          });
+          logger.info('Access token refreshed successfully');
+        } catch (refreshError) {
+          logger.error('Token refresh failed:', refreshError.message);
+          
+          // Mark Gmail as disconnected since tokens are invalid
+          await FinancialProfile.findOneAndUpdate(
+            { userId: req.user._id },
+            { $set: { 'gmailSettings.isConnected': false } }
+          );
+          
+          return res.status(401).json({
+            success: false,
+            message: 'Gmail session expired. Please disconnect and reconnect your Gmail account.',
+            requiresReauth: true
+          });
+        }
+      } else {
         return res.status(401).json({
           success: false,
-          message: 'Gmail access token expired. Please reconnect your account.',
+          message: 'No refresh token available. Please reconnect your Gmail account.',
           requiresReauth: true
         });
       }
@@ -231,14 +264,29 @@ router.post('/sync', authenticate, async (req, res) => {
     logger.error('Gmail sync error:', {
       message: error.message,
       code: error.code,
-      requiresReauth: error.requiresReauth,
-      stack: error.stack
+      requiresReauth: error.requiresReauth
     });
 
-    if (error.code === 'GMAIL_INSUFFICIENT_SCOPE' || error.requiresReauth) {
+    // Handle token/auth errors from within the sync
+    const isAuthError = error.message?.includes('invalid_grant') || 
+                        error.message?.includes('Token has been expired') ||
+                        error.message?.includes('Invalid Credentials') ||
+                        error.code === 401 || error.code === 403 ||
+                        error.code === 'GMAIL_INSUFFICIENT_SCOPE' || 
+                        error.requiresReauth;
+
+    if (isAuthError) {
+      // Mark Gmail as disconnected
+      try {
+        await FinancialProfile.findOneAndUpdate(
+          { userId: req.user._id },
+          { $set: { 'gmailSettings.isConnected': false } }
+        );
+      } catch (_) { /* ignore */ }
+
       return res.status(401).json({
         success: false,
-        message: error.message,
+        message: 'Gmail session has expired. Please disconnect and reconnect your Gmail account from the Profile page.',
         requiresReauth: true
       });
     }

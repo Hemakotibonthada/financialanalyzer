@@ -20,7 +20,7 @@ import {
   Home, DirectionsCar, BeachAccess, Elderly, ExpandMore,
   Info, Star, AccountBalanceWallet, Receipt, PieChart, Timeline
 } from '@mui/icons-material';
-import enhancedAIService from '../../services/enhancedAIService';
+import enhancedAIService from '../services/enhancedAIService';
 
 // ============================================================================
 // §1  RETIREMENT PLANNER TAB

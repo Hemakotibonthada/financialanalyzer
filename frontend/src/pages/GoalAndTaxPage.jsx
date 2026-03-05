@@ -36,7 +36,7 @@ function GoalFeasibilityPanel() {
     setLoading(true);
     try {
       // Simplified — call backend or compute locally
-      const { GoalAchievementService } = await import('../../services/enhancedAIService');
+      const { GoalAchievementService } = await import('../services/enhancedAIService');
       // Simulate analysis
       const results = goals.map(goal => {
         const months = Math.max(1, Math.round((new Date(goal.deadline) - Date.now()) / (30 * 86400000)));
