@@ -158,21 +158,21 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                         <div className="px-4 py-1">
                           <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account</p>
                         </div>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=personal" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <User className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">Profile Settings</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">Manage your account</p>
                           </div>
                         </Link>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=notifications" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Bell className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">Notifications</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">Alerts & preferences</p>
                           </div>
                         </Link>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=security" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Lock className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">Security & Privacy</p>
@@ -186,21 +186,21 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                         <div className="px-4 py-1">
                           <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Preferences</p>
                         </div>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=preferences" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Settings className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">General Settings</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">App configuration</p>
                           </div>
                         </Link>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=appearance" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Palette className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">Appearance</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">Theme & display</p>
                           </div>
                         </Link>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=preferences" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Globe className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">Language & Region</p>
@@ -221,14 +221,14 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                             <p className="text-xs text-slate-400 dark:text-slate-500">Import & export</p>
                           </div>
                         </Link>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=integrations" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Key className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">API & Integrations</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">Connect services</p>
                           </div>
                         </Link>
-                        <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
+                        <Link to="/profile?tab=data" onClick={() => setProfileDropdownOpen(false)} className={dropdownLinkClass}>
                           <Download className="w-4 h-4" />
                           <div className="flex-1">
                             <p className="font-medium">Backup & Restore</p>

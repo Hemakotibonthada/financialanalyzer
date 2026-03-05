@@ -4,6 +4,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLocalStorage } from '../hooks/useCustomHooks';
@@ -109,9 +110,18 @@ const Profile = () => {
   const { user } = useAuth();
   const { darkMode, toggleTheme, mode } = useTheme();
   const dk = mode === 'dark' || mode === 'black';
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal');
+  const validTabs = ['personal', 'financial', 'budget', 'preferences', 'notifications', 'integrations', 'security', 'appearance', 'data'];
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(validTabs.includes(tabFromUrl) ? tabFromUrl : 'personal');
+
+  // Sync active tab when URL ?tab= changes
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && validTabs.includes(t)) setActiveTab(t);
+  }, [searchParams]);
 
   // ===== Profile state (backend-persisted via POST /profile) =====
   const [profile, setProfile] = useState({
