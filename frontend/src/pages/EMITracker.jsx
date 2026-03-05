@@ -3125,14 +3125,15 @@ const EMITracker = () => {
         {/* Side Navigation Panel */}
         <Box 
           sx={{ 
-            width: 220,
+            width: 200,
+            minWidth: 200,
             flexShrink: 0,
             position: 'sticky',
-            top: 16,
+            top: 80,
             alignSelf: 'flex-start',
-            maxHeight: 'calc(100vh - 32px)',
+            maxHeight: 'calc(100vh - 100px)',
             overflowY: 'auto',
-            display: { xs: 'none', md: 'block' },
+            display: { xs: 'none', lg: 'block' },
             '&::-webkit-scrollbar': { width: 3 },
             '&::-webkit-scrollbar-thumb': { background: isDark ? '#334155' : '#cbd5e1', borderRadius: 2 }
           }}
@@ -3199,8 +3200,8 @@ const EMITracker = () => {
           </Box>
         </Box>
 
-        {/* Mobile horizontal tabs (shown only on small screens) */}
-        <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3, width: '100%' }}>
+        {/* Mobile horizontal tabs (shown only on small/medium screens) */}
+        <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 3, width: '100%' }}>
           <Tabs 
             value={activeTab} 
             onChange={(e, newValue) => setActiveTab(newValue)}
