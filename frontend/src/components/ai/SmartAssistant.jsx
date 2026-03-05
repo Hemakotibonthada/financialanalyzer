@@ -436,7 +436,23 @@ export default function SmartAssistant() {
           };
         }
       } catch {
-        // Backend unavailable — fall back to local engine
+        // AI Intelligence unavailable — try Local AI Engine
+      }
+
+      // Try Local AI Engine (always-available fallback)
+      if (!response) {
+        try {
+          const { localAIService } = await import('../../services/api');
+          const res = await localAIService.chat(query);
+          if (res.data?.success && res.data?.data?.message) {
+            response = {
+              content: res.data.data.message,
+              suggestions: [],
+            };
+          }
+        } catch {
+          // Local AI also unavailable — fall through to client-side
+        }
       }
 
       // Fallback to client-side AI engine

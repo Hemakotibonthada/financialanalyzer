@@ -445,6 +445,14 @@ export const aiIntelligenceService = {
   getSpendingAlerts: () => api.get('/analytics-v2/alerts'),
 };
 
+// ─── Local AI Service (Works offline, Ollama optional) ────────────────
+export const localAIService = {
+  chat: (message, history = []) => api.post('/local-ai/chat', { message, history }),
+  getStatus: () => api.get('/local-ai/status'),
+  categorize: (description, amount) => api.post('/local-ai/categorize', { description, amount }),
+  generateAlert: (type, data) => api.post('/local-ai/alert', { type, data }),
+};
+
 // Debug: log computed API URL at runtime (only in development)
 if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.MODE === 'development')) {
   // eslint-disable-next-line no-console
