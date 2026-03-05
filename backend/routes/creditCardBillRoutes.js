@@ -358,9 +358,9 @@ router.post('/sync-gmail', authenticate, async (req, res) => {
 
     const { google } = require('googleapis');
     const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+      process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GMAIL_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI
     );
     oauth2Client.setCredentials({
       access_token: user.gmailAccessToken,
