@@ -89,6 +89,7 @@ const Sidebar = () => {
       insights: false,
       wealth: false,
       ailab: false,
+      gmail: false,
       more: false,
     };
   });
@@ -251,8 +252,16 @@ const Sidebar = () => {
         { label: 'Sub Manager', icon: Boxes, path: '/subscription-manager', color: 'pink', badge: 'AI' },
         { label: 'Goal & Tax AI', icon: Target, path: '/goal-tax-optimizer', color: 'amber', badge: 'AI' },
         { label: 'Wellness AI', icon: Heart, path: '/financial-wellness-ai', color: 'rose', badge: 'AI' },
+      ]
+    },
+    {
+      id: 'gmail',
+      label: 'Gmail',
+      icon: Mail,
+      items: [
         { label: 'Gmail Inbox', icon: Mail, path: '/gmail-inbox', color: 'blue', badge: 'NEW' },
         { label: 'Gmail Analytics', icon: BarChart3, path: '/gmail-analytics', color: 'purple', badge: 'AI' },
+        { label: 'Gmail Browser', icon: Search, path: '/gmail-browser', color: 'teal' },
       ]
     },
     {
