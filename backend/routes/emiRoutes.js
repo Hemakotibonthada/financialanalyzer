@@ -81,7 +81,6 @@ router.get('/overview', authenticate, async (req, res) => {
     logger.info(`Fetching EMI overview for user: ${req.user._id}`);
     
     // Auto-mark past-due installments as paid
-    // If EMI start date has passed and no installments are marked paid yet, mark them
     const now = new Date();
     const activeEMIs = await EMI.find({ userId: req.user._id, status: 'active', repaymentType: 'MONTHLY' });
     
@@ -89,33 +88,38 @@ router.get('/overview', authenticate, async (req, res) => {
       if (!emi.startDate) continue;
       const startDate = new Date(emi.startDate);
       
-      // Calculate how many installments should be paid by now
-      // startDate = first EMI paid date, so if now > startDate, at least 1 is paid
-      const monthsElapsed = Math.floor(
-        (now.getFullYear() - startDate.getFullYear()) * 12 +
-        (now.getMonth() - startDate.getMonth()) +
-        (now.getDate() >= startDate.getDate() ? 1 : 0)
-      );
-      const shouldBePaid = Math.min(Math.max(0, monthsElapsed), emi.totalTenure);
+      // Count how many installment dates have already passed
+      // Installment i is due at startDate + i months (0-indexed: i=0 is first payment at startDate)
+      let shouldBePaid = 0;
+      for (let i = 0; i < emi.totalTenure; i++) {
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+        if (now >= dueDate) {
+          shouldBePaid = i + 1;
+        } else {
+          break;
+        }
+      }
       
       if (shouldBePaid > (emi.paidInstallments || 0)) {
-        // Auto-mark past installments as paid
-        const newPaid = shouldBePaid;
+        logger.info(`Auto-marking EMI ${emi._id}: ${emi.paidInstallments || 0} → ${shouldBePaid} paid (of ${emi.totalTenure})`);
+        
+        // Mark past installments as paid in payment history
         if (emi.paymentHistory && emi.paymentHistory.length > 0) {
-          for (let i = 0; i < emi.paymentHistory.length; i++) {
-            if (i < newPaid && emi.paymentHistory[i].status !== 'paid') {
+          for (let i = 0; i < emi.paymentHistory.length && i < shouldBePaid; i++) {
+            if (emi.paymentHistory[i].status !== 'paid') {
               emi.paymentHistory[i].status = 'paid';
               emi.paymentHistory[i].paidDate = emi.paymentHistory[i].dueDate || now;
             }
           }
         }
-        emi.paidInstallments = newPaid;
-        emi.remainingInstallments = Math.max(0, emi.totalTenure - newPaid);
+        emi.paidInstallments = shouldBePaid;
+        emi.remainingInstallments = Math.max(0, emi.totalTenure - shouldBePaid);
         
         // Update next due date
         if (emi.remainingInstallments > 0) {
           const nextDue = new Date(startDate);
-          nextDue.setMonth(nextDue.getMonth() + newPaid);
+          nextDue.setMonth(nextDue.getMonth() + shouldBePaid);
           emi.nextDueDate = nextDue;
         }
         
@@ -125,7 +129,6 @@ router.get('/overview', authenticate, async (req, res) => {
         }
         
         await emi.save();
-        logger.info(`Auto-marked ${newPaid - (emi.paidInstallments || 0)} installments as paid for EMI ${emi._id}`);
       }
     }
     
