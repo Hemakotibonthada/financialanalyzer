@@ -1743,6 +1743,7 @@ router.put('/:id', authenticate, async (req, res) => {
       'interestRate',
       'interestType',
       'totalTenure',
+      'repaymentType',
       'notes',
       'tags',
       'status'
@@ -2197,7 +2198,7 @@ router.put('/:id', authenticate, async (req, res) => {
     // Update allowed fields
     const allowedUpdates = [
       'merchantName', 'productDescription', 'notes', 'tags',
-      'cardHolderName', 'interestRate', 'interestType'
+      'cardHolderName', 'interestRate', 'interestType', 'repaymentType'
     ];
     
     Object.keys(req.body).forEach(key => {

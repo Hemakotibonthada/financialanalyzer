@@ -1205,6 +1205,7 @@ const PersonalBorrowings = () => {
   const [prefillLender, setPrefillLender] = useState(null);
   const [repaymentModalOpen, setRepaymentModalOpen] = useState(false);
   const [repayingLoan, setRepayingLoan] = useState(null);
+  const [repayingLoanType, setRepayingLoanType] = useState('taken'); // 'taken' or 'given'
 
   // AI Analytics
   const [aiAnalytics, setAIAnalytics] = useState(null);
@@ -1268,8 +1269,13 @@ const PersonalBorrowings = () => {
   };
 
   const handleRepayment = async (loanId, amount) => {
-    await api.post(`/personal-loans/${loanId}/repayment`, { amount });
+    if (repayingLoanType === 'given') {
+      await api.post(`/loans-given/${loanId}/repayment`, { amount });
+    } else {
+      await api.post(`/personal-loans/${loanId}/repayment`, { amount });
+    }
     setRepayingLoan(null);
+    setRepayingLoanType('taken');
     await fetchData();
   };
 
@@ -1439,7 +1445,7 @@ const PersonalBorrowings = () => {
           <AllLoansTable
             loans={filteredLoans}
             palette={palette}
-            onRepay={(loan) => { setRepayingLoan(loan); setRepaymentModalOpen(true); }}
+            onRepay={(loan) => { setRepayingLoan(loan); setRepayingLoanType('taken'); setRepaymentModalOpen(true); }}
             onMarkRepaid={handleMarkRepaid}
             onEdit={handleEditLoan}
             onDelete={handleDeleteLoan}
@@ -1494,6 +1500,7 @@ const PersonalBorrowings = () => {
                         <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Repaid</th>
                         <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Outstanding</th>
                         <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Status</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1523,6 +1530,19 @@ const PersonalBorrowings = () => {
                                 loan.status === 'written_off' ? 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300' :
                                 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                               }`}>{(loan.status || 'pending').replace(/_/g, ' ').toUpperCase()}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {isActive && (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => { setRepayingLoan({ ...loan, principalAmount: amount, totalRepaid: repaid, outstandingAmount: outstanding, lenderName: loan.borrowerName }); setRepayingLoanType('given'); setRepaymentModalOpen(true); }}
+                                    className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 hover:bg-emerald-100 transition-colors"
+                                    title="Record repayment"
+                                  >
+                                    <DollarSign className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
