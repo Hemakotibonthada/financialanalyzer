@@ -25,7 +25,21 @@ if (process.env.QPDF_PATH) {
   process.env.PATH = `${qpdfDir}${path.delimiter}${process.env.PATH}`;
   logger.info(`✅ QPDF binary directory added to PATH: ${qpdfDir}`);
 } else {
-  logger.warn('⚠️ QPDF_PATH not configured in environment variables');
+  // Auto-detect qpdf on Mac/Linux
+  const { execSync } = require('child_process');
+  try {
+    const detected = execSync('which qpdf 2>/dev/null || where qpdf 2>nul', { encoding: 'utf-8' }).trim().split('\n')[0];
+    if (detected) {
+      process.env.QPDF_PATH = detected;
+      const qpdfDir = path.dirname(detected);
+      process.env.PATH = `${qpdfDir}${path.delimiter}${process.env.PATH}`;
+      logger.info(`✅ QPDF auto-detected: ${detected}`);
+    } else {
+      logger.warn('⚠️ QPDF not found. Password-protected PDF processing will be disabled.');
+    }
+  } catch {
+    logger.warn('⚠️ QPDF not installed. Install with: brew install qpdf (Mac) or apt install qpdf (Linux) or winget install qpdf.qpdf (Windows)');
+  }
 }
 
 // Ensure required directories exist
