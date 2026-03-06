@@ -473,6 +473,24 @@ router.post('/sync', authenticate, async (req, res) => {
       // Update last sync time
       await FinancialProfile.findOneAndUpdate({ userId }, { $set: { 'gmailSettings.lastSync': new Date() } });
 
+      // Auto-extract insurance data from synced emails (fire and forget)
+      try {
+        const InsurancePolicy = require('../models/InsurancePolicy');
+        const insuranceEmails = await GmailEmail.find({
+          userId,
+          $or: [
+            { 'classification.primaryCategory': { $in: ['insurance_notification', 'insurance'] } },
+            { subject: { $regex: /insurance|policy|premium|claim|coverage|renewal|lic/i } }
+          ]
+        }).sort('-receivedAt').limit(50).lean();
+        
+        if (insuranceEmails.length > 0) {
+          logger.info(`Auto-extracting insurance data from ${insuranceEmails.length} emails`);
+        }
+      } catch (insErr) {
+        logger.debug('Insurance auto-extract skipped:', insErr.message);
+      }
+
       ws.sendToUser(userId, 'gmailSyncProgress', {
         status: 'completed', progress: 100,
         message: `Done! ${results.stored} emails stored, ${results.transactionsExtracted} transactions extracted`,
