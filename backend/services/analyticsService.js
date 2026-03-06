@@ -1418,17 +1418,9 @@ class AnalyticsService {
         // Use latest salary as the primary value (captures raises), round to nearest 100
         const calculatedIncome = Math.round(latestSalary / 100) * 100;
         
-        // Update profile if the calculated income differs significantly from stored value
-        if (!profile?.monthlyIncome || Math.abs(profile.monthlyIncome - calculatedIncome) > 1000) {
-          if (profile) {
-            profile.monthlyIncome = calculatedIncome;
-            profile.incomeSource = 'auto-detected';
-            profile.lastIncomeUpdate = new Date();
-            await profile.save();
-            
-            logger.info(`Auto-updated monthly income for user ${userId}: ₹${calculatedIncome}`);
-          }
-        }
+        // DO NOT auto-update profile monthlyIncome from email/transaction data.
+        // Income should only be set manually by the user in Profile settings.
+        // This prevents incorrect values from promotional emails or misclassified transactions.
         
         return {
           amount: calculatedIncome,

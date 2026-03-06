@@ -265,7 +265,7 @@ router.post('/sync', authenticate, async (req, res) => {
   const ws = require('../services/websocketService');
 
   // Respond immediately — sync runs in background
-  const { maxResults = 500, dateAfter, fullSync = false } = req.body;
+  const { maxResults = 10000, dateAfter, fullSync = false } = req.body;
 
   // Send initial response so the frontend doesn't hang
   res.json({ success: true, message: 'Gmail sync started in background', data: { status: 'started' } });
@@ -301,31 +301,38 @@ router.post('/sync', authenticate, async (req, res) => {
 
       ws.sendToUser(userId, 'gmailSyncProgress', { status: 'fetching', progress: 5, message: 'Fetching email list...' });
 
-      // Build query
-      let query = 'category:primary OR category:updates';
+      // Build query — fetch ALL emails (no category filter for full coverage)
+      let query = '';
       if (dateAfter) {
         const d = new Date(dateAfter);
-        query += ` after:${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        query += `after:${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
       }
       if (!fullSync && profile.gmailSettings.lastSync) {
         const ls = new Date(profile.gmailSettings.lastSync);
-        query += ` after:${ls.getFullYear()}/${ls.getMonth() + 1}/${ls.getDate()}`;
+        if (query) query += ' ';
+        query += `after:${ls.getFullYear()}/${ls.getMonth() + 1}/${ls.getDate()}`;
       }
 
-      // Paginate to get ALL messages
+      // Paginate to get ALL messages (no artificial cap)
       const allMessageIds = [];
       let pageToken = null;
-      const limit = Math.min(maxResults, 500);
       do {
         const listRes = await gmail.users.messages.list({
-          userId: 'me', q: query, maxResults: Math.min(100, limit - allMessageIds.length),
+          userId: 'me',
+          ...(query && { q: query }),
+          maxResults: 100,  // Google max per page
           ...(pageToken && { pageToken })
         });
         const msgs = listRes.data.messages || [];
         allMessageIds.push(...msgs.map(m => m.id));
         pageToken = listRes.data.nextPageToken;
-        ws.sendToUser(userId, 'gmailSyncProgress', { status: 'fetching', progress: 10, message: `Found ${allMessageIds.length} emails...` });
-      } while (pageToken && allMessageIds.length < limit);
+        ws.sendToUser(userId, 'gmailSyncProgress', { status: 'fetching', progress: 10, message: `Found ${allMessageIds.length} emails so far...` });
+        // Safety: stop if user specified a limit
+        if (maxResults && allMessageIds.length >= maxResults) {
+          allMessageIds.splice(maxResults);
+          break;
+        }
+      } while (pageToken);
 
       logger.info(`Gmail enhanced sync: ${allMessageIds.length} messages to process`);
       ws.sendToUser(userId, 'gmailSyncProgress', { status: 'processing', progress: 15, message: `Processing ${allMessageIds.length} emails...`, total: allMessageIds.length });
@@ -408,12 +415,45 @@ router.post('/sync', authenticate, async (req, res) => {
           await emailDoc.save();
           results.stored++;
 
-          // Download attachments
+          // Download attachments + try to unlock password-protected PDFs
           for (const att of attachmentParts) {
             try {
               const attRes = await gmail.users.messages.attachments.get({ userId: 'me', messageId: msgId, id: att.attachmentId });
+              const attData = Buffer.from(attRes.data.data, 'base64');
+
+              // Save attachment to local filesystem
+              const userDir = require('path').join(process.cwd(), 'uploads', 'gmail', String(userId));
+              const fs = require('fs');
+              if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+              const safeFilename = `${Date.now()}_${att.filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+              const localPath = require('path').join(userDir, safeFilename);
+              fs.writeFileSync(localPath, attData);
+
               const attDoc = new GmailAttachment({ userId, emailId: emailDoc._id, gmailMessageId: msgId, filename: att.filename,
-                mimeType: att.mimeType, size: attRes.data.size || att.size, contentBase64: attRes.data.data, status: 'downloaded' });
+                mimeType: att.mimeType, size: attData.length, contentBase64: attRes.data.data, status: 'downloaded',
+                localPath });
+              
+              // Try to unlock password-protected PDFs
+              if (att.mimeType === 'application/pdf' || att.filename.toLowerCase().endsWith('.pdf')) {
+                try {
+                  const User = require('../models/User');
+                  const user = await User.findById(userId);
+                  const userProfile = await FinancialProfile.findOne({ userId });
+                  if (user && userProfile?.dateOfBirth) {
+                    const { tryUnlockPDF } = require('../utils/documentPasswordGenerator');
+                    const unlockResult = await tryUnlockPDF(localPath, user, userProfile.dateOfBirth);
+                    if (unlockResult.success) {
+                      attDoc.status = 'unlocked';
+                      attDoc.unlockedPath = unlockResult.outputPath;
+                      attDoc.passwordUsed = unlockResult.password;
+                    }
+                  }
+                } catch (unlockErr) {
+                  // Not password protected or unlock failed — that's OK
+                  logger.debug('PDF unlock attempt:', att.filename, unlockErr.message);
+                }
+              }
+
               await attDoc.save();
               results.attachmentsProcessed++;
             } catch (e) { results.errors.push(`Attachment ${att.filename}: ${e.message}`); }

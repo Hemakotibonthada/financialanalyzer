@@ -115,7 +115,7 @@ const GmailInboxPage = () => {
       setSyncing(true);
       setError(null);
       // Enhanced sync runs in background — progress shown via global WebSocket bar
-      await gmailEnhancedService.sync({ maxResults: 500 });
+      await gmailEnhancedService.sync({ maxResults: 10000, fullSync: true });
       setSuccessMsg('Sync started! Progress bar will appear at the top of the screen.');
       setTimeout(() => setSuccessMsg(null), 5000);
     } catch (err) {
