@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useWebSocket } from '../context/WebSocketContext';
 import MainLayout from '../components/MainLayout';
 import gmailEnhancedService from '../services/gmailEnhancedService';
 import {
@@ -17,6 +18,7 @@ import {
 const GmailInboxPage = () => {
   const { mode } = useTheme();
   const dk = mode === 'dark' || mode === 'black';
+  const { socket } = useWebSocket();
 
   // ── State ──
   const [emails, setEmails] = useState([]);
@@ -93,17 +95,29 @@ const GmailInboxPage = () => {
     loadSyncStatus();
   }, [loadEmails, loadStats, loadSyncStatus]);
 
+  // Auto-reload data when sync completes (via WebSocket)
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      if (data.status === 'completed') {
+        loadEmails();
+        loadStats();
+        loadSyncStatus();
+      }
+    };
+    socket.on('gmailSyncProgress', handler);
+    return () => socket.off('gmailSyncProgress', handler);
+  }, [socket, loadEmails, loadStats, loadSyncStatus]);
+
   // ── Actions ──
   const handleSync = async () => {
     try {
       setSyncing(true);
       setError(null);
-      const res = await gmailEnhancedService.sync({ maxResults: 100 });
-      setSuccessMsg(`Sync complete! ${res.data?.data?.totalProcessed || 0} emails processed.`);
+      // Enhanced sync runs in background — progress shown via global WebSocket bar
+      await gmailEnhancedService.sync({ maxResults: 500 });
+      setSuccessMsg('Sync started! Progress bar will appear at the top of the screen.');
       setTimeout(() => setSuccessMsg(null), 5000);
-      loadEmails();
-      loadStats();
-      loadSyncStatus();
     } catch (err) {
       setError(err.response?.data?.message || 'Sync failed');
     } finally {

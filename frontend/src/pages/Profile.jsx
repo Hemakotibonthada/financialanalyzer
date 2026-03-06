@@ -459,15 +459,11 @@ const Profile = () => {
 
   const syncGmail = async () => {
     try {
-      setMessage({ type: 'info', text: 'Syncing Gmail documents...' });
-      const response = await api.post('/gmail/sync');
-      if (response.data.success) {
-        setMessage({
-          type: 'success',
-          text: `Sync completed! Found ${response.data.results.downloadedAttachments} financial documents`
-        });
-        loadGmailStatus();
-      }
+      setMessage({ type: 'info', text: 'Starting Gmail sync... Progress bar will appear at the top.' });
+      // Use enhanced sync endpoint — runs in background with WebSocket progress
+      await api.post('/gmail-enhanced/sync', { maxResults: 500, fullSync: false });
+      // Response is immediate — sync runs in background
+      // Progress is shown via the global WebSocket progress bar in MainLayout
     } catch (error) {
       console.error('Error syncing Gmail:', error);
       const apiMessage = error.response?.data?.message;
@@ -475,7 +471,7 @@ const Profile = () => {
       if (requiresReauth) {
         setMessage({ type: 'error', text: 'Gmail permissions have expired. Please disconnect and reconnect Gmail to grant email read access.' });
       } else {
-        setMessage({ type: 'error', text: apiMessage || 'Failed to sync Gmail documents' });
+        setMessage({ type: 'error', text: apiMessage || 'Failed to start Gmail sync' });
       }
     }
   };

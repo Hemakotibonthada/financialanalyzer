@@ -1639,8 +1639,12 @@ class GmailService {
       if (stats.processed > 0) {
         profile.gmailSettings.lastReadSummaryCount = (profile.gmailSettings.lastReadSummaryCount || 0) + stats.processed;
       }
-      profile.markModified('gmailSettings');
-      await profile.save();
+      // Use findOneAndUpdate to handle both Mongoose docs and lean objects
+const FinancialProfile = require('../models/FinancialProfile');
+await FinancialProfile.findOneAndUpdate(
+  { userId: profile.userId || profile._id },
+  { $set: { gmailSettings: profile.gmailSettings } }
+);
     }
 
     return {
@@ -2056,8 +2060,12 @@ class GmailService {
         profile.gmailSettings.lastFullSyncAt = syncStartedAt;
       }
 
-      profile.markModified('gmailSettings');
-      await profile.save();
+      // Use findOneAndUpdate to handle both Mongoose docs and lean objects
+const FinancialProfile = require('../models/FinancialProfile');
+await FinancialProfile.findOneAndUpdate(
+  { userId: profile.userId || profile._id },
+  { $set: { gmailSettings: profile.gmailSettings } }
+);
 
       logger.info(`Gmail sync completed for user ${userId}:`, {
         ...results,
