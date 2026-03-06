@@ -2269,7 +2269,7 @@ const EMITracker = () => {
                           foreclosureDate: new Date().toISOString(),
                           foreclosureAmount: remainingAmt
                         });
-                        setConfirmationDialog({ open: true, title: 'EMI Foreclosed', message: 'EMI has been foreclosed successfully.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); fetchOverview(); } });
+                        setConfirmationDialog({ open: true, title: 'EMI Foreclosed', message: 'EMI has been foreclosed successfully.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); fetchAllData(); } });
                       } catch (err) {
                         setConfirmationDialog({ open: true, title: 'Foreclosure Failed', message: err.response?.data?.message || 'Failed to foreclose EMI', isError: true, confirmAction: () => setConfirmationDialog(p => ({ ...p, open: false })) });
                       }
@@ -2298,7 +2298,7 @@ const EMITracker = () => {
                     confirmAction: async () => {
                       try {
                         await api.put(`/emi/${emiId}`, { repaymentType: 'ON_REQUEST' });
-                        setConfirmationDialog({ open: true, title: 'Converted', message: 'EMI has been converted to a Personal Loan.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); fetchOverview(); } });
+                        setConfirmationDialog({ open: true, title: 'Converted', message: 'EMI has been converted to a Personal Loan. Go to Personal Loans tab to view it.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); setActiveTab(8); fetchAllData(); } });
                       } catch (err) {
                         setConfirmationDialog({ open: true, title: 'Conversion Failed', message: err.response?.data?.message || 'Failed to convert', isError: true, confirmAction: () => setConfirmationDialog(p => ({ ...p, open: false })) });
                       }
