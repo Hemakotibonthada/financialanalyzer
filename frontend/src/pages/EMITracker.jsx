@@ -2098,90 +2098,58 @@ const EMITracker = () => {
       <Dialog
         open={emiDetailOpen}
         onClose={() => setEmiDetailOpen(false)}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 3 } }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ pb: 1 }}>
           {selectedEMI ? `${selectedEMI.merchantName} — EMI Details` : 'EMI Details'}
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ py: 1.5 }}>
           {selectedEMI ? (
-            <Grid container spacing={2} alignItems="flex-start">
-              {/* Left column: Start / End / Next EMI Day first, then provider info */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="subtitle2">First EMI Date</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.startDate ? formatDate(selectedEMI.startDate) : '—'}</Typography>
-
-                <Typography variant="subtitle2">Estimated End Date</Typography>
-                <Typography variant="body1" gutterBottom>{estimateEndDate(selectedEMI) ? formatDate(estimateEndDate(selectedEMI)) : '—'}</Typography>
-
-                <Typography variant="subtitle2">Next EMI Day</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.nextDueDate ? getOrdinalSuffix(new Date(selectedEMI.nextDueDate).getDate()) : '—'}</Typography>
-
-                <Typography variant="subtitle2">Provider</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.cardProvider} {selectedEMI.cardLastFourDigits}</Typography>
-
-                <Typography variant="subtitle2">EMI Amount</Typography>
-                <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.emiAmount)}</Typography>
-
-                <Typography variant="subtitle2">Principal</Typography>
-                <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.principalAmount)}</Typography>
-
-                <Typography variant="subtitle2">Interest Rate</Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedEMI.interestType === 'flat' ? `${formatCurrency(selectedEMI.interestRate)} (Flat)` : selectedEMI.interestType === 'rupee_per_100' ? `${selectedEMI.interestRate} ₹/100/month` : `${selectedEMI.interestRate}% p.a.`}
-                </Typography>
-
-                <Typography variant="subtitle2">Repayment Type</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.repaymentType === 'ON_REQUEST' ? 'On Request (flexible)' : 'Monthly'}</Typography>
+            <Box>
+              {/* Compact 3-column grid */}
+              <Grid container spacing={1}>
+                {[
+                  { label: 'First EMI', value: selectedEMI.startDate ? formatDate(selectedEMI.startDate) : '—' },
+                  { label: 'End Date', value: estimateEndDate(selectedEMI) ? formatDate(estimateEndDate(selectedEMI)) : '—' },
+                  { label: 'Next Due', value: selectedEMI.nextDueDate ? formatDate(selectedEMI.nextDueDate) : '—', color: 'primary.main' },
+                  { label: 'Provider', value: `${selectedEMI.cardProvider || ''} ${selectedEMI.cardLastFourDigits || ''}`.trim() || '—' },
+                  { label: 'EMI Amount', value: formatCurrency(selectedEMI.emiAmount), color: 'text.primary' },
+                  { label: 'Principal', value: formatCurrency(selectedEMI.principalAmount) },
+                  { label: 'Tenure', value: `${selectedEMI.paidInstallments}/${selectedEMI.totalTenure} paid`, color: selectedEMI.paidInstallments > 0 ? 'success.main' : 'text.secondary' },
+                  { label: 'Remaining', value: formatCurrency(selectedEMI.remainingAmount), color: 'warning.main' },
+                  { label: 'Interest', value: selectedEMI.interestType === 'flat' ? `${formatCurrency(selectedEMI.interestRate)} flat` : `${selectedEMI.interestRate}% p.a.` },
+                  { label: 'EMI Day', value: selectedEMI.nextDueDate ? getOrdinalSuffix(new Date(selectedEMI.nextDueDate).getDate()) : '—' },
+                  { label: 'Completion', value: `${selectedEMI.completionPercentage || Math.round((selectedEMI.paidInstallments / selectedEMI.totalTenure) * 100)}%` },
+                  { label: 'Type', value: selectedEMI.repaymentType === 'ON_REQUEST' ? 'Personal Loan' : 'Monthly EMI' },
+                ].map((item, i) => (
+                  <Grid size={{ xs: 4 }} key={i}>
+                    <Box sx={{ p: 0.8, borderRadius: 1, bgcolor: 'action.hover', textAlign: 'center', height: '100%' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }}>{item.label}</Typography>
+                      <Typography variant="body2" fontWeight="bold" color={item.color || 'text.primary'} sx={{ fontSize: '0.8rem', mt: 0.3 }}>{item.value}</Typography>
+                    </Box>
+                  </Grid>
+                ))}
               </Grid>
 
-              {/* Right column: tenure, completion, remaining, next due + chart */}
-              <Grid size={{ xs: 12, md: 8 }}>
-                <Typography variant="subtitle2">Tenure</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.paidInstallments} paid of {selectedEMI.totalTenure}</Typography>
-
-                <Typography variant="subtitle2">Completion</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.completionPercentage}%</Typography>
-
-                <Typography variant="subtitle2">Remaining Amount</Typography>
-                <Typography variant="body1" gutterBottom>{formatCurrency(selectedEMI.remainingAmount)}</Typography>
-
-                <Typography variant="subtitle2">Next Due Date</Typography>
-                <Typography variant="body1" gutterBottom>{selectedEMI.nextDueDate ? formatDate(selectedEMI.nextDueDate) : '—'}</Typography>
-
-                {selectedEMI.notes && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2">Notes</Typography>
-                    <Typography variant="body2" gutterBottom>{selectedEMI.notes}</Typography>
-                  </Box>
-                )}
-
-                {/* Show circular completion indicator instead of chart */}
-                <Box sx={{ mt: 1, height: { xs: 220, sm: 340 }, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Box sx={{ width: { xs: 120, sm: 180 }, height: { xs: 120, sm: 180 }, ml: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                    {(() => {
-                      const pct = selectedEMI.completionPercentage != null
-                        ? Math.round(selectedEMI.completionPercentage)
-                        : (selectedEMI.totalTenure ? Math.round(( (selectedEMI.paidInstallments || 0) / selectedEMI.totalTenure) * 100) : 0);
-                      return (
-                        <>
-                          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                            <CircularProgress variant="determinate" value={Math.min(Math.max(pct, 0), 100)} size={Math.min(180, Math.max(120, pct * 1))} thickness={6} sx={{ color: '#667eea' }} />
-                            <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Typography variant="h6" component="div">{pct}%</Typography>
-                            </Box>
-                          </Box>
-                          <Typography variant="caption" sx={{ mt: 1 }}>Completed</Typography>
-                        </>
-                      );
-                    })()}
-                  </Box>
+              {/* Completion bar */}
+              <Box sx={{ mt: 1.5, px: 0.5 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min(100, (selectedEMI.paidInstallments / selectedEMI.totalTenure) * 100)}
+                  sx={{ height: 8, borderRadius: 4, bgcolor: isDark ? 'rgba(255,255,255,0.08)' : '#e0e0e0',
+                    '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg, #667eea, #764ba2)', borderRadius: 4 } }}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">{selectedEMI.paidInstallments} paid</Typography>
+                  <Typography variant="caption" color="text.secondary">{selectedEMI.remainingInstallments} remaining</Typography>
                 </Box>
-              </Grid>
+              </Box>
 
-              {/* notes rendered in right column above; avoid duplicate */}
+              {selectedEMI.notes && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '0.75rem' }}>📝 {selectedEMI.notes}</Typography>
+              )}
 
               {/* If backend provides transaction history or schedule, show it */}
               {selectedEMI.schedule && selectedEMI.schedule.length > 0 && (
