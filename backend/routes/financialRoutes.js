@@ -657,6 +657,51 @@ router.delete('/transactions/:id', authenticate, async (req, res) => {
   }
 });
 
+// ── Cleanup: remove future-dated + duplicate transactions ───────────────
+router.post('/transactions/cleanup', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const now = new Date();
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // 1. Delete future-dated transactions
+    const futureResult = await Transaction.deleteMany({
+      userId,
+      date: { $gt: tomorrow }
+    });
+
+    // 2. Find and remove duplicates (same amount + date + description)
+    const pipeline = [
+      { $match: { userId } },
+      { $group: {
+        _id: { amount: '$amount', date: '$date', description: '$description' },
+        ids: { $push: '$_id' },
+        count: { $sum: 1 }
+      }},
+      { $match: { count: { $gt: 1 } } }
+    ];
+    const duplicates = await Transaction.aggregate(pipeline);
+    let dupCount = 0;
+    for (const dup of duplicates) {
+      // Keep the first, delete the rest
+      const idsToDelete = dup.ids.slice(1);
+      await Transaction.deleteMany({ _id: { $in: idsToDelete } });
+      dupCount += idsToDelete.length;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        futureDeleted: futureResult.deletedCount,
+        duplicatesRemoved: dupCount,
+        total: futureResult.deletedCount + dupCount
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ── Income endpoint ─────────────────────────────────────────────────────
 router.get('/income', authenticate, async (req, res) => {
   try {

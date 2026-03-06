@@ -1661,9 +1661,39 @@ const processDocumentFile = async (filePath, fileType, password = null, password
  */
 const saveTransactions = async (transactionData, document) => {
   const savedTransactions = [];
+  const now = new Date();
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   
   for (const txnData of transactionData) {
     try {
+      // ── Validation: reject bad data ──
+      // Skip future-dated transactions (likely misparsed)
+      if (txnData.date) {
+        const txnDate = new Date(txnData.date);
+        if (txnDate > tomorrow) {
+          logger.debug(`Skipping future-dated transaction: ${txnData.description} @ ${txnDate.toISOString()}`);
+          continue;
+        }
+      }
+
+      // Skip suspiciously small amounts likely from promotional text (e.g., "Rs 5 Lakh offer")
+      if (txnData.amount != null && Math.abs(txnData.amount) < 1) {
+        logger.debug(`Skipping near-zero transaction: ${txnData.description} amount=${txnData.amount}`);
+        continue;
+      }
+
+      // Skip duplicates: same userId + same date + same amount + same description
+      const existingDup = await Transaction.findOne({
+        userId: document.userId,
+        amount: Math.abs(txnData.amount),
+        description: txnData.description,
+        date: txnData.date,
+      });
+      if (existingDup) {
+        logger.debug(`Skipping duplicate transaction: ${txnData.description} ${txnData.amount}`);
+        continue;
+      }
+
       // Enhanced transaction data with AI processing support
       const transactionDoc = new Transaction({
         userId: document.userId,
