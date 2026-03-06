@@ -2498,8 +2498,6 @@ router.post('/:id/convert-to-loan', authenticate, async (req, res) => {
 
     // 1. Mark EMI as ON_REQUEST but keep it active
     emi.repaymentType = 'ON_REQUEST';
-    emi.convertedToLoan = true;
-    emi.convertedAt = new Date();
     await emi.save();
 
     // 2. Create a linked PersonalLoan record
@@ -2514,18 +2512,17 @@ router.post('/:id/convert-to-loan', authenticate, async (req, res) => {
         userId: req.user._id,
         lenderName: emi.cardProvider || emi.merchantName || 'EMI Provider',
         principalAmount: emi.principalAmount || outstanding,
-        outstandingAmount: outstanding,
         interestRate: emi.interestRate || 0,
         loanTakenDate: emi.startDate || new Date(),
         purpose: `Converted from EMI: ${emi.merchantName || emi.productDescription || 'EMI'}`,
-        relationship: 'bank',
+        relationship: 'Other',
         status: 'active',
         linkedEmiId: emi._id,
         notes: `Auto-created from EMI conversion. Original tenure: ${emi.totalTenure} months, Paid: ${emi.paidInstallments}`,
         repayments: emi.paymentHistory?.filter(p => p.status === 'paid').map((p, i) => ({
           amount: p.amount || emi.emiAmount,
           amountInINR: p.amount || emi.emiAmount,
-          date: p.paidDate || p.dueDate,
+          date: p.paidDate || p.dueDate || new Date(),
           method: 'bank_transfer',
           notes: `EMI installment ${p.installmentNumber || i + 1}`
         })) || []
