@@ -334,9 +334,9 @@ export default function EmergencyFund() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Withdrawal History</h2>
-          {withdrawalHistory.length > 0 ? (
+          {withdrawals.length > 0 ? (
             <div className="space-y-3">
-              {withdrawalHistory.map(w => (
+              {withdrawals.map(w => (
                 <div key={w.id} className="flex items-center gap-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800">
                   <ArrowDownRight className="w-5 h-5 text-red-500" />
                   <div className="flex-1">
