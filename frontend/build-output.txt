@@ -1,0 +1,270 @@
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+transforming...
+[32mΓ£ô[39m 14466 modules transformed.
+rendering chunks...
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/api.js is dynamically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/ai/SmartAssistant.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/DataVisualizationLab.jsx but also statically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/AIFinancialPredictions.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/AdminDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/CSVImportExport.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/CacheManagementPanel.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/CreditScoreCard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/DocumentSummary.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/ExpenseFormModal.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/MainLayout.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/MonthlyTrends.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/NotificationBell.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/QuickExpenseEntry.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/QuickIncomeEntry.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/SpendingDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/TransactionSearch.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/ai/SmartAssistant.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/business/BusinessDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/insurance/InsuranceDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/ml/MLDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/notifications/NotificationCenter.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/realEstate/RealEstateDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/retirement/RetirementPlanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/search/AdvancedSearch.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/components/tax/TaxPlanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/context/AuthContext.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/context/WebSocketContext.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AICommandCenter.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AIInsights.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AIInsightsHub.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AITrainingDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AccountSettings.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AchievementsPage.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AdvancedAnalytics.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AnomalyDetector.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/AutomationRules.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/BankAccountManager.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/BillOfMaterials.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/BillReminders.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/BillTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/BudgetPlanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/CashFlowForecast.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/CompanyExpensesDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/ContactSupport.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/CreditCardManager.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/CreditScoreDetail.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/CryptoPortfolio.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/CurrencyConverter.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/DarkModeSettings.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/Dashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/DebtManagementDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/DebtPayoff.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/Documents.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EMITracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EPFTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EmergencyFund.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedBudgetPlannerV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedDashboardV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedDebtManagementV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedFinancialGoalsV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedFinancialHealthV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedFinancialPlanningV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedInvestmentPortfolioV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedNetWorthTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedReportsV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedSettingsV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedSpendingInsightsV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/EnhancedTransactionManagerV2.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/ExpenseIntelligence.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/ExportCenter.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FIRETracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FamilyFinance.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialCalendar.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialChat.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialDocuments.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialGoals.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialHealthDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialInsightsDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialQuiz.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialReportsHub.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialScorecard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialTemplate.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FinancialWellness.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/FixedDeposits.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/GoalForecaster.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/GoalTimeline.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/GoldTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/IncomeForecast.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/IncomeTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/InsurancePlanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/InvestmentAnalyzer.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/InvestmentPortfolio.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/LenderDashboardEnhanced.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/LifestyleAnalytics.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/LoanCalculator.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/MarketInsights.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/MerchantIntelligence.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/Milestones.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/MutualFunds.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/NPS.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/NetBanking.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/NetWorthTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/PPFTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/PersonalBorrowings.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/PortfolioAnalyticsDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/Profile.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/PropertyManager.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/ReceiptScanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/RecurringPayments.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/ReportDetail.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/Reports.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/RetirementPlanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/RiskAssessment.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/RiskDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SIPCalculator.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SavingsChallenges.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SecurityCenter.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SelfTrainingPage.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SentimentDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SmartBudgetOptimizer.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SmartBudgetWizard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SmartInvestmentAdvisor.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SmartNotifications.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SpendingForecast.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SpendingInsights.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SplitExpenses.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SubscriptionManager.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/SystemDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/TaxEstimator.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/TaxOptimizationCenter.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/TaxPlanner.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/TransactionManager.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/WatchlistDashboard.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/WealthManagement.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseAIChat.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseAnalytics.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseBudgetIntelligence.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseCashflowForecaster.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseDashboardV3.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseDebtManagement.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseFinancialHealth.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseGmailBrowser.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseGoalsTracker.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseInvestmentAdvisor.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseReports.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseSettings.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/pages/enterprise/EnterpriseTransactionManager.jsx, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/aiService.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/enhancedAIService.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/gmailEnhancedService.js, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/node_modules/firebase/firestore/dist/esm/index.esm.js is dynamically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/context/AuthContext.jsx but also statically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebase.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebaseAuth.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/storage.js, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebase.js is dynamically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/context/AuthContext.jsx but also statically imported by C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/firebaseAuth.js, C:/Users/v-hbonthada/WorkSpace-Pract/FinancialAnalyzer/frontend/src/services/storage.js, dynamic import will not move module into another chunk.
+
+computing gzip size...
+[2mdist/[22m[32mindex.html                                        [39m[1m[2m  0.82 kB[22m[1m[22m[2m Γöé gzip:   0.41 kB[22m
+[2mdist/[22m[35massets/animations-tA9eHemU.css                    [39m[1m[2m 23.83 kB[22m[1m[22m[2m Γöé gzip:   5.29 kB[22m
+[2mdist/[22m[35massets/index-ChtdC9aa.css                         [39m[1m[2m327.37 kB[22m[1m[22m[2m Γöé gzip:  48.63 kB[22m
+[2mdist/[22m[36massets/square-BC5fAyO8.js                         [39m[1m[2m  0.32 kB[22m[1m[22m[2m Γöé gzip:   0.26 kB[22m
+[2mdist/[22m[36massets/pen-14QtZjGB.js                            [39m[1m[2m  0.33 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/filter-9xNM3EeR.js                         [39m[1m[2m  0.33 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/bookmark-yxKtfOft.js                       [39m[1m[2m  0.33 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/arrow-left-L5gGVl9Z.js                     [39m[1m[2m  0.33 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/arrow-up-right-HQmKJjzG.js                 [39m[1m[2m  0.34 kB[22m[1m[22m[2m Γöé gzip:   0.26 kB[22m
+[2mdist/[22m[36massets/arrow-down-right-CbUqXqr-.js               [39m[1m[2m  0.34 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/gauge-DRAcp53_.js                          [39m[1m[2m  0.35 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/clock-DP_eMIh2.js                          [39m[1m[2m  0.35 kB[22m[1m[22m[2m Γöé gzip:   0.28 kB[22m
+[2mdist/[22m[36massets/pen-line-CpPBSL0X.js                       [39m[1m[2m  0.36 kB[22m[1m[22m[2m Γöé gzip:   0.28 kB[22m
+[2mdist/[22m[36massets/pause-Ctv5cp1Z.js                          [39m[1m[2m  0.37 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/smartphone-B-DHg7ui.js                     [39m[1m[2m  0.37 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/graduation-cap-BNVWrg0Z.js                 [39m[1m[2m  0.37 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/shield-check-B1V2Y1q0.js                   [39m[1m[2m  0.37 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/rotate-ccw-DlsPgKWn.js                     [39m[1m[2m  0.37 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/map-pin-3R1dfHzK.js                        [39m[1m[2m  0.37 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/unlock-BGz-J12U.js                         [39m[1m[2m  0.38 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/check-square-C8y-VjcE.js                   [39m[1m[2m  0.39 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/laptop-CnDOJegs.js                         [39m[1m[2m  0.39 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/flag-DRalSWJL.js                           [39m[1m[2m  0.39 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/paperclip-CzMW5wAA.js                      [39m[1m[2m  0.39 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/tag-BgZV3-RV.js                            [39m[1m[2m  0.40 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/briefcase-Bcfd2gZB.js                      [39m[1m[2m  0.40 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/more-vertical-DDSH2NGw.js                  [39m[1m[2m  0.40 kB[22m[1m[22m[2m Γöé gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/history-ZfUvmC7V.js                        [39m[1m[2m  0.41 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/timer-w1KbZ2YL.js                          [39m[1m[2m  0.41 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/link-2-eqmPU2QO.js                         [39m[1m[2m  0.41 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/percent-Bb4tjpfo.js                        [39m[1m[2m  0.41 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/pen-square-BtH1WSSD.js                     [39m[1m[2m  0.42 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/arrow-right-left-C6fFk4Z9.js               [39m[1m[2m  0.42 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/bar-chart-2-CgszQheB.js                    [39m[1m[2m  0.42 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/archive-HW1jTEVl.js                        [39m[1m[2m  0.42 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/utensils-C6lPLVcC.js                       [39m[1m[2m  0.43 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/external-link-aKm2WgY7.js                  [39m[1m[2m  0.45 kB[22m[1m[22m[2m Γöé gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/save-D9BZR0PL.js                           [39m[1m[2m  0.45 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/mail-check-C8iL9JhW.js                     [39m[1m[2m  0.45 kB[22m[1m[22m[2m Γöé gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/indian-rupee-DbqrvUSU.js                   [39m[1m[2m  0.46 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/shopping-cart-BV2hDcNE.js                  [39m[1m[2m  0.46 kB[22m[1m[22m[2m Γöé gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/folder-open-BTHGfMqR.js                    [39m[1m[2m  0.46 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/wifi-C9HlhrZo.js                           [39m[1m[2m  0.46 kB[22m[1m[22m[2m Γöé gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/grid-3x3-IYl_oJ2M.js                       [39m[1m[2m  0.46 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/hash-DfM9BLR6.js                           [39m[1m[2m  0.47 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/star-off-L5LC-DmP.js                       [39m[1m[2m  0.47 kB[22m[1m[22m[2m Γöé gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/printer-DZd8_SVr.js                        [39m[1m[2m  0.47 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/thumbs-up-CDTGeJAC.js                      [39m[1m[2m  0.47 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/plane-C72mXs3-.js                          [39m[1m[2m  0.48 kB[22m[1m[22m[2m Γöé gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/alert-octagon-UiATbBa4.js                  [39m[1m[2m  0.48 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/bell-ring-DaKhDZOq.js                      [39m[1m[2m  0.48 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/calendar-DhEWiapf.js                       [39m[1m[2m  0.49 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/server-DPrL-4MD.js                         [39m[1m[2m  0.51 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/newspaper-CqfvRJaf.js                      [39m[1m[2m  0.51 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/layout-grid-DAFissjs.js                    [39m[1m[2m  0.52 kB[22m[1m[22m[2m Γöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/gift-BApjIBMW.js                           [39m[1m[2m  0.53 kB[22m[1m[22m[2m Γöé gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/share-2-CDvqWDAm.js                        [39m[1m[2m  0.53 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/trash-2-BR4y7iZh.js                        [39m[1m[2m  0.53 kB[22m[1m[22m[2m Γöé gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/package-CISdgdIs.js                        [39m[1m[2m  0.53 kB[22m[1m[22m[2m Γöé gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/layers-BN401ipP.js                         [39m[1m[2m  0.53 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/file-spreadsheet-Jl5ScIeg.js               [39m[1m[2m  0.56 kB[22m[1m[22m[2m Γöé gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/hard-drive-y98XAxiB.js                     [39m[1m[2m  0.56 kB[22m[1m[22m[2m Γöé gzip:   0.37 kB[22m
+[2mdist/[22m[36massets/file-text-DmZvWFve.js                      [39m[1m[2m  0.57 kB[22m[1m[22m[2m Γöé gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/car-BEwfiNiS.js                            [39m[1m[2m  0.58 kB[22m[1m[22m[2m Γöé gzip:   0.39 kB[22m
+[2mdist/[22m[36massets/list-5wbqKmU-.js                           [39m[1m[2m  0.58 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/arrow-up-CyfCJuH0.js                       [39m[1m[2m  0.61 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/trophy-BfmJ6SkE.js                         [39m[1m[2m  0.64 kB[22m[1m[22m[2m Γöé gzip:   0.39 kB[22m
+[2mdist/[22m[36massets/card-BPwdAngU.js                           [39m[1m[2m  0.66 kB[22m[1m[22m[2m Γöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/wifi-off-Bno5mDNr.js                       [39m[1m[2m  0.66 kB[22m[1m[22m[2m Γöé gzip:   0.41 kB[22m
+[2mdist/[22m[36massets/cpu-D81W9ukn.js                            [39m[1m[2m  0.66 kB[22m[1m[22m[2m Γöé gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/calculator-BB6Wcpkw.js                     [39m[1m[2m  0.70 kB[22m[1m[22m[2m Γöé gzip:   0.39 kB[22m
+[2mdist/[22m[36massets/tv-CPtbGWx6.js                             [39m[1m[2m  0.71 kB[22m[1m[22m[2m Γöé gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/building-BRcyiMtl.js                       [39m[1m[2m  0.71 kB[22m[1m[22m[2m Γöé gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/sliders-horizontal-BmxqE1Ur.js             [39m[1m[2m  0.75 kB[22m[1m[22m[2m Γöé gzip:   0.37 kB[22m
+[2mdist/[22m[36massets/fingerprint-q849fjkZ.js                    [39m[1m[2m  0.81 kB[22m[1m[22m[2m Γöé gzip:   0.48 kB[22m
+[2mdist/[22m[36massets/store-S1wgQsIg.js                          [39m[1m[2m  0.82 kB[22m[1m[22m[2m Γöé gzip:   0.41 kB[22m
+[2mdist/[22m[36massets/download-CiXJC2dA.js                       [39m[1m[2m  0.87 kB[22m[1m[22m[2m Γöé gzip:   0.45 kB[22m
+[2mdist/[22m[36massets/brain-circuit-HIWUuL_S.js                  [39m[1m[2m  0.88 kB[22m[1m[22m[2m Γöé gzip:   0.44 kB[22m
+[2mdist/[22m[36massets/settings-D1a0WkxP.js                       [39m[1m[2m  0.90 kB[22m[1m[22m[2m Γöé gzip:   0.45 kB[22m
+[2mdist/[22m[36massets/gmailEnhancedService-bsQqr3us.js           [39m[1m[2m  0.96 kB[22m[1m[22m[2m Γöé gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/documentPasswordNotification-CL2wPToa.js   [39m[1m[2m  1.03 kB[22m[1m[22m[2m Γöé gzip:   0.66 kB[22m
+[2mdist/[22m[36massets/tabs-CSeSULMc.js                           [39m[1m[2m  1.15 kB[22m[1m[22m[2m Γöé gzip:   0.54 kB[22m
+[2mdist/[22m[36massets/aiService-CJOFztUX.js                      [39m[1m[2m  2.36 kB[22m[1m[22m[2m Γöé gzip:   1.04 kB[22m
+[2mdist/[22m[36massets/NotFound-DMFwc1A7.js                       [39m[1m[2m  3.00 kB[22m[1m[22m[2m Γöé gzip:   1.06 kB[22m
+[2mdist/[22m[36massets/AnimatedComponents-Deoq5M87.js             [39m[1m[2m  4.26 kB[22m[1m[22m[2m Γöé gzip:   1.83 kB[22m
+[2mdist/[22m[36massets/ReportDetail-Bq4is7tt.js                   [39m[1m[2m  5.31 kB[22m[1m[22m[2m Γöé gzip:   1.82 kB[22m
+[2mdist/[22m[36massets/enhancedAIService-BhY3x5Un.js              [39m[1m[2m  5.63 kB[22m[1m[22m[2m Γöé gzip:   1.79 kB[22m
+[2mdist/[22m[36massets/useAIFeatures-BD8NfAsy.js                  [39m[1m[2m  5.91 kB[22m[1m[22m[2m Γöé gzip:   1.40 kB[22m
+[2mdist/[22m[36massets/CreditScorePredictorPage-CkWHHyDr.js       [39m[1m[2m  6.35 kB[22m[1m[22m[2m Γöé gzip:   2.42 kB[22m
+[2mdist/[22m[36massets/SelfTrainingPage-6ttJvvHM.js               [39m[1m[2m  6.49 kB[22m[1m[22m[2m Γöé gzip:   1.99 kB[22m
+[2mdist/[22m[36massets/NotificationCenter-BxolK_Rr.js             [39m[1m[2m  6.52 kB[22m[1m[22m[2m Γöé gzip:   2.00 kB[22m
+[2mdist/[22m[36massets/EnterpriseAnimationSystem-CBlsYoCj.js      [39m[1m[2m  6.88 kB[22m[1m[22m[2m Γöé gzip:   2.65 kB[22m
+[2mdist/[22m[36massets/FinancialWellnessPage-D9ClOAzv.js          [39m[1m[2m  7.32 kB[22m[1m[22m[2m Γöé gzip:   2.64 kB[22m
+[2mdist/[22m[36massets/TransactionSearch-BRo-_yPq.js              [39m[1m[2m  7.51 kB[22m[1m[22m[2m Γöé gzip:   2.48 kB[22m
+[2mdist/[22m[36massets/SubscriptionManagerPage-B5pbCR0X.js        [39m[1m[2m  7.57 kB[22m[1m[22m[2m Γöé gzip:   2.69 kB[22m
+[2mdist/[22m[36massets/PortfolioOptimizerPage-D3GL3DE6.js         [39m[1m[2m  8.09 kB[22m[1m[22m[2m Γöé gzip:   2.90 kB[22m
+[2mdist/[22m[36massets/EnhancedAIChatbot-DDVDEIar.js              [39m[1m[2m  8.15 kB[22m[1m[22m[2m Γöé gzip:   2.97 kB[22m
+[2mdist/[22m[36massets/HelpCenter-DpPTv06S.js                     [39m[1m[2m  8.96 kB[22m[1m[22m[2m Γöé gzip:   2.97 kB[22m
+[2mdist/[22m[36massets/CashFlowIntelligencePage-ge1Wi3pz.js       [39m[1m[2m  9.08 kB[22m[1m[22m[2m Γöé gzip:   2.82 kB[22m
+[2mdist/[22m[36massets/IncomeForecast-C3IpZc_t.js                 [39m[1m[2m  9.74 kB[22m[1m[22m[2m Γöé gzip:   3.11 kB[22m
+[2mdist/[22m[36massets/EnhancedFinancialChat-BhAsHzBO.js          [39m[1m[2m  9.76 kB[22m[1m[22m[2m Γöé gzip:   3.38 kB[22m
+[2mdist/[22m[36massets/GoalForecaster-Dh3pSO6F.js                 [39m[1m[2m  9.97 kB[22m[1m[22m[2m Γöé gzip:   3.22 kB[22m
+[2mdist/[22m[36massets/AdvancedSearch-Bjy4wnpC.js                 [39m[1m[2m 10.01 kB[22m[1m[22m[2m Γöé gzip:   2.76 kB[22m
+[2mdist/[22m[36massets/AdvancedAnomalyDetectorPage-UUMNBOt8.js    [39m[1m[2m 10.34 kB[22m[1m[22m[2m Γöé gzip:   3.21 kB[22m
+[2mdist/[22m[36massets/ContactSupport-B8P5HvRE.js                 [39m[1m[2m 10.67 kB[22m[1m[22m[2m Γöé gzip:   2.91 kB[22m
+[2mdist/[22m[36massets/AIInsights-CWT386nM.js                     [39m[1m[2m 10.68 kB[22m[1m[22m[2m Γöé gzip:   3.57 kB[22m
+[2mdist/[22m[36massets/RealEstateDashboard-DXNexRBn.js            [39m[1m[2m 10.87 kB[22m[1m[22m[2m Γöé gzip:   2.77 kB[22m
+[2mdist/[22m[36massets/AnomalyDetector-BqJCHXal.js                [39m[1m[2m 10.96 kB[22m[1m[22m[2m Γöé gzip:   3.61 kB[22m
+[2mdist/[22m[36massets/SpendingForecast-fZVeP5Pd.js               [39m[1m[2m 11.24 kB[22m[1m[22m[2m Γöé gzip:   3.42 kB[22m
+[2mdist/[22m[36massets/Milestones-D9uSHR2A.js                     [39m[1m[2m 11.31 kB[22m[1m[22m[2m Γöé gzip:   3.39 kB[22m
+[2mdist/[22m[36massets/RLOptimizerPage--B2UntEV.js                [39m[1m[2m 11.32 kB[22m[1m[22m[2m Γöé gzip:   3.53 kB[22m
+[2mdist/[22m[36massets/GoalAndTaxPage-BN_KhFLY.js                 [39m[1m[2m 11.69 kB[22m[1m[22m[2m Γöé gzip:   3.51 kB[22m
+[2mdist/[22m[36massets/RiskAssessment-BipwdI2A.js                 [39m[1m[2m 11.72 kB[22m[1m[22m[2m Γöé gzip:   3.73 kB[22m
+[2mdist/[22m[36massets/CSVImportExport-CVUuXl16.js                [39m[1m[2m 11.79 kB[22m[1m[22m[2m Γöé gzip:   3.53 kB[22m
+[2mdist/[22m[36massets/EnhancedFinancialHealthV2-B3W02zja.js      [39m[1m[2m 11.87 kB[22m[1m[22m[2m Γöé gzip:   4.18 kB[22m
+[2mdist/[22m[36massets/EnhancedAICommandCenter-B8NHf5qK.js        [39m[1m[2m 12.46 kB[22m[1m[22m[2m Γöé gzip:   3.51 kB[22m
+[2mdist/[22m[36massets/SavingsChallenges-C3B44t8D.js              [39m[1m[2m 12.58 kB[22m[1m[22m[2m Γöé gzip:   3.98 kB[22m
+[2mdist/[22m[36massets/SmartBudgetOptimizer-DM6X7pmb.js           [39m[1m[2m 12.59 kB[22m[1m[22m[2m Γöé gzip:   3.66 kB[22m
+[2mdist/[22m[36massets/SystemDashboard-BFQ-OgKl.js                [39m[1m[2m 12.71 kB[22m[1m[22m[2m Γöé gzip:   3.28 kB[22m
+[2mdist/[22m[36massets/MerchantIntelligence-S0EhXu4k.js           [39m[1m[2m 13.07 kB[22m[1m[22m[2m Γöé gzip:   4.02 kB[22m
+[2mdist/[22m[36massets/EnhancedInvestmentPortfolioV2-Cu_hWG2s.js  [39m[1m[2m 13.48 kB[22m[1m[22m[2m Γöé gzip:   4.36 kB[22m
+[2mdist/[22m[36massets/EnhancedReportsV2-DaDv6-CN.js              [39m[1m[2m 13.99 kB[22m[1m[22m[2m Γöé gzip:   4.28 kB[22m
+[2mdist/[22m[36massets/TaxPlanner-sl_UMRC7.js                     [39m[1m[2m 14.04 kB[22m[1m[22m[2m Γöé gzip:   3.32 kB[22m
+[2mdist/[22m[36massets/EnhancedDebtManagementV2-DAIPTJcl.js       [39m[1m[2m 14.12 kB[22m[1m[22m[2m Γöé gzip:   4.48 kB[22m
+[2mdist/[22m[36massets/RiskDashboard-D1ogC0Cn.js                  [39m[1m[2m 14.18 kB[22m[1m[22m[2m Γöé gzip:   4.35 kB[22m
+[2mdist/[22m[36massets/InvestmentAnalyzer-8ZjUe36U.js             [39m[1m[2m 14.19 kB[22m[1m[22m[2m Γöé gzip:   3.71 kB[22m
+[2mdist/[22m[36massets/EnterpriseReports-CEVBzad5.js              [39m[1m[2m 14.29 kB[22m[1m[22m[2m Γöé gzip:   5.12 kB[22m
+[2mdist/[22m[36massets/AIModelObservatory-D5HYiqdU.js             [39m[1m[2m 14.34 kB[22m[1m[22m[2m Γöé gzip:   3.97 kB[22m
+[2mdist/[22m[36massets/Reports-CMIgpQ2E.js                        [39m[1m[2m 14.36 kB[22m[1m[22m[2m Γöé gzip:   3.22 kB[22m
+[2mdist/[22m[36massets/EnhancedFinancialGoalsV2-D2p6QAqO.js       [39m[1m[2m 14.51 kB[22m[1m[22m[2m Γöé gzip:   4.51 kB[22m
+[2mdist/[22m[36massets/EnhancedBudgetPlannerV2-CjCCxr6i.js        [39m[1m[2m 14.52 kB[22m[1m[22m[2m Γöé gzip:   4.59 kB[22m
+[2mdist/[22m[36massets/CryptoPortfolio-DTogmWGo.js                [39m[1m[2m 14.61 kB[22m[1m[22m[2m Γöé gzip:   3.48 kB[22m
+[2mdist/[22m[36massets/EnterpriseCharts-1RVH_Nzq.js               [39m[1m[2m 15.04 kB[22m[1m[22m[2m Γöé gzip:   4.64 kB[22m
+[2mdist/[22m[36massets/EnterpriseAIChat-Vjla6dk1.js               [39m[1m[2m 15.10 kB[22m[1m[22m[2m Γöé gzip:   6.25 kB[22m
+[2mdist/[22m[36massets/MarketInsights-HEM4HrMs.js                 [39m[1m[2m 15.33 kB[22m[1m[22m[2m Γöé gzip:   4.11 kB[22m
+[2mdist/[22m[36massets/FinancialGoals-CZrnAOn3.js                 [39m[1m[2m 15.35 kB[22m[1m[22m[2m Γöé gzip:   4.18 kB[22m
+[2mdist/[22m[36massets/Documents-BScnHyiC.js                      [39m[1m[2m 15.36 kB[22m[1m[22m[2m Γöé gzip:   4.10 kB[22m
+[2mdist/[22m[36massets/EnterpriseComponents-D8-RLI0s.js           [39m[1m[2m 15.86 kB[22m[1m[22m[2m Γöé gzip:   4.65 kB[22m
+[2mdist/[22m[36massets/LoanCalculator-Dk73MBSQ.js                 [39m[1m[2m 15.96 kB[22m[1m[22m[2m Γöé gzip:   3.90 kB[22m
+[2mdist/[22m[36massets/TaxEstimator-wEqSsgCL.js                   [39m[1m[2m 15.99 kB[22m[1m[22m[2m Γöé gzip:   4.43 kB[22m
+[2mdist/[22m[36massets/RetirementPlanner-zh0gZLYx.js              [39m[1m[2m 16.08 kB[22m[1m[22m[2m Γöé gzip:   3.82 kB[22m
+[2mdist/[22m[36massets/FinancialCalendar-BUnP4DWD.js              [39m[1m[2m 16.23 kB[22m[1m[22m[2m Γöé gzip:   4.41 kB[22m
+[2mdist/[22m[36massets/EnhancedSpendingInsightsV2-CGTyKeRY.js     [39m[1m[2m 16.47 kB[22m[1m[22m[2m Γöé gzip:   5.32 kB[22m
+[2mdist/[22m[36massets/EnterpriseCashflowForecaster-DjR70hNF.js   [39m[1m[2m 16.49 kB[22m[1m[22m[2m Γöé gzip:   4.98 kB[22m
+[2mdist/[22m[36massets/BusinessDashboard-fRigP99k.js              [39m[1m[2m 16.52 kB[22m[1m[22m[2m Γöé gzip:   3.76 kB[22m
+[2mdist/[22m[36massets/EmergencyFund-BMRE1M6k.js                  [39m[1m[2m 16.97 kB[22m[1m[22m[2m Γöé gzip:   4.55 kB[22m
+[2mdist/[22m[36massets/WatchlistDashboard-BCTmWZL5.js             [39m[1m[2m 17.12 kB[22m[1m[22m[2m Γöé gzip:   4.38 kB[22m
+[2mdist/[22m[36massets/FinancialChat-BzfJ-Rox.js                  [39m[1m[2m 17.22 kB[22m[1m[22m[2m Γöé gzip:   5.13 kB[22m
+[2mdist/[22m[36massets/GmailAnalyticsDashboard-Qg8QOF72.js        [39m[1m[2m 17.54 kB[22m[1m[22m[2m Γöé gzip:   4.82 kB[22m
+[2mdist/[22m[36massets/GmailInboxPage-D5DAPAjw.js                 [39m[1m[2m 17.59 kB[22m[1m[22m[2m Γöé gzip:   4.93 kB[22m
+[2mdist/[22m[36massets/BankAccountManager-BkBY96RN.js             [39m[1m[2m 17.60 kB[22m[1m[22m[2m Γöé gzip:   4.21 kB[22m
+[2mdist/[22m[36massets/NetWorthTracker-D-lI5oy4.js                [39m[1m[2m 17.61 kB[22m[1m[22m[2m Γöé gzip:   4.50 kB[22m
+[2mdist/[22m[36massets/SpendingIntelligencePage-COpLC5kv.js       [39m[1m[2m 17.72 kB[22m[1m[22m[2m Γöé gzip:   4.79 kB[22m
+[2mdist/[22m[36massets/SIPCalculator-BfCXeQ4T.js                  [39m[1m[2m 17.77 kB[22m[1m[22m[2m Γöé gzip:   4.13 kB[22m
+[2mdist/[22m[36massets/EnterpriseAnalytics-CAEdBT5L.js            [39m[1m[2m 17.78 kB[22m[1m[22m[2m Γöé gzip:   5.09 kB[22m
+[2mdist/[22m[36massets/EPFTracker-BXvAQ0-4.js                     [39m[1m[2m 17.82 kB[22m[1m[22m[2m Γöé gzip:   4.40 kB[22m
+[2mdist/[22m[36massets/FinancialHealthDashboard-mWP2T5_n.js       [39m[1m[2m 18.06 kB[22m[1m[22m[2m Γöé gzip:   4.68 kB[22m
+[2mdist/[22m[36massets/RecurringPayments-K_B5xyKM.js              [39m[1m[2m 18.17 kB[22m[1m[22m[2m Γöé gzip:   4.94 kB[22m
+[2mdist/[22m[36massets/FIRETracker-E-djO22z.js                    [39m[1m[2m 18.21 kB[22m[1m[22m[2m Γöé gzip:   5.04 kB[22m
+[2mdist/[22m[36massets/NetBanking-DAKFzZpk.js                     [39m[1m[2m 18.21 kB[22m[1m[22m[2m Γöé gzip:   4.78 kB[22m
+[2mdist/[22m[36massets/DarkModeSettings-D7_B_KSl.js               [39m[1m[2m 18.21 kB[22m[1m[22m[2m Γöé gzip:   4.99 kB[22m
+[2mdist/[22m[36massets/CreditCardManager-DPQISeBE.js              [39m[1m[2m 18.37 kB[22m[1m[22m[2m Γöé gzip:   4.59 kB[22m
+[2mdist/[22m[36massets/RetirementPlanner-DhDHuEyc.js              [39m[1m[2m 18.48 kB[22m[1m[22m[2m Γöé gzip:   4.70 kB[22m
+[2mdist/[22m[36massets/EnterpriseFinancialHealth-FfkWdxZ_.js      [39m[1m[2m 18.48 kB[22m[1m[22m[2m Γöé gzip:   6.08 kB[22m
+[2mdist/[22m[36massets/EnterpriseSettings-D595LETV.js             [39m[1m[2m 18.72 kB[22m[1m[22m[2m Γöé gzip:   5.31 kB[22m
+[2mdist/[22m[36massets/FinancialInsightsDashboard-DKJ8ZGq9.js     [39m[1m[2m 18.85 kB[22m[1m[22m[2m Γöé gzip:   4.76 kB[22m
+[2mdist/[22m[36massets/SubscriptionManager-DWIJdQEU.js            [39m[1m[2m 19.01 kB[22m[1m[22m[2m Γöé gzip:   5.07 kB[22m
+[2mdist/[22m[36massets/InsuranceDashboard-CKGM2i-r.js             [39m[1m[2m 19.07 kB[22m[1m[22m[2m Γöé gzip:   4.84 kB[22m
+[2mdist/[22m[36massets/FinancialTemplate-DH_8Yr2F.js              [39m[1m[2m 19.36 kB[22m[1m[22m[2m Γöé gzip:   5.39 kB[22m
+[2mdist/[22m[36massets/SmartNotifications-sBVRMwqB.js             [39m[1m[2m 19.39 kB[22m[1m[22m[2m Γöé gzip:   4.98 kB[22m
+[2mdist/[22m[36massets/EnhancedTransactionManagerV2-B_oU77Wp.js   [39m[1m[2m 19.63 kB[22m[1m[22m[2m Γöé gzip:   5.20 kB[22m
+[2mdist/[22m[36massets/AITrainingDashboard-DR8cKVGa.js            [39m[1m[2m 19.70 kB[22m[1m[22m[2m Γöé gzip:   5.85 kB[22m
+[2mdist/[22m[36massets/EnhancedFinancialPlanningV2-DI-xN6WO.js    [39m[1m[2m 19.70 kB[22m[1m[22m[2m Γöé gzip:   5.03 kB[22m
+[2mdist/[22m[36massets/CurrencyConverter-FR4KmR4V.js              [39m[1m[2m 19.71 kB[22m[1m[22m[2m Γöé gzip:   5.12 kB[22m
+[2mdist/[22m[36massets/InsurancePlanner-BqPVxeWa.js               [39m[1m[2m 19.75 kB[22m[1m[22m[2m Γöé gzip:   4.78 kB[22m
+[2mdist/[22m[36massets/ChartComponents-CtSxVCSh.js                [39m[1m[2m 19.79 kB[22m[1m[22m[2m Γöé gzip:   5.94 kB[22m
+[2mdist/[22m[36massets/FinancialScorecard-Bt26Crge.js             [39m[1m[2m 19.99 kB[22m[1m[22m[2m Γöé gzip:   4.93 kB[22m
+[2mdist/[22m[36massets/IncomeTracker-BPUuVP9e.js                  [39m[1m[2m 20.12 kB[22m[1m[22m[2m Γöé gzip:   5.42 kB[22m
+[2mdist/[22m[36massets/DebtManagementDashboard-Ccb6zRF3.js        [39m[1m[2m 20.17 kB[22m[1m[22m[2m Γöé gzip:   4.57 kB[22m
+[2mdist/[22m[36massets/SmartBudgetWizard-CMRMHzeX.js              [39m[1m[2m 20.18 kB[22m[1m[22m[2m Γöé gzip:   4.45 kB[22m
+[2mdist/[22m[36massets/ComparisonTool-BNyYJBcv.js                 [39m[1m[2m 20.60 kB[22m[1m[22m[2m Γöé gzip:   5.30 kB[22m
+[2mdist/[22m[36massets/GoldTracker-Dvie0jme.js                    [39m[1m[2m 20.68 kB[22m[1m[22m[2m Γöé gzip:   5.08 kB[22m
+[2mdist/[22m[36massets/DebtPayoff-CPWylquR.js                     [39m[1m[2m 20.70 kB[22m[1m[22m[2m Γöé gzip:   5.14 kB[22m
+[2mdist/[22m[36massets/CashFlowForecast-361qj73o.js               [39m[1m[2m 20.70 kB[22m[1m[22m[2m Γöé gzip:   5.69 kB[22m
+[2mdist/[22m[36massets/FamilyFinance-C-ctz_Ml.js                  [39m[1m[2m 20.78 kB[22m[1m[22m[2m Γöé gzip:   5.16 kB[22m
+[2mdist/[22m[36massets/PPFTracker-BP0OO34p.js                     [39m[1m[2m 20.93 kB[22m[1m[22m[2m Γöé gzip:   5.06 kB[22m
+[2mdist/[22m[36massets/SmartFinancialPlannerPage-DJY28b9y.js      [39m[1m[2m 21.09 kB[22m[1m[22m[2m Γöé gzip:   5.50 kB[22m
+[2mdist/[22m[36massets/EnhancedDashboardV2-BpzukEdv.js            [39m[1m[2m 21.09 kB[22m[1m[22m[2m Γöé gzip:   5.93 kB[22m
+[2mdist/[22m[36massets/FinancialDocuments-MycsthOn.js             [39m[1m[2m 21.16 kB[22m[1m[22m[2m Γöé gzip:   4.92 kB[22m
+[2mdist/[22m[36massets/EnhancedSettingsV2-CFAoImcv.js             [39m[1m[2m 21.28 kB[22m[1m[22m[2m Γöé gzip:   5.83 kB[22m
+[2mdist/[22m[36massets/MutualFunds-D-RxSNS9.js                    [39m[1m[2m 21.37 kB[22m[1m[22m[2m Γöé gzip:   5.52 kB[22m
+[2mdist/[22m[36massets/DataVisualizationLab-DhJ3rD4b.js           [39m[1m[2m 21.54 kB[22m[1m[22m[2m Γöé gzip:   5.88 kB[22m
+[2mdist/[22m[36massets/NPS-Dio9dS0Z.js                            [39m[1m[2m 21.76 kB[22m[1m[22m[2m Γöé gzip:   4.96 kB[22m
+[2mdist/[22m[36massets/SecurityCenter-BUDlcen0.js                 [39m[1m[2m 21.87 kB[22m[1m[22m[2m Γöé gzip:   5.62 kB[22m
+[2mdist/[22m[36massets/ExpenseIntelligence-BMQkXt17.js            [39m[1m[2m 22.13 kB[22m[1m[22m[2m Γöé gzip:   5.87 kB[22m
+[2mdist/[22m[36massets/FixedDeposits-U2F2EB9M.js                  [39m[1m[2m 22.18 kB[22m[1m[22m[2m Γöé gzip:   4.99 kB[22m
+[2mdist/[22m[36massets/MonthlyTrends-zxN_keWi.js                  [39m[1m[2m 22.31 kB[22m[1m[22m[2m Γöé gzip:   5.50 kB[22m
+[2mdist/[22m[36massets/EnterpriseBudgetIntelligence-V9iFkvrm.js   [39m[1m[2m 22.57 kB[22m[1m[22m[2m Γöé gzip:   6.72 kB[22m
+[2mdist/[22m[36massets/ReceiptScanner-_kF4GRbt.js                 [39m[1m[2m 22.63 kB[22m[1m[22m[2m Γöé gzip:   6.07 kB[22m
+[2mdist/[22m[36massets/FinancialQuiz-y51wSLie.js                  [39m[1m[2m 22.64 kB[22m[1m[22m[2m Γöé gzip:   6.42 kB[22m
+[2mdist/[22m[36massets/ExportCenter-Zj_VWfX2.js                   [39m[1m[2m 22.66 kB[22m[1m[22m[2m Γöé gzip:   6.27 kB[22m
+[2mdist/[22m[36massets/BudgetPlanner-C4EeI7By.js                  [39m[1m[2m 22.68 kB[22m[1m[22m[2m Γöé gzip:   6.49 kB[22m
+[2mdist/[22m[36massets/BillTracker-IA9eNqKT.js                    [39m[1m[2m 22.75 kB[22m[1m[22m[2m Γöé gzip:   5.75 kB[22m
+[2mdist/[22m[36massets/SplitExpenses-Mur_c9Wq.js                  [39m[1m[2m 22.79 kB[22m[1m[22m[2m Γöé gzip:   5.26 kB[22m
+[2mdist/[22m[36massets/GoalTimeline-C67tyUVk.js                   [39m[1m[2m 22.80 kB[22m[1m[22m[2m Γöé gzip:   5.92 kB[22m
+[2mdist/[22m[36massets/PortfolioAnalyticsDashboard-Bv9gi8Ni.js    [39m[1m[2m 22.93 kB[22m[1m[22m[2m Γöé gzip:   5.13 kB[22m
+[2mdist/[22m[36massets/TaxOptimizationCenter-P5cc7eSd.js          [39m[1m[2m 23.40 kB[22m[1m[22m[2m Γöé gzip:   6.22 kB[22m
+[2mdist/[22m[36massets/LifestyleAnalytics-DlJr-6kA.js             [39m[1m[2m 23.63 kB[22m[1m[22m[2m Γöé gzip:   6.90 kB[22m
+[2mdist/[22m[36massets/TransactionManager-RumI_NVd.js             [39m[1m[2m 23.68 kB[22m[1m[22m[2m Γöé gzip:   6.40 kB[22m
+[2mdist/[22m[36massets/AchievementsPage-6160uqIW.js               [39m[1m[2m 23.71 kB[22m[1m[22m[2m Γöé gzip:   7.04 kB[22m
+[2mdist/[22m[36massets/SentimentDashboard-BORuG0gV.js             [39m[1m[2m 23.76 kB[22m[1m[22m[2m Γöé gzip:   6.62 kB[22m
+[2mdist/[22m[36massets/TaxPlanner-DS3Oiazc.js                     [39m[1m[2m 24.34 kB[22m[1m[22m[2m Γöé gzip:   6.77 kB[22m
+[2mdist/[22m[36massets/EnhancedNetWorthTracker-BafdwzkM.js        [39m[1m[2m 24.38 kB[22m[1m[22m[2m Γöé gzip:   5.47 kB[22m
+[2mdist/[22m[36massets/EnterpriseGoalsTracker-DGXO6c9i.js         [39m[1m[2m 24.47 kB[22m[1m[22m[2m Γöé gzip:   6.90 kB[22m
+[2mdist/[22m[36massets/PropertyManager-g1uU_6Hw.js                [39m[1m[2m 24.77 kB[22m[1m[22m[2m Γöé gzip:   5.83 kB[22m
+[2mdist/[22m[36massets/BillOfMaterials-BvaGOGKK.js                [39m[1m[2m 24.92 kB[22m[1m[22m[2m Γöé gzip:   6.74 kB[22m
+[2mdist/[22m[36massets/EnterpriseGmailBrowser-a0m7qjWB.js         [39m[1m[2m 25.36 kB[22m[1m[22m[2m Γöé gzip:   6.88 kB[22m
+[2mdist/[22m[36massets/EnterpriseDebtManagement-BAqoCXAA.js       [39m[1m[2m 26.17 kB[22m[1m[22m[2m Γöé gzip:   7.20 kB[22m
+[2mdist/[22m[36massets/AIInsightsHub-BpXZXtaA.js                  [39m[1m[2m 26.39 kB[22m[1m[22m[2m Γöé gzip:   6.87 kB[22m
+[2mdist/[22m[36massets/FinancialReportsHub-BIvvhNUA.js            [39m[1m[2m 26.53 kB[22m[1m[22m[2m Γöé gzip:   6.67 kB[22m
+[2mdist/[22m[36massets/EnterpriseDashboardV3-Bp4qJRAl.js          [39m[1m[2m 26.56 kB[22m[1m[22m[2m Γöé gzip:   7.21 kB[22m
+[2mdist/[22m[36massets/SmartInvestmentAdvisor-CCyIkq8E.js         [39m[1m[2m 27.27 kB[22m[1m[22m[2m Γöé gzip:   7.60 kB[22m
+[2mdist/[22m[36massets/CreditScoreDetail-PREPqRaw.js              [39m[1m[2m 27.49 kB[22m[1m[22m[2m Γöé gzip:   5.49 kB[22m
+[2mdist/[22m[36massets/ComponentLibrary-BnUu5aec.js               [39m[1m[2m 27.66 kB[22m[1m[22m[2m Γöé gzip:   8.52 kB[22m
+[2mdist/[22m[36massets/EnterpriseTransactionManager-Bh4xvf-j.js   [39m[1m[2m 27.67 kB[22m[1m[22m[2m Γöé gzip:   7.33 kB[22m
+[2mdist/[22m[36massets/InvestmentPortfolio-C_FZHTFx.js            [39m[1m[2m 28.13 kB[22m[1m[22m[2m Γöé gzip:   6.77 kB[22m
+[2mdist/[22m[36massets/LenderDashboardEnhanced-C9JXqBBm.js        [39m[1m[2m 29.06 kB[22m[1m[22m[2m Γöé gzip:   6.87 kB[22m
+[2mdist/[22m[36massets/FinancialEducation-CsHDEx_h.js             [39m[1m[2m 29.10 kB[22m[1m[22m[2m Γöé gzip:  10.06 kB[22m
+[2mdist/[22m[36massets/AdvancedAnalytics-Bo_V_mGp.js              [39m[1m[2m 29.63 kB[22m[1m[22m[2m Γöé gzip:   6.51 kB[22m
+[2mdist/[22m[36massets/EnterpriseInvestmentAdvisor-IFPmTqb6.js    [39m[1m[2m 30.12 kB[22m[1m[22m[2m Γöé gzip:   8.37 kB[22m
+[2mdist/[22m[36massets/AICommandCenter-DFwJR_v4.js                [39m[1m[2m 31.36 kB[22m[1m[22m[2m Γöé gzip:   7.94 kB[22m
+[2mdist/[22m[36massets/FinancialWellness-KkqxSoX8.js              [39m[1m[2m 34.80 kB[22m[1m[22m[2m Γöé gzip:   8.11 kB[22m
+[2mdist/[22m[36massets/MLDashboard-DWyVYlx8.js                    [39m[1m[2m 34.84 kB[22m[1m[22m[2m Γöé gzip:   8.22 kB[22m
+[2mdist/[22m[36massets/mui-icons-DT0aplVu.js                      [39m[1m[2m 35.50 kB[22m[1m[22m[2m Γöé gzip:  12.47 kB[22m
+[2mdist/[22m[36massets/SpendingInsights-69FpVIks.js               [39m[1m[2m 36.10 kB[22m[1m[22m[2m Γöé gzip:   7.11 kB[22m
+[2mdist/[22m[36massets/BillReminders-DgS7LS-H.js                  [39m[1m[2m 37.37 kB[22m[1m[22m[2m Γöé gzip:   8.00 kB[22m
+[2mdist/[22m[36massets/CompanyExpensesDashboard-DhjIglHQ.js       [39m[1m[2m 37.83 kB[22m[1m[22m[2m Γöé gzip:   7.92 kB[22m
+[2mdist/[22m[36massets/EnhancedDashboard-BXOCVAwO.js              [39m[1m[2m 42.92 kB[22m[1m[22m[2m Γöé gzip:  10.02 kB[22m
+[2mdist/[22m[36massets/WealthManagement-WN2oF4dh.js               [39m[1m[2m 43.82 kB[22m[1m[22m[2m Γöé gzip:  11.13 kB[22m
+[2mdist/[22m[36massets/AccountSettings-DArRJpSz.js                [39m[1m[2m 49.21 kB[22m[1m[22m[2m Γöé gzip:  11.08 kB[22m
+[2mdist/[22m[36massets/MainLayout-C4rHxpp0.js                     [39m[1m[2m 53.45 kB[22m[1m[22m[2m Γöé gzip:  14.32 kB[22m
+[2mdist/[22m[36massets/AutomationRules-CD1wa4Tn.js                [39m[1m[2m 60.00 kB[22m[1m[22m[2m Γöé gzip:  14.05 kB[22m
+[2mdist/[22m[36massets/PersonalBorrowings-DeZ9pChX.js             [39m[1m[2m 65.07 kB[22m[1m[22m[2m Γöé gzip:  14.01 kB[22m
+[2mdist/[22m[36massets/AdminDashboard-BHjhy_a1.js                 [39m[1m[2m 70.34 kB[22m[1m[22m[2m Γöé gzip:  11.29 kB[22m
+[2mdist/[22m[36massets/Profile-BrknPZXy.js                        [39m[1m[2m 94.09 kB[22m[1m[22m[2m Γöé gzip:  18.79 kB[22m
+[2mdist/[22m[36massets/Analyzer-BNaGIPOu.js                       [39m[1m[2m124.38 kB[22m[1m[22m[2m Γöé gzip:  29.05 kB[22m
+[2mdist/[22m[36massets/utils-BAQ8Pqnf.js                          [39m[1m[2m131.45 kB[22m[1m[22m[2m Γöé gzip:  45.47 kB[22m
+[2mdist/[22m[36massets/Dashboard-7N3XPpT4.js                      [39m[1m[2m139.09 kB[22m[1m[22m[2m Γöé gzip:  27.35 kB[22m
+[2mdist/[22m[36massets/react-vendor-CDfJqfTF.js                   [39m[1m[2m161.10 kB[22m[1m[22m[2m Γöé gzip:  52.36 kB[22m
+[2mdist/[22m[36massets/EMITracker-DC7jly1Z.js                     [39m[1m[2m257.74 kB[22m[1m[22m[2m Γöé gzip:  53.68 kB[22m
+[2mdist/[22m[36massets/mui-core-N76QtOcT.js                       [39m[1m[2m422.18 kB[22m[1m[22m[2m Γöé gzip: 121.22 kB[22m
+[2mdist/[22m[36massets/charts-B8eXiZxr.js                         [39m[1m[2m658.19 kB[22m[1m[22m[2m Γöé gzip: 181.13 kB[22m
+[2mdist/[22m[36massets/index-sDtzRQga.js                          [39m[1m[2m868.25 kB[22m[1m[22m[2m Γöé gzip: 215.56 kB[22m
+[32mΓ£ô built in 4m 9s[39m
