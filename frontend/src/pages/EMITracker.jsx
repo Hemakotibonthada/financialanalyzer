@@ -2179,7 +2179,7 @@ const EMITracker = () => {
                   </TableContainer>
                 </Grid>
               )}
-            </Grid>
+            </Box>
           ) : (
             <Typography>No EMI selected</Typography>
           )}
