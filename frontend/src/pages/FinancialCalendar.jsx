@@ -108,21 +108,23 @@ export default function FinancialCalendar() {
         const startDate = new Date(year, month, 1).toISOString();
         const endDate = new Date(year, month + 1, 0).toISOString();
         const [txRes, billRes, emiRes] = await Promise.all([
-          api.get('/transactions', { params: { startDate, endDate, limit: 500 } }).catch(() => ({ data: [] })),
-          api.get('/bill-reminders').catch(() => ({ data: [] })),
-          api.get('/emi').catch(() => ({ data: [] })),
+          api.get('/transactions', { params: { startDate, endDate, limit: 500 } }).catch(() => ({ data: { data: [] } })),
+          api.get('/bill-reminders').catch(() => ({ data: { data: [] } })),
+          api.get('/emi/overview').catch(() => ({ data: { data: { activeEMIs: [] } } })),
         ]);
 
-        const txns = (txRes.data?.transactions || txRes.data || []).map(t => ({
+        const txRaw = txRes.data?.data || txRes.data?.transactions || [];
+        const txns = (Array.isArray(txRaw) ? txRaw : []).map(t => ({
           id: t._id || t.id,
           title: t.description || t.name || 'Transaction',
           amount: t.amount || 0,
           date: t.date,
-          type: t.type === 'income' ? 'income' : 'expense',
+          type: t.type === 'income' || t.type === 'credit' ? 'income' : 'expense',
           source: 'transaction',
         }));
 
-        const bills = (billRes.data?.reminders || billRes.data || []).map(b => ({
+        const billRaw = billRes.data?.data || billRes.data?.reminders || [];
+        const bills = (Array.isArray(billRaw) ? billRaw : []).map(b => ({
           id: b._id || b.id,
           title: b.name || b.title || 'Bill',
           amount: b.amount || 0,
@@ -132,9 +134,10 @@ export default function FinancialCalendar() {
           source: 'bill',
         }));
 
-        const emis = (emiRes.data?.emis || emiRes.data || []).map(e => ({
+        const emiRaw = emiRes.data?.data?.activeEMIs || emiRes.data?.data || [];
+        const emis = (Array.isArray(emiRaw) ? emiRaw : []).map(e => ({
           id: e._id || e.id,
-          title: e.name || e.loanName || 'EMI',
+          title: e.merchantName || e.name || e.loanName || 'EMI',
           amount: e.emiAmount || e.amount || 0,
           date: e.nextDueDate || e.dueDate || e.date,
           type: 'emi',

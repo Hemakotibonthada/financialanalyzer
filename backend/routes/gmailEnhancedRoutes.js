@@ -415,24 +415,63 @@ router.post('/sync', authenticate, async (req, res) => {
           await emailDoc.save();
           results.stored++;
 
-          // Download attachments + try to unlock password-protected PDFs
+          // Download attachments, organize by category, save to Documents
           for (const att of attachmentParts) {
             try {
               const attRes = await gmail.users.messages.attachments.get({ userId: 'me', messageId: msgId, id: att.attachmentId });
               const attData = Buffer.from(attRes.data.data, 'base64');
+              const pathModule = require('path');
+              const fsModule = require('fs');
+              const Document = require('../models/Document');
 
-              // Save attachment to local filesystem
-              const userDir = require('path').join(process.cwd(), 'uploads', 'gmail', String(userId));
-              const fs = require('fs');
-              if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+              // Categorize attachment based on email classification + filename
+              const emailCat = emailDoc.classification?.primaryCategory || 'other';
+              const fname = (att.filename || '').toLowerCase();
+              let docCategory = 'other';
+              let folderName = 'other';
+
+              if (/salary|payslip|pay\s*stub|wage|form\s*16/i.test(fname + ' ' + (emailDoc.subject || ''))) {
+                docCategory = 'payslip'; folderName = 'payslips';
+              } else if (/insurance|policy|premium|claim|lic|ergo|lombard|star.*health/i.test(fname + ' ' + (emailDoc.subject || '') + ' ' + (emailDoc.from?.email || ''))) {
+                docCategory = 'insurance'; folderName = 'insurance';
+              } else if (/investment|mutual.*fund|sip|portfolio|demat|zerodha|groww|kuvera|dividend/i.test(fname + ' ' + (emailDoc.subject || ''))) {
+                docCategory = 'investment'; folderName = 'investments';
+              } else if (/statement|bank.*statement|account.*statement/i.test(fname + ' ' + (emailDoc.subject || ''))) {
+                docCategory = 'bank_statement'; folderName = 'bank_statements';
+              } else if (/credit.*card|card.*statement/i.test(fname + ' ' + (emailDoc.subject || ''))) {
+                docCategory = 'credit_card'; folderName = 'credit_cards';
+              } else if (/tax|itr|form.*16|tds|26as|ais/i.test(fname + ' ' + (emailDoc.subject || ''))) {
+                docCategory = 'tax_document'; folderName = 'tax_documents';
+              } else if (/receipt|invoice|bill/i.test(fname)) {
+                docCategory = 'receipt'; folderName = 'receipts';
+              } else if (/loan|emi|sanction/i.test(fname + ' ' + (emailDoc.subject || ''))) {
+                docCategory = 'loan'; folderName = 'loans';
+              } else if (emailCat === 'insurance_notification') {
+                docCategory = 'insurance'; folderName = 'insurance';
+              } else if (emailCat === 'credit_card_statement') {
+                docCategory = 'credit_card'; folderName = 'credit_cards';
+              } else if (emailCat === 'salary_credit') {
+                docCategory = 'payslip'; folderName = 'payslips';
+              }
+
+              // Save to organized folder: uploads/documents/{userId}/{category}/
+              const docDir = pathModule.join(process.cwd(), 'uploads', 'documents', String(userId), folderName);
+              if (!fsModule.existsSync(docDir)) fsModule.mkdirSync(docDir, { recursive: true });
               const safeFilename = `${Date.now()}_${att.filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-              const localPath = require('path').join(userDir, safeFilename);
-              fs.writeFileSync(localPath, attData);
+              const localPath = pathModule.join(docDir, safeFilename);
+              fsModule.writeFileSync(localPath, attData);
 
+              // Also save to gmail folder for raw backup
+              const gmailDir = pathModule.join(process.cwd(), 'uploads', 'gmail', String(userId));
+              if (!fsModule.existsSync(gmailDir)) fsModule.mkdirSync(gmailDir, { recursive: true });
+              const gmailPath = pathModule.join(gmailDir, safeFilename);
+              fsModule.writeFileSync(gmailPath, attData);
+
+              // Create GmailAttachment record
               const attDoc = new GmailAttachment({ userId, emailId: emailDoc._id, gmailMessageId: msgId, filename: att.filename,
                 mimeType: att.mimeType, size: attData.length, contentBase64: attRes.data.data, status: 'downloaded',
-                localPath });
-              
+                localPath, category: docCategory });
+
               // Try to unlock password-protected PDFs
               if (att.mimeType === 'application/pdf' || att.filename.toLowerCase().endsWith('.pdf')) {
                 try {
@@ -449,12 +488,39 @@ router.post('/sync', authenticate, async (req, res) => {
                     }
                   }
                 } catch (unlockErr) {
-                  // Not password protected or unlock failed — that's OK
                   logger.debug('PDF unlock attempt:', att.filename, unlockErr.message);
                 }
               }
 
               await attDoc.save();
+
+              // Create Document record for the Documents tab
+              const existingDoc = await Document.findOne({ userId, gmailMessageId: msgId, originalFileName: att.filename });
+              if (!existingDoc) {
+                try {
+                  await Document.create({
+                    userId,
+                    fileName: safeFilename,
+                    originalFileName: att.filename,
+                    fileType: pathModule.extname(att.filename).replace('.', '') || 'pdf',
+                    fileSize: attData.length,
+                    filePath: localPath,
+                    source: 'gmail',
+                    gmailMessageId: msgId,
+                    category: docCategory,
+                    isProcessed: false,
+                    metadata: {
+                      subject: emailDoc.subject,
+                      from: emailDoc.from?.email,
+                      dateReceived: emailDoc.receivedAt,
+                      folderName,
+                    }
+                  });
+                } catch (docErr) {
+                  logger.debug('Document record creation skipped:', docErr.message);
+                }
+              }
+
               results.attachmentsProcessed++;
             } catch (e) { results.errors.push(`Attachment ${att.filename}: ${e.message}`); }
           }
