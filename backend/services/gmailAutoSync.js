@@ -118,7 +118,7 @@ class GmailAutoSyncScheduler {
         'gmailSettings.isConnected': true,
         'gmailSettings.accessToken': { $exists: true, $ne: null },
         'gmailSettings.refreshToken': { $exists: true, $ne: null },
-      }).select('userId gmailSettings.lastSync gmailSettings.email gmailSettings.initialSyncCompleted').lean();
+      }).select('+gmailSettings.accessToken +gmailSettings.refreshToken userId gmailSettings.lastSync gmailSettings.email gmailSettings.initialSyncCompleted gmailSettings.isConnected gmailSettings.grantedScopes').lean();
 
       runResults.usersFound = connectedProfiles.length;
       logger.info(`[GmailAutoSync] Found ${connectedProfiles.length} connected users`);
@@ -184,7 +184,8 @@ class GmailAutoSyncScheduler {
 
       const dateAfter = new Date(Date.now() - this.syncWindowDays * 24 * 60 * 60 * 1000);
 
-      const syncResult = await gmailService.syncFinancialDocuments(userId, {
+      // Pass the full profile (with tokens) as 2nd arg, options as 3rd
+      const syncResult = await gmailService.syncFinancialDocuments(userId, profile, {
         dateAfter,
         maxResults: 50, // Limit per-user to avoid rate limits
       });
@@ -237,8 +238,16 @@ class GmailAutoSyncScheduler {
    * Manually trigger a sync for a specific user
    */
   async syncUser(userId, options = {}) {
+    // Fetch the full profile with tokens for syncFinancialDocuments
+    const profile = await FinancialProfile.findOne({ userId })
+      .select('+gmailSettings.accessToken +gmailSettings.refreshToken');
+    
+    if (!profile?.gmailSettings?.isConnected) {
+      throw new Error('Gmail not connected for this user');
+    }
+
     const dateAfter = options.dateAfter || new Date(Date.now() - this.syncWindowDays * 24 * 60 * 60 * 1000);
-    return gmailService.syncFinancialDocuments(userId, {
+    return gmailService.syncFinancialDocuments(userId, profile, {
       dateAfter,
       maxResults: options.maxResults || 100,
       forceResync: options.forceResync || false,
