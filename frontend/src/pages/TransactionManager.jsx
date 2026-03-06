@@ -93,8 +93,8 @@ const TransactionManager = () => {
 
       // Calculate statistics
       const txns = data?.transactions || data || [];
-      const totalIncome = txns.filter(t => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
-      const totalExpenses = txns.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount || 0), 0);
+      const totalIncome = txns.filter(t => t.type === 'income' || t.type === 'credit').reduce((s, t) => s + Math.abs(t.amount || 0), 0);
+      const totalExpenses = txns.filter(t => t.type === 'expense' || t.type === 'debit').reduce((s, t) => s + Math.abs(t.amount || 0), 0);
       const categoryBreakdown = {};
       txns.forEach(t => {
         const cat = t.category || 'Other';
