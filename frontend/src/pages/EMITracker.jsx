@@ -2297,8 +2297,8 @@ const EMITracker = () => {
                     message: 'This will change the repayment type from Monthly EMI to Personal Loan (pay back anytime when requested). Continue?',
                     confirmAction: async () => {
                       try {
-                        await api.put(`/emi/${emiId}`, { repaymentType: 'ON_REQUEST' });
-                        setConfirmationDialog({ open: true, title: 'Converted', message: 'EMI has been converted to a Personal Loan. Go to Personal Loans tab to view it.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); setActiveTab(8); fetchAllData(); } });
+                        await api.post(`/emi/${emiId}/convert-to-loan`);
+                        setConfirmationDialog({ open: true, title: 'Converted', message: 'EMI converted to Personal Loan. It stays in Active EMIs and also appears in Personal Loans tab. Repayments sync between both.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); setActiveTab(8); fetchAllData(); fetchPersonalLoans(); } });
                       } catch (err) {
                         setConfirmationDialog({ open: true, title: 'Conversion Failed', message: err.response?.data?.message || 'Failed to convert', isError: true, confirmAction: () => setConfirmationDialog(p => ({ ...p, open: false })) });
                       }
@@ -6096,8 +6096,8 @@ const EMITracker = () => {
                                       message: `Convert "${emi.merchantName}" from Monthly EMI to Personal Loan (pay back anytime)?`,
                                       confirmAction: async () => {
                                         try {
-                                          await api.put(`/emi/${emiId}`, { repaymentType: 'ON_REQUEST' });
-                                          setConfirmationDialog({ open: true, title: 'Converted', message: 'Moved to Personal Loans tab.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); setActiveTab(8); fetchAllData(); } });
+                                          await api.post(`/emi/${emiId}/convert-to-loan`);
+                                          setConfirmationDialog({ open: true, title: 'Converted', message: 'Stays in Active EMIs + appears in Personal Loans. Repayments sync.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); setActiveTab(8); fetchAllData(); fetchPersonalLoans(); } });
                                         } catch (err) {
                                           setConfirmationDialog({ open: true, title: 'Failed', message: err.response?.data?.message || 'Conversion failed', isError: true, confirmAction: () => setConfirmationDialog(p => ({ ...p, open: false })) });
                                         }

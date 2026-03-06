@@ -369,6 +369,34 @@ router.post('/:id/repayment', authenticate, async (req, res) => {
     
     await loan.addRepayment(amount);
     
+    // If this loan is linked to an EMI, update the EMI too
+    if (loan.linkedEmiId) {
+      try {
+        const EMI = require('../models/EMI');
+        const linkedEmi = await EMI.findById(loan.linkedEmiId);
+        if (linkedEmi) {
+          // Mark next upcoming installment as paid
+          const nextUnpaid = linkedEmi.paymentHistory?.find(p => p.status === 'upcoming' || p.status === 'pending');
+          if (nextUnpaid) {
+            nextUnpaid.status = 'paid';
+            nextUnpaid.paidDate = new Date();
+            nextUnpaid.amount = amount;
+          }
+          linkedEmi.paidInstallments = (linkedEmi.paidInstallments || 0) + 1;
+          linkedEmi.remainingInstallments = Math.max(0, linkedEmi.totalTenure - linkedEmi.paidInstallments);
+          
+          if (linkedEmi.remainingInstallments === 0) {
+            linkedEmi.status = 'completed';
+          }
+          
+          await linkedEmi.save();
+          logger.info(`Linked EMI ${loan.linkedEmiId} updated after personal loan repayment`);
+        }
+      } catch (emiErr) {
+        logger.warn('Failed to update linked EMI:', emiErr.message);
+      }
+    }
+    
     logger.info(`Repayment of ₹${amount} added to personal loan ${loan._id}`);
     
     res.json({

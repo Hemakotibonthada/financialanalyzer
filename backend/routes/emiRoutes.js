@@ -2477,6 +2477,72 @@ router.post('/:id/foreclose', authenticate, async (req, res) => {
 });
 
 /**
+ * @route POST /api/emi/:id/convert-to-loan
+ * @desc Convert EMI to Personal Loan — keeps EMI active AND creates PersonalLoan record
+ * @access Private
+ */
+router.post('/:id/convert-to-loan', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const emi = await EMI.findOne({ _id: id, userId: req.user._id });
+    
+    if (!emi) {
+      return res.status(404).json({ success: false, message: 'EMI not found' });
+    }
+    if (emi.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Only active EMIs can be converted' });
+    }
+
+    // 1. Mark EMI as ON_REQUEST but keep it active
+    emi.repaymentType = 'ON_REQUEST';
+    emi.convertedToLoan = true;
+    emi.convertedAt = new Date();
+    await emi.save();
+
+    // 2. Create a linked PersonalLoan record
+    const PersonalLoan = require('../models/PersonalLoan');
+    
+    // Check if already linked
+    let loan = await PersonalLoan.findOne({ userId: req.user._id, linkedEmiId: emi._id });
+    
+    if (!loan) {
+      const outstanding = (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+      loan = await PersonalLoan.create({
+        userId: req.user._id,
+        lenderName: emi.cardProvider || emi.merchantName || 'EMI Provider',
+        principalAmount: emi.principalAmount || outstanding,
+        outstandingAmount: outstanding,
+        interestRate: emi.interestRate || 0,
+        loanTakenDate: emi.startDate || new Date(),
+        purpose: `Converted from EMI: ${emi.merchantName || emi.productDescription || 'EMI'}`,
+        relationship: 'bank',
+        status: 'active',
+        linkedEmiId: emi._id,
+        notes: `Auto-created from EMI conversion. Original tenure: ${emi.totalTenure} months, Paid: ${emi.paidInstallments}`,
+        repayments: emi.paymentHistory?.filter(p => p.status === 'paid').map((p, i) => ({
+          amount: p.amount || emi.emiAmount,
+          amountInINR: p.amount || emi.emiAmount,
+          date: p.paidDate || p.dueDate,
+          method: 'bank_transfer',
+          notes: `EMI installment ${p.installmentNumber || i + 1}`
+        })) || []
+      });
+    }
+
+    logger.info(`EMI ${id} converted to Personal Loan ${loan._id} for user ${req.user._id}`);
+
+    res.json({
+      success: true,
+      message: 'EMI converted to Personal Loan successfully',
+      data: { emi, personalLoan: loan }
+    });
+  } catch (error) {
+    logger.error('Convert to loan error:', error);
+    res.status(500).json({ success: false, message: 'Failed to convert EMI', error: error.message });
+  }
+});
+
+/**
  * @route GET /api/emi/export/pdf
  * @desc Export EMI report as PDF
  * @access Private

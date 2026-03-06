@@ -66,6 +66,11 @@ const personalLoanSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  linkedEmiId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'EMI',
+    default: null
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
