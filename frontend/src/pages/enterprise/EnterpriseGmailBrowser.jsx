@@ -42,8 +42,8 @@ const CATEGORY_COLORS = {
 };
 
 export default function EnterpriseGmailBrowser() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark' || theme === 'black';
+  const { mode } = useTheme();
+  const isDark = mode === 'dark' || mode === 'black';
 
   // ── State ───────────────────────────────────────────────────────────────
   const [connectionStatus, setConnectionStatus] = useState(null);

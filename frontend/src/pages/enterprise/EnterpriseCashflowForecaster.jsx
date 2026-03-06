@@ -76,7 +76,7 @@ function ScenarioCard({ title, icon: Icon, color, values, description, isActive,
 // MAIN
 // ============================================================================
 export default function EnterpriseCashflowForecaster() {
-  const { theme } = useTheme();
+  const { mode: theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [forecastMonths, setForecastMonths] = useState(6);

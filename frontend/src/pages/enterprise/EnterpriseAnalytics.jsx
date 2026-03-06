@@ -82,7 +82,7 @@ function TreemapContent({ x, y, width, height, name, value, index }) {
 // MAIN COMPONENT
 // ============================================================================
 export default function EnterpriseAnalytics() {
-  const { theme } = useTheme();
+  const { mode: theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState(0);

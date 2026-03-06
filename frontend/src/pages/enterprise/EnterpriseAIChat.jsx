@@ -244,7 +244,7 @@ function TypingIndicator() {
 // MAIN
 // ============================================================================
 export default function EnterpriseAIChat() {
-  const { theme } = useTheme();
+  const { mode: theme } = useTheme();
   const [messages, setMessages] = useState([{
     id: 1, role: 'ai', text: 'Hello! 👋 I\'m your AI Financial Assistant powered by local intelligence.\n\nI can analyze your finances and provide personalized advice on budgeting, investments, taxes, debt, and more.\n\nHow can I help you today?',
     timestamp: Date.now(),

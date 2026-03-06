@@ -159,7 +159,7 @@ function ChartTooltip({ active, payload, label }) {
 // MAIN COMPONENT
 // ============================================================================
 export default function EnterpriseFinancialHealth() {
-  const { theme } = useTheme();
+  const { mode: theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);

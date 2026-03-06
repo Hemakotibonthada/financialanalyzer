@@ -178,7 +178,7 @@ function ReportPreview({ reportData, reportType }) {
 // MAIN
 // ============================================================================
 export default function EnterpriseReports() {
-  const { theme } = useTheme();
+  const { mode: theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [selectedType, setSelectedType] = useState('executive');
