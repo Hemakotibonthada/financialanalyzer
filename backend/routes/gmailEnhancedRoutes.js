@@ -257,275 +257,199 @@ router.delete('/emails/:id', authenticate, async (req, res) => {
 
 /**
  * POST /api/gmail-enhanced/sync
- * Full sync: fetch from Gmail, store, classify, extract transactions, process attachments
+ * Full sync: fetch from Gmail, store, classify, extract transactions, process attachments.
+ * Emits real-time progress via WebSocket so the UI can show a persistent progress bar.
  */
 router.post('/sync', authenticate, async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { maxResults = 50, dateAfter, fullSync = false } = req.body;
+  const userId = req.user._id;
+  const ws = require('../services/websocketService');
 
-    // Get Gmail credentials
-    const profile = await FinancialProfile.findOne({ userId })
-      .select('+gmailSettings.accessToken +gmailSettings.refreshToken');
+  // Respond immediately — sync runs in background
+  const { maxResults = 500, dateAfter, fullSync = false } = req.body;
 
-    if (!profile?.gmailSettings?.isConnected) {
-      return res.status(400).json({
-        success: false,
-        message: 'Gmail not connected. Go to Profile to connect Gmail.',
-      });
-    }
+  // Send initial response so the frontend doesn't hang
+  res.json({ success: true, message: 'Gmail sync started in background', data: { status: 'started' } });
 
-    const GmailService = require('../services/gmailService');
-    const credentials = {
-      access_token: profile.gmailSettings.accessToken,
-      refresh_token: profile.gmailSettings.refreshToken,
-    };
+  // ── Background sync ──
+  (async () => {
+    try {
+      const profile = await FinancialProfile.findOne({ userId })
+        .select('+gmailSettings.accessToken +gmailSettings.refreshToken');
 
-    // Test/refresh the token
-    const gmailSvc = GmailService.getUserInstance(credentials);
-    let accessToken = credentials.access_token;
-
-    if (credentials.refresh_token) {
-      try {
-        const { credentials: newCreds } = await gmailSvc.oauth2Client.refreshToken(credentials.refresh_token);
-        accessToken = newCreds.access_token;
-        await FinancialProfile.findOneAndUpdate(
-          { userId },
-          { $set: { 'gmailSettings.accessToken': accessToken } }
-        );
-        gmailSvc.setCredentials({ access_token: accessToken, refresh_token: credentials.refresh_token });
-      } catch (refreshErr) {
-        logger.warn('Token refresh failed, using existing token:', refreshErr.message);
+      if (!profile?.gmailSettings?.isConnected) {
+        ws.sendToUser(userId, 'gmailSyncProgress', { status: 'error', message: 'Gmail not connected' });
+        return;
       }
-    }
 
-    // Fetch messages from Gmail API
-    const { google } = require('googleapis');
-    const gmail = google.gmail({ version: 'v1', auth: gmailSvc.oauth2Client });
+      ws.sendToUser(userId, 'gmailSyncProgress', { status: 'starting', progress: 0, message: 'Connecting to Gmail...' });
 
-    // Build a simpler query that works with gmail.readonly scope
-    let query = 'category:primary OR category:updates';
-    if (dateAfter) {
-      const d = new Date(dateAfter);
-      query += ` after:${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-    }
+      const GmailService = require('../services/gmailService');
+      const credentials = { access_token: profile.gmailSettings.accessToken, refresh_token: profile.gmailSettings.refreshToken };
+      const gmailSvc = GmailService.getUserInstance(credentials);
 
-    // If not full sync, only get emails since last sync
-    if (!fullSync && profile.gmailSettings.lastSync) {
-      const lastSync = new Date(profile.gmailSettings.lastSync);
-      query += ` after:${lastSync.getFullYear()}/${lastSync.getMonth() + 1}/${lastSync.getDate()}`;
-    }
-
-    logger.info(`Gmail enhanced sync — query: ${query}, maxResults: ${maxResults}`);
-
-    const listResponse = await gmail.users.messages.list({
-      userId: 'me',
-      q: query,
-      maxResults: Math.min(maxResults, 100),
-    });
-
-    const messageIds = (listResponse.data.messages || []).map(m => m.id);
-    logger.info(`Found ${messageIds.length} messages to process`);
-
-    // Process each message
-    const results = {
-      total: messageIds.length,
-      stored: 0,
-      skipped: 0,
-      classified: 0,
-      transactionsExtracted: 0,
-      attachmentsProcessed: 0,
-      errors: [],
-    };
-
-    for (const msgId of messageIds) {
-      try {
-        // Check if already stored
-        const exists = await GmailEmail.exists({ gmailId: msgId, userId });
-        if (exists) {
-          results.skipped++;
-          continue;
-        }
-
-        // Fetch full message
-        const msgResponse = await gmail.users.messages.get({
-          userId: 'me',
-          id: msgId,
-          format: 'full',
-        });
-
-        const msg = msgResponse.data;
-        const headers = msg.payload?.headers || [];
-        const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
-
-        // Parse from field
-        const fromRaw = getHeader('From');
-        const fromMatch = fromRaw.match(/^(?:"?([^"<]*)"?\s*)?<?([^>]*)>?$/);
-        const fromName = fromMatch?.[1]?.trim() || '';
-        const fromEmail = fromMatch?.[2]?.trim() || fromRaw;
-
-        // Extract body
-        let textBody = '';
-        let htmlBody = '';
-
-        function extractBody(part) {
-          if (!part) return;
-          if (part.mimeType === 'text/plain' && part.body?.data) {
-            textBody += Buffer.from(part.body.data, 'base64').toString('utf-8');
-          }
-          if (part.mimeType === 'text/html' && part.body?.data) {
-            htmlBody += Buffer.from(part.body.data, 'base64').toString('utf-8');
-          }
-          if (part.parts) part.parts.forEach(extractBody);
-        }
-        extractBody(msg.payload);
-
-        // Check for attachments
-        const attachmentParts = [];
-        function findAttachments(part) {
-          if (!part) return;
-          if (part.filename && part.body?.attachmentId) {
-            attachmentParts.push({
-              filename: part.filename,
-              mimeType: part.mimeType,
-              size: parseInt(part.body.size || 0),
-              attachmentId: part.body.attachmentId,
-            });
-          }
-          if (part.parts) part.parts.forEach(findAttachments);
-        }
-        findAttachments(msg.payload);
-
-        // Store the email
-        const emailDoc = new GmailEmail({
-          userId,
-          gmailId: msgId,
-          threadId: msg.threadId,
-          subject: getHeader('Subject') || '(No Subject)',
-          from: { name: fromName, email: fromEmail },
-          to: getHeader('To'),
-          date: getHeader('Date'),
-          receivedAt: new Date(parseInt(msg.internalDate)),
-          snippet: msg.snippet || '',
-          body: textBody || '',
-          rawHtml: htmlBody || '',
-          labels: msg.labelIds || [],
-          hasAttachments: attachmentParts.length > 0,
-          attachmentCount: attachmentParts.length,
-          sizeEstimate: msg.sizeEstimate || 0,
-          isRead: !(msg.labelIds || []).includes('UNREAD'),
-        });
-
-        // Classify the email
+      // Refresh token
+      if (credentials.refresh_token) {
         try {
-          const classifier = getClassifier();
-          if (classifier.classifyEmail) {
-            const classification = classifier.classifyEmail({
-              subject: emailDoc.subject,
-              from: emailDoc.from,
-              body: textBody,
-              snippet: emailDoc.snippet,
-            });
-            emailDoc.classification = {
-              primaryCategory: classification.category || 'other',
-              confidence: classification.confidence || 0,
-              detectedBank: classification.bank || null,
-              isFinancial: classification.isFinancial || false,
-              subCategory: classification.subCategory || null,
-            };
-            results.classified++;
-          }
-        } catch (classErr) {
-          logger.warn('Classification failed for message:', msgId, classErr.message);
-        }
+          const { credentials: newCreds } = await gmailSvc.oauth2Client.refreshToken(credentials.refresh_token);
+          await FinancialProfile.findOneAndUpdate({ userId }, { $set: { 'gmailSettings.accessToken': newCreds.access_token } });
+          gmailSvc.setCredentials({ access_token: newCreds.access_token, refresh_token: credentials.refresh_token });
+        } catch (e) { logger.warn('Token refresh failed:', e.message); }
+      }
 
-        // Extract transactions from email body
+      const { google } = require('googleapis');
+      const gmail = google.gmail({ version: 'v1', auth: gmailSvc.oauth2Client });
+
+      ws.sendToUser(userId, 'gmailSyncProgress', { status: 'fetching', progress: 5, message: 'Fetching email list...' });
+
+      // Build query
+      let query = 'category:primary OR category:updates';
+      if (dateAfter) {
+        const d = new Date(dateAfter);
+        query += ` after:${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+      }
+      if (!fullSync && profile.gmailSettings.lastSync) {
+        const ls = new Date(profile.gmailSettings.lastSync);
+        query += ` after:${ls.getFullYear()}/${ls.getMonth() + 1}/${ls.getDate()}`;
+      }
+
+      // Paginate to get ALL messages
+      const allMessageIds = [];
+      let pageToken = null;
+      const limit = Math.min(maxResults, 500);
+      do {
+        const listRes = await gmail.users.messages.list({
+          userId: 'me', q: query, maxResults: Math.min(100, limit - allMessageIds.length),
+          ...(pageToken && { pageToken })
+        });
+        const msgs = listRes.data.messages || [];
+        allMessageIds.push(...msgs.map(m => m.id));
+        pageToken = listRes.data.nextPageToken;
+        ws.sendToUser(userId, 'gmailSyncProgress', { status: 'fetching', progress: 10, message: `Found ${allMessageIds.length} emails...` });
+      } while (pageToken && allMessageIds.length < limit);
+
+      logger.info(`Gmail enhanced sync: ${allMessageIds.length} messages to process`);
+      ws.sendToUser(userId, 'gmailSyncProgress', { status: 'processing', progress: 15, message: `Processing ${allMessageIds.length} emails...`, total: allMessageIds.length });
+
+      const results = { total: allMessageIds.length, stored: 0, skipped: 0, classified: 0, transactionsExtracted: 0, attachmentsProcessed: 0, errors: [] };
+
+      for (let idx = 0; idx < allMessageIds.length; idx++) {
+        const msgId = allMessageIds[idx];
+        const pct = 15 + Math.floor((idx / allMessageIds.length) * 80);
+
         try {
-          const extractor = getExtractor();
-          if (extractor.extractFromEmail) {
-            const extracted = extractor.extractFromEmail({
-              subject: emailDoc.subject,
-              body: textBody,
-              from: emailDoc.from,
-              date: emailDoc.receivedAt,
-            });
-            if (extracted && extracted.transactions?.length > 0) {
-              emailDoc.extractedData = {
-                transactions: extracted.transactions,
-                transactionCount: extracted.transactions.length,
-                totalCredits: extracted.transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0),
-                totalDebits: extracted.transactions.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0),
-              };
-              results.transactionsExtracted += extracted.transactions.length;
+          const exists = await GmailEmail.exists({ gmailId: msgId, userId });
+          if (exists) { results.skipped++; continue; }
+
+          const msgResponse = await gmail.users.messages.get({ userId: 'me', id: msgId, format: 'full' });
+          const msg = msgResponse.data;
+          const headers = msg.payload?.headers || [];
+          const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+
+          const fromRaw = getHeader('From');
+          const fromMatch = fromRaw.match(/^(?:"?([^"<]*)"?\s*)?<?([^>]*)>?$/);
+          const fromName = fromMatch?.[1]?.trim() || '';
+          const fromEmail = fromMatch?.[2]?.trim() || fromRaw;
+
+          let textBody = '', htmlBody = '';
+          function extractBody(part) {
+            if (!part) return;
+            if (part.mimeType === 'text/plain' && part.body?.data) textBody += Buffer.from(part.body.data, 'base64').toString('utf-8');
+            if (part.mimeType === 'text/html' && part.body?.data) htmlBody += Buffer.from(part.body.data, 'base64').toString('utf-8');
+            if (part.parts) part.parts.forEach(extractBody);
+          }
+          extractBody(msg.payload);
+
+          const attachmentParts = [];
+          function findAttachments(part) {
+            if (!part) return;
+            if (part.filename && part.body?.attachmentId) {
+              attachmentParts.push({ filename: part.filename, mimeType: part.mimeType, size: parseInt(part.body.size || 0), attachmentId: part.body.attachmentId });
             }
+            if (part.parts) part.parts.forEach(findAttachments);
           }
-        } catch (extErr) {
-          logger.warn('Transaction extraction failed:', msgId, extErr.message);
-        }
+          findAttachments(msg.payload);
 
-        await emailDoc.save();
-        results.stored++;
+          const emailDoc = new GmailEmail({
+            userId, gmailId: msgId, threadId: msg.threadId,
+            subject: getHeader('Subject') || '(No Subject)',
+            from: { name: fromName, email: fromEmail },
+            to: getHeader('To'), date: getHeader('Date'),
+            receivedAt: new Date(parseInt(msg.internalDate)),
+            snippet: msg.snippet || '', body: textBody || '', rawHtml: htmlBody || '',
+            labels: msg.labelIds || [], hasAttachments: attachmentParts.length > 0,
+            attachmentCount: attachmentParts.length, sizeEstimate: msg.sizeEstimate || 0,
+            isRead: !(msg.labelIds || []).includes('UNREAD'),
+          });
 
-        // Process attachments
-        for (const att of attachmentParts) {
+          // Classify
           try {
-            // Download attachment content
-            const attResponse = await gmail.users.messages.attachments.get({
-              userId: 'me',
-              messageId: msgId,
-              id: att.attachmentId,
-            });
+            const classifier = getClassifier();
+            if (classifier.classifyEmail) {
+              const c = classifier.classifyEmail({ subject: emailDoc.subject, from: emailDoc.from, body: textBody, snippet: emailDoc.snippet });
+              emailDoc.classification = { primaryCategory: c.category || 'other', confidence: c.confidence || 0, detectedBank: c.bank || null, isFinancial: c.isFinancial || false, subCategory: c.subCategory || null };
+              results.classified++;
+            }
+          } catch (e) { /* skip */ }
 
-            const attDoc = new GmailAttachment({
-              userId,
-              emailId: emailDoc._id,
-              gmailMessageId: msgId,
-              filename: att.filename,
-              mimeType: att.mimeType,
-              size: attResponse.data.size || att.size,
-              contentBase64: attResponse.data.data,
-              status: 'downloaded',
-            });
+          // Extract transactions
+          try {
+            const extractor = getExtractor();
+            if (extractor.extractFromEmail) {
+              const ex = extractor.extractFromEmail({ subject: emailDoc.subject, body: textBody, from: emailDoc.from, date: emailDoc.receivedAt });
+              if (ex?.transactions?.length > 0) {
+                emailDoc.extractedData = { transactions: ex.transactions, transactionCount: ex.transactions.length,
+                  totalCredits: ex.transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0),
+                  totalDebits: ex.transactions.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0) };
+                results.transactionsExtracted += ex.transactions.length;
+              }
+            }
+          } catch (e) { /* skip */ }
 
-            await attDoc.save();
-            results.attachmentsProcessed++;
-          } catch (attErr) {
-            logger.warn('Attachment download failed:', att.filename, attErr.message);
-            results.errors.push(`Attachment ${att.filename}: ${attErr.message}`);
+          await emailDoc.save();
+          results.stored++;
+
+          // Download attachments
+          for (const att of attachmentParts) {
+            try {
+              const attRes = await gmail.users.messages.attachments.get({ userId: 'me', messageId: msgId, id: att.attachmentId });
+              const attDoc = new GmailAttachment({ userId, emailId: emailDoc._id, gmailMessageId: msgId, filename: att.filename,
+                mimeType: att.mimeType, size: attRes.data.size || att.size, contentBase64: attRes.data.data, status: 'downloaded' });
+              await attDoc.save();
+              results.attachmentsProcessed++;
+            } catch (e) { results.errors.push(`Attachment ${att.filename}: ${e.message}`); }
           }
-        }
-      } catch (msgErr) {
-        logger.warn('Message processing failed:', msgId, msgErr.message);
-        results.errors.push(`Message ${msgId}: ${msgErr.message}`);
+
+          // Emit progress every 5 messages
+          if (idx % 5 === 0 || idx === allMessageIds.length - 1) {
+            ws.sendToUser(userId, 'gmailSyncProgress', {
+              status: 'processing', progress: pct,
+              message: `${idx + 1}/${allMessageIds.length} — ${results.stored} stored, ${results.skipped} skipped`,
+              current: idx + 1, total: allMessageIds.length, results
+            });
+          }
+        } catch (e) { results.errors.push(`${msgId}: ${e.message}`); }
       }
-    }
 
-    // Update last sync time
-    await FinancialProfile.findOneAndUpdate(
-      { userId },
-      { $set: { 'gmailSettings.lastSync': new Date() } }
-    );
+      // Update last sync time
+      await FinancialProfile.findOneAndUpdate({ userId }, { $set: { 'gmailSettings.lastSync': new Date() } });
 
-    logger.info('Enhanced Gmail sync completed:', results);
+      ws.sendToUser(userId, 'gmailSyncProgress', {
+        status: 'completed', progress: 100,
+        message: `Done! ${results.stored} emails stored, ${results.transactionsExtracted} transactions extracted`,
+        results
+      });
 
-    res.json({
-      success: true,
-      message: `Synced ${results.stored} new emails, extracted ${results.transactionsExtracted} transactions`,
-      data: results,
-    });
-  } catch (error) {
-    logger.error('Enhanced Gmail sync error:', error.message);
-
-    if (error.message?.includes('invalid_grant') || error.code === 401) {
-      return res.status(401).json({
-        success: false,
-        message: 'Gmail session expired. Please disconnect and reconnect Gmail.',
-        requiresReauth: true,
+      logger.info('Enhanced Gmail sync completed:', results);
+    } catch (error) {
+      logger.error('Background Gmail sync error:', error.message);
+      ws.sendToUser(userId, 'gmailSyncProgress', {
+        status: 'error', progress: 0,
+        message: error.message?.includes('invalid_grant')
+          ? 'Gmail session expired. Disconnect and reconnect Gmail.'
+          : `Sync failed: ${error.message}`
       });
     }
-
-    res.status(500).json({ success: false, message: 'Gmail sync failed', error: error.message });
-  }
+  })();
 });
 
 /**

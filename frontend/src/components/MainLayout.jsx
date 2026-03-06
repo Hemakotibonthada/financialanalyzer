@@ -39,6 +39,7 @@ import ThemeToggle from './ThemeToggle';
 import ThemePicker from './ThemePicker';
 import NotificationBell from './NotificationBell';
 import api from '../services/api';
+import { useWebSocket } from '../context/WebSocketContext';
 
 /**
  * MainLayout Component
@@ -50,6 +51,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
   const { user, logout } = useAuth();
   const { isCollapsed } = useSidebar();
   const { mode, isDark } = useTheme();
+  const { socket } = useWebSocket();
   const navigate = useNavigate();
   const location = useLocation();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -130,6 +132,22 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
     logout();
     navigate('/login');
   };
+
+  // ── Gmail Sync Progress (persists across page navigation) ──
+  const [gmailSync, setGmailSync] = useState(null);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      setGmailSync(data);
+      // Auto-dismiss after 8 seconds on completion/error
+      if (data.status === 'completed' || data.status === 'error') {
+        setTimeout(() => setGmailSync(null), 8000);
+      }
+    };
+    socket.on('gmailSyncProgress', handler);
+    return () => socket.off('gmailSyncProgress', handler);
+  }, [socket]);
 
   /* ── Reusable dropdown link class ── */
   const dropdownLinkClass =
@@ -516,6 +534,31 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
             </div>
           </div>
         </header>
+
+        {/* Gmail Sync Progress Bar (global, persists across pages) */}
+        {gmailSync && gmailSync.status !== 'idle' && (
+          <div className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${isCollapsed ? 'lg:left-20' : 'lg:left-72'}`}>
+            <div className={`${gmailSync.status === 'error' ? 'bg-red-600' : gmailSync.status === 'completed' ? 'bg-green-600' : 'bg-blue-600'} text-white px-4 py-2 flex items-center gap-3 text-sm shadow-lg`}>
+              {gmailSync.status === 'completed' ? (
+                <Check className="w-4 h-4" />
+              ) : gmailSync.status === 'error' ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              <span className="flex-1 truncate">{gmailSync.message || 'Syncing Gmail...'}</span>
+              {gmailSync.progress > 0 && gmailSync.status !== 'completed' && gmailSync.status !== 'error' && (
+                <span className="text-xs font-mono opacity-80">{gmailSync.progress}%</span>
+              )}
+              <button onClick={() => setGmailSync(null)} className="p-0.5 rounded hover:bg-white/20"><X className="w-3.5 h-3.5" /></button>
+            </div>
+            {gmailSync.status !== 'completed' && gmailSync.status !== 'error' && (
+              <div className="h-1 bg-blue-800">
+                <div className="h-full bg-blue-300 transition-all duration-500" style={{ width: `${gmailSync.progress || 0}%` }} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Main Content */}
         <main className={`pt-16 min-h-screen transition-all duration-300 ${

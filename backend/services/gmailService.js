@@ -747,7 +747,7 @@ class GmailService {
         logger.info(`Using analysis run directory: ${uploadDir}`);
       } else {
         // For regular sync: uploads/financial/{userId}/
-        uploadDir = path.join(process.cwd(), 'uploads', 'financial', userId);
+        uploadDir = path.join(process.cwd(), 'uploads', 'financial', String(userId));
       }
       
       await fs.mkdir(uploadDir, { recursive: true });
