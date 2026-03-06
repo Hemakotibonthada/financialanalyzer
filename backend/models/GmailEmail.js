@@ -618,6 +618,6 @@ gmailEmailSchema.pre('save', function(next) {
   next();
 });
 
-const GmailEmail = mongoose.model('GmailEmail', gmailEmailSchema);
+const GmailEmail = mongoose.models.GmailEmail || mongoose.model('GmailEmail', gmailEmailSchema);
 
 module.exports = GmailEmail;

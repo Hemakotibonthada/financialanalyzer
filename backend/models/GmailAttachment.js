@@ -878,6 +878,6 @@ GmailAttachmentSchema.pre(/^find/, function (next) {
 //  Model export
 // ---------------------------------------------------------------------------
 
-const GmailAttachment = mongoose.model('GmailAttachment', GmailAttachmentSchema);
+const GmailAttachment = mongoose.models.GmailAttachment || mongoose.model('GmailAttachment', GmailAttachmentSchema);
 
 module.exports = GmailAttachment;
