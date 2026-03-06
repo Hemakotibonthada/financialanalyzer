@@ -41,30 +41,6 @@ const documentSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: [
-      'bank_statement',
-      'credit_card',
-      'receipt',
-      'invoice',
-      'tax_document',
-      'investment',
-      'insurance',
-      'upi_transaction',
-      'upi_receipt',
-      'email_record',
-      'banking',
-      'creditCards',
-      'upiPayments',
-      'mobileWallet',
-      'investments',
-      'taxes',
-      'utilities',
-      'loans',
-      'receipts',
-      'payroll',
-      'expenses',
-      'other'
-    ],
     default: 'other'
   },
   isPasswordProtected: {
