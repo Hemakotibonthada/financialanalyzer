@@ -316,10 +316,10 @@ emiSchema.virtual('completionPercentage').get(function() {
 
 // Instance method to update next due date
 emiSchema.methods.updateNextDueDate = function() {
-  const currentDate = new Date();
-  const monthsToAdd = this.paidInstallments + 1;
+  // startDate = first EMI paid date
+  // Next due = startDate + paidInstallments months (0-indexed: 0=first payment at startDate)
   const nextDate = new Date(this.startDate);
-  nextDate.setMonth(nextDate.getMonth() + monthsToAdd);
+  nextDate.setMonth(nextDate.getMonth() + this.paidInstallments);
   
   this.nextDueDate = nextDate;
   

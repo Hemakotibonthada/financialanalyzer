@@ -2035,25 +2035,28 @@ router.post('/manual', authenticate, async (req, res) => {
     const finalTotalTenure = repaymentType === 'ON_REQUEST' ? 1 : parseInt(totalTenure);
     
     // Calculate dates
+    // startDate = date of FIRST EMI payment (not contract date)
     const emiStartDate = new Date(startDate);
     const endDate = new Date(emiStartDate);
     if (repaymentType === 'MONTHLY') {
-      endDate.setMonth(endDate.getMonth() + finalTotalTenure);
+      // Last payment is at startDate + (tenure - 1) months
+      endDate.setMonth(endDate.getMonth() + finalTotalTenure - 1);
     }
     // For ON_REQUEST, end date is not applicable (no fixed tenure)
     
     const nextDueDate = repaymentType === 'MONTHLY' ? (() => {
       const now = new Date();
-      // Calculate months elapsed from start to determine next future due date
-      const monthsFromStart = Math.max(0, Math.floor(
-        (now.getFullYear() - emiStartDate.getFullYear()) * 12 +
-        (now.getMonth() - emiStartDate.getMonth())
-      ));
-      // Next due = start + (elapsed + 1) months, capped at tenure
-      const nextInstallment = Math.min(monthsFromStart + 1, finalTotalTenure);
-      const date = new Date(emiStartDate);
-      date.setMonth(date.getMonth() + nextInstallment);
-      return date;
+      // First payment is at startDate, subsequent payments monthly
+      // Find the next future due date
+      for (let i = 0; i < finalTotalTenure; i++) {
+        const dueDate = new Date(emiStartDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+        if (dueDate > now) return dueDate;
+      }
+      // All installments are past — return last one
+      const lastDate = new Date(emiStartDate);
+      lastDate.setMonth(lastDate.getMonth() + finalTotalTenure - 1);
+      return lastDate;
     })() : null; // No next due date for ON_REQUEST type
     
     // For older EMIs, calculate how many installments are already past
@@ -2074,20 +2077,21 @@ router.post('/manual', authenticate, async (req, res) => {
       const monthlyInterest = finalInterestType === 'flat' ? 0 : (interestRate || 0) / 12 / 100;
       const flatInterestPerMonth = finalInterestType === 'flat' ? (parseFloat(interestRate) || 0) / finalTotalTenure : 0;
       
-      for (let i = 1; i <= finalTotalTenure; i++) {
+      for (let i = 0; i < finalTotalTenure; i++) {
+        // First installment (i=0) is at emiStartDate itself
         const dueDate = new Date(emiStartDate);
         dueDate.setMonth(dueDate.getMonth() + i);
         
         // Calculate principal and interest for this installment
-        const outstandingPrincipal = principalAmount - ((i - 1) * (principalAmount / finalTotalTenure));
+        const outstandingPrincipal = principalAmount - (i * (principalAmount / finalTotalTenure));
         const interestPaid = finalInterestType === 'flat' ? flatInterestPerMonth : (outstandingPrincipal * monthlyInterest);
         const principalPaid = finalEmiAmount - interestPaid;
         
         // Auto-mark past installments as paid for older EMIs
-        const isPast = i <= autoPaidInstallments;
+        const isPast = i < autoPaidInstallments;
         
         paymentHistory.push({
-          installmentNumber: i,
+          installmentNumber: i + 1,
           dueDate: dueDate,
           amount: finalEmiAmount,
           principalPaid: Math.max(0, principalPaid),

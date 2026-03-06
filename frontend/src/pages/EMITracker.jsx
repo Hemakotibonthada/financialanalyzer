@@ -1586,7 +1586,7 @@ const EMITracker = () => {
       }
     }
     
-    if (!manualEMIData.startDate) errors.startDate = 'Start date is required';
+    if (!manualEMIData.startDate) errors.startDate = 'First EMI paid date is required';
     
     setManualEMIErrors(errors);
     return Object.keys(errors).length === 0;
@@ -2110,7 +2110,7 @@ const EMITracker = () => {
             <Grid container spacing={2} alignItems="flex-start">
               {/* Left column: Start / End / Next EMI Day first, then provider info */}
               <Grid size={{ xs: 12, md: 4 }}>
-                <Typography variant="subtitle2">Start Date</Typography>
+                <Typography variant="subtitle2">First EMI Date</Typography>
                 <Typography variant="body1" gutterBottom>{selectedEMI.startDate ? formatDate(selectedEMI.startDate) : '—'}</Typography>
 
                 <Typography variant="subtitle2">Estimated End Date</Typography>
@@ -8448,12 +8448,12 @@ const EMITracker = () => {
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="EMI Start Date *"
+                label="First EMI Paid Date *"
                 type="date"
                 value={manualEMIData.startDate}
                 onChange={(e) => handleManualEMIChange('startDate', e.target.value)}
                 error={!!manualEMIErrors.startDate}
-                helperText={manualEMIErrors.startDate}
+                helperText={manualEMIErrors.startDate || 'Date when first EMI installment was paid'}
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
