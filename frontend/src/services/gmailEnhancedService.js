@@ -29,6 +29,12 @@ const gmailEnhancedService = {
   runAnalysis: (days = 90) => api.post('/gmail-enhanced/analyze', { days }),
   getReport: (days = 30) => api.get('/gmail-enhanced/report', { params: { days } }),
 
+  // ── Gmail AI Agent ──
+  trainAgent: () => api.post('/gmail-enhanced/agent/train'),
+  getAgentStatus: () => api.get('/gmail-enhanced/agent/status'),
+  agentAnalyze: (params = {}) => api.post('/gmail-enhanced/agent/analyze', params),
+  getAgentInsights: () => api.get('/gmail-enhanced/agent/insights'),
+
   // ── Data Management ──
   clearAllData: () => api.delete('/gmail-enhanced/data'),
 };

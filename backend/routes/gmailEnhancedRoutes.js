@@ -557,6 +557,18 @@ router.post('/sync', authenticate, async (req, res) => {
         logger.debug('Insurance auto-extract skipped:', insErr.message);
       }
 
+      // Auto-train Gmail AI Agent after sync
+      try {
+        const { gmailAIAgent } = require('../services/gmail/gmailAIAgent');
+        await gmailAIAgent.loadModels(userId);
+        const trainResult = await gmailAIAgent.trainFromUserEmails(userId);
+        if (trainResult.success) {
+          logger.info(`[GmailAIAgent] Auto-trained after sync: ${trainResult.accuracy}% accuracy, ${trainResult.totalEmails} emails`);
+        }
+      } catch (agentErr) {
+        logger.debug('Gmail AI Agent auto-train skipped:', agentErr.message);
+      }
+
       ws.sendToUser(userId, 'gmailSyncProgress', {
         status: 'completed', progress: 100,
         message: `Done! ${results.stored} emails stored, ${results.transactionsExtracted} transactions extracted`,
@@ -1086,6 +1098,129 @@ router.get('/stats', authenticate, async (req, res) => {
   } catch (error) {
     logger.error('Stats error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to get stats' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// GMAIL AI AGENT ENDPOINTS
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * POST /api/gmail-enhanced/agent/train
+ * Train the Gmail AI Agent on the user's emails
+ */
+router.post('/agent/train', authenticate, async (req, res) => {
+  try {
+    const { gmailAIAgent } = require('../services/gmail/gmailAIAgent');
+    
+    // Load existing models first
+    await gmailAIAgent.loadModels(req.user._id);
+    
+    // Train on user's emails
+    const result = await gmailAIAgent.trainFromUserEmails(req.user._id);
+    
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Agent training error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to train agent' });
+  }
+});
+
+/**
+ * GET /api/gmail-enhanced/agent/status
+ * Get agent training status and model info
+ */
+router.get('/agent/status', authenticate, async (req, res) => {
+  try {
+    const { gmailAIAgent } = require('../services/gmail/gmailAIAgent');
+    await gmailAIAgent.loadModels(req.user._id);
+    
+    res.json({ success: true, data: gmailAIAgent.getAgentStatus() });
+  } catch (error) {
+    logger.error('Agent status error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to get agent status' });
+  }
+});
+
+/**
+ * POST /api/gmail-enhanced/agent/analyze
+ * Analyze emails using the trained agent
+ */
+router.post('/agent/analyze', authenticate, async (req, res) => {
+  try {
+    const { gmailAIAgent } = require('../services/gmail/gmailAIAgent');
+    await gmailAIAgent.loadModels(req.user._id);
+
+    const { emailIds, limit = 50 } = req.body;
+    
+    let emails;
+    if (emailIds?.length > 0) {
+      emails = await GmailEmail.find({ _id: { $in: emailIds }, userId: req.user._id }).lean();
+    } else {
+      emails = await GmailEmail.find({ userId: req.user._id })
+        .sort('-receivedAt').limit(limit).lean();
+    }
+
+    const results = gmailAIAgent.batchAnalyze(emails);
+    
+    res.json({ success: true, data: { analyzed: results.length, results } });
+  } catch (error) {
+    logger.error('Agent analyze error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to analyze emails' });
+  }
+});
+
+/**
+ * GET /api/gmail-enhanced/agent/insights
+ * Get AI-generated insights from learned patterns
+ */
+router.get('/agent/insights', authenticate, async (req, res) => {
+  try {
+    const { gmailAIAgent } = require('../services/gmail/gmailAIAgent');
+    await gmailAIAgent.loadModels(req.user._id);
+
+    const status = gmailAIAgent.getAgentStatus();
+    const insights = [];
+
+    // Generate insights from pattern learner
+    const patterns = status.models.patternLearner;
+    
+    if (patterns.knownSenders > 0) {
+      insights.push({ type: 'info', message: `Agent has learned patterns from ${patterns.knownSenders} unique email senders.` });
+    }
+
+    if (patterns.categoryAmountRanges) {
+      for (const [cat, data] of Object.entries(patterns.categoryAmountRanges)) {
+        if (data.count >= 3) {
+          insights.push({
+            type: 'pattern',
+            category: cat,
+            message: `${cat.replace(/_/g, ' ')}: avg ₹${data.avg.toLocaleString('en-IN')} (range ₹${data.min.toLocaleString('en-IN')} - ₹${data.max.toLocaleString('en-IN')}, ${data.count} transactions)`
+          });
+        }
+      }
+    }
+
+    if (patterns.recurringDays) {
+      for (const [cat, days] of Object.entries(patterns.recurringDays)) {
+        if (days.length > 0 && days[0].count >= 2) {
+          insights.push({
+            type: 'recurring',
+            category: cat,
+            message: `${cat.replace(/_/g, ' ')} transactions typically arrive on day ${days[0].day} of the month`
+          });
+        }
+      }
+    }
+
+    if (status.stats.accuracy) {
+      insights.push({ type: 'model', message: `Email classification accuracy: ${status.stats.accuracy}% (trained on ${status.stats.totalEmails} emails)` });
+    }
+
+    res.json({ success: true, data: { insights, agentStatus: status } });
+  } catch (error) {
+    logger.error('Agent insights error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to get insights' });
   }
 });
 
