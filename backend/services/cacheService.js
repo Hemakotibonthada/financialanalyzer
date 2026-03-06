@@ -11,6 +11,7 @@ class CacheService {
     this.redis = null;
     this.useRedis = false;
     this.defaultTTL = 300; // 5 minutes default TTL
+    this._redisWarningLogged = false; // Only log Redis warnings once
   }
 
   /**
@@ -29,7 +30,10 @@ class CacheService {
           connectTimeout: 5000,
           reconnectStrategy: (retries) => {
             if (retries > 3) {
-              logger.warn('Redis retry limit reached, using in-memory cache');
+              if (!this._redisWarningLogged) {
+                logger.info('Redis not available — using in-memory cache (this is normal without Redis installed)');
+                this._redisWarningLogged = true;
+              }
               return false; // Stop retrying
             }
             return Math.min(retries * 100, 3000);
@@ -42,7 +46,9 @@ class CacheService {
       this.redis = redis.createClient(config);
 
       this.redis.on('error', (err) => {
-        logger.warn('Redis Client Error, using in-memory cache:', err.message);
+        if (!this._redisWarningLogged) {
+          logger.debug('Redis unavailable, using in-memory cache');
+        }
         this.useRedis = false;
       });
 
@@ -57,7 +63,6 @@ class CacheService {
       });
 
       this.redis.on('end', () => {
-        logger.warn('Redis connection closed, using in-memory cache');
         this.useRedis = false;
       });
 
@@ -69,7 +74,10 @@ class CacheService {
         )
       ]);
     } catch (error) {
-      logger.warn('Redis not available, using in-memory cache:', error.message);
+      if (!this._redisWarningLogged) {
+        logger.info('Redis not installed — using in-memory cache (this is fine for development)');
+        this._redisWarningLogged = true;
+      }
       this.useRedis = false;
       this.redis = null;
     }
