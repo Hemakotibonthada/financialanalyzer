@@ -6047,19 +6047,67 @@ const EMITracker = () => {
                               </Grid>
                             </Grid>
                             
-                            <Box mt={2}>
+                            <Box mt={2} display="flex" gap={1} flexWrap="wrap">
                               <Button
                                 size="small"
                                 variant="outlined"
-                                fullWidth
                                 onClick={() => {
                                   setSelectedEMIForEarlyPayment(emi);
                                   setEarlyPaymentAmount(emi.remainingAmount.toString());
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
                               >
-                                Calculate Prepayment
+                                Prepayment
                               </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="warning"
+                                onClick={() => {
+                                  const emiId = emi.id || emi.emiId || emi._id;
+                                  const remainingAmt = (emi.emiAmount || 0) * (emi.remainingInstallments || 0);
+                                  setConfirmationDialog({
+                                    open: true,
+                                    title: 'Foreclose EMI?',
+                                    message: `Close "${emi.merchantName}" early. Remaining: ${formatCurrency(remainingAmt)}. Continue?`,
+                                    confirmAction: async () => {
+                                      try {
+                                        await api.post(`/emi/${emiId}/foreclose`, { foreclosureDate: new Date().toISOString(), foreclosureAmount: remainingAmt });
+                                        setConfirmationDialog({ open: true, title: 'Foreclosed', message: 'EMI has been foreclosed.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); fetchAllData(); } });
+                                      } catch (err) {
+                                        setConfirmationDialog({ open: true, title: 'Failed', message: err.response?.data?.message || 'Foreclosure failed', isError: true, confirmAction: () => setConfirmationDialog(p => ({ ...p, open: false })) });
+                                      }
+                                    }
+                                  });
+                                }}
+                              >
+                                Foreclose
+                              </Button>
+                              {emi.repaymentType === 'MONTHLY' && (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="secondary"
+                                  onClick={() => {
+                                    const emiId = emi.id || emi.emiId || emi._id;
+                                    setConfirmationDialog({
+                                      open: true,
+                                      title: 'Convert to Personal Loan?',
+                                      message: `Convert "${emi.merchantName}" from Monthly EMI to Personal Loan (pay back anytime)?`,
+                                      confirmAction: async () => {
+                                        try {
+                                          await api.put(`/emi/${emiId}`, { repaymentType: 'ON_REQUEST' });
+                                          setConfirmationDialog({ open: true, title: 'Converted', message: 'Moved to Personal Loans tab.', isSuccess: true, confirmAction: () => { setConfirmationDialog(p => ({ ...p, open: false })); setActiveTab(8); fetchAllData(); } });
+                                        } catch (err) {
+                                          setConfirmationDialog({ open: true, title: 'Failed', message: err.response?.data?.message || 'Conversion failed', isError: true, confirmAction: () => setConfirmationDialog(p => ({ ...p, open: false })) });
+                                        }
+                                      }
+                                    });
+                                  }}
+                                >
+                                  → Personal Loan
+                                </Button>
+                              )}
                             </Box>
                           </Box>
                         </Grid>
