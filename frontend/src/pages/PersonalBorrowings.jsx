@@ -99,6 +99,8 @@ const SummaryCards = ({ summary, lendersCount, palette }) => {
 const LenderCard = ({ lender, palette, onExpand, isExpanded, onNewLoan, onViewHistory, onRepay }) => {
   const prioInfo = getPriorityInfo(lender.priority);
   const hasActive = lender.activeLoansCount > 0;
+  const isDark = palette.text?.includes('white') || palette.text?.includes('zinc') || palette.text?.includes('slate-1');
+  const isBlack = palette.bg?.includes('black') || palette.bg?.includes('zinc-9');
 
   return (
     <div className={`${palette.card} rounded-2xl border overflow-hidden transition-all duration-300 ${hasActive ? 'ring-1 ring-blue-500/20' : ''}`}>
