@@ -80,6 +80,55 @@ router.get('/overview', authenticate, async (req, res) => {
   try {
     logger.info(`Fetching EMI overview for user: ${req.user._id}`);
     
+    // Auto-mark past-due installments as paid
+    // If EMI start date has passed and no installments are marked paid yet, mark them
+    const now = new Date();
+    const activeEMIs = await EMI.find({ userId: req.user._id, status: 'active', repaymentType: 'MONTHLY' });
+    
+    for (const emi of activeEMIs) {
+      if (!emi.startDate) continue;
+      const startDate = new Date(emi.startDate);
+      
+      // Calculate how many installments should be paid by now
+      // startDate = first EMI paid date, so if now > startDate, at least 1 is paid
+      const monthsElapsed = Math.floor(
+        (now.getFullYear() - startDate.getFullYear()) * 12 +
+        (now.getMonth() - startDate.getMonth()) +
+        (now.getDate() >= startDate.getDate() ? 1 : 0)
+      );
+      const shouldBePaid = Math.min(Math.max(0, monthsElapsed), emi.totalTenure);
+      
+      if (shouldBePaid > (emi.paidInstallments || 0)) {
+        // Auto-mark past installments as paid
+        const newPaid = shouldBePaid;
+        if (emi.paymentHistory && emi.paymentHistory.length > 0) {
+          for (let i = 0; i < emi.paymentHistory.length; i++) {
+            if (i < newPaid && emi.paymentHistory[i].status !== 'paid') {
+              emi.paymentHistory[i].status = 'paid';
+              emi.paymentHistory[i].paidDate = emi.paymentHistory[i].dueDate || now;
+            }
+          }
+        }
+        emi.paidInstallments = newPaid;
+        emi.remainingInstallments = Math.max(0, emi.totalTenure - newPaid);
+        
+        // Update next due date
+        if (emi.remainingInstallments > 0) {
+          const nextDue = new Date(startDate);
+          nextDue.setMonth(nextDue.getMonth() + newPaid);
+          emi.nextDueDate = nextDue;
+        }
+        
+        // Mark as completed if all paid
+        if (emi.remainingInstallments === 0) {
+          emi.status = 'completed';
+        }
+        
+        await emi.save();
+        logger.info(`Auto-marked ${newPaid - (emi.paidInstallments || 0)} installments as paid for EMI ${emi._id}`);
+      }
+    }
+    
     const overview = await emiAnalyticsService.getEMIOverview(req.user._id);
     
     res.json({
