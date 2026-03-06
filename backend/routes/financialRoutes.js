@@ -623,6 +623,125 @@ router.get('/transactions', authenticate, async (req, res) => {
   }
 });
 
+// ── Transaction CRUD (POST/PUT/DELETE) ──────────────────────────────────
+router.post('/transactions', authenticate, async (req, res) => {
+  try {
+    const txn = await Transaction.create({ ...req.body, userId: req.user._id, amount: parseFloat(req.body.amount) });
+    res.status(201).json({ success: true, data: txn });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/transactions/:id', authenticate, async (req, res) => {
+  try {
+    const txn = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!txn) return res.status(404).json({ success: false, message: 'Transaction not found' });
+    res.json({ success: true, data: txn });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.delete('/transactions/:id', authenticate, async (req, res) => {
+  try {
+    const txn = await Transaction.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    if (!txn) return res.status(404).json({ success: false, message: 'Transaction not found' });
+    res.json({ success: true, message: 'Transaction deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ── Income endpoint ─────────────────────────────────────────────────────
+router.get('/income', authenticate, async (req, res) => {
+  try {
+    const { months = 6 } = req.query;
+    const since = new Date();
+    since.setMonth(since.getMonth() - parseInt(months));
+    
+    const incomeTransactions = await Transaction.find({
+      userId: req.user._id,
+      type: { $in: ['credit', 'income'] },
+      date: { $gte: since }
+    }).sort({ date: -1 }).lean();
+
+    // Group by month
+    const monthly = {};
+    for (const txn of incomeTransactions) {
+      const key = new Date(txn.date).toISOString().slice(0, 7);
+      if (!monthly[key]) monthly[key] = { month: key, total: 0, transactions: [] };
+      monthly[key].total += Math.abs(txn.amount || 0);
+      monthly[key].transactions.push(txn);
+    }
+
+    const totalIncome = incomeTransactions.reduce((s, t) => s + Math.abs(t.amount || 0), 0);
+    const sources = {};
+    for (const txn of incomeTransactions) {
+      const src = txn.category || txn.merchantName || 'Other';
+      sources[src] = (sources[src] || 0) + Math.abs(txn.amount || 0);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        transactions: incomeTransactions,
+        totalIncome,
+        monthlyBreakdown: Object.values(monthly).sort((a, b) => b.month.localeCompare(a.month)),
+        sources: Object.entries(sources).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount),
+        count: incomeTransactions.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ── Credit Card CRUD ────────────────────────────────────────────────────
+router.post('/credit-cards', authenticate, async (req, res) => {
+  try {
+    const CreditCardBill = require('../models/CreditCardBill');
+    const card = await CreditCardBill.create({ ...req.body, userId: req.user._id });
+    res.status(201).json({ success: true, data: card });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/credit-cards/:id/payment', authenticate, async (req, res) => {
+  try {
+    const CreditCardBill = require('../models/CreditCardBill');
+    const card = await CreditCardBill.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { $inc: { amountPaid: req.body.amount, balance: -req.body.amount } },
+      { new: true }
+    );
+    if (!card) return res.status(404).json({ success: false, message: 'Card not found' });
+    res.json({ success: true, data: card });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ── Splits redirect ─────────────────────────────────────────────────────
+router.get('/splits', authenticate, async (req, res) => {
+  try {
+    const SplitExpense = require('../models/SplitExpense');
+    const Group = require('../models/Group');
+    const [groups, expenses] = await Promise.all([
+      Group.find({ members: req.user._id }).lean(),
+      SplitExpense.find({ $or: [{ paidBy: req.user._id }, { 'shares.user': req.user._id }] }).sort('-date').limit(50).lean()
+    ]);
+    res.json({ success: true, data: { groups, expenses } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 /**
  * @route GET /api/financial/transactions/filters
  * @desc Get available filter values for transactions

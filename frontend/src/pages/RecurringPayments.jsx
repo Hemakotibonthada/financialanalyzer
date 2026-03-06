@@ -134,14 +134,14 @@ export default function RecurringPayments() {
 
   const handleDelete = useCallback(async (id) => {
     try {
-      await api.delete(`/recurring/${id}`);
+      await api.delete(`/bill-reminders/${id}`);
     } catch { /* ignore */ }
     setPayments(prev => prev.filter(p => p.id !== id));
   }, []);
 
   const togglePause = useCallback(async (id) => {
     setPayments(prev => prev.map(p => p.id === id ? { ...p, status: p.status === 'active' ? 'paused' : 'active' } : p));
-    try { await api.patch(`/recurring/${id}/toggle`); } catch { /* ignore */ }
+    try { await api.put(`/bill-reminders/${id}`, { status: 'paused' }); } catch { /* ignore */ }
   }, []);
 
   if (loading) {

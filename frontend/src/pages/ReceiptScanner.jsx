@@ -93,7 +93,7 @@ export default function ReceiptScanner() {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('documents', file);
       formData.append('type', 'receipt');
       const res = await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -129,7 +129,7 @@ export default function ReceiptScanner() {
         setBatchFiles(prev => prev.map((bf, j) => j === i ? { ...bf, status: 'processing' } : bf));
         try {
           const formData = new FormData();
-          formData.append('file', f);
+          formData.append('documents', f);
           formData.append('type', 'receipt');
           const res = await api.post('/documents/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
