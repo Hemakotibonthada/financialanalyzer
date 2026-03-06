@@ -1321,44 +1321,78 @@ class GmailService {
       return null;
     }
 
-    const apiKey = options.apiKey
-      || profile?.preferences?.openAIKey
-      || process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
-      logger.warn('Email summary skipped: OpenAI API key not configured.');
-      return this.generateFallbackSummary(emailData);
-    }
-
-    const maxChars = options.maxChars || 6000;
-    const truncatedBody = bodyText.length > maxChars
-      ? `${bodyText.slice(0, maxChars)}...`
-      : bodyText;
-
+    // 100% local summarization — no external APIs
     try {
-      const OpenAI = require('openai');
-      const openai = new OpenAI({ apiKey });
+      const subject = (emailData.subject || '').toLowerCase();
+      const from = (typeof emailData.from === 'string' ? emailData.from : emailData.from?.email || '').toLowerCase();
+      const body = bodyText.substring(0, 3000);
 
-      const response = await openai.chat.completions.create({
-        model: options.model || 'gpt-4o-mini',
-        temperature: options.temperature ?? 0.3,
-        max_tokens: options.maxTokens || 220,
-        messages: [
-          {
-            role: 'system',
-            content: 'You summarize personal email messages succinctly. Provide 2-3 sentences highlighting key points and any required actions.'
-          },
-          {
-            role: 'user',
-            content: `Email subject: ${emailData.subject}\nEmail sender: ${emailData.from}\n\nEmail body:\n${truncatedBody}`
-          }
-        ]
-      });
+      // ── Financial pattern detection ──
+      const amountPattern = /(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)/gi;
+      const amounts = [];
+      let match;
+      while ((match = amountPattern.exec(body)) !== null) {
+        amounts.push(parseFloat(match[1].replace(/,/g, '')));
+      }
 
-      const summary = response.choices?.[0]?.message?.content?.trim();
-      return summary || this.generateFallbackSummary(emailData);
+      const upiPattern = /([a-z0-9][\w.\-]+@\w+)/i;
+      const upiMatch = body.match(upiPattern);
+      const utrPattern = /(?:utr|ref(?:erence)?)\s*(?:no\.?\s*)?:?\s*([A-Z0-9]{8,})/i;
+      const utrMatch = body.match(utrPattern);
+
+      // ── Detect email type ──
+      const isDebit = /debited|paid|spent|charged|deducted|withdrawn|payment.*made/i.test(body);
+      const isCredit = /credited|received|deposited|refund|cashback|salary/i.test(body);
+      const isAlert = /alert|security|suspicious|otp|verify|urgent/i.test(subject);
+      const isStatement = /statement|summary|report|bill.*due|outstanding/i.test(subject);
+      const isEMI = /emi|installment|loan.*payment|auto.*debit/i.test(subject + ' ' + body);
+      const isInvestment = /mutual fund|sip|dividend|portfolio|zerodha|groww|kuvera/i.test(subject + ' ' + body);
+
+      // ── Build local summary ──
+      const parts = [];
+
+      // Sender context
+      const senderName = emailData.from?.name || from.split('@')[0] || 'Unknown';
+      parts.push(`Email from ${senderName}.`);
+
+      // Subject summary
+      if (subject) {
+        parts.push(`Subject: "${emailData.subject}".`);
+      }
+
+      // Transaction details
+      if (amounts.length > 0) {
+        const mainAmount = Math.max(...amounts);
+        const formattedAmt = `₹${mainAmount.toLocaleString('en-IN')}`;
+        if (isDebit) {
+          parts.push(`Debit transaction of ${formattedAmt} detected.`);
+        } else if (isCredit) {
+          parts.push(`Credit of ${formattedAmt} received.`);
+        } else {
+          parts.push(`Amount mentioned: ${formattedAmt}.`);
+        }
+      }
+
+      // Type-specific insights
+      if (isEMI) parts.push('This appears to be an EMI/loan related communication.');
+      if (isStatement) parts.push('This is a financial statement or bill summary.');
+      if (isAlert) parts.push('This is a security or account alert.');
+      if (isInvestment) parts.push('This is related to investments or trading.');
+      if (upiMatch) parts.push(`UPI ID: ${upiMatch[1]}.`);
+      if (utrMatch) parts.push(`Reference: ${utrMatch[1]}.`);
+
+      // Extract key sentences from body
+      const sentences = body.split(/(?<=[.!?])\s+/).filter(s => s.length > 20 && s.length < 200);
+      const financialSentences = sentences.filter(s =>
+        /amount|balance|credit|debit|paid|received|due|payment|transaction|account/i.test(s)
+      );
+      if (financialSentences.length > 0) {
+        parts.push(financialSentences[0].trim());
+      }
+
+      return parts.join(' ').substring(0, 500) || this.generateFallbackSummary(emailData);
     } catch (error) {
-      logger.error('Email summary generation failed:', error);
+      logger.warn('Local email summary failed:', error.message);
       return this.generateFallbackSummary(emailData);
     }
   }
