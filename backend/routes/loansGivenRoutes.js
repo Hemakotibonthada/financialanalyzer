@@ -258,6 +258,9 @@ router.post('/:id/repayment', authenticate, async (req, res) => {
     
     await loan.addRepayment({
       amount,
+      amountInINR: amount,  // Default to same as amount (INR)
+      currency: req.body.currency || 'INR',
+      exchangeRate: req.body.exchangeRate || 1,
       date: date || new Date(),
       method: method || 'cash',
       transactionId,
