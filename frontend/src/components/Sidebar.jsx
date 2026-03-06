@@ -62,6 +62,7 @@ import {
   Boxes,
   ScrollText,
   Bot,
+  Mail,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -250,6 +251,8 @@ const Sidebar = () => {
         { label: 'Sub Manager', icon: Boxes, path: '/subscription-manager', color: 'pink', badge: 'AI' },
         { label: 'Goal & Tax AI', icon: Target, path: '/goal-tax-optimizer', color: 'amber', badge: 'AI' },
         { label: 'Wellness AI', icon: Heart, path: '/financial-wellness-ai', color: 'rose', badge: 'AI' },
+        { label: 'Gmail Inbox', icon: Mail, path: '/gmail-inbox', color: 'blue', badge: 'NEW' },
+        { label: 'Gmail Analytics', icon: BarChart3, path: '/gmail-analytics', color: 'purple', badge: 'AI' },
       ]
     },
     {

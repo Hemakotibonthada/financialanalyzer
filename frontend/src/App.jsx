@@ -223,6 +223,8 @@ const EnterpriseSettings = lazyRetry(() => import('./pages/enterprise/Enterprise
 const EnterpriseAIChat = lazyRetry(() => import('./pages/enterprise/EnterpriseAIChat'));
 const EnterpriseCashflowForecaster = lazyRetry(() => import('./pages/enterprise/EnterpriseCashflowForecaster'));
 const EnterpriseGmailBrowser = lazyRetry(() => import('./pages/enterprise/EnterpriseGmailBrowser'));
+const GmailInboxPage = lazyRetry(() => import('./pages/GmailInboxPage'));
+const GmailAnalyticsDashboard = lazyRetry(() => import('./pages/GmailAnalyticsDashboard'));
 
 // AI-Powered Feature Pages
 const MerchantIntelligence = lazy(() => import('./pages/MerchantIntelligence'));
@@ -470,6 +472,8 @@ function App() {
               <Route path="/ai-chat-v3" element={<ProtectedRoute><EnterpriseAIChat /></ProtectedRoute>} />
               <Route path="/cashflow-forecaster" element={<ProtectedRoute><EnterpriseCashflowForecaster /></ProtectedRoute>} />
               <Route path="/gmail-browser" element={<ProtectedRoute><EnterpriseGmailBrowser /></ProtectedRoute>} />
+              <Route path="/gmail-inbox" element={<ProtectedRoute><GmailInboxPage /></ProtectedRoute>} />
+              <Route path="/gmail-analytics" element={<ProtectedRoute><GmailAnalyticsDashboard /></ProtectedRoute>} />
 
               {/* ========== AI-POWERED FEATURE ROUTES ========== */}
               <Route path="/merchant-intelligence" element={<ProtectedRoute><MerchantIntelligence /></ProtectedRoute>} />

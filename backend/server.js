@@ -286,6 +286,7 @@ app.use('/api/transactions', (() => {
   return txnRouter;
 })());
 app.use('/api/gmail', require('./routes/gmailRoutes'));
+app.use('/api/gmail-enhanced', require('./routes/gmailEnhancedRoutes'));
 app.use('/api/drive', require('./routes/googleDriveRoutes')); // Google Drive backup/sync
 app.use('/api/documents', require('./routes/documentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
