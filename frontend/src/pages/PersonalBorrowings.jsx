@@ -96,7 +96,7 @@ const SummaryCards = ({ summary, lendersCount, palette }) => {
 
 // ─── Lender Card (Person you borrow from) ────────────────────────────────────
 
-const LenderCard = ({ lender, palette, onExpand, isExpanded, onNewLoan, onViewHistory }) => {
+const LenderCard = ({ lender, palette, onExpand, isExpanded, onNewLoan, onViewHistory, onRepay }) => {
   const prioInfo = getPriorityInfo(lender.priority);
   const hasActive = lender.activeLoansCount > 0;
 
@@ -122,6 +122,11 @@ const LenderCard = ({ lender, palette, onExpand, isExpanded, onNewLoan, onViewHi
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {hasActive && (
+              <button onClick={() => onRepay && onRepay(lender)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors" title="Add repayment">
+                <DollarSign className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={() => onNewLoan(lender)} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors" title="New loan from this person">
               <Plus className="w-4 h-4" />
             </button>
@@ -176,7 +181,7 @@ const LenderCard = ({ lender, palette, onExpand, isExpanded, onNewLoan, onViewHi
 
         {/* Contact info */}
         {(lender.contactDetails?.phone || lender.contactDetails?.email) && (
-          <div className="flex items-center gap-3 mt-2 pt-2 border-t" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
+          <div className="flex items-center gap-3 mt-2 pt-2 border-t" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
             {lender.contactDetails.phone && (
               <a href={`tel:${lender.contactDetails.phone}`} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600">
                 <Phone className="w-3 h-3" />{lender.contactDetails.phone}
@@ -193,7 +198,7 @@ const LenderCard = ({ lender, palette, onExpand, isExpanded, onNewLoan, onViewHi
 
       {/* Expanded: Loan History */}
       {isExpanded && (
-        <div className="border-t px-5 py-4" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+        <div className="border-t px-5 py-4" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
           <div className="flex items-center justify-between mb-3">
             <h4 className={`text-sm font-semibold ${palette.text}`}>Loan History ({lender.totalTransactions} transactions)</h4>
             <button onClick={() => onViewHistory(lender.lenderName)} className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1">
@@ -219,7 +224,7 @@ const LoanHistoryRow = ({ loan, palette }) => {
   const prioInfo = getPriorityInfo(loan.priority);
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-xl border ${isActive ? 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10' : ''}`} style={{ borderColor: !isActive ? (palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)') : undefined }}>
+    <div className={`flex items-center gap-3 p-3 rounded-xl border ${isActive ? 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10' : ''}`} style={{ borderColor: !isActive ? ((isDark || isBlack) ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)') : undefined }}>
       {/* Status indicator */}
       <div className={`w-2 h-10 rounded-full flex-shrink-0 ${isActive ? 'bg-blue-500' : 'bg-emerald-500'}`} />
 
@@ -313,7 +318,7 @@ const AllLoansTable = ({ loans, palette, onRepay, onMarkRepaid, onEdit, onDelete
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+            <tr className="border-b" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
               <SortHeader field="lenderName">Lender</SortHeader>
               <SortHeader field="principalAmount">Amount</SortHeader>
               <SortHeader field="loanTakenDate">Taken Date</SortHeader>
@@ -333,7 +338,7 @@ const AllLoansTable = ({ loans, palette, onRepay, onMarkRepaid, onEdit, onDelete
               const days = daysBetween(loan.loanTakenDate, isActive ? null : loan.repaymentDate);
               const prioInfo = getPriorityInfo(loan.priority);
               return (
-                <tr key={loan._id || i} className={`border-b transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-700/30 ${isActive ? '' : 'opacity-70'}`} style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.15)' : 'rgba(226,232,240,0.5)' }}>
+                <tr key={loan._id || i} className={`border-b transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-700/30 ${isActive ? '' : 'opacity-70'}`} style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.15)' : 'rgba(226,232,240,0.5)' }}>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{getRelationshipIcon(loan.relationship)}</span>
@@ -615,7 +620,7 @@ const RepaymentModal = ({ isOpen, onClose, loan, onSubmit, palette }) => {
           <button onClick={onClose} className={`p-2 rounded-lg ${palette.btnBg} border ${palette.btnBorder}`}><X className="w-4 h-4" /></button>
         </div>
 
-        <div className={`p-4 rounded-xl mb-4 border`} style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+        <div className={`p-4 rounded-xl mb-4 border`} style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
           <div className="flex justify-between mb-2">
             <span className={`text-sm ${palette.textSub}`}>Loan from</span>
             <span className={`text-sm font-semibold ${palette.text}`}>{loan.lenderName}</span>
@@ -632,7 +637,7 @@ const RepaymentModal = ({ isOpen, onClose, loan, onSubmit, palette }) => {
             <span className={`text-sm ${palette.textSub}`}>Already Repaid</span>
             <span className="text-sm text-emerald-500">{formatCurrency(loan.totalRepaid || 0)}</span>
           </div>
-          <div className="flex justify-between pt-2 border-t" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+          <div className="flex justify-between pt-2 border-t" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
             <span className={`text-sm font-semibold ${palette.text}`}>Outstanding</span>
             <span className="text-sm font-bold text-red-500">{formatCurrency(outstanding)}</span>
           </div>
@@ -713,7 +718,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
             {/* Score gauge */}
             <div className="relative w-28 h-28 flex-shrink-0">
               <svg width="112" height="112" viewBox="0 0 112 112">
-                <circle cx="56" cy="56" r="48" fill="none" stroke={palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)'} strokeWidth="7" />
+                <circle cx="56" cy="56" r="48" fill="none" stroke={(isDark || isBlack) ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)'} strokeWidth="7" />
                 <circle cx="56" cy="56" r="48" fill="none" stroke={analytics.healthScore.color} strokeWidth="7" strokeDasharray={`${2 * Math.PI * 48}`} strokeDashoffset={`${2 * Math.PI * 48 * (1 - analytics.healthScore.score / 100)}`} strokeLinecap="round" transform="rotate(-90 56 56)" className="transition-all duration-1000 ease-out" style={{ filter: `drop-shadow(0 0 6px ${analytics.healthScore.color}50)` }} />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -743,7 +748,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
             </div>
             {/* Model info */}
             <div className="flex-shrink-0">
-              <div className="p-3 rounded-xl border" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.04)', borderColor: 'rgba(139,92,246,0.15)' }}>
+              <div className="p-3 rounded-xl border" style={{ backgroundColor: (isDark || isBlack) ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.04)', borderColor: 'rgba(139,92,246,0.15)' }}>
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Bot className="w-4 h-4 text-purple-500" />
                   <span className="text-xs font-semibold text-purple-500">AI Model v{analytics.modelInfo?.version}</span>
@@ -782,7 +787,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
                   { label: 'Completion Rate', value: `${analytics.portfolio.completionRate}%`, color: analytics.portfolio.completionRate >= 70 ? 'text-emerald-500' : 'text-amber-500' },
                   { label: 'Unique Lenders', value: String(analytics.portfolio.uniqueLenders), color: 'text-purple-500' }
                 ].map((stat, i) => (
-                  <div key={i} className="p-3 rounded-xl border transition-all hover:shadow-md hover:scale-[1.02]" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.5)' : 'rgba(248,250,252,0.9)', borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.25)' : 'rgba(226,232,240,0.7)' }}>
+                  <div key={i} className={`p-3 rounded-xl border transition-all hover:shadow-md hover:scale-[1.02] ${isDark || isBlack ? 'bg-slate-700/50 border-slate-600/30' : 'bg-gray-50 border-gray-200/70'}`}>
                     <p className={`text-[11px] font-medium ${palette.textMuted} mb-0.5`}>{stat.label}</p>
                     <p className={`text-base font-bold ${stat.color}`}>{stat.value}</p>
                   </div>
@@ -849,7 +854,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
                     <span className={`text-sm font-bold ${item.color}`}>{item.value}</span>
                   </div>
                 ))}
-                <div className="pt-3 mt-3 border-t" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+                <div className="pt-3 mt-3 border-t" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
                   <div className="flex items-center justify-between">
                     <span className={`text-sm font-medium ${palette.text}`}>Status</span>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -982,11 +987,11 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
                   <p className={`text-xs ${palette.textMuted}`}>Annual Interest</p>
                   <p className="text-lg font-bold text-red-500">{formatCurrency(analytics.interestAnalysis.annualInterest)}</p>
                 </div>
-                <div className="p-3 rounded-xl" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: (isDark || isBlack) ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
                   <p className={`text-xs ${palette.textMuted}`}>Avg Rate</p>
                   <p className={`text-lg font-bold ${palette.text}`}>{analytics.interestAnalysis.weightedAvgRate}% p.a.</p>
                 </div>
-                <div className="p-3 rounded-xl" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: (isDark || isBlack) ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
                   <p className={`text-xs ${palette.textMuted}`}>Interest-Free Loans</p>
                   <p className={`text-lg font-bold text-emerald-500`}>{analytics.interestAnalysis.interestFreeLoans}</p>
                 </div>
@@ -1016,7 +1021,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
               {pred.projections && (
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {pred.projections.map((proj, j) => (
-                    <div key={j} className="p-3 rounded-xl text-center" style={{ backgroundColor: palette.text === 'text-white' ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
+                    <div key={j} className="p-3 rounded-xl text-center" style={{ backgroundColor: (isDark || isBlack) ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)' }}>
                       <p className={`text-xs ${palette.textMuted}`}>{proj.label}</p>
                       <p className={`text-sm font-bold text-red-500`}>{formatCurrency(proj.amount)}</p>
                     </div>
@@ -1035,7 +1040,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
               </div>
               <div className="space-y-3">
                 {analytics.timeline.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">{item.order}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -1105,7 +1110,7 @@ const AIAnalyticsDashboard = ({ analytics, palette, onRefresh }) => {
               </div>
               <div className="space-y-3">
                 {analytics.patterns.map((pattern, i) => (
-                  <div key={i} className={`p-3 rounded-xl border`} style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
+                  <div key={i} className={`p-3 rounded-xl border`} style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.2)' : 'rgba(226,232,240,0.6)' }}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300`}>{pattern.type.replace(/_/g, ' ').toUpperCase()}</span>
                       {pattern.confidence && <span className={`text-xs ${palette.textMuted}`}>({pattern.confidence})</span>}
@@ -1427,6 +1432,15 @@ const PersonalBorrowings = () => {
                 onExpand={(name) => setExpandedLender(expandedLender === name ? null : name)}
                 onNewLoan={handleNewLoanFromLender}
                 onViewHistory={() => setExpandedLender(expandedLender === lender.lenderName ? null : lender.lenderName)}
+                onRepay={(lenderData) => {
+                  // Find the first active loan from this lender for repayment
+                  const activeLoan = loans.find(l => l.lenderName === lenderData.lenderName && (l.status === 'active' || l.status === 'partially_paid'));
+                  if (activeLoan) {
+                    setRepayingLoan(activeLoan);
+                    setRepayingLoanType('taken');
+                    setRepaymentModalOpen(true);
+                  }
+                }}
               />
             )) : (
               <div className={`${palette.card} rounded-2xl border p-12 text-center`}>
@@ -1492,7 +1506,7 @@ const PersonalBorrowings = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b" style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
+                      <tr className="border-b" style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.3)' : 'rgba(226,232,240,0.8)' }}>
                         <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Borrower</th>
                         <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Amount</th>
                         <th className={`px-4 py-3 text-left text-xs font-semibold ${palette.textMuted}`}>Lent Date</th>
@@ -1510,7 +1524,7 @@ const PersonalBorrowings = () => {
                         const repaid = loan.repayments?.reduce((s, r) => s + (r.amountInINR || r.amount || 0), 0) || 0;
                         const outstanding = amount - repaid;
                         return (
-                          <tr key={loan._id || i} className={`border-b transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-700/30 ${!isActive ? 'opacity-60' : ''}`} style={{ borderColor: palette.text === 'text-white' ? 'rgba(71,85,105,0.15)' : 'rgba(226,232,240,0.5)' }}>
+                          <tr key={loan._id || i} className={`border-b transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-700/30 ${!isActive ? 'opacity-60' : ''}`} style={{ borderColor: (isDark || isBlack) ? 'rgba(71,85,105,0.15)' : 'rgba(226,232,240,0.5)' }}>
                             <td className="px-4 py-3">
                               <div>
                                 <p className={`text-sm font-medium ${palette.text}`}>{loan.borrowerName}</p>
