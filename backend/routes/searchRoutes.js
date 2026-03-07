@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const SearchService = require('../services/searchService');
 const { body, query, validationResult } = require('express-validator');
+const { authenticate } = require('../middleware/auth');
+
+// All search routes require authentication
+router.use(authenticate);
 
 /**
  * @route   GET /api/search/transactions
