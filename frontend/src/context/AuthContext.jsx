@@ -105,8 +105,19 @@ export const AuthProvider = ({ children }) => {
             // Get user data from Firestore if available
             const { getFirebaseDb } = await import('../services/firebase');
             const db = getFirebaseDb();
-            const { doc, getDoc } = await import('firebase/firestore');
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            const { doc, getDoc, getDocFromCache } = await import('firebase/firestore');
+            let userDoc;
+            try {
+              userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            } catch (firestoreErr) {
+              // Firestore offline — try cache, then fall back to empty
+              console.warn('Firestore offline, trying cache:', firestoreErr.message);
+              try {
+                userDoc = await getDocFromCache(doc(db, 'users', firebaseUser.uid));
+              } catch {
+                userDoc = { exists: () => false, data: () => ({}) };
+              }
+            }
             const userData = userDoc.exists() ? userDoc.data() : {};
             
             const userObj = {

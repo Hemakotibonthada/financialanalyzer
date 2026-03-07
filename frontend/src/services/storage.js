@@ -3,7 +3,9 @@ import {
   collection, 
   doc, 
   getDoc, 
+  getDocFromCache,
   getDocs, 
+  getDocsFromCache,
   addDoc, 
   updateDoc, 
   deleteDoc,
@@ -137,7 +139,14 @@ class StorageService {
         }
       });
       
-      const querySnapshot = await getDocs(q);
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (err) {
+        console.warn('Firestore offline, trying cache:', err.message);
+        try { querySnapshot = await getDocsFromCache(q); }
+        catch { return []; }
+      }
       return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
   }
@@ -150,7 +159,14 @@ class StorageService {
     } else {
       const db = getFirebaseDb();
       const docRef = doc(db, this.collectionName, id);
-      const docSnap = await getDoc(docRef);
+      let docSnap;
+      try {
+        docSnap = await getDoc(docRef);
+      } catch (err) {
+        console.warn('Firestore offline, trying cache:', err.message);
+        try { docSnap = await getDocFromCache(docRef); }
+        catch { throw new Error('Document not available offline'); }
+      }
       
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };

@@ -5,13 +5,27 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocFromCache } from 'firebase/firestore';
 import { getFirebaseAuth, getFirebaseDb } from './firebase';
 
 /**
  * Firebase Authentication Service
  * Used when storage type is 'online'
  */
+
+// Helper: get Firestore doc with offline fallback
+async function safeGetDoc(docRef) {
+  try {
+    return await getDoc(docRef);
+  } catch (err) {
+    // Firestore is offline — try cache
+    try {
+      return await getDocFromCache(docRef);
+    } catch {
+      return { exists: () => false, data: () => ({}) };
+    }
+  }
+}
 
 // Sign in with email and password
 export async function signInWithFirebase(email, password) {
@@ -23,7 +37,7 @@ export async function signInWithFirebase(email, password) {
     
     // Get additional user data from Firestore
     const db = getFirebaseDb();
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userDoc = await safeGetDoc(doc(db, 'users', user.uid));
     
     const userData = userDoc.exists() ? userDoc.data() : {};
     
