@@ -108,61 +108,29 @@ const Dashboard = () => {
     try {
       setRefreshing(true);
       
-      // Check if user is authenticated
       if (!user) {
         alert('Please log in to continue');
         return;
       }
       
-      console.log('Starting Gmail sync for user:', user);
+      // Use enhanced sync — runs in background with WebSocket progress bar
+      await api.post('/gmail-enhanced/sync', { maxResults: 10000, fullSync: true });
       
-      // Prepare request payload
-      const payload = {
-        analysisType: 'spending_analysis',
-        syncGmail: true,
-        dateRange: {
-          startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // 90 days ago
-          endDate: new Date()
-        }
-      };
-      
-      console.log('Sending request with payload:', payload);
-      
-      const response = await api.post('/financial/analyze-all', payload);
-      
-      if (response.data.success) {
-        console.log('Gmail sync started successfully:', response.data);
-        alert('Gmail sync started! Analysis is running in the background.');
-        // Wait a moment then refresh dashboard
-        setTimeout(() => {
-          fetchDashboardData();
-        }, 2000);
-      }
+      // Response is immediate — sync runs in background
+      // Progress shown via global WebSocket bar in MainLayout
+      setTimeout(() => fetchDashboardData(), 3000);
     } catch (error) {
       console.error('Gmail sync error:', error);
-      console.error('Error response:', error.response?.data);
-      const requiresReauth = error.response?.data?.requiresReauth || error.response?.data?.details?.gmailSyncRequiresReauth;
+      const requiresReauth = error.response?.data?.requiresReauth;
       const apiMessage = error.response?.data?.message;
       
-      // Handle specific error cases
-      if (error.response?.status === 400) {
-        const message = apiMessage || 'Bad request';
-        if (requiresReauth) {
-          alert('Gmail permissions have expired. Please disconnect and reconnect Gmail in the Profile page to continue.');
-        } else if (message.includes('profile')) {
-          alert(`Please set up your profile first. Go to Profile page to complete setup.`);
-        } else {
-          alert(`Gmail sync failed: ${message}`);
-        }
-      } else if (error.response?.status === 401) {
-        if (requiresReauth) {
-          alert('Gmail permissions have expired. Please disconnect and reconnect Gmail in the Profile page to continue.');
-        } else {
-          alert('Authentication failed. Please log in again.');
-          logout();
-        }
+      if (requiresReauth) {
+        alert('Gmail permissions expired. Go to Profile → Integrations → Disconnect and Reconnect Gmail.');
+      } else if (error.response?.status === 400) {
+        alert(apiMessage || 'Gmail not connected. Go to Profile → Integrations to connect.');
       } else {
-        alert(`Gmail sync failed: ${apiMessage || error.message}`);
+        // Don't alert for timeouts — the sync is running in background
+        console.warn('Gmail sync request issue:', apiMessage || error.message);
       }
     } finally {
       setRefreshing(false);

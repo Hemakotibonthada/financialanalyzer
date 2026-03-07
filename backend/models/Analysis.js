@@ -132,7 +132,7 @@ const analysisSchema = new mongoose.Schema({
       attempted: { type: Boolean, default: false },
       successful: { type: Boolean, default: false },
       totalEmails: { type: Number, default: 0 },
-      downloadedFiles: { type: Number, default: 0 },
+      downloadedFiles: { type: mongoose.Schema.Types.Mixed, default: 0 },
       runDate: Date,
       errors: { type: Number, default: 0 },
       folderPath: String,
