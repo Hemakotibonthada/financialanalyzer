@@ -65,6 +65,15 @@ connectDB().then(() => {
   billReminderService.initialize().catch(err => {
     logger.warn('Bill Reminder service initialization failed:', err.message);
   });
+
+  // Initialize GCP Cloud Storage Service
+  const gcpStorageService = require('./services/gcpStorageService');
+  const gcpReady = gcpStorageService.initialize();
+  if (gcpReady) {
+    gcpStorageService.ensureBucket().catch(err => {
+      logger.warn('GCP Storage bucket check failed:', err.message);
+    });
+  }
 }).catch(err => {
   logger.error('Failed to start — MongoDB connection could not be established');
   process.exit(1);
@@ -324,6 +333,7 @@ app.use('/api/banking', require('./routes/banking')); // Banking integration
 app.use('/api/currency', require('./routes/currency')); // Currency conversion
 app.use('/api/security', require('./routes/security')); // Security features
 app.use('/api/company-expenses', require('./routes/companyExpenseRoutes')); // Company expenses tracking
+app.use('/api/gcp-storage', require('./routes/gcpStorageRoutes')); // GCP Cloud Storage backup/sync
 
 // ========== NEW ENHANCED ROUTES ==========
 // Split Expenses & Groups

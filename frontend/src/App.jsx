@@ -168,6 +168,7 @@ const AutomationRules = lazy(() => import('./pages/AutomationRules'));
 const AICommandCenter = lazy(() => import('./pages/AICommandCenter'));
 const FinancialInsightsDashboard = lazy(() => import('./pages/FinancialInsightsDashboard'));
 const SystemDashboard = lazy(() => import('./pages/SystemDashboard'));
+const CloudBackup = lazy(() => import('./pages/CloudBackup'));
 const AITrainingDashboard = lazy(() => import('./pages/AITrainingDashboard'));
 const SelfTrainingPage = lazy(() => import('./pages/SelfTrainingPage'));
 const SmartBudgetOptimizer = lazy(() => import('./pages/SmartBudgetOptimizer'));
@@ -422,6 +423,7 @@ function App() {
               
               {/* ========== SYSTEM & ADMIN ========== */}
               <Route path="/system-dashboard" element={<ProtectedRoute><SystemDashboard /></ProtectedRoute>} />
+              <Route path="/cloud-backup" element={<ProtectedRoute><CloudBackup /></ProtectedRoute>} />
               
               {/* ========== EDUCATION & GAMIFICATION ========== */}
               <Route path="/education" element={<ProtectedRoute><FinancialEducation /></ProtectedRoute>} />

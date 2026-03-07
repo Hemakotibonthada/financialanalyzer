@@ -63,6 +63,7 @@ import {
   ScrollText,
   Bot,
   Mail,
+  Cloud,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -277,6 +278,7 @@ const Sidebar = () => {
         { label: 'Achievements', icon: Award, path: '/achievements', color: 'yellow' },
         { label: 'Search', icon: Search, path: '/search', color: 'gray' },
         { label: 'Import / Export', icon: Upload, path: '/import-export', color: 'green' },
+        { label: 'Cloud Backup', icon: Cloud, path: '/cloud-backup', color: 'cyan', badge: 'GCP' },
         { label: 'System Dashboard', icon: Settings, path: '/system-dashboard', color: 'slate', badge: 'NEW' },
       ]
     },
