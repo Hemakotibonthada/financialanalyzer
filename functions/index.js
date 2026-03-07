@@ -181,6 +181,10 @@ app.use('/search', searchRoutes);
 app.use('/health-check', healthRoutes);
 app.use('/data-management', dataManagementRoutes);
 
+// Public routes (no auth required)
+const publicRoutes = requireIfExists('./routes/public');
+app.use('/public', publicRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);

@@ -124,6 +124,11 @@ const buildAllowedOrigins = () => {
     origins.add(`http://127.0.0.1:${port}`);
   }
   if (process.env.FRONTEND_URL) origins.add(process.env.FRONTEND_URL);
+
+  // Firebase Hosting domains
+  origins.add('https://finserveassist.web.app');
+  origins.add('https://finserveassist.firebaseapp.com');
+
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
