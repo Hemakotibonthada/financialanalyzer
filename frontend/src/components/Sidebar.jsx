@@ -141,6 +141,7 @@ const Sidebar = () => {
         { label: 'Bank Accounts', icon: Landmark, path: '/bank-accounts', color: 'green' },
         { label: 'Credit Cards', icon: CreditCard, path: '/credit-cards', color: 'purple' },
         { label: 'Budget Planner', icon: ClipboardList, path: '/budget-planner', color: 'indigo' },
+        { label: 'Company Expenses', icon: Receipt, path: '/company-expenses', color: 'amber', badge: 'PRO' },
         { label: 'Income Tracker', icon: Banknote, path: '/income-tracker', color: 'green' },
         { label: 'Cash Flow', icon: TrendingUp, path: '/cash-flow', color: 'teal' },
         { label: 'Bills & Recurring', icon: Repeat, path: '/recurring-payments', color: 'orange' },
@@ -276,7 +277,6 @@ const Sidebar = () => {
         { label: 'Achievements', icon: Award, path: '/achievements', color: 'yellow' },
         { label: 'Search', icon: Search, path: '/search', color: 'gray' },
         { label: 'Import / Export', icon: Upload, path: '/import-export', color: 'green' },
-        { label: 'Company Expenses', icon: Receipt, path: '/company-expenses', color: 'amber' },
         { label: 'System Dashboard', icon: Settings, path: '/system-dashboard', color: 'slate', badge: 'NEW' },
       ]
     },

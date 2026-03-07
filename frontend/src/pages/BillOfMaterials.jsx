@@ -47,7 +47,7 @@ import {
 import api from '../services/api';
 import MainLayout from '../components/MainLayout';
 
-const BillOfMaterials = () => {
+const BillOfMaterials = ({ embedded = false }) => {
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
   const [materials, setMaterials] = useState([]);
@@ -382,22 +382,26 @@ const BillOfMaterials = () => {
     return colors[priority] || 'default';
   };
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+  const wrapperProps = embedded ? {} : { title: 'Bill of Materials' };
+
   if (loading) {
     return (
-      <MainLayout title="Bill of Materials">
+      <Wrapper {...wrapperProps}>
         <Box className="min-h-[60vh] flex items-center justify-center">
           <Typography>Loading Bill of Materials...</Typography>
         </Box>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
   const filteredMaterials = getFilteredMaterials();
 
   return (
-    <MainLayout title="Bill of Materials">
-      <Box className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-8">{/* Removed sidebar and left margin */}
-        {/* Header */}
+    <Wrapper {...wrapperProps}>
+      <Box className={`${embedded ? '' : 'min-h-screen'} ${embedded ? '' : 'bg-gray-50 dark:bg-slate-900'} pb-8`}>
+        {/* Header — only when standalone */}
+        {!embedded && (
         <Box
           sx={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%, #667eea 200%)',
@@ -475,8 +479,27 @@ const BillOfMaterials = () => {
             </Box>
           </Container>
         </Box>
+        )}
 
-        <Container maxWidth="xl">
+        {/* Embedded quick-action bar (when inside a tab) */}
+        {embedded && (
+          <Box display="flex" justifyContent="flex-end" gap={1.5} mb={2} flexWrap="wrap">
+            <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={fetchMaterials}
+              sx={{ borderColor: '#667eea', color: '#667eea', '&:hover': { borderColor: '#764ba2', color: '#764ba2' } }}>
+              Refresh
+            </Button>
+            <Button size="small" variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint}
+              sx={{ borderColor: '#667eea', color: '#667eea', '&:hover': { borderColor: '#764ba2', color: '#764ba2' } }}>
+              Print
+            </Button>
+            <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportCSV}
+              sx={{ borderColor: '#667eea', color: '#667eea', '&:hover': { borderColor: '#764ba2', color: '#764ba2' } }}>
+              Export CSV
+            </Button>
+          </Box>
+        )}
+
+        <Container maxWidth={embedded ? false : "xl"} disableGutters={embedded}>
           {/* Statistics Cards */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 3 }}>
             <Card sx={{ 
@@ -935,7 +958,8 @@ const BillOfMaterials = () => {
           )}
         </Container>
 
-        {/* Floating Action Button */}
+        {/* Floating Action Button — only when standalone */}
+        {!embedded && (
         <Fab
           color="primary"
           sx={{ position: 'fixed', bottom: 24, right: 24 }}
@@ -946,6 +970,7 @@ const BillOfMaterials = () => {
         >
           <AddIcon />
         </Fab>
+        )}
 
         {/* Add/Edit Dialog */}
         <Dialog 
@@ -1147,7 +1172,7 @@ const BillOfMaterials = () => {
           </DialogActions>
         </Dialog>
       </Box>
-    </MainLayout>
+    </Wrapper>
   );
 };
 

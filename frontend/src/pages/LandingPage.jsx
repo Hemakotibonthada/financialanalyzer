@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 import '../styles/landing.css';
 
 import {
@@ -205,7 +206,7 @@ const FAQ_DATA = [
 
 // ─── SVG ILLUSTRATIONS (theme-aware) ─────────────────────────────────────────
 
-const DashboardMockupSVG = ({ isDark }) => {
+const DashboardMockupSVG = ({ isDark, stats }) => {
   const bg = isDark ? '#0f172a' : '#f1f5f9';
   const surface = isDark ? '#1e293b' : '#ffffff';
   const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
@@ -214,6 +215,37 @@ const DashboardMockupSVG = ({ isDark }) => {
   const label = isDark ? '#64748b' : '#94a3b8';
   const textBright = isDark ? '#e2e8f0' : '#1e293b';
   const barBg = isDark ? '#1e3a5f' : '#dbeafe';
+
+  // Derive display values from real stats
+  const fmtShort = (v) => {
+    if (!v || v === 0) return '₹0';
+    const abs = Math.abs(v);
+    if (abs >= 10000000) return `₹${(v/10000000).toFixed(1)}Cr`;
+    if (abs >= 100000) return `₹${(v/100000).toFixed(1)}L`;
+    if (abs >= 1000) return `₹${(v/1000).toFixed(0)}K`;
+    return `₹${v}`;
+  };
+  const credit = stats?.moneyManaged?.totalCredit || 0;
+  const debit = stats?.moneyManaged?.totalDebit || 0;
+  const avgTx = stats?.transactions?.avgAmount || 0;
+  const userTotal = stats?.users?.total || 0;
+
+  // Monthly growth bar heights (relative, max 76px)
+  const monthly = stats?.monthlyGrowth || [];
+  const maxVol = Math.max(1, ...monthly.map(m => m.volume));
+  const barHeights = monthly.length > 0
+    ? monthly.slice(-8).map(m => Math.max(10, Math.round((m.volume / maxVol) * 76)))
+    : [28, 46, 38, 60, 50, 70, 56, 76]; // fallback if no data
+
+  // Category breakdown for donut (top 4)
+  const cats = stats?.categories || [];
+  const totalCatAmount = cats.reduce((a, c) => a + c.totalAmount, 0) || 1;
+  const donutCircumference = 226;
+  const catSlices = cats.slice(0, 4).map((c, i) => ({
+    pct: c.totalAmount / totalCatAmount,
+    dashLen: Math.round((c.totalAmount / totalCatAmount) * donutCircumference),
+    color: ['#3b82f6', '#8b5cf6', '#22c55e', '#f97316'][i]
+  }));
 
   return (
   <svg viewBox="0 0 480 320" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
@@ -230,47 +262,60 @@ const DashboardMockupSVG = ({ isDark }) => {
     <rect x="20" y="96" width="32" height="4" rx="2" fill="#3b82f6" opacity="0.4"/>
     <rect x="20" y="110" width="32" height="4" rx="2" fill={muted}/>
     <rect x="20" y="124" width="32" height="4" rx="2" fill={muted}/>
-    {/* Stat cards */}
+    {/* Stat cards — real data */}
     <rect x="88" y="46" width="90" height="52" rx="10" fill={surface}/>
     <rect x="96" y="54" width="36" height="4" rx="2" fill={label}/>
-    <text x="96" y="82" fill="#22c55e" fontSize="16" fontWeight="700" fontFamily="monospace">₹4.2L</text>
+    <text x="96" y="82" fill="#22c55e" fontSize="16" fontWeight="700" fontFamily="monospace">{fmtShort(credit)}</text>
     <rect x="190" y="46" width="90" height="52" rx="10" fill={surface}/>
     <rect x="198" y="54" width="36" height="4" rx="2" fill={label}/>
-    <text x="198" y="82" fill="#3b82f6" fontSize="16" fontWeight="700" fontFamily="monospace">₹1.8L</text>
+    <text x="198" y="82" fill="#3b82f6" fontSize="16" fontWeight="700" fontFamily="monospace">{fmtShort(debit)}</text>
     <rect x="292" y="46" width="90" height="52" rx="10" fill={surface}/>
     <rect x="300" y="54" width="36" height="4" rx="2" fill={label}/>
-    <text x="300" y="82" fill="#f97316" fontSize="16" fontWeight="700" fontFamily="monospace">₹62K</text>
+    <text x="300" y="82" fill="#f97316" fontSize="16" fontWeight="700" fontFamily="monospace">{fmtShort(avgTx)}</text>
     <rect x="394" y="46" width="72" height="52" rx="10" fill={surface}/>
     <rect x="402" y="54" width="28" height="4" rx="2" fill={label}/>
-    <text x="402" y="82" fill="#8b5cf6" fontSize="14" fontWeight="700" fontFamily="monospace">780</text>
-    {/* Bar chart */}
+    <text x="402" y="82" fill="#8b5cf6" fontSize="14" fontWeight="700" fontFamily="monospace">{userTotal}</text>
+    {/* Bar chart — real monthly data */}
     <rect x="88" y="112" width="196" height="120" rx="10" fill={surface}/>
     <rect x="100" y="120" width="52" height="4" rx="2" fill={label}/>
-    <rect x="108" y="190" width="14" height="28" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.1s'}}/>
-    <rect x="128" y="172" width="14" height="46" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.2s'}}/>
-    <rect x="148" y="180" width="14" height="38" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.3s'}}/>
-    <rect x="168" y="158" width="14" height="60" rx="3" fill="#8b5cf6" className="land-chart-bar" style={{animationDelay:'0.4s'}}/>
-    <rect x="188" y="168" width="14" height="50" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.5s'}}/>
-    <rect x="208" y="148" width="14" height="70" rx="3" fill="#22c55e" className="land-chart-bar" style={{animationDelay:'0.6s'}}/>
-    <rect x="228" y="162" width="14" height="56" rx="3" fill="#3b82f6" className="land-chart-bar" style={{animationDelay:'0.7s'}}/>
-    <rect x="248" y="142" width="14" height="76" rx="3" fill="#8b5cf6" className="land-chart-bar" style={{animationDelay:'0.8s'}}/>
-    {/* Donut chart */}
+    {barHeights.map((h, i) => {
+      const x = 108 + i * 20;
+      const y = 218 - h;
+      const colors = ['#3b82f6', '#3b82f6', '#3b82f6', '#8b5cf6', '#3b82f6', '#22c55e', '#3b82f6', '#8b5cf6'];
+      return <rect key={i} x={x} y={y} width="14" height={h} rx="3" fill={colors[i % colors.length]} className="land-chart-bar" style={{animationDelay:`${0.1 + i*0.1}s`}}/>;
+    })}
+    {/* Donut chart — real category data */}
     <rect x="296" y="112" width="170" height="120" rx="10" fill={surface}/>
     <rect x="308" y="120" width="52" height="4" rx="2" fill={label}/>
     <circle cx="381" cy="180" r="36" fill="none" stroke={surface} strokeWidth="12"/>
-    <circle cx="381" cy="180" r="36" fill="none" stroke="#3b82f6" strokeWidth="12" strokeDasharray="90 226" strokeLinecap="round" transform="rotate(-90 381 180)"/>
-    <circle cx="381" cy="180" r="36" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeDasharray="56 226" strokeDashoffset="-90" strokeLinecap="round" transform="rotate(-90 381 180)"/>
-    <circle cx="381" cy="180" r="36" fill="none" stroke="#22c55e" strokeWidth="12" strokeDasharray="40 226" strokeDashoffset="-146" strokeLinecap="round" transform="rotate(-90 381 180)"/>
-    <circle cx="381" cy="180" r="36" fill="none" stroke="#f97316" strokeWidth="12" strokeDasharray="30 226" strokeDashoffset="-186" strokeLinecap="round" transform="rotate(-90 381 180)"/>
-    {/* Transaction list */}
+    {catSlices.length > 0 ? catSlices.map((slice, i) => {
+      const offset = catSlices.slice(0, i).reduce((a, s) => a - s.dashLen, 0);
+      return <circle key={i} cx="381" cy="180" r="36" fill="none" stroke={slice.color} strokeWidth="12"
+        strokeDasharray={`${slice.dashLen} ${donutCircumference}`}
+        strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 381 180)"/>;
+    }) : (
+      <>
+        <circle cx="381" cy="180" r="36" fill="none" stroke="#3b82f6" strokeWidth="12" strokeDasharray="90 226" strokeLinecap="round" transform="rotate(-90 381 180)"/>
+        <circle cx="381" cy="180" r="36" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeDasharray="56 226" strokeDashoffset="-90" strokeLinecap="round" transform="rotate(-90 381 180)"/>
+        <circle cx="381" cy="180" r="36" fill="none" stroke="#22c55e" strokeWidth="12" strokeDasharray="40 226" strokeDashoffset="-146" strokeLinecap="round" transform="rotate(-90 381 180)"/>
+        <circle cx="381" cy="180" r="36" fill="none" stroke="#f97316" strokeWidth="12" strokeDasharray="30 226" strokeDashoffset="-186" strokeLinecap="round" transform="rotate(-90 381 180)"/>
+      </>
+    )}
+    {/* Top categories progress bars */}
     <rect x="88" y="244" width="378" height="64" rx="10" fill={surface}/>
     <rect x="100" y="252" width="64" height="4" rx="2" fill={label}/>
-    <rect x="100" y="266" width="280" height="6" rx="3" fill={barBg}/>
-    <rect x="100" y="266" width="180" height="6" rx="3" fill="#3b82f6" opacity="0.7"/>
-    <rect x="100" y="282" width="280" height="6" rx="3" fill={barBg}/>
-    <rect x="100" y="282" width="220" height="6" rx="3" fill="#22c55e" opacity="0.7"/>
-    <rect x="100" y="298" width="280" height="6" rx="3" fill={barBg}/>
-    <rect x="100" y="298" width="140" height="6" rx="3" fill="#8b5cf6" opacity="0.7"/>
+    {(cats.length > 0 ? cats.slice(0, 3) : [{name:'Category 1',totalAmount:180},{name:'Category 2',totalAmount:220},{name:'Category 3',totalAmount:140}]).map((cat, i) => {
+      const maxW = 280;
+      const barW = cats.length > 0 ? Math.max(30, Math.round((cat.totalAmount / (cats[0]?.totalAmount || 1)) * maxW)) : [180, 220, 140][i];
+      const colors = ['#3b82f6', '#22c55e', '#8b5cf6'];
+      const yPos = 266 + i * 16;
+      return (
+        <g key={i}>
+          <rect x="100" y={yPos} width={maxW} height="6" rx="3" fill={barBg}/>
+          <rect x="100" y={yPos} width={barW} height="6" rx="3" fill={colors[i]} opacity="0.7"/>
+        </g>
+      );
+    })}
   </svg>
   );
 };
@@ -325,13 +370,39 @@ const AIBrainSVG = ({ isDark }) => {
   );
 };
 
-const GmailFlowSVG = ({ isDark }) => {
+const GmailFlowSVG = ({ isDark, stats }) => {
   const surface = isDark ? '#1e293b' : '#ffffff';
   const bg = isDark ? '#0f172a' : '#f1f5f9';
   const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
   const muted = isDark ? '#334155' : '#94a3b8';
   const label = isDark ? '#94a3b8' : '#64748b';
   const labelDim = isDark ? '#64748b' : '#94a3b8';
+
+  // Build transaction type badges from real payment methods & sources
+  const defaultBadges = [
+    {label:'UPI', color:'#06b6d4'}, {label:'NEFT', color:'#3b82f6'},
+    {label:'EMI', color:'#8b5cf6'}, {label:'Salary', color:'#22c55e'},
+    {label:'CC', color:'#f97316'}, {label:'RTGS', color:'#ec4899'},
+    {label:'IMPS', color:'#eab308'}, {label:'Bills', color:'#64748b'},
+  ];
+  const colorPool = ['#06b6d4','#3b82f6','#8b5cf6','#22c55e','#f97316','#ec4899','#eab308','#64748b'];
+  const methods = stats?.paymentMethods || [];
+  const sources = stats?.transactionSources || [];
+  const combined = [...methods.map(m => m.method), ...sources.map(s => s.source)];
+  const uniqueLabels = [...new Set(combined)].filter(l => l && l !== 'other' && l !== 'unknown').slice(0, 8);
+  const badges = uniqueLabels.length >= 4
+    ? uniqueLabels.map((lbl, i) => ({
+        label: lbl.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()).substring(0, 8),
+        color: colorPool[i % colorPool.length]
+      }))
+    : defaultBadges;
+
+  // Lay out badges in 2 rows of 4
+  const badgePositions = badges.map((b, i) => ({
+    ...b,
+    x: 30 + (i % 4) * 56,
+    y: 150 + Math.floor(i / 4) * 20
+  }));
 
   return (
   <svg viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
@@ -371,22 +442,15 @@ const GmailFlowSVG = ({ isDark }) => {
     <text x="24" y="110" fill={label} fontSize="7.5" fontFamily="sans-serif">Your Inbox</text>
     <text x="145" y="110" fill={label} fontSize="7.5" fontFamily="sans-serif">Smart Extraction</text>
     <text x="262" y="110" fill={label} fontSize="7.5" fontFamily="sans-serif">Dashboard</text>
-    {/* Transaction type badges */}
+    {/* Transaction type badges — from real data */}
     <rect x="20" y="125" width="265" height="60" rx="8" fill={bg} stroke={isDark ? '#1e293b' : '#e2e8f0'} strokeWidth="1"/>
-    <text x="30" y="142" fill={labelDim} fontSize="8" fontFamily="monospace">Detected Transactions:</text>
-    {[
-      {x:30, y:150, label:'UPI', color:'#06b6d4'},
-      {x:86, y:150, label:'NEFT', color:'#3b82f6'},
-      {x:142,y:150, label:'EMI', color:'#8b5cf6'},
-      {x:198,y:150, label:'Salary', color:'#22c55e'},
-      {x:30, y:170, label:'CC', color:'#f97316'},
-      {x:86, y:170, label:'RTGS', color:'#ec4899'},
-      {x:142,y:170, label:'IMPS', color:'#eab308'},
-      {x:198,y:170, label:'Bills', color:'#64748b'},
-    ].map((t, i) => (
+    <text x="30" y="142" fill={labelDim} fontSize="8" fontFamily="monospace">
+      {stats ? `Detected: ${stats.transactions?.total?.toLocaleString() || 0} transactions` : 'Detected Transactions:'}
+    </text>
+    {badgePositions.map((t, i) => (
       <g key={i}>
         <rect x={t.x} y={t.y} width="50" height="16" rx="4" fill={t.color + '20'} stroke={t.color} strokeWidth="0.5"/>
-        <text x={t.x + 8} y={t.y + 11} fill={t.color} fontSize="7" fontFamily="monospace">{t.label}</text>
+        <text x={t.x + 5} y={t.y + 11} fill={t.color} fontSize="7" fontFamily="monospace">{t.label}</text>
       </g>
     ))}
   </svg>
@@ -424,11 +488,46 @@ const GoalsSVG = ({ isDark }) => {
   );
 };
 
-const DebtSVG = ({ isDark }) => {
+const DebtSVG = ({ isDark, stats }) => {
   const surface = isDark ? '#1e293b' : '#ffffff';
   const surfaceDeep = isDark ? '#0c1322' : '#e2e8f0';
   const textBright = isDark ? '#e2e8f0' : '#1e293b';
   const label = isDark ? '#94a3b8' : '#64748b';
+
+  // Derive real values from stats
+  const fmtShort = (v) => {
+    if (!v || v === 0) return '₹0';
+    const abs = Math.abs(v);
+    if (abs >= 10000000) return `₹${(v/10000000).toFixed(1)}Cr`;
+    if (abs >= 100000) return `₹${(v/100000).toFixed(1)}L`;
+    if (abs >= 1000) return `₹${(v/1000).toFixed(0)}K`;
+    return `₹${v}`;
+  };
+  const totalVolume = stats?.moneyManaged?.total || 0;
+  const creditTotal = stats?.moneyManaged?.totalCredit || 0;
+  const debitTotal = stats?.moneyManaged?.totalDebit || 0;
+  const netWorth = creditTotal - debitTotal;
+  const netPct = creditTotal > 0 ? Math.round(((creditTotal - debitTotal) / creditTotal) * 100) : 0;
+
+  // Top 3 categories as "EMI-like" items
+  const topCats = (stats?.categories || []).slice(0, 3);
+  const emiRows = topCats.length > 0
+    ? topCats.map((c, i) => ({
+        name: c.name.charAt(0).toUpperCase() + c.name.slice(1),
+        amount: fmtShort(Math.round(c.totalAmount / Math.max(1, (stats?.monthlyGrowth?.length || 6)))) + '/mo',
+        color: ['#f97316', '#3b82f6', '#8b5cf6'][i]
+      }))
+    : [
+        { name: 'Category 1', amount: '—', color: '#f97316' },
+        { name: 'Category 2', amount: '—', color: '#3b82f6' },
+        { name: 'Category 3', amount: '—', color: '#8b5cf6' },
+      ];
+
+  // Donut proportions
+  const circumference = 157;
+  const creditSlice = totalVolume > 0 ? Math.round((creditTotal / totalVolume) * circumference) : 62;
+  const debitSlice = totalVolume > 0 ? Math.round((debitTotal / totalVolume) * circumference) : 40;
+  const otherSlice = Math.max(0, circumference - creditSlice - debitSlice);
 
   return (
   <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
@@ -436,27 +535,35 @@ const DebtSVG = ({ isDark }) => {
     <rect x="10" y="10" width="120" height="90" rx="10" fill={surface} stroke="#f97316" strokeWidth="1"/>
     <text x="20" y="28" fill="#f97316" fontSize="8" fontWeight="600" fontFamily="monospace">PORTFOLIO</text>
     <circle cx="70" cy="62" r="25" fill="none" stroke={surface} strokeWidth="8"/>
-    <circle cx="70" cy="62" r="25" fill="none" stroke="#f97316" strokeWidth="8" strokeDasharray="62 157" strokeLinecap="round" transform="rotate(-90 70 62)"/>
-    <circle cx="70" cy="62" r="25" fill="none" stroke="#3b82f6" strokeWidth="8" strokeDasharray="40 157" strokeDashoffset="-62" strokeLinecap="round" transform="rotate(-90 70 62)"/>
-    <circle cx="70" cy="62" r="25" fill="none" stroke="#22c55e" strokeWidth="8" strokeDasharray="30 157" strokeDashoffset="-102" strokeLinecap="round" transform="rotate(-90 70 62)"/>
-    <text x="58" y="66" fill={textBright} fontSize="10" fontWeight="700">₹18L</text>
+    <circle cx="70" cy="62" r="25" fill="none" stroke="#f97316" strokeWidth="8" strokeDasharray={`${creditSlice} ${circumference}`} strokeLinecap="round" transform="rotate(-90 70 62)"/>
+    <circle cx="70" cy="62" r="25" fill="none" stroke="#3b82f6" strokeWidth="8" strokeDasharray={`${debitSlice} ${circumference}`} strokeDashoffset={`${-creditSlice}`} strokeLinecap="round" transform="rotate(-90 70 62)"/>
+    <circle cx="70" cy="62" r="25" fill="none" stroke="#22c55e" strokeWidth="8" strokeDasharray={`${otherSlice} ${circumference}`} strokeDashoffset={`${-(creditSlice + debitSlice)}`} strokeLinecap="round" transform="rotate(-90 70 62)"/>
+    <text x="50" y="66" fill={textBright} fontSize="10" fontWeight="700">{fmtShort(totalVolume)}</text>
     {/* Net worth trend */}
     <rect x="140" y="10" width="130" height="90" rx="10" fill={surface} stroke="#22c55e" strokeWidth="1"/>
     <text x="150" y="28" fill="#22c55e" fontSize="8" fontWeight="600" fontFamily="monospace">NET WORTH</text>
-    <polyline points="155,75 175,68 195,55 215,60 235,45 255,35" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-    <text x="230" y="30" fill="#22c55e" fontSize="9" fontWeight="700">↑ 12%</text>
-    {/* EMI Schedule */}
+    {(() => {
+      const mg = stats?.monthlyGrowth || [];
+      if (mg.length >= 2) {
+        const maxV = Math.max(1, ...mg.map(m => m.volume));
+        const points = mg.map((m, i) => {
+          const x = 155 + (i / Math.max(1, mg.length - 1)) * 100;
+          const y = 80 - ((m.volume / maxV) * 50);
+          return `${x},${y}`;
+        }).join(' ');
+        return <polyline points={points} stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>;
+      }
+      return <polyline points="155,75 175,68 195,55 215,60 235,45 255,35" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>;
+    })()}
+    <text x="220" y="30" fill="#22c55e" fontSize="9" fontWeight="700">{netPct >= 0 ? '↑' : '↓'} {Math.abs(netPct)}%</text>
+    {/* Top categories */}
     <rect x="10" y="110" width="260" height="80" rx="10" fill={surface} stroke="#8b5cf6" strokeWidth="1"/>
-    <text x="20" y="128" fill="#8b5cf6" fontSize="8" fontWeight="600" fontFamily="monospace">EMI SCHEDULE</text>
-    {[
-      { y: 138, name: 'Home Loan', amount: '₹42,500/mo', color: '#f97316' },
-      { y: 156, name: 'Car Loan', amount: '₹18,200/mo', color: '#3b82f6' },
-      { y: 174, name: 'Personal Loan', amount: '₹12,800/mo', color: '#8b5cf6' },
-    ].map((row, i) => (
+    <text x="20" y="128" fill="#8b5cf6" fontSize="8" fontWeight="600" fontFamily="monospace">TOP CATEGORIES</text>
+    {emiRows.map((row, i) => (
       <g key={i}>
-        <rect x="20" y={row.y} width="240" height="14" rx="4" fill={surfaceDeep}/>
-        <text x="25" y={row.y + 11} fill={label} fontSize="7" fontFamily="monospace">{row.name}</text>
-        <text x="180" y={row.y + 11} fill={row.color} fontSize="7" fontWeight="600" fontFamily="monospace">{row.amount}</text>
+        <rect x="20" y={138 + i * 18} width="240" height="14" rx="4" fill={surfaceDeep}/>
+        <text x="25" y={138 + i * 18 + 11} fill={label} fontSize="7" fontFamily="monospace">{row.name}</text>
+        <text x="180" y={138 + i * 18 + 11} fill={row.color} fontSize="7" fontWeight="600" fontFamily="monospace">{row.amount}</text>
       </g>
     ))}
   </svg>
@@ -494,13 +601,13 @@ const SecurityShieldSVG = ({ isDark }) => {
 };
 
 // ─── Mockup Renderer (passes theme state) ────────────────────────────────────
-const FeatureMockup = ({ type, isDark }) => {
+const FeatureMockup = ({ type, isDark, stats }) => {
   switch (type) {
     case 'ai':        return <AIBrainSVG isDark={isDark} />;
-    case 'gmail':     return <GmailFlowSVG isDark={isDark} />;
-    case 'dashboard': return <DashboardMockupSVG isDark={isDark} />;
+    case 'gmail':     return <GmailFlowSVG isDark={isDark} stats={stats} />;
+    case 'dashboard': return <DashboardMockupSVG isDark={isDark} stats={stats} />;
     case 'goals':     return <GoalsSVG isDark={isDark} />;
-    case 'debt':      return <DebtSVG isDark={isDark} />;
+    case 'debt':      return <DebtSVG isDark={isDark} stats={stats} />;
     case 'security':  return <SecurityShieldSVG isDark={isDark} />;
     default:          return null;
   }
@@ -517,6 +624,8 @@ const LandingPage = () => {
   const [scrolled, setScrolled] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [themeTransition, setThemeTransition] = useState(false);
+  const [platformStats, setPlatformStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const heroTyped = useTypewriter(
     ['Financial Future', 'Spending Habits', 'Investment Portfolio', 'Savings Goals', 'Credit Score'],
     90, 2200
@@ -542,11 +651,53 @@ const LandingPage = () => {
     setTimeout(() => setThemeTransition(false), 500);
   }, [toggleTheme]);
 
-  // Counters
-  const [userCount, userRef]   = useCounter(50000, 2200);
-  const [txCount, txRef]       = useCounter(1200000, 2400);
-  const [savedCount, savedRef] = useCounter(500, 2000);
-  const [uptime, uptimeRef]    = useCounter(99, 1800);
+  // ── Fetch real platform stats from backend ──
+  useEffect(() => {
+    const fetchPlatformStats = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await api.get('/public/stats');
+        if (response.data?.success) {
+          setPlatformStats(response.data.data);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch platform stats, using defaults:', error.message);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchPlatformStats();
+  }, []);
+
+  // ── Derive counter targets from real data ──
+  const counterTargets = useMemo(() => {
+    if (!platformStats) {
+      return { users: 0, transactions: 0, moneyManaged: 0, uptime: 0 };
+    }
+    const totalMoney = platformStats.moneyManaged?.total || 0;
+    // Convert to Cr (1 Cr = 10,000,000)
+    const moneyCr = Math.max(1, Math.round(totalMoney / 10000000));
+    return {
+      users: platformStats.users?.total || 0,
+      transactions: platformStats.transactions?.total || 0,
+      moneyManaged: moneyCr,
+      uptime: platformStats.platform?.uptimePercentage || 99
+    };
+  }, [platformStats]);
+
+  // ── Helper to format currency amounts ──
+  const formatAmount = useCallback((amount) => {
+    if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`;
+    if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
+    if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
+    return `₹${amount}`;
+  }, []);
+
+  // Counters — use real data targets
+  const [userCount, userRef]   = useCounter(counterTargets.users, 2200);
+  const [txCount, txRef]       = useCounter(counterTargets.transactions, 2400);
+  const [savedCount, savedRef] = useCounter(counterTargets.moneyManaged, 2000);
+  const [uptime, uptimeRef]    = useCounter(counterTargets.uptime, 1800);
 
   // Redirect if authenticated
   useEffect(() => {
@@ -734,7 +885,7 @@ const LandingPage = () => {
             <div className="relative land-float-slow">
               <div className="land-border-glow p-1">
                 <div className="rounded-[18px] overflow-hidden shadow-2xl shadow-blue-500/10">
-                  <DashboardMockupSVG isDark={isDark} />
+                  <DashboardMockupSVG isDark={isDark} stats={platformStats} />
                 </div>
               </div>
               {/* Floating badges */}
@@ -744,8 +895,10 @@ const LandingPage = () => {
                     <TrendingUp className="w-4 h-4 text-green-400" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-400">Savings</div>
-                    <div className="text-sm font-bold text-green-400">+₹24,500</div>
+                    <div className="text-[10px] text-gray-400">Total Credit</div>
+                    <div className="text-sm font-bold text-green-400">
+                      {platformStats ? formatAmount(platformStats.moneyManaged?.totalCredit || 0) : '...'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -755,8 +908,10 @@ const LandingPage = () => {
                     <Brain className="w-4 h-4 text-purple-400" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-400">AI Score</div>
-                    <div className="text-sm font-bold text-purple-400">97%</div>
+                    <div className="text-[10px] text-gray-400">Categories</div>
+                    <div className="text-sm font-bold text-purple-400">
+                      {platformStats ? (platformStats.categories?.length || 0) : '...'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -766,8 +921,10 @@ const LandingPage = () => {
                     <Mail className="w-4 h-4 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-400">Gmail Sync</div>
-                    <div className="text-sm font-bold text-blue-400">Active</div>
+                    <div className="text-[10px] text-gray-400">Documents</div>
+                    <div className="text-sm font-bold text-blue-400">
+                      {platformStats ? (platformStats.documents?.total || 0) : '...'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -782,14 +939,20 @@ const LandingPage = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { ref: userRef,  value: userCount,  suffix: '+',   label: 'Active Users',        Icon: Users },
-              { ref: txRef,    value: txCount,    suffix: '+',   label: 'Transactions Tracked', Icon: Receipt },
-              { ref: savedRef, value: savedCount, suffix: 'Cr+', label: 'Money Managed (₹)',   Icon: Wallet },
-              { ref: uptimeRef,value: uptime,     suffix: '.9%', label: 'Uptime SLA',           Icon: Zap },
+              { ref: userRef,  value: userCount,  suffix: statsLoading ? '' : (counterTargets.users > 0 ? '+' : ''),   label: 'Active Users',        Icon: Users },
+              { ref: txRef,    value: txCount,    suffix: statsLoading ? '' : (counterTargets.transactions > 0 ? '+' : ''),   label: 'Transactions Tracked', Icon: Receipt },
+              { ref: savedRef, value: savedCount, suffix: statsLoading ? '' : (counterTargets.moneyManaged > 0 ? 'Cr+' : ''), label: 'Money Managed (₹)',   Icon: Wallet },
+              { ref: uptimeRef,value: uptime,     suffix: statsLoading ? '' : '%', label: 'Uptime SLA',           Icon: Zap },
             ].map((s, i) => (
               <div key={i} ref={s.ref} className="text-center">
                 <s.Icon className="w-6 h-6 mx-auto mb-2 opacity-80" />
-                <div className="text-3xl sm:text-4xl font-black tabular-nums">{s.value.toLocaleString()}{s.suffix}</div>
+                <div className="text-3xl sm:text-4xl font-black tabular-nums">
+                  {statsLoading ? (
+                    <span className="inline-block w-20 h-8 rounded bg-white/20 animate-pulse" />
+                  ) : (
+                    <>{s.value.toLocaleString()}{s.suffix}</>
+                  )}
+                </div>
                 <div className="text-sm opacity-80 mt-1">{s.label}</div>
               </div>
             ))}
@@ -846,8 +1009,29 @@ const LandingPage = () => {
                       ))}
                     </ul>
                     <div className="mt-8 inline-flex items-center gap-3 px-5 py-3 rounded-2xl" style={{ backgroundColor: 'var(--theme-gradient-subtle)', border: '1px solid var(--theme-border)' }}>
-                      <span className="text-2xl font-black" style={{color: feat.accent}}>{feat.stat.value}</span>
-                      <span className="text-sm land-text-secondary">{feat.stat.label}</span>
+                      <span className="text-2xl font-black" style={{color: feat.accent}}>
+                        {(() => {
+                          if (!platformStats) return feat.stat.value;
+                          // Map feature stats to real data where possible
+                          if (feat.mockup === 'ai') return platformStats.categories?.length > 0 ? `${platformStats.categories.length}+` : feat.stat.value;
+                          if (feat.mockup === 'gmail') return platformStats.paymentMethods?.length > 0 ? `${platformStats.paymentMethods.length}+` : feat.stat.value;
+                          if (feat.mockup === 'dashboard') return platformStats.transactions?.total > 0 ? `${platformStats.transactions.total.toLocaleString()}` : feat.stat.value;
+                          if (feat.mockup === 'goals') return platformStats.transactions?.recent30Days > 0 ? `${platformStats.transactions.recent30Days}` : feat.stat.value;
+                          if (feat.mockup === 'debt') return platformStats.moneyManaged?.total > 0 ? formatAmount(platformStats.moneyManaged.total) : feat.stat.value;
+                          return feat.stat.value;
+                        })()}
+                      </span>
+                      <span className="text-sm land-text-secondary">
+                        {(() => {
+                          if (!platformStats) return feat.stat.label;
+                          if (feat.mockup === 'ai') return platformStats.categories?.length > 0 ? 'Categories detected' : feat.stat.label;
+                          if (feat.mockup === 'gmail') return platformStats.paymentMethods?.length > 0 ? 'Payment methods tracked' : feat.stat.label;
+                          if (feat.mockup === 'dashboard') return platformStats.transactions?.total > 0 ? 'Total transactions' : feat.stat.label;
+                          if (feat.mockup === 'goals') return platformStats.transactions?.recent30Days > 0 ? 'Transactions this month' : feat.stat.label;
+                          if (feat.mockup === 'debt') return platformStats.moneyManaged?.total > 0 ? 'Total money managed' : feat.stat.label;
+                          return feat.stat.label;
+                        })()}
+                      </span>
                     </div>
                   </div>
                   {/* Illustration side */}
@@ -856,7 +1040,7 @@ const LandingPage = () => {
                       <div className="absolute inset-0 rounded-3xl opacity-30 blur-3xl"
                         style={{background: `radial-gradient(circle, ${feat.accent}40, transparent 70%)`}} />
                       <div className="relative land-glass-light dark:land-glass p-6 sm:p-8 rounded-3xl">
-                        <FeatureMockup type={feat.mockup} isDark={isDark} />
+                        <FeatureMockup type={feat.mockup} isDark={isDark} stats={platformStats} />
                       </div>
                     </div>
                   </div>
@@ -1068,7 +1252,7 @@ const LandingPage = () => {
             Ready to Transform Your<br />Financial Life?
           </h2>
           <p className="mt-4 text-lg text-blue-100 max-w-xl mx-auto">
-            Join 50,000+ users who have taken control of their finances with AI-powered insights, automated tracking, and beautiful dashboards.
+            Join {platformStats ? platformStats.users?.total?.toLocaleString() : '...'}{platformStats?.users?.total > 0 ? '+' : ''} users who have taken control of their finances with AI-powered insights, automated tracking, and beautiful dashboards.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button onClick={() => navigate('/register')}
@@ -1102,7 +1286,7 @@ const LandingPage = () => {
                 </span>
               </div>
               <p className="text-sm max-w-xs land-text-secondary">
-                AI-powered financial management platform trusted by 50,000+ users across India.
+                AI-powered financial management platform trusted by {platformStats ? platformStats.users?.total?.toLocaleString() : '...'}{platformStats?.users?.total > 0 ? '+' : ''} users across India.
               </p>
             </div>
             {[

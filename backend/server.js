@@ -200,6 +200,7 @@ app.use('/uploads', authenticate, express.static('uploads'));
 app.use('/api/auth', authLimiter, require('./routes/authRoutes')); // Apply stricter rate limit to auth
 app.use('/api/2fa', authLimiter, require('./routes/twoFactorAuthRoutes')); // 2FA management
 app.use('/api/health', require('./routes/healthRoutes')); // Health checks (no auth required)
+app.use('/api/public', require('./routes/publicRoutes')); // Public stats for landing page (no auth required)
 app.use('/api/export', require('./routes/exportRoutes')); // Export functionality
 app.use('/api/budgets', require('./routes/budgetRoutes')); // Budget tracking
 app.use('/api/bill-reminders', require('./routes/billReminderRoutes')); // Bill reminders & auto-payment
