@@ -333,6 +333,35 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 /**
+ * @route GET /api/documents/:id/download
+ * @desc Download a document file
+ * @access Private
+ */
+router.get('/:id/download', authenticate, async (req, res) => {
+  try {
+    const document = await Document.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!document) {
+      return res.status(404).json({ success: false, message: 'Document not found' });
+    }
+
+    // Check file exists
+    try {
+      await fs.access(document.filePath);
+    } catch {
+      return res.status(404).json({ success: false, message: 'File not found on disk' });
+    }
+
+    res.setHeader('Content-Disposition', `attachment; filename="${document.originalFileName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    const { createReadStream } = require('fs');
+    createReadStream(document.filePath).pipe(res);
+  } catch (error) {
+    logger.error('Download document error:', error);
+    res.status(500).json({ success: false, message: 'Failed to download document' });
+  }
+});
+
+/**
  * @route GET /api/documents/:id/transactions
  * @desc Get transactions from a specific document
  * @access Private

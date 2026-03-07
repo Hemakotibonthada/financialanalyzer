@@ -33,6 +33,17 @@ export default function FinancialDocuments() {
   const [showUpload, setShowUpload] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [shareLink, setShareLink] = useState(null);
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadCategory, setUploadCategory] = useState('Tax Returns');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const formatDate = (d) => {
+    if (!d) return 'N/A';
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -40,7 +51,33 @@ export default function FinancialDocuments() {
       setError(null);
       try {
         const res = await api.get('/documents');
-        setDocuments(res.data?.documents || res.data || []);
+        const raw = res.data?.documents || res.data?.data || res.data || [];
+        const docs = (Array.isArray(raw) ? raw : []).map(d => {
+          // Map backend category to frontend display category
+          const catMap = {
+            'bank_statement': 'Tax Returns', 'tax_document': 'Tax Returns', 'tax': 'Tax Returns',
+            'payslip': 'Pay Slips', 'salary': 'Pay Slips', 'payroll': 'Pay Slips',
+            'insurance': 'Insurance',
+            'investment': 'Investments', 'mutual_fund': 'Investments', 'demat': 'Investments',
+            'credit_card': 'Tax Returns', 'receipt': 'Tax Returns',
+            'loan': 'Property', 'real_estate': 'Property',
+          };
+          const sizeBytes = d.fileSize || d.size || 0;
+          const sizeMB = typeof sizeBytes === 'number' ? sizeBytes / (1024 * 1024) : 0;
+          return {
+            ...d,
+            id: d._id || d.id,
+            name: d.originalFileName || d.fileName || d.name || 'Unnamed Document',
+            category: catMap[d.category] || d.category || 'Tax Returns',
+            size: sizeMB >= 1 ? `${sizeMB.toFixed(1)} MB` : `${(sizeBytes / 1024).toFixed(0)} KB`,
+            sizeBytes,
+            uploaded: formatDate(d.createdAt || d.uploaded || d.date),
+            tags: d.tags || (d.metadata?.folderName ? [d.metadata.folderName] : []),
+            type: d.fileType || d.type || 'pdf',
+            source: d.source || 'upload',
+          };
+        });
+        setDocuments(docs);
       } catch (err) {
         console.error('Error fetching documents:', err);
         setError('Failed to load documents.');
@@ -79,13 +116,7 @@ export default function FinancialDocuments() {
   [documents]);
 
   const totalStorage = useMemo(() => {
-    return documents.reduce((sum, d) => {
-      const sizeStr = d.size || '0';
-      const num = parseFloat(sizeStr);
-      if (sizeStr.includes('MB')) return sum + num;
-      if (sizeStr.includes('KB')) return sum + num / 1024;
-      return sum + num;
-    }, 0);
+    return documents.reduce((sum, d) => sum + (d.sizeBytes || 0), 0) / (1024 * 1024);
   }, [documents]);
   const maxStorage = 100;
   const storagePct = (totalStorage / maxStorage) * 100;
@@ -99,6 +130,66 @@ export default function FinancialDocuments() {
     }
   };
   const shareDoc = (doc) => setShareLink(`https://app.financialanalyzer.com/shared/${doc.id || doc._id}/${Date.now()}`);
+
+  const handleUpload = async () => {
+    if (!uploadFiles.length) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      uploadFiles.forEach(f => formData.append('documents', f));
+      formData.append('category', uploadCategory);
+      await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setShowUpload(false);
+      setUploadFiles([]);
+      // Re-fetch documents
+      const res = await api.get('/documents');
+      const raw = res.data?.documents || res.data?.data || res.data || [];
+      const catMap = {
+        'bank_statement': 'Tax Returns', 'tax_document': 'Tax Returns', 'tax': 'Tax Returns',
+        'payslip': 'Pay Slips', 'salary': 'Pay Slips', 'payroll': 'Pay Slips',
+        'insurance': 'Insurance', 'investment': 'Investments', 'mutual_fund': 'Investments',
+        'demat': 'Investments', 'credit_card': 'Tax Returns', 'receipt': 'Tax Returns',
+        'loan': 'Property', 'real_estate': 'Property',
+      };
+      const docs = (Array.isArray(raw) ? raw : []).map(d => {
+        const sizeBytes = d.fileSize || d.size || 0;
+        const sizeMB = typeof sizeBytes === 'number' ? sizeBytes / (1024 * 1024) : 0;
+        return {
+          ...d, id: d._id || d.id,
+          name: d.originalFileName || d.fileName || d.name || 'Unnamed Document',
+          category: catMap[d.category] || d.category || 'Tax Returns',
+          size: sizeMB >= 1 ? `${sizeMB.toFixed(1)} MB` : `${(sizeBytes / 1024).toFixed(0)} KB`,
+          sizeBytes, uploaded: formatDate(d.createdAt || d.uploaded || d.date),
+          tags: d.tags || (d.metadata?.folderName ? [d.metadata.folderName] : []),
+          type: d.fileType || d.type || 'pdf', source: d.source || 'upload',
+        };
+      });
+      setDocuments(docs);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setError('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const downloadDoc = async (doc) => {
+    try {
+      const res = await api.get(`/documents/${doc.id || doc._id}/download`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
+    }
+  };
 
   const getCategoryColor = (cat) => categoryList.find(c => c.name === cat)?.color || '#64748b';
 
@@ -232,7 +323,7 @@ export default function FinancialDocuments() {
               </div>
               <div className={`flex gap-1 mt-3 pt-3 border-t ${dk ? 'border-slate-700' : 'border-slate-100'}`}>
                 <button onClick={() => setPreviewDoc(doc)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Eye className="w-4 h-4 text-blue-500" /></button>
-                <button className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Download className="w-4 h-4 text-green-500" /></button>
+                <button onClick={() => downloadDoc(doc)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Download className="w-4 h-4 text-green-500" /></button>
                 <button onClick={() => shareDoc(doc)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Share2 className="w-4 h-4 text-purple-500" /></button>
                 <button onClick={() => deleteDoc(doc.id || doc._id)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} ml-auto`}><Trash2 className="w-4 h-4 text-red-500" /></button>
               </div>
@@ -270,7 +361,7 @@ export default function FinancialDocuments() {
                   <td className="py-3 px-4">
                     <div className="flex gap-1 justify-center">
                       <button onClick={() => setPreviewDoc(doc)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Eye className="w-4 h-4 text-blue-500" /></button>
-                      <button className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Download className="w-4 h-4 text-green-500" /></button>
+                      <button onClick={() => downloadDoc(doc)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Download className="w-4 h-4 text-green-500" /></button>
                       <button onClick={() => shareDoc(doc)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Share2 className="w-4 h-4 text-purple-500" /></button>
                       <button onClick={() => deleteDoc(doc.id || doc._id)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><Trash2 className="w-4 h-4 text-red-500" /></button>
                     </div>
@@ -343,28 +434,41 @@ export default function FinancialDocuments() {
           <div className={`${dk ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 w-full max-w-lg border ${dk ? 'border-slate-700' : 'border-slate-200'} shadow-xl`}>
             <div className="flex items-center justify-between mb-6">
               <h3 className={`text-lg font-semibold ${dk ? 'text-white' : 'text-slate-800'}`}>Upload Document</h3>
-              <button onClick={() => setShowUpload(false)} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><X className="w-5 h-5 text-slate-500" /></button>
+              <button onClick={() => { setShowUpload(false); setUploadFiles([]); }} className={`p-1 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}><X className="w-5 h-5 text-slate-500" /></button>
             </div>
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.csv,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png,.txt" className="hidden" onChange={e => setUploadFiles(Array.from(e.target.files || []))} />
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); }}
+              onDrop={e => { e.preventDefault(); setDragOver(false); setUploadFiles(Array.from(e.dataTransfer.files || [])); }}
+              onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors ${dragOver ? `border-blue-500 ${dk ? 'bg-blue-900/20' : 'bg-blue-50'}` : `${dk ? 'border-slate-600' : 'border-slate-300'} hover:border-blue-400`}`}
             >
               <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-              <p className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-700'} font-medium`}>Drag & drop files here</p>
-              <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>or click to browse</p>
-              <p className="text-xs text-slate-400 mt-3">PDF, JPG, PNG up to 10MB</p>
+              {uploadFiles.length > 0 ? (
+                <>
+                  <p className={`text-sm ${dk ? 'text-green-300' : 'text-green-700'} font-medium`}>{uploadFiles.length} file(s) selected</p>
+                  <div className="mt-2 space-y-1">
+                    {uploadFiles.map((f, i) => <p key={i} className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} truncate`}>{f.name} ({(f.size / 1024).toFixed(0)} KB)</p>)}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className={`text-sm ${dk ? 'text-slate-300' : 'text-slate-700'} font-medium`}>Drag & drop files here</p>
+                  <p className={`text-xs ${dk ? 'text-slate-400' : 'text-slate-500'} mt-1`}>or click to browse</p>
+                  <p className="text-xs text-slate-400 mt-3">PDF, CSV, XLSX, JPG, PNG up to 50MB</p>
+                </>
+              )}
             </div>
             <div className="mt-4">
               <label className={`text-sm ${dk ? 'text-slate-400' : 'text-slate-500'} block mb-1`}>Category</label>
-              <select className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`}>
-                {categoryList.map(c => <option key={c.name}>{c.name}</option>)}
+              <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)} className={`w-full rounded-xl border ${dk ? `border-slate-700` : `border-slate-200`} ${dk ? 'bg-slate-900' : 'bg-white'} ${dk ? `text-white` : `text-slate-800`} px-3 py-2 text-sm`}>
+                {categoryList.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
             </div>
             <div className="flex gap-3 mt-6 justify-end">
-              <button onClick={() => setShowUpload(false)} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-4 py-2`}>Cancel</button>
-              <button className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2">Upload</button>
+              <button onClick={() => { setShowUpload(false); setUploadFiles([]); }} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-4 py-2`}>Cancel</button>
+              <button onClick={handleUpload} disabled={!uploadFiles.length || uploading} className={`bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed`}>{uploading ? 'Uploading...' : 'Upload'}</button>
             </div>
           </div>
         </div>
@@ -391,7 +495,7 @@ export default function FinancialDocuments() {
               <div><span className={`${dk ? 'text-slate-400' : `text-slate-500`}`}>Expiry:</span> <span className={`${dk ? 'text-white' : 'text-slate-800'} font-medium ml-1`}>{previewDoc.expiry || `N/A`}</span></div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 flex items-center gap-2"><Download className="w-4 h-4" /> Download</button>
+              <button onClick={() => downloadDoc(previewDoc)} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 px-4 py-2 flex items-center gap-2"><Download className="w-4 h-4" /> Download</button>
               <button onClick={() => shareDoc(previewDoc)} className={`${dk ? 'bg-slate-700' : 'bg-slate-100'} ${dk ? 'text-slate-300' : 'text-slate-700'} rounded-xl text-sm px-4 py-2 flex items-center gap-2`}><Share2 className="w-4 h-4" /> Share</button>
             </div>
           </div>
