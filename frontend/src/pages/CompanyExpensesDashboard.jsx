@@ -15,6 +15,7 @@ import api from '../services/api';
 import { toast } from 'react-toastify';
 import ExpenseFormModal from '../components/ExpenseFormModal';
 import BillOfMaterials from './BillOfMaterials';
+import FundsInvestments from './FundsInvestments';
 import { extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 /* ─── Animated Counter ──────────────────────────────────────────────────── */
@@ -211,6 +212,7 @@ const CompanyExpensesDashboard = () => {
     { id:'analytics', label:'Analytics', icon: BarChart3 },
     { id:'vendors',   label:'Vendors',   icon: Building2 },
     { id:'bom',       label:'Bill of Materials', icon: Layers },
+    { id:'funds',      label:'Funds & Investments', icon: TrendingUp },
   ];
 
   // ═════════ RENDER ═════════
@@ -658,6 +660,9 @@ const CompanyExpensesDashboard = () => {
 
           {/* ═══ BOM TAB ═══ */}
           {activeTab === 'bom' && <BillOfMaterials embedded />}
+
+          {/* ═══ FUNDS TAB ═══ */}
+          {activeTab === 'funds' && <FundsInvestments embedded />}
         </div>
 
         {/* ═══ DETAIL DRAWER ═══ */}

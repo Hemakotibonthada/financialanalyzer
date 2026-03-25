@@ -158,15 +158,21 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-        {/* Fixed Header — glassmorphism */}
+      <div className="min-h-screen transition-colors duration-300 relative">
+        {/* Global ambient background */}
+        <div className="app-bg-ambient">
+          <div className="app-bg-orb app-bg-orb-1" />
+          <div className="app-bg-orb app-bg-orb-2" />
+        </div>
+
+        {/* Fixed Header — enhanced glassmorphism */}
         <header className={`
           fixed top-0 right-0 left-0 z-40 transition-all duration-300
-          bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl
-          border-b border-slate-200/60 dark:border-slate-700/40
-          shadow-sm dark:shadow-slate-900/30
+          bg-white/60 dark:bg-slate-900/50 backdrop-blur-2xl
+          border-b border-white/30 dark:border-white/[0.06]
+          shadow-[0_4px_30px_rgba(31,38,135,0.06)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.3)]
           ${isCollapsed ? 'lg:left-20' : 'lg:left-72'}
-        `}>
+        `} style={{ WebkitBackdropFilter: 'blur(40px) saturate(200%)', backdropFilter: 'blur(40px) saturate(200%)' }}>
           <div className="px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between gap-4">
               {/* Page Title */}
@@ -200,7 +206,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
                   </button>
 
                   {expenseOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <div className="absolute right-0 mt-2 w-80 bg-white/70 dark:bg-slate-800/80 backdrop-blur-2xl rounded-2xl shadow-[0_16px_48px_rgba(31,38,135,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/30 dark:border-white/[0.06] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                       {/* Header */}
                       <div className="px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -314,7 +320,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
 
                   {/* Dropdown */}
                   {profileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 py-0 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 max-h-[85vh] overflow-y-auto">
+                    <div className="absolute right-0 mt-2 w-80 bg-white/70 dark:bg-slate-800/80 backdrop-blur-2xl rounded-2xl shadow-[0_16px_48px_rgba(31,38,135,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] border border-white/30 dark:border-white/[0.06] py-0 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 max-h-[85vh] overflow-y-auto">
                       {/* Company Branding */}
                       <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                         <div className="flex items-center gap-2 mb-1">

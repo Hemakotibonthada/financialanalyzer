@@ -114,7 +114,6 @@ const Sidebar = () => {
   // — Standalone special items (shown as top-level, outside collapsible groups) —
   const specialItems = [
     { label: 'Company', icon: Building2, path: '/company-expenses', color: 'amber', badge: 'PRO', special: true },
-    { label: 'Funds & Investments', icon: TrendingUp, path: '/funds-investments', color: 'emerald', badge: 'NEW', special: true },
   ];
 
   // — Consolidated navigation: 7 groups —
@@ -422,7 +421,7 @@ const Sidebar = () => {
     
     if (collapsed) {
       return (
-        <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-2" />
+        <div className="w-full h-px bg-gray-200/50 dark:bg-white/[0.06] my-2" />
       );
     }
     
@@ -445,7 +444,7 @@ const Sidebar = () => {
   const SidebarContent = ({ collapsed, mobile = false }) => (
     <>
       {/* Logo Section */}
-      <div className={`p-4 border-b border-gray-200 dark:border-gray-700 ${mobile ? '' : 'sticky top-0 bg-white dark:bg-slate-900 z-10'}`}>
+      <div className={`p-4 border-b border-white/20 dark:border-white/[0.06] ${mobile ? '' : 'sticky top-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl z-10'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
@@ -483,7 +482,7 @@ const Sidebar = () => {
           ))}
         </div>
 
-        <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-1" />
+        <div className="w-full h-px bg-gray-200/50 dark:bg-white/[0.06] my-1" />
 
         {/* Special standalone items (outside collapsible groups) */}
         <div className="space-y-1.5 mb-2">
@@ -492,7 +491,7 @@ const Sidebar = () => {
           ))}
         </div>
 
-        <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-1" />
+        <div className="w-full h-px bg-gray-200/50 dark:bg-white/[0.06] my-1" />
 
         {/* Collapsible Navigation Sections */}
         {navigationSections.map((section) => (
@@ -510,7 +509,7 @@ const Sidebar = () => {
 
         {/* Role-based items */}
         {advancedItems.filter(hasAccess).length > 0 && (
-          <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-0.5">
+          <div className="pt-2 mt-2 border-t border-white/20 dark:border-white/[0.06] space-y-0.5">
             {advancedItems
               .filter(hasAccess)
               .map((item) => (
@@ -522,10 +521,10 @@ const Sidebar = () => {
 
       {/* Collapse Toggle Button (Desktop Only) */}
       {!mobile && (
-        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-3 border-t border-white/20 dark:border-white/[0.06]">
           <button
             onClick={toggleSidebar}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all text-gray-700 dark:text-gray-300"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/40 dark:bg-white/[0.05] hover:bg-white/60 dark:hover:bg-white/[0.08] backdrop-blur-sm rounded-lg transition-all text-gray-700 dark:text-gray-300"
           >
             {isCollapsed ? (
               <ChevronRight className="w-5 h-5" />
@@ -553,7 +552,7 @@ const Sidebar = () => {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-xl shadow-lg hover:shadow-xl transition-all border border-white/30 dark:border-white/[0.06]"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
@@ -569,7 +568,7 @@ const Sidebar = () => {
 
       {/* Mobile Sidebar */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ${
+        className={`lg:hidden fixed top-0 left-0 bottom-0 w-72 bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl shadow-[0_16px_70px_rgba(31,38,135,0.15)] dark:shadow-[0_16px_70px_rgba(0,0,0,0.5)] border-r border-white/30 dark:border-white/[0.06] z-50 transform transition-transform duration-300 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } flex flex-col`}
       >
@@ -578,7 +577,7 @@ const Sidebar = () => {
 
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-gray-700 shadow-lg z-30 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 bg-white/60 dark:bg-slate-900/50 backdrop-blur-2xl border-r border-white/30 dark:border-white/[0.06] shadow-[0_8px_40px_rgba(31,38,135,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.3)] z-30 transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-72'
         }`}
       >
