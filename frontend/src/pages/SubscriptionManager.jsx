@@ -95,7 +95,8 @@ const SubscriptionForm = ({ subscription, onSave, onCancel }) => {
   );
 };
 
-export default function SubscriptionManager() {
+export default function SubscriptionManager({ embedded = false }) {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
@@ -223,7 +224,7 @@ export default function SubscriptionManager() {
   }
 
   return (
-    <MainLayout title="Subscription Manager">
+    <Wrapper>
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-6 space-y-6">
       {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">{error}</div>}
 
@@ -423,6 +424,6 @@ export default function SubscriptionManager() {
         </div>
       )}
     </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

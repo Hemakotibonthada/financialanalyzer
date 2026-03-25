@@ -40,7 +40,8 @@ const BUDGET_RULES = {
   custom: { needs: 0, wants: 0, savings: 0, name: 'Custom' },
 };
 
-export default function BudgetPlanner() {
+export default function BudgetPlanner({ embedded = false }) {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { user } = useAuth();
   const { mode, accent } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -315,17 +316,17 @@ export default function BudgetPlanner() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <Wrapper>
         <PageShell>
           <PageLoader text="Loading budget data..." />
         </PageShell>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
+      <Wrapper>
         <PageShell>
           <EmptyPlaceholder
             icon={<AlertTriangle className="w-12 h-12" />}
@@ -337,12 +338,12 @@ export default function BudgetPlanner() {
             </ThemeButton>
           </EmptyPlaceholder>
         </PageShell>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
   return (
-    <MainLayout title="Budget Planner">
+    <Wrapper>
     <PageTransition>
     <div className={`min-h-screen ${p.bg} p-6 transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -781,6 +782,6 @@ export default function BudgetPlanner() {
       </Modal>
     </div>
     </PageTransition>
-    </MainLayout>
+    </Wrapper>
   );
 }

@@ -331,6 +331,7 @@ app.use('/api/lender-loans', require('./routes/lenderLoanRoutes'));
 app.use('/api/lender-payments', require('./routes/lenderPaymentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/investments', require('./routes/investmentRoutes')); // Investment portfolio tracking
+app.use('/api/funders', require('./routes/funderRoutes')); // Funder/investor tracking
 app.use('/api/goals', require('./routes/goalRoutes')); // Financial goals management
 app.use('/api/networth', require('./routes/netWorthRoutes')); // Net worth tracking
 app.use('/api/insights', require('./routes/insights')); // Financial insights & behavior analysis

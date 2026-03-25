@@ -42,7 +42,8 @@ const CATEGORY_COLORS = [
   '#3F51B5', '#009688', '#CDDC39', '#FF5722',
 ];
 
-const CashFlowForecast = () => {
+const CashFlowForecast = ({ embedded = false }) => {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const [activeTab, setActiveTab] = useState(0);
   const [forecastMonths, setForecastMonths] = useState(12);
   const [selectedScenario, setSelectedScenario] = useState('moderate');
@@ -198,7 +199,7 @@ const CashFlowForecast = () => {
   };
 
   return (
-    <MainLayout title="Cash Flow Forecast">
+    <Wrapper>
     <Box sx={{ p: 3, animation: 'fadeInUp 0.6s ease-out', bgcolor: isDark ? '#0f172a' : 'transparent', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -687,7 +688,7 @@ const CashFlowForecast = () => {
         </Box>
       )}
     </Box>
-    </MainLayout>
+    </Wrapper>
   );
 };
 

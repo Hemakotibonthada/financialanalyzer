@@ -6,7 +6,7 @@ import {
   Briefcase, Calendar, Target, ChevronDown, RefreshCw, Eye, Layers,
   Download, FileText, Share2, Percent, Clock, AlertTriangle, CheckCircle,
   Award, Zap, Activity, Shield, ArrowUp, ArrowDown, Copy, Printer,
-  SortAsc, SortDesc, LayoutGrid, List, Info, Star, BookOpen, Hash
+  SortAsc, SortDesc, LayoutGrid, List, Info, Star, BookOpen, Hash, Users
 } from 'lucide-react';
 import {
   PieChart as RePieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
@@ -153,6 +153,19 @@ export default function FundsInvestments({ embedded = false }) {
   const [showDetailDrawer, setShowDetailDrawer] = useState(null);
   const exportRef = useRef(null);
 
+  // Funder state
+  const [funders, setFunders] = useState([]);
+  const [funderLoading, setFunderLoading] = useState(false);
+  const [showFunderModal, setShowFunderModal] = useState(false);
+  const [editFunder, setEditFunder] = useState(null);
+  const [funderForm, setFunderForm] = useState({
+    name: '', email: '', phone: '', company: '', type: 'angel', amount: '',
+    equityPercentage: '', valuationAtInvestment: '', round: 'seed',
+    investmentDate: new Date().toISOString().split('T')[0], instrumentType: 'equity',
+    interestRate: '', maturityDate: '', boardSeat: false, status: 'received',
+    amountReceived: '', notes: ''
+  });
+
   const [formData, setFormData] = useState({
     type: 'mutual_fund', name: '', symbol: '', quantity: 1, purchasePrice: '',
     currentPrice: '', purchaseDate: new Date().toISOString().split('T')[0],
@@ -171,6 +184,19 @@ export default function FundsInvestments({ embedded = false }) {
   }, []);
 
   useEffect(() => { fetchInvestments(); }, [fetchInvestments]);
+
+  // Fetch funders
+  const fetchFunders = useCallback(async () => {
+    setFunderLoading(true);
+    try {
+      const res = await api.get('/funders');
+      const data = res.data?.data || res.data;
+      setFunders(Array.isArray(data) ? data : []);
+    } catch { setFunders([]); }
+    finally { setFunderLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchFunders(); }, [fetchFunders]);
 
   useEffect(() => {
     const handler = (e) => { if (exportRef.current && !exportRef.current.contains(e.target)) setShowExportMenu(false); };
@@ -329,6 +355,50 @@ export default function FundsInvestments({ embedded = false }) {
   const resetForm = () => setFormData({ type: 'mutual_fund', name: '', symbol: '', quantity: 1, purchasePrice: '', currentPrice: '',
     purchaseDate: new Date().toISOString().split('T')[0], category: 'equity', riskLevel: 'medium', maturityDate: '', notes: '', broker: '', folio: '', goal: '' });
 
+  // Funder CRUD
+  const handleSaveFunder = async () => {
+    try {
+      const payload = { ...funderForm, amount: parseFloat(funderForm.amount) || 0,
+        equityPercentage: parseFloat(funderForm.equityPercentage) || 0,
+        valuationAtInvestment: parseFloat(funderForm.valuationAtInvestment) || 0,
+        amountReceived: parseFloat(funderForm.amountReceived) || parseFloat(funderForm.amount) || 0,
+        interestRate: parseFloat(funderForm.interestRate) || 0 };
+      if (editFunder) await api.put(`/funders/${editFunder._id}`, payload);
+      else await api.post('/funders', payload);
+      setShowFunderModal(false); setEditFunder(null); resetFunderForm(); fetchFunders();
+    } catch (err) { console.error('Save funder failed:', err); }
+  };
+
+  const handleEditFunder = (f) => {
+    setEditFunder(f);
+    setFunderForm({ name: f.name || '', email: f.email || '', phone: f.phone || '', company: f.company || '',
+      type: f.type || 'angel', amount: f.amount || '', equityPercentage: f.equityPercentage || '',
+      valuationAtInvestment: f.valuationAtInvestment || '', round: f.round || 'seed',
+      investmentDate: f.investmentDate?.split('T')[0] || '', instrumentType: f.instrumentType || 'equity',
+      interestRate: f.interestRate || '', maturityDate: f.maturityDate?.split('T')[0] || '',
+      boardSeat: f.boardSeat || false, status: f.status || 'received',
+      amountReceived: f.amountReceived || '', notes: f.notes || '' });
+    setShowFunderModal(true);
+  };
+
+  const handleDeleteFunder = async (id) => {
+    if (!window.confirm('Delete this funder?')) return;
+    try { await api.delete(`/funders/${id}`); fetchFunders(); } catch (err) { console.error(err); }
+  };
+
+  const resetFunderForm = () => setFunderForm({ name: '', email: '', phone: '', company: '', type: 'angel', amount: '',
+    equityPercentage: '', valuationAtInvestment: '', round: 'seed',
+    investmentDate: new Date().toISOString().split('T')[0], instrumentType: 'equity',
+    interestRate: '', maturityDate: '', boardSeat: false, status: 'received', amountReceived: '', notes: '' });
+
+  // Funder computed data
+  const funderStats = useMemo(() => {
+    const totalRaised = funders.reduce((s, f) => s + (f.amountReceived || f.amount || 0), 0);
+    const totalCommitted = funders.reduce((s, f) => s + (f.amount || 0), 0);
+    const totalEquity = funders.reduce((s, f) => s + (f.equityPercentage || 0), 0);
+    return { totalRaised, totalCommitted, totalEquity, founderEquity: 100 - totalEquity, count: funders.length };
+  }, [funders]);
+
   const toggleSelect = (id) => setSelectedInvestments(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const selectAll = () => setSelectedInvestments(new Set(filteredInvestments.map(i => i._id)));
   const clearSelection = () => setSelectedInvestments(new Set());
@@ -391,6 +461,7 @@ export default function FundsInvestments({ embedded = false }) {
     { id: 'holdings', label: 'Holdings', icon: Layers },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'performance', label: 'Performance', icon: Activity },
+    { id: 'funders', label: 'Funders', icon: Users },
     { id: 'insights', label: 'Insights', icon: Zap },
   ];
 
@@ -713,6 +784,184 @@ export default function FundsInvestments({ embedded = false }) {
                     <div className={`h-2.5 rounded-full overflow-hidden ${dk ? 'bg-slate-700' : 'bg-gray-200'}`}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${(cat.currentValue / total) * 100}%`, background: `linear-gradient(90deg, ${PIE_COLORS[idx % PIE_COLORS.length]}, ${PIE_COLORS[(idx + 1) % PIE_COLORS.length]})` }} /></div>
                     <div className="flex justify-between mt-1"><span className={`text-[10px] ${dk ? 'text-slate-500' : 'text-gray-400'}`}>Invested: {fmtCompact(cat.invested)}</span><span className={`text-[10px] ${dk ? 'text-slate-500' : 'text-gray-400'}`}>{((cat.currentValue / total) * 100).toFixed(1)}% of portfolio</span></div></div>); })}
                 {categoryPerformance.length === 0 && <p className={`text-center py-6 text-sm ${dk ? 'text-slate-500' : 'text-gray-400'}`}>No data</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════ FUNDERS TAB ══════ */}
+        {activeTab === 'funders' && (
+          <div className="space-y-5">
+            {/* Funder Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard title="Total Raised" value={fmtCompact(funderStats.totalRaised)} icon={IndianRupee} color="emerald" dk={dk} subtext={`${funderStats.count} funders`} />
+              <StatCard title="Committed" value={fmtCompact(funderStats.totalCommitted)} icon={Target} color="blue" dk={dk} subtext="Total pledged" />
+              <StatCard title="Equity Given" value={`${funderStats.totalEquity.toFixed(1)}%`} icon={PieChart} color="purple" dk={dk} subtext={`${funderStats.founderEquity.toFixed(1)}% founder equity`} />
+              <StatCard title="Active Funders" value={funderStats.count} icon={Users} color="orange" dk={dk} subtext="Investors" />
+            </div>
+
+            {/* Equity Split Donut */}
+            {funders.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className={`rounded-2xl p-5 ${glassCard(dk)}`}>
+                  <h3 className="text-base font-semibold mb-3 flex items-center gap-2"><PieChart className="w-4 h-4 text-purple-500" /> Equity Distribution</h3>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <RePieChart>
+                      <Pie data={[
+                        { name: 'Founders', value: funderStats.founderEquity, color: '#10b981' },
+                        ...funders.filter(f => f.equityPercentage > 0).map(f => ({ name: f.name, value: f.equityPercentage, color: PIE_COLORS[funders.indexOf(f) % PIE_COLORS.length] }))
+                      ]} cx="50%" cy="50%" innerRadius={55} outerRadius={100} paddingAngle={2} dataKey="value">
+                        {[{ color: '#10b981' }, ...funders.filter(f => f.equityPercentage > 0)].map((e, i) => <Cell key={i} fill={i === 0 ? '#10b981' : PIE_COLORS[(i - 1) % PIE_COLORS.length]} />)}
+                      </Pie>
+                      <ReTooltip content={<CustomTooltip dk={dk} />} />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" /><span className={`text-xs ${dk ? 'text-slate-300' : 'text-gray-600'}`}>Founders</span><span className="text-xs font-semibold ml-auto">{funderStats.founderEquity.toFixed(1)}%</span></div>
+                    {funders.filter(f => f.equityPercentage > 0).map((f, i) => (
+                      <div key={f._id} className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span className={`text-xs truncate ${dk ? 'text-slate-300' : 'text-gray-600'}`}>{f.name}</span><span className="text-xs font-semibold ml-auto">{f.equityPercentage}%</span></div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Funding by Round */}
+                <div className={`rounded-2xl p-5 ${glassCard(dk)}`}>
+                  <h3 className="text-base font-semibold mb-3 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-blue-500" /> Funding by Round</h3>
+                  {(() => {
+                    const byRound = {};
+                    funders.forEach(f => { const r = f.round || 'other'; if (!byRound[r]) byRound[r] = { name: r.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()), value: 0, count: 0 }; byRound[r].value += f.amountReceived || f.amount || 0; byRound[r].count++; });
+                    const data = Object.values(byRound);
+                    return data.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={240}>
+                        <BarChart data={data}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={dk ? '#334155' : '#e5e7eb'} />
+                          <XAxis dataKey="name" tick={{ fill: dk ? '#94a3b8' : '#6b7280', fontSize: 11 }} />
+                          <YAxis tickFormatter={v => fmtCompact(v)} tick={{ fill: dk ? '#94a3b8' : '#6b7280', fontSize: 11 }} />
+                          <ReTooltip content={<CustomTooltip dk={dk} />} />
+                          <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} name="Amount" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : <div className={`h-48 flex items-center justify-center text-sm ${dk ? 'text-slate-500' : 'text-gray-400'}`}>No data</div>;
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Add Funder Button */}
+            <div className="flex justify-end">
+              <button onClick={() => { resetFunderForm(); setEditFunder(null); setShowFunderModal(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all font-medium text-sm">
+                <Plus className="w-4 h-4" /> Add Funder / Investor
+              </button>
+            </div>
+
+            {/* Funder List */}
+            {funderLoading ? <div className="flex justify-center py-12"><RefreshCw className="w-8 h-8 animate-spin text-purple-500" /></div>
+            : funders.length === 0 ? (
+              <div className={`rounded-2xl p-12 text-center ${glassStatic(dk)}`}>
+                <Users className={`w-12 h-12 mx-auto mb-4 ${dk ? 'text-slate-600' : 'text-gray-300'}`} />
+                <p className={`text-lg font-medium mb-2 ${dk ? 'text-slate-400' : 'text-gray-500'}`}>No funders yet</p>
+                <p className={`text-sm mb-4 ${dk ? 'text-slate-500' : 'text-gray-400'}`}>Track who invested in your company, how much, and the terms</p>
+                <button onClick={() => { resetFunderForm(); setEditFunder(null); setShowFunderModal(true); }}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-xl text-sm font-medium"><Plus className="w-4 h-4 inline mr-1" /> Add Funder</button>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {funders.map(f => {
+                  const ROUND_COLORS = { pre_seed: '#94a3b8', seed: '#f59e0b', series_a: '#3b82f6', series_b: '#8b5cf6', series_c: '#6366f1', series_d: '#a855f7', bridge: '#06b6d4', debt: '#ef4444', grant: '#22c55e' };
+                  const TYPE_LABELS = { angel: '👼 Angel', vc: '🏢 VC', pe: '💼 PE', family_office: '🏠 Family Office', corporate: '🏗️ Corporate', government: '🏛️ Govt', crowdfunding: '👥 Crowdfunding', personal: '👤 Personal', bank_loan: '🏦 Bank', other: '📦 Other' };
+                  const STATUS_COLORS = { committed: 'text-amber-500 bg-amber-500/10', received: 'text-green-500 bg-green-500/10', partially_received: 'text-blue-500 bg-blue-500/10', converted: 'text-purple-500 bg-purple-500/10', exited: 'text-gray-500 bg-gray-500/10', defaulted: 'text-red-500 bg-red-500/10' };
+                  return (
+                    <div key={f._id} className={`rounded-xl p-4 transition-all duration-300 ${glassCard(dk)}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: `${ROUND_COLORS[f.round] || '#64748b'}20` }}>
+                            {TYPE_LABELS[f.type]?.split(' ')[0] || '📦'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold truncate">{f.name}</h4>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[f.status] || 'text-gray-500 bg-gray-500/10'}`}>{f.status?.replace('_', ' ')}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {f.company && <span className={`text-xs ${dk ? 'text-slate-400' : 'text-gray-500'}`}>{f.company}</span>}
+                              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${ROUND_COLORS[f.round] || '#64748b'}20`, color: ROUND_COLORS[f.round] || '#64748b' }}>
+                                {f.round?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                              </span>
+                              <span className={`text-xs ${dk ? 'text-slate-400' : 'text-gray-500'}`}>{TYPE_LABELS[f.type]?.split(' ').slice(1).join(' ')}</span>
+                              {f.investmentDate && <span className={`text-xs ${dk ? 'text-slate-500' : 'text-gray-400'}`}>· {new Date(f.investmentDate).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-semibold text-lg">{fmtCompact(f.amountReceived || f.amount)}</p>
+                            {f.equityPercentage > 0 && <p className={`text-xs font-medium text-purple-500`}>{f.equityPercentage}% equity</p>}
+                            {f.instrumentType && <p className={`text-[10px] ${dk ? 'text-slate-500' : 'text-gray-400'}`}>{f.instrumentType?.replace('_', ' ')}</p>}
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <button onClick={() => handleEditFunder(f)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4 text-blue-500" /></button>
+                            <button onClick={() => handleDeleteFunder(f._id)} className={`p-1.5 rounded-lg ${dk ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}><Trash2 className="w-4 h-4 text-red-500" /></button>
+                          </div>
+                        </div>
+                      </div>
+                      {f.notes && <p className={`text-xs mt-2 pl-14 ${dk ? 'text-slate-400' : 'text-gray-500'}`}>{f.notes}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════ FUNDER MODAL ══════ */}
+        {showFunderModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setShowFunderModal(false)}>
+            <div className={`w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto ${dk ? 'bg-slate-800/90 backdrop-blur-2xl border border-white/10 shadow-[0_8px_60px_rgba(0,0,0,0.5)]' : 'bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_8px_60px_rgba(31,38,135,0.2)]'}`} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5"><h2 className="text-lg font-bold">{editFunder ? 'Edit Funder' : 'Add Funder / Investor'}</h2>
+                <button onClick={() => setShowFunderModal(false)} className={`p-2 rounded-lg ${dk ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}><X className="w-5 h-5" /></button></div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Investor Name *</label><input value={funderForm.name} onChange={e => setFunderForm(p => ({ ...p, name: e.target.value }))} placeholder="John Doe" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Company</label><input value={funderForm.company} onChange={e => setFunderForm(p => ({ ...p, company: e.target.value }))} placeholder="Sequoia Capital" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Email</label><input value={funderForm.email} onChange={e => setFunderForm(p => ({ ...p, email: e.target.value }))} type="email" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Phone</label><input value={funderForm.phone} onChange={e => setFunderForm(p => ({ ...p, phone: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Investor Type</label><select value={funderForm.type} onChange={e => setFunderForm(p => ({ ...p, type: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`}>
+                    {[['angel','Angel'],['vc','VC'],['pe','Private Equity'],['family_office','Family Office'],['corporate','Corporate'],['government','Government'],['crowdfunding','Crowdfunding'],['personal','Personal'],['bank_loan','Bank Loan'],['other','Other']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Round</label><select value={funderForm.round} onChange={e => setFunderForm(p => ({ ...p, round: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`}>
+                    {[['pre_seed','Pre-Seed'],['seed','Seed'],['series_a','Series A'],['series_b','Series B'],['series_c','Series C'],['series_d','Series D'],['bridge','Bridge'],['debt','Debt'],['grant','Grant'],['other','Other']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Amount ₹ *</label><input type="number" value={funderForm.amount} onChange={e => setFunderForm(p => ({ ...p, amount: e.target.value }))} min="0" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Equity %</label><input type="number" value={funderForm.equityPercentage} onChange={e => setFunderForm(p => ({ ...p, equityPercentage: e.target.value }))} min="0" max="100" step="0.1" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Valuation ₹</label><input type="number" value={funderForm.valuationAtInvestment} onChange={e => setFunderForm(p => ({ ...p, valuationAtInvestment: e.target.value }))} min="0" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Investment Date *</label><input type="date" value={funderForm.investmentDate} onChange={e => setFunderForm(p => ({ ...p, investmentDate: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Instrument</label><select value={funderForm.instrumentType} onChange={e => setFunderForm(p => ({ ...p, instrumentType: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`}>
+                    {[['equity','Equity'],['convertible_note','Convertible Note'],['safe','SAFE'],['debt','Debt'],['revenue_share','Revenue Share'],['grant','Grant'],['other','Other']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Status</label><select value={funderForm.status} onChange={e => setFunderForm(p => ({ ...p, status: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`}>
+                    {[['committed','Committed'],['received','Received'],['partially_received','Partially Received'],['converted','Converted'],['exited','Exited'],['defaulted','Defaulted']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Amount Received ₹</label><input type="number" value={funderForm.amountReceived} onChange={e => setFunderForm(p => ({ ...p, amountReceived: e.target.value }))} min="0" className={`w-full px-3 py-2 rounded-xl border text-sm ${inputCls(dk)}`} /></div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={funderForm.boardSeat} onChange={e => setFunderForm(p => ({ ...p, boardSeat: e.target.checked }))} className="rounded" />
+                    <span className={`text-sm ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Board Seat</span></label>
+                </div>
+                <div><label className={`block text-xs font-medium mb-1 ${dk ? 'text-slate-300' : 'text-gray-700'}`}>Notes</label><textarea value={funderForm.notes} onChange={e => setFunderForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Investment terms, conditions..." className={`w-full px-3 py-2 rounded-xl border text-sm resize-none ${inputCls(dk)}`} /></div>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => setShowFunderModal(false)} className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium ${dk ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : 'border-gray-200 hover:bg-gray-50'}`}>Cancel</button>
+                <button onClick={handleSaveFunder} disabled={!funderForm.name || !funderForm.amount}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl text-sm font-medium hover:shadow-lg disabled:opacity-50">
+                  {editFunder ? 'Update' : 'Add Funder'}</button>
               </div>
             </div>
           </div>

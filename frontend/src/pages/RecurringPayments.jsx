@@ -36,7 +36,8 @@ const FREQUENCIES = ['Weekly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'];
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export default function RecurringPayments() {
+export default function RecurringPayments({ embedded = false }) {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
@@ -156,7 +157,7 @@ export default function RecurringPayments() {
   }
 
   return (
-    <MainLayout title="Recurring Payments">
+    <Wrapper>
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -399,6 +400,6 @@ export default function RecurringPayments() {
         </div>
       )}
     </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

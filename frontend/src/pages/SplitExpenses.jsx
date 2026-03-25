@@ -24,7 +24,8 @@ const AnimatedValue = ({ end, prefix = '₹' }) => {
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#f97316'];
 
-export default function SplitExpenses() {
+export default function SplitExpenses({ embedded = false }) {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
@@ -158,7 +159,7 @@ export default function SplitExpenses() {
   }
 
   return (
-    <MainLayout title="Split Expenses">
+    <Wrapper>
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -498,6 +499,6 @@ export default function SplitExpenses() {
         </div>
       )}
     </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

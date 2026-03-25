@@ -8,7 +8,7 @@ import {
   CheckCircle2, XCircle, RefreshCw, Layers, MoreHorizontal,
   ArrowLeft, ArrowRight, Sparkles, Zap, Target, Activity, Globe,
   Upload, Paperclip, Hash, LayoutGrid, List, SlidersHorizontal,
-  Wallet, CalendarDays, FileBarChart
+  Wallet, CalendarDays, FileBarChart, Repeat, Boxes, ClipboardList, Banknote
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import api from '../services/api';
@@ -16,6 +16,12 @@ import { toast } from 'react-toastify';
 import ExpenseFormModal from '../components/ExpenseFormModal';
 import BillOfMaterials from './BillOfMaterials';
 import FundsInvestments from './FundsInvestments';
+import BudgetPlanner from './BudgetPlanner';
+import CashFlowForecast from './CashFlowForecast';
+import IncomeTracker from './IncomeTracker';
+import RecurringPayments from './RecurringPayments';
+import SubscriptionManager from './SubscriptionManager';
+import SplitExpenses from './SplitExpenses';
 import { extractPasswordFromResponse, downloadFileWithPassword } from '../utils/documentPasswordNotification';
 
 /* ─── Animated Counter ──────────────────────────────────────────────────── */
@@ -212,7 +218,13 @@ const CompanyExpensesDashboard = () => {
     { id:'analytics', label:'Analytics', icon: BarChart3 },
     { id:'vendors',   label:'Vendors',   icon: Building2 },
     { id:'bom',       label:'Bill of Materials', icon: Layers },
-    { id:'funds',      label:'Funds & Investments', icon: TrendingUp },
+    { id:'funds',     label:'Funds & Investments', icon: TrendingUp },
+    { id:'budget',    label:'Budget', icon: ClipboardList },
+    { id:'cashflow',  label:'Cash Flow', icon: Wallet },
+    { id:'income',    label:'Income', icon: Banknote },
+    { id:'recurring', label:'Recurring', icon: Repeat },
+    { id:'subscriptions', label:'Subscriptions', icon: Boxes },
+    { id:'split',     label:'Split Expenses', icon: Users },
   ];
 
   // ═════════ RENDER ═════════
@@ -663,6 +675,24 @@ const CompanyExpensesDashboard = () => {
 
           {/* ═══ FUNDS TAB ═══ */}
           {activeTab === 'funds' && <FundsInvestments embedded />}
+
+          {/* ═══ BUDGET TAB ═══ */}
+          {activeTab === 'budget' && <BudgetPlanner embedded />}
+
+          {/* ═══ CASH FLOW TAB ═══ */}
+          {activeTab === 'cashflow' && <CashFlowForecast embedded />}
+
+          {/* ═══ INCOME TAB ═══ */}
+          {activeTab === 'income' && <IncomeTracker embedded />}
+
+          {/* ═══ RECURRING TAB ═══ */}
+          {activeTab === 'recurring' && <RecurringPayments embedded />}
+
+          {/* ═══ SUBSCRIPTIONS TAB ═══ */}
+          {activeTab === 'subscriptions' && <SubscriptionManager embedded />}
+
+          {/* ═══ SPLIT EXPENSES TAB ═══ */}
+          {activeTab === 'split' && <SplitExpenses embedded />}
         </div>
 
         {/* ═══ DETAIL DRAWER ═══ */}

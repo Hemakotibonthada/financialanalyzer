@@ -44,7 +44,8 @@ const TAX_SLABS = [
   { min: 1500000, max: Infinity, rate: 30 },
 ];
 
-export default function IncomeTracker() {
+export default function IncomeTracker({ embedded = false }) {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { mode, isDark, isBlack } = useTheme();
   const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
@@ -170,7 +171,7 @@ export default function IncomeTracker() {
   }
 
   return (
-    <MainLayout title="Income Tracker">
+    <Wrapper>
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
@@ -455,6 +456,6 @@ export default function IncomeTracker() {
         </div>
       )}
     </div>
-    </MainLayout>
+    </Wrapper>
   );
 }
