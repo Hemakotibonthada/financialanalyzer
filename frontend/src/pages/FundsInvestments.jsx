@@ -140,7 +140,7 @@ export default function FundsInvestments({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(embedded ? 'funders' : 'overview');
   const [filterType, setFilterType] = useState('all');
   const [filterRisk, setFilterRisk] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -456,7 +456,12 @@ export default function FundsInvestments({ embedded = false }) {
   };
 
   // ─── TABS ─────────────────────────────────────────────────────
-  const tabs = [
+  const tabs = embedded ? [
+    { id: 'funders', label: 'Funders & Investors', icon: Users },
+    { id: 'overview', label: 'Funding Overview', icon: PieChart },
+    { id: 'holdings', label: 'Investments', icon: Layers },
+    { id: 'insights', label: 'Insights', icon: Zap },
+  ] : [
     { id: 'overview', label: 'Overview', icon: PieChart },
     { id: 'holdings', label: 'Holdings', icon: Layers },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -498,6 +503,12 @@ export default function FundsInvestments({ embedded = false }) {
             <div><h1 className="text-2xl font-bold">Funds & Investments</h1><p className={`text-sm ${dk ? 'text-slate-400' : 'text-gray-500'}`}>Track, analyze & manage your portfolio</p></div>
           </div>}
           <div className="flex items-center gap-2 flex-wrap">
+            {embedded && (
+              <button onClick={() => { resetFunderForm(); setEditFunder(null); setShowFunderModal(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all font-medium text-sm">
+                <Plus className="w-4 h-4" /> Add Funder / Investor
+              </button>
+            )}
             {selectedInvestments.size > 0 && (
               <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 text-red-500 rounded-xl text-sm font-medium hover:bg-red-500/20"><Trash2 className="w-3.5 h-3.5" /> Delete {selectedInvestments.size}</button>
             )}
@@ -521,7 +532,17 @@ export default function FundsInvestments({ embedded = false }) {
         </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {embedded ? (
+          /* Company funding stats when embedded */
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard title="Total Raised" value={fmtCompact(funderStats.totalRaised)} icon={IndianRupee} color="emerald" dk={dk} subtext={`${funderStats.count} investors`} />
+            <StatCard title="Committed" value={fmtCompact(funderStats.totalCommitted)} icon={Target} color="blue" dk={dk} subtext="Total pledged" />
+            <StatCard title="Equity Given" value={`${funderStats.totalEquity.toFixed(1)}%`} icon={PieChart} color="purple" dk={dk} subtext={`${funderStats.founderEquity.toFixed(1)}% founder equity`} trend={funderStats.founderEquity > 50 ? 1 : -1} />
+            <StatCard title="Portfolio Value" value={fmtCompact(stats.currentValue)} icon={TrendingUp} color="orange" dk={dk} subtext={`${stats.overallReturn >= 0 ? '+' : ''}${fmtPct(stats.overallReturn)}`} trend={stats.overallReturn} />
+          </div>
+        ) : (
+          /* Full investment stats when standalone */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard title="Total Invested" value={fmtCompact(stats.totalInvested)} icon={IndianRupee} color="blue" dk={dk} subtext={`${stats.totalFunds} holdings`} />
           <StatCard title="Current Value" value={fmtCompact(stats.currentValue)} icon={TrendingUp} color="emerald" dk={dk} subtext={`${stats.overallReturn >= 0 ? '+' : ''}${fmtPct(stats.overallReturn)}`} trend={stats.overallReturn} />
           <StatCard title="Gain / Loss" value={fmtCompact(Math.abs(stats.totalGainLoss))} icon={stats.totalGainLoss >= 0 ? ArrowUpRight : ArrowDownRight} color={stats.totalGainLoss >= 0 ? 'green' : 'red'} dk={dk} subtext={stats.totalGainLoss >= 0 ? 'Profit' : 'Loss'} trend={stats.totalGainLoss} />
@@ -529,6 +550,7 @@ export default function FundsInvestments({ embedded = false }) {
           <StatCard title="Diversification" value={`${stats.diversificationScore}/100`} icon={Shield} color="teal" dk={dk} subtext="Portfolio score" />
           <StatCard title="Long-term" value={`${stats.longTerm}/${stats.totalFunds}`} icon={Clock} color="orange" dk={dk} subtext="> 1 year held" />
         </div>
+        )}
 
         {/* TABS */}
         <div className={`flex gap-1 p-1 rounded-2xl overflow-x-auto ${glassStatic(dk)}`}>
@@ -860,11 +882,11 @@ export default function FundsInvestments({ embedded = false }) {
             {funderLoading ? <div className="flex justify-center py-12"><RefreshCw className="w-8 h-8 animate-spin text-purple-500" /></div>
             : funders.length === 0 ? (
               <div className={`rounded-2xl p-12 text-center ${glassStatic(dk)}`}>
-                <Users className={`w-12 h-12 mx-auto mb-4 ${dk ? 'text-slate-600' : 'text-gray-300'}`} />
-                <p className={`text-lg font-medium mb-2 ${dk ? 'text-slate-400' : 'text-gray-500'}`}>No funders yet</p>
-                <p className={`text-sm mb-4 ${dk ? 'text-slate-500' : 'text-gray-400'}`}>Track who invested in your company, how much, and the terms</p>
+                <Users className={`w-14 h-14 mx-auto mb-4 ${dk ? 'text-slate-600' : 'text-gray-300'}`} />
+                <p className={`text-lg font-medium mb-2 ${dk ? 'text-slate-400' : 'text-gray-500'}`}>No funders or investors yet</p>
+                <p className={`text-sm mb-6 ${dk ? 'text-slate-500' : 'text-gray-400'} max-w-md mx-auto`}>When your company raises funding, add investor details here to track who invested, how much equity was given, funding rounds, and investment terms.</p>
                 <button onClick={() => { resetFunderForm(); setEditFunder(null); setShowFunderModal(true); }}
-                  className="px-4 py-2 bg-purple-500 text-white rounded-xl text-sm font-medium"><Plus className="w-4 h-4 inline mr-1" /> Add Funder</button>
+                  className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-purple-500/20 hover:shadow-xl transition-all"><Plus className="w-4 h-4 inline mr-1.5" /> Add Your First Investor</button>
               </div>
             ) : (
               <div className="grid gap-3">
