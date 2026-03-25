@@ -108,6 +108,7 @@ const SubscriptionManager = lazy(() => import('./pages/SubscriptionManager'));
 const BillTracker = lazy(() => import('./pages/BillTracker'));
 
 // Investments & Markets
+const FundsInvestments = lazy(() => import('./pages/FundsInvestments'));
 const InvestmentAnalyzer = lazy(() => import('./pages/InvestmentAnalyzer'));
 const MutualFunds = lazy(() => import('./pages/MutualFunds'));
 const CryptoPortfolio = lazy(() => import('./pages/CryptoPortfolio'));
@@ -339,6 +340,7 @@ function App() {
               <Route path="/receipt-scanner" element={<ProtectedRoute><ReceiptScanner /></ProtectedRoute>} />
               
               {/* ========== INVESTMENTS & MARKETS ========== */}
+              <Route path="/funds-investments" element={<ProtectedRoute><FundsInvestments /></ProtectedRoute>} />
               <Route path="/investments" element={<ProtectedRoute><InvestmentPortfolio /></ProtectedRoute>} />
               <Route path="/investment-analyzer" element={<ProtectedRoute><InvestmentAnalyzer /></ProtectedRoute>} />
               <Route path="/mutual-funds" element={<ProtectedRoute><MutualFunds /></ProtectedRoute>} />

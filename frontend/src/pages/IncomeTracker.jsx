@@ -60,7 +60,8 @@ export default function IncomeTracker() {
     setLoading(true);
     try {
       const res = await api.get('/financial/income');
-      setIncomes(res.data?.incomes || res.data || []);
+      const payload = res.data?.data || res.data;
+      setIncomes(Array.isArray(payload?.transactions) ? payload.transactions : Array.isArray(payload) ? payload : []);
     } catch {
       setIncomes([]);
     } finally {

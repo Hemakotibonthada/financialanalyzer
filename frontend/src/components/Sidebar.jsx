@@ -111,6 +111,12 @@ const Sidebar = () => {
     { label: 'Notifications', icon: Bell, path: '/smart-notifications', color: 'yellow' },
   ];
 
+  // — Standalone special items (shown as top-level, outside collapsible groups) —
+  const specialItems = [
+    { label: 'Company', icon: Building2, path: '/company-expenses', color: 'amber', badge: 'PRO', special: true },
+    { label: 'Funds & Investments', icon: TrendingUp, path: '/funds-investments', color: 'emerald', badge: 'NEW', special: true },
+  ];
+
   // — Consolidated navigation: 7 groups —
   const navigationSections = [
     {
@@ -142,7 +148,6 @@ const Sidebar = () => {
         { label: 'Bank Accounts', icon: Landmark, path: '/bank-accounts', color: 'green' },
         { label: 'Credit Cards', icon: CreditCard, path: '/credit-cards', color: 'purple' },
         { label: 'Budget Planner', icon: ClipboardList, path: '/budget-planner', color: 'indigo' },
-        { label: 'Company Expenses', icon: Receipt, path: '/company-expenses', color: 'amber', badge: 'PRO' },
         { label: 'Income Tracker', icon: Banknote, path: '/income-tracker', color: 'green' },
         { label: 'Cash Flow', icon: TrendingUp, path: '/cash-flow', color: 'teal' },
         { label: 'Bills & Recurring', icon: Repeat, path: '/recurring-payments', color: 'orange' },
@@ -345,6 +350,45 @@ const Sidebar = () => {
   const NavItem = ({ item, collapsed }) => {
     const active = isActive(item.path);
     const Icon = item.icon;
+
+    if (item.special) {
+      const colorMap = {
+        amber: {
+          active: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-lg shadow-amber-500/25 font-semibold',
+          idle: 'bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 hover:shadow-md',
+          iconBg: active ? 'bg-white/20' : 'bg-amber-100 dark:bg-amber-800/30',
+          badgeIdle: 'bg-amber-200 text-amber-800 dark:bg-amber-800/40 dark:text-amber-200',
+        },
+        emerald: {
+          active: 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25 font-semibold',
+          idle: 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 hover:shadow-md',
+          iconBg: active ? 'bg-white/20' : 'bg-emerald-100 dark:bg-emerald-800/30',
+          badgeIdle: 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800/40 dark:text-emerald-200',
+        },
+      };
+      const c = colorMap[item.color] || colorMap.amber;
+
+      return (
+        <Link
+          to={item.path}
+          onClick={() => setIsMobileOpen(false)}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm border ${
+            active ? c.active : c.idle
+          }`}
+          title={collapsed ? item.label : ''}
+        >
+          <div className={`p-1 rounded-lg ${c.iconBg}`}>
+            <Icon className="w-4 h-4 flex-shrink-0" />
+          </div>
+          {!collapsed && <span className="truncate font-medium">{item.label}</span>}
+          {item.badge && !collapsed && (
+            <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+              active ? 'bg-white/20 text-white' : c.badgeIdle
+            }`}>{item.badge}</span>
+          )}
+        </Link>
+      );
+    }
     
     return (
       <Link
@@ -435,6 +479,15 @@ const Sidebar = () => {
             </p>
           )}
           {quickLinks.map((item) => (
+            <NavItem key={item.path} item={item} collapsed={collapsed} />
+          ))}
+        </div>
+
+        <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-1" />
+
+        {/* Special standalone items (outside collapsible groups) */}
+        <div className="space-y-1.5 mb-2">
+          {specialItems.map((item) => (
             <NavItem key={item.path} item={item} collapsed={collapsed} />
           ))}
         </div>
