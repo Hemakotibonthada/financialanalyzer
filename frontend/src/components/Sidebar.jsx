@@ -107,6 +107,7 @@ const Sidebar = () => {
   // — Quick-access top-level links (always visible, no collapse) —
   const quickLinks = [
     { label: 'Dashboard', icon: Home, path: '/dashboard', color: 'blue' },
+    { label: 'All Features', icon: Sparkles, path: '/features', color: 'purple' },
     { label: 'Financial Health', icon: Activity, path: '/financial-health', color: 'teal' },
     { label: 'Notifications', icon: Bell, path: '/smart-notifications', color: 'yellow' },
   ];

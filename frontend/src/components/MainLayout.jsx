@@ -173,7 +173,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
           shadow-[0_4px_30px_rgba(31,38,135,0.06)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.3)]
           ${isCollapsed ? 'lg:left-20' : 'lg:left-72'}
         `} style={{ WebkitBackdropFilter: 'blur(40px) saturate(200%)', backdropFilter: 'blur(40px) saturate(200%)' }}>
-          <div className="px-4 sm:px-6 lg:px-8 py-3">
+          <div className="pl-16 lg:pl-8 pr-4 sm:pr-6 lg:pr-8 py-3">
             <div className="flex items-center justify-between gap-4">
               {/* Page Title */}
               <div className="flex-1 min-w-0">
