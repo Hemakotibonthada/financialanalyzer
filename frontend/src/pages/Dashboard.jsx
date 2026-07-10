@@ -23,6 +23,7 @@ import QuickIncomeEntry from '../components/QuickIncomeEntry';
 import NewFeaturesShowcase from '../components/NewFeaturesShowcase';
 import AIFinancialPredictions from '../components/AIFinancialPredictions';
 import { FadeIn, StaggerChildren, CardSkeleton, PageTransition } from '../components/ui/AnimatedComponents';
+import DebtSpiralWidget from '../components/dashboard/DebtSpiralWidget';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -216,6 +217,7 @@ const Dashboard = () => {
       headerActions={headerActions}
     >
       <PageTransition>
+      <DebtSpiralWidget />
       {/* Financial Summary */}
       <FadeIn direction="up" delay={0}>
       <div className="mb-6">

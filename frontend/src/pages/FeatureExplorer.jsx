@@ -113,6 +113,7 @@ const CATEGORIES = [
     accent: 'from-rose-500 to-red-500',
     items: [
       { label: 'EMI Tracker', path: '/emi-tracker' },
+      { label: 'Debt Spiral Monitor', path: '/debt-spiral', badge: 'NEW' },
       { label: 'Personal Borrowings', path: '/personal-borrowings' },
       { label: 'Debt Management', path: '/debt-management' },
       { label: 'Debt Management V2', path: '/debt-management-v2' },

@@ -329,6 +329,7 @@ app.use('/api/personal-loans', require('./routes/personalLoanRoutes'));
 app.use('/api/lenders', require('./routes/lenderRoutes'));
 app.use('/api/lender-loans', require('./routes/lenderLoanRoutes'));
 app.use('/api/lender-payments', require('./routes/lenderPaymentRoutes'));
+app.use('/api/loan-intelligence', require('./routes/loanAppIntelligenceRoutes')); // Loan-app/NBFC EMI + overdue + debt-spiral detection from Gmail
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/investments', require('./routes/investmentRoutes')); // Investment portfolio tracking
 app.use('/api/funders', require('./routes/funderRoutes')); // Funder/investor tracking

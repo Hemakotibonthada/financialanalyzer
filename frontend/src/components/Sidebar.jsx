@@ -27,6 +27,7 @@ import {
   FileText,
   Activity,
   TrendingDown,
+  AlertTriangle,
   Receipt,
   ArrowLeftRight,
   Landmark,
@@ -181,6 +182,7 @@ const Sidebar = () => {
       icon: Scale,
       items: [
         { label: 'EMI Tracker', icon: CreditCard, path: '/emi-tracker', color: 'yellow' },
+        { label: 'Debt Spiral Monitor', icon: AlertTriangle, path: '/debt-spiral', color: 'rose', badge: 'NEW' },
         { label: 'Borrowings', icon: Users, path: '/personal-borrowings', color: 'indigo', badge: 'NEW' },
         { label: 'Debt Management', icon: Target, path: '/debt-management', color: 'red' },
         { label: 'Debt Payoff', icon: TrendingDown, path: '/debt-payoff', color: 'orange' },
