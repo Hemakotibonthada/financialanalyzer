@@ -382,4 +382,40 @@ router.get('/portfolio-impact', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/market/crypto
+ * @desc    Live crypto prices (CoinGecko). Query: ?ids=bitcoin,ethereum OR ?symbols=BTC,ETH&vs=inr
+ * @access  Private
+ */
+const CRYPTO_SYMBOL_MAP = {
+  BTC: 'bitcoin', ETH: 'ethereum', USDT: 'tether', BNB: 'binancecoin', XRP: 'ripple',
+  ADA: 'cardano', SOL: 'solana', DOGE: 'dogecoin', DOT: 'polkadot', MATIC: 'matic-network',
+  LTC: 'litecoin', TRX: 'tron', SHIB: 'shiba-inu', AVAX: 'avalanche-2', LINK: 'chainlink',
+  BCH: 'bitcoin-cash', XLM: 'stellar', UNI: 'uniswap', ATOM: 'cosmos', ETC: 'ethereum-classic',
+};
+router.get('/crypto', authenticate, async (req, res) => {
+  const vs = String(req.query.vs || 'inr').toLowerCase();
+  let ids = [];
+  if (req.query.ids) {
+    ids = String(req.query.ids).split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  } else if (req.query.symbols) {
+    ids = String(req.query.symbols).split(',')
+      .map((s) => CRYPTO_SYMBOL_MAP[s.trim().toUpperCase()]).filter(Boolean);
+  } else {
+    ids = ['bitcoin', 'ethereum', 'tether', 'binancecoin', 'ripple', 'cardano', 'solana', 'dogecoin'];
+  }
+  try {
+    const data = await live.getCryptoPrices(ids, vs);
+    const out = Object.entries(data).map(([id, v]) => ({
+      id,
+      price: v[vs],
+      change24h: v[`${vs}_24h_change`] != null ? Math.round(v[`${vs}_24h_change`] * 100) / 100 : null,
+    }));
+    res.json({ success: true, vs, data: out, live: true });
+  } catch (error) {
+    logger.error('Error fetching crypto prices:', error.message);
+    res.status(503).json({ success: false, error: 'Live crypto prices unavailable', live: false });
+  }
+});
+
 module.exports = router;
