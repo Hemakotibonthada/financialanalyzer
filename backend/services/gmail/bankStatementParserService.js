@@ -67,7 +67,15 @@ class BankParserBase {
    */
   parseAmount(amountStr) {
     if (!amountStr) return 0;
-    const cleaned = amountStr.toString().replace(/[₹Rs.\s,]/g, '').replace(/\(([^)]+)\)/, '-$1');
+    // Keep the decimal point! The previous `[₹Rs.\s,]` class also removed '.',
+    // turning 450.00 into 45000. Strip currency symbols/prefixes, thousands
+    // separators and spaces; support accounting negatives like (123.45).
+    const cleaned = amountStr
+      .toString()
+      .replace(/\(([^)]+)\)/, '-$1')
+      .replace(/(?:₹|INR|Rs\.?)/gi, '')
+      .replace(/[,\s]/g, '')
+      .trim();
     const val = parseFloat(cleaned);
     return isNaN(val) ? 0 : Math.abs(val);
   }

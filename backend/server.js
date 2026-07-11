@@ -241,6 +241,7 @@ app.use('/api/bill-reminders', require('./routes/billReminderRoutes')); // Bill 
 app.use('/api/activity-logs', require('./routes/activityLogRoutes')); // Activity logging
 app.use('/api/search', require('./routes/searchRoutes')); // Search functionality
 app.use('/api/csv', require('./routes/csvRoutes')); // CSV import/export
+app.use('/api/statements', require('./routes/statementImportRoutes')); // PDF/TXT/CSV statement import
 app.use('/api/notifications', require('./routes/notificationRoutes')); // Notifications
 app.use('/api/cache', require('./routes/cacheRoutes')); // Cache management
 app.use('/api/recurring', require('./routes/recurringRoutes')); // Recurring transactions

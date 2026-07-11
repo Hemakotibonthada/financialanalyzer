@@ -3,6 +3,9 @@ FROM node:20-alpine AS base
 WORKDIR /app
 ENV NODE_ENV=production
 
+# qpdf enables unlocking password-protected PDF statements at runtime
+RUN apk add --no-cache qpdf
+
 # Install production dependencies first (better layer caching)
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
