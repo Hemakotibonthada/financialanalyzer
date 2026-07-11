@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
+const live = require('../services/liveMarketData');
+const logger = require('../utils/logger');
 
 // In-memory watchlist store (per user)
 const userWatchlists = {};
@@ -11,18 +13,28 @@ const userWatchlists = {};
  * @access  Private
  */
 router.get('/indices', authenticate, async (req, res) => {
+  // Reference values used as per-item fallback when live data is unavailable.
+  const fallback = {
+    NIFTY50: { symbol: 'NIFTY50', name: 'NIFTY 50', value: 24850.75, change: 125.30, changePercent: 0.51 },
+    SENSEX: { symbol: 'SENSEX', name: 'BSE SENSEX', value: 81625.40, change: 410.15, changePercent: 0.50 },
+    BANKNIFTY: { symbol: 'BANKNIFTY', name: 'BANK NIFTY', value: 54120.60, change: -85.40, changePercent: -0.16 },
+    NIFTYIT: { symbol: 'NIFTYIT', name: 'NIFTY IT', value: 42350.20, change: 320.80, changePercent: 0.76 },
+    NIFTYMIDCAP: { symbol: 'NIFTYMIDCAP', name: 'NIFTY MIDCAP 100', value: 58920.15, change: 245.60, changePercent: 0.42 },
+  };
   try {
-    const indices = [
-      { symbol: 'NIFTY50', name: 'NIFTY 50', value: 24850.75, change: 125.30, changePercent: 0.51 },
-      { symbol: 'SENSEX', name: 'BSE SENSEX', value: 81625.40, change: 410.15, changePercent: 0.50 },
-      { symbol: 'BANKNIFTY', name: 'BANK NIFTY', value: 54120.60, change: -85.40, changePercent: -0.16 },
-      { symbol: 'NIFTYIT', name: 'NIFTY IT', value: 42350.20, change: 320.80, changePercent: 0.76 },
-      { symbol: 'NIFTYMIDCAP', name: 'NIFTY MIDCAP 100', value: 58920.15, change: 245.60, changePercent: 0.42 },
-    ];
-    res.json({ success: true, data: indices, lastUpdated: new Date().toISOString() });
+    const data = await live.mapLimit(live.INDIA_INDICES, 5, async (idx) => {
+      try {
+        const q = await live.getQuote(idx.yahoo);
+        if (q.price == null) throw new Error('no price');
+        return { symbol: idx.symbol, name: idx.name, value: q.price, change: q.change, changePercent: q.changePercent, live: true };
+      } catch {
+        return { ...fallback[idx.symbol], live: false };
+      }
+    });
+    res.json({ success: true, data, lastUpdated: new Date().toISOString() });
   } catch (error) {
-    console.error('Error fetching indices:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch market indices' });
+    logger.error('Error fetching indices:', error.message);
+    res.json({ success: true, data: Object.values(fallback).map((d) => ({ ...d, live: false })), lastUpdated: new Date().toISOString() });
   }
 });
 
@@ -32,19 +44,25 @@ router.get('/indices', authenticate, async (req, res) => {
  * @access  Private
  */
 router.get('/gainers', authenticate, async (req, res) => {
+  const { limit = 10 } = req.query;
+  const fallback = [
+    { symbol: 'TATAMOTORS', name: 'Tata Motors', price: 985.50, change: 42.30, changePercent: 4.49, volume: 15200000 },
+    { symbol: 'ADANIENT', name: 'Adani Enterprises', price: 2850.75, change: 95.20, changePercent: 3.46, volume: 8500000 },
+    { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1825.40, change: 38.60, changePercent: 2.16, volume: 12300000 },
+    { symbol: 'INFY', name: 'Infosys', price: 1920.30, change: 35.10, changePercent: 1.86, volume: 9800000 },
+    { symbol: 'TCS', name: 'TCS', price: 4250.80, change: 72.50, changePercent: 1.74, volume: 5600000 },
+  ];
   try {
-    const { limit = 10 } = req.query;
-    const gainers = [
-      { symbol: 'TATAMOTORS', name: 'Tata Motors', price: 985.50, change: 42.30, changePercent: 4.49, volume: 15200000 },
-      { symbol: 'ADANIENT', name: 'Adani Enterprises', price: 2850.75, change: 95.20, changePercent: 3.46, volume: 8500000 },
-      { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1825.40, change: 38.60, changePercent: 2.16, volume: 12300000 },
-      { symbol: 'INFY', name: 'Infosys', price: 1920.30, change: 35.10, changePercent: 1.86, volume: 9800000 },
-      { symbol: 'TCS', name: 'TCS', price: 4250.80, change: 72.50, changePercent: 1.74, volume: 5600000 },
-    ].slice(0, Number(limit));
-    res.json({ success: true, data: gainers });
+    const snap = await live.getUniverseSnapshot();
+    const data = snap
+      .filter((s) => s.changePercent > 0)
+      .sort((a, b) => b.changePercent - a.changePercent)
+      .slice(0, Number(limit))
+      .map((s) => ({ symbol: s.symbol, name: s.name, price: s.price, change: s.change, changePercent: s.changePercent, volume: s.volume, live: true }));
+    res.json({ success: true, data: data.length ? data : fallback.slice(0, Number(limit)) });
   } catch (error) {
-    console.error('Error fetching gainers:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch market gainers' });
+    logger.error('Error fetching gainers:', error.message);
+    res.json({ success: true, data: fallback.slice(0, Number(limit)) });
   }
 });
 
@@ -54,18 +72,24 @@ router.get('/gainers', authenticate, async (req, res) => {
  * @access  Private
  */
 router.get('/losers', authenticate, async (req, res) => {
+  const { limit = 10 } = req.query;
+  const fallback = [
+    { symbol: 'WIPRO', name: 'Wipro', price: 452.30, change: -18.60, changePercent: -3.95, volume: 11200000 },
+    { symbol: 'SUNPHARMA', name: 'Sun Pharma', price: 1680.50, change: -45.30, changePercent: -2.63, volume: 7800000 },
+    { symbol: 'COALINDIA', name: 'Coal India', price: 385.20, change: -8.40, changePercent: -2.13, volume: 6200000 },
+    { symbol: 'BPCL', name: 'BPCL', price: 345.80, change: -6.20, changePercent: -1.76, volume: 5100000 },
+  ];
   try {
-    const { limit = 10 } = req.query;
-    const losers = [
-      { symbol: 'WIPRO', name: 'Wipro', price: 452.30, change: -18.60, changePercent: -3.95, volume: 11200000 },
-      { symbol: 'SUNPHARMA', name: 'Sun Pharma', price: 1680.50, change: -45.30, changePercent: -2.63, volume: 7800000 },
-      { symbol: 'COALINDIA', name: 'Coal India', price: 385.20, change: -8.40, changePercent: -2.13, volume: 6200000 },
-      { symbol: 'BPCL', name: 'BPCL', price: 345.80, change: -6.20, changePercent: -1.76, volume: 5100000 },
-    ].slice(0, Number(limit));
-    res.json({ success: true, data: losers });
+    const snap = await live.getUniverseSnapshot();
+    const data = snap
+      .filter((s) => s.changePercent < 0)
+      .sort((a, b) => a.changePercent - b.changePercent)
+      .slice(0, Number(limit))
+      .map((s) => ({ symbol: s.symbol, name: s.name, price: s.price, change: s.change, changePercent: s.changePercent, volume: s.volume, live: true }));
+    res.json({ success: true, data: data.length ? data : fallback.slice(0, Number(limit)) });
   } catch (error) {
-    console.error('Error fetching losers:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch market losers' });
+    logger.error('Error fetching losers:', error.message);
+    res.json({ success: true, data: fallback.slice(0, Number(limit)) });
   }
 });
 
@@ -99,19 +123,28 @@ router.get('/sectors', authenticate, async (req, res) => {
  * @access  Private
  */
 router.get('/global', authenticate, async (req, res) => {
+  const fallback = {
+    DJI: { symbol: 'DJI', name: 'Dow Jones', value: 42580.50, change: 185.40, changePercent: 0.44, country: 'US' },
+    SPX: { symbol: 'SPX', name: 'S&P 500', value: 5920.30, change: 28.60, changePercent: 0.49, country: 'US' },
+    IXIC: { symbol: 'IXIC', name: 'NASDAQ', value: 19250.80, change: 120.50, changePercent: 0.63, country: 'US' },
+    FTSE: { symbol: 'FTSE', name: 'FTSE 100', value: 8450.20, change: -32.10, changePercent: -0.38, country: 'UK' },
+    N225: { symbol: 'N225', name: 'Nikkei 225', value: 39850.60, change: 285.40, changePercent: 0.72, country: 'JP' },
+    HSI: { symbol: 'HSI', name: 'Hang Seng', value: 22150.80, change: -180.30, changePercent: -0.81, country: 'HK' },
+  };
   try {
-    const globalMarkets = [
-      { symbol: 'DJI', name: 'Dow Jones', value: 42580.50, change: 185.40, changePercent: 0.44, country: 'US' },
-      { symbol: 'SPX', name: 'S&P 500', value: 5920.30, change: 28.60, changePercent: 0.49, country: 'US' },
-      { symbol: 'IXIC', name: 'NASDAQ', value: 19250.80, change: 120.50, changePercent: 0.63, country: 'US' },
-      { symbol: 'FTSE', name: 'FTSE 100', value: 8450.20, change: -32.10, changePercent: -0.38, country: 'UK' },
-      { symbol: 'N225', name: 'Nikkei 225', value: 39850.60, change: 285.40, changePercent: 0.72, country: 'JP' },
-      { symbol: 'HSI', name: 'Hang Seng', value: 22150.80, change: -180.30, changePercent: -0.81, country: 'HK' },
-    ];
-    res.json({ success: true, data: globalMarkets });
+    const data = await live.mapLimit(live.GLOBAL_INDICES, 6, async (idx) => {
+      try {
+        const q = await live.getQuote(idx.yahoo);
+        if (q.price == null) throw new Error('no price');
+        return { symbol: idx.symbol, name: idx.name, value: q.price, change: q.change, changePercent: q.changePercent, country: idx.country, live: true };
+      } catch {
+        return { ...fallback[idx.symbol], live: false };
+      }
+    });
+    res.json({ success: true, data, lastUpdated: new Date().toISOString() });
   } catch (error) {
-    console.error('Error fetching global markets:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch global market data' });
+    logger.error('Error fetching global markets:', error.message);
+    res.json({ success: true, data: Object.values(fallback).map((d) => ({ ...d, live: false })) });
   }
 });
 
@@ -144,17 +177,24 @@ router.get('/sentiment', authenticate, async (req, res) => {
  * @access  Private
  */
 router.get('/trending', authenticate, async (req, res) => {
+  const fallback = [
+    { symbol: 'RELIANCE', name: 'Reliance Industries', price: 2950.40, volume: 18500000, mentions: 1250 },
+    { symbol: 'TATAMOTORS', name: 'Tata Motors', price: 985.50, volume: 15200000, mentions: 980 },
+    { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1825.40, volume: 12300000, mentions: 870 },
+    { symbol: 'INFY', name: 'Infosys', price: 1920.30, volume: 9800000, mentions: 750 },
+  ];
   try {
-    const trending = [
-      { symbol: 'RELIANCE', name: 'Reliance Industries', price: 2950.40, volume: 18500000, mentions: 1250 },
-      { symbol: 'TATAMOTORS', name: 'Tata Motors', price: 985.50, volume: 15200000, mentions: 980 },
-      { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1825.40, volume: 12300000, mentions: 870 },
-      { symbol: 'INFY', name: 'Infosys', price: 1920.30, volume: 9800000, mentions: 750 },
-    ];
-    res.json({ success: true, data: trending });
+    const snap = await live.getUniverseSnapshot();
+    // "Trending" = most active by traded volume.
+    const data = snap
+      .filter((s) => s.volume)
+      .sort((a, b) => (b.volume || 0) - (a.volume || 0))
+      .slice(0, 6)
+      .map((s) => ({ symbol: s.symbol, name: s.name, price: s.price, volume: s.volume, changePercent: s.changePercent, live: true }));
+    res.json({ success: true, data: data.length ? data : fallback });
   } catch (error) {
-    console.error('Error fetching trending:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch trending stocks' });
+    logger.error('Error fetching trending:', error.message);
+    res.json({ success: true, data: fallback });
   }
 });
 
@@ -185,21 +225,42 @@ router.get('/news', authenticate, async (req, res) => {
  * @access  Private
  */
 router.get('/quote/:symbol', authenticate, async (req, res) => {
+  const { symbol } = req.params;
+  const sym = symbol.toUpperCase();
   try {
-    const { symbol } = req.params;
-    const quote = {
-      symbol: symbol.toUpperCase(),
-      name: `${symbol.toUpperCase()} Ltd`,
-      price: 1825.40, open: 1810.00, high: 1835.50, low: 1798.20, close: 1786.80,
-      volume: 12300000, avgVolume: 10500000, marketCap: '₹13.8L Cr',
-      pe: 22.5, pb: 3.8, eps: 81.13, dividend: 1.2,
-      weekHigh52: 1920.50, weekLow52: 1420.80,
-      change: 38.60, changePercent: 2.16,
-    };
-    res.json({ success: true, data: quote });
+    // Try NSE first, then BSE, then the symbol as-is (indices/global).
+    let q = null;
+    for (const cand of [`${sym}.NS`, `${sym}.BO`, sym]) {
+      try { q = await live.getQuote(cand); if (q && q.price != null) break; } catch { /* try next */ }
+    }
+    if (!q || q.price == null) throw new Error('no live quote');
+    res.json({
+      success: true,
+      data: {
+        symbol: sym,
+        name: sym,
+        price: q.price, open: q.open, high: q.high, low: q.low, close: q.previousClose,
+        volume: q.volume, avgVolume: null, marketCap: null,
+        pe: null, pb: null, eps: null, dividend: null,
+        weekHigh52: q.week52High, weekLow52: q.week52Low,
+        change: q.change, changePercent: q.changePercent,
+        currency: q.currency, live: true, asOf: q.marketTime,
+      },
+    });
   } catch (error) {
-    console.error('Error fetching quote:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch stock quote' });
+    logger.error(`Error fetching quote ${sym}:`, error.message);
+    // Fallback reference quote (clearly marked not-live).
+    res.json({
+      success: true,
+      data: {
+        symbol: sym, name: `${sym} Ltd`,
+        price: 1825.40, open: 1810.00, high: 1835.50, low: 1798.20, close: 1786.80,
+        volume: 12300000, avgVolume: 10500000, marketCap: '₹13.8L Cr',
+        pe: 22.5, pb: 3.8, eps: 81.13, dividend: 1.2,
+        weekHigh52: 1920.50, weekLow52: 1420.80,
+        change: 38.60, changePercent: 2.16, live: false,
+      },
+    });
   }
 });
 
@@ -209,25 +270,31 @@ router.get('/quote/:symbol', authenticate, async (req, res) => {
  * @access  Private
  */
 router.get('/historical/:symbol', authenticate, async (req, res) => {
+  const { symbol } = req.params;
+  const { period = '1M' } = req.query;
+  const sym = symbol.toUpperCase();
+  const rangeMap = { '1W': '5d', '1M': '1mo', '3M': '3mo', '6M': '6mo', '1Y': '1y', '2Y': '2y', '5Y': '5y' };
+  const range = rangeMap[String(period).toUpperCase()] || '1mo';
   try {
-    const { symbol } = req.params;
-    const { period = '1M' } = req.query;
+    let rows = null;
+    for (const cand of [`${sym}.NS`, `${sym}.BO`, sym]) {
+      try { rows = await live.getHistorical(cand, range, '1d'); if (rows && rows.length) break; } catch { /* next */ }
+    }
+    if (!rows || !rows.length) throw new Error('no live history');
+    res.json({ success: true, symbol: sym, period, data: rows, live: true });
+  } catch (error) {
+    logger.error(`Error fetching history ${sym}:`, error.message);
     const data = Array.from({ length: 30 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (30 - i));
       return {
         date: date.toISOString().split('T')[0],
-        open: 1780 + Math.random() * 80,
-        high: 1800 + Math.random() * 80,
-        low: 1760 + Math.random() * 60,
-        close: 1770 + Math.random() * 80,
+        open: 1780 + Math.random() * 80, high: 1800 + Math.random() * 80,
+        low: 1760 + Math.random() * 60, close: 1770 + Math.random() * 80,
         volume: 8000000 + Math.floor(Math.random() * 8000000),
       };
     });
-    res.json({ success: true, symbol: symbol.toUpperCase(), period, data });
-  } catch (error) {
-    console.error('Error fetching historical data:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch historical data' });
+    res.json({ success: true, symbol: sym, period, data, live: false });
   }
 });
 
@@ -238,7 +305,7 @@ router.get('/historical/:symbol', authenticate, async (req, res) => {
  */
 router.get('/watchlist', authenticate, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = String(req.user._id);
     const watchlist = userWatchlists[userId] || [];
     res.json({ success: true, data: watchlist });
   } catch (error) {
@@ -254,7 +321,7 @@ router.get('/watchlist', authenticate, async (req, res) => {
  */
 router.post('/watchlist', authenticate, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = String(req.user._id);
     const { symbol, name } = req.body;
     if (!symbol) return res.status(400).json({ success: false, error: 'Symbol is required' });
     if (!userWatchlists[userId]) userWatchlists[userId] = [];
@@ -276,7 +343,7 @@ router.post('/watchlist', authenticate, async (req, res) => {
  */
 router.delete('/watchlist/:symbol', authenticate, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = String(req.user._id);
     const { symbol } = req.params;
     if (!userWatchlists[userId]) return res.status(404).json({ success: false, error: 'Watchlist not found' });
     userWatchlists[userId] = userWatchlists[userId].filter(w => w.symbol !== symbol.toUpperCase());
