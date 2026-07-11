@@ -20,6 +20,7 @@ const quoteCache = new NodeCache({ stdTTL: 60 });        // live quotes: 60s
 const snapshotCache = new NodeCache({ stdTTL: 120 });    // universe snapshot: 120s
 const histCache = new NodeCache({ stdTTL: 900 });        // history: 15m
 const cryptoCache = new NodeCache({ stdTTL: 60 });       // crypto: 60s
+const mfCache = new NodeCache({ stdTTL: 6 * 3600 });     // MF NAV map: 6h
 
 const YAHOO = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 const COINGECKO = 'https://api.coingecko.com/api/v3';
@@ -216,6 +217,72 @@ async function getCryptoPrices(ids, vs = 'inr') {
   return data;
 }
 
+/* ---------------- Mutual funds (AMFI) & precious metals ---------------- */
+
+const AMFI_NAV_URL = 'https://www.amfiindia.com/spages/NAVAll.txt';
+const OZ_TO_GRAM = 31.1034768;
+
+/**
+ * Fetch & parse the full AMFI daily NAV file into a { schemeCode: {name,nav,date} }
+ * map. Cached 6h. Line format: Code;ISIN1;ISIN2;Name;NAV;Date (headers skipped).
+ */
+async function getMutualFundNavMap() {
+  const cached = mfCache.get('navmap');
+  if (cached) return cached;
+  const { data } = await axios.get(AMFI_NAV_URL, { timeout: 20000, maxRedirects: 5, headers: UA });
+  const map = {};
+  for (const line of String(data).split('\n')) {
+    const p = line.split(';');
+    if (p.length < 6) continue;
+    const code = p[0].trim();
+    const nav = parseFloat(p[4]);
+    if (/^\d+$/.test(code) && Number.isFinite(nav)) {
+      map[code] = { schemeCode: code, name: p[3].trim(), nav, date: p[5].trim() };
+    }
+  }
+  if (Object.keys(map).length === 0) throw new Error('AMFI NAV parse produced no schemes');
+  mfCache.set('navmap', map);
+  return map;
+}
+
+/** NAV for a single AMFI scheme code, or null. */
+async function getMutualFundNav(schemeCode) {
+  const map = await getMutualFundNavMap();
+  return map[String(schemeCode).trim()] || null;
+}
+
+/**
+ * Live gold & silver in INR, derived from COMEX spot (Yahoo GC=F/SI=F) converted
+ * with the live USD/INR rate. International spot (per gram / 10g / kg) — NOT
+ * MCX/retail (which adds import duty, GST, making charges). Cached 60s.
+ */
+async function getMetalPrices() {
+  const cached = quoteCache.get('metals');
+  if (cached) return cached;
+  const [gold, silver, fx] = await Promise.all([
+    getQuote('GC=F').catch(() => null),
+    getQuote('SI=F').catch(() => null),
+    getQuote('USDINR=X').catch(() => null),
+  ]);
+  if (!gold || gold.price == null || !fx || fx.price == null) throw new Error('metal price unavailable');
+  const usdinr = fx.price;
+  const goldPerGram = round2((gold.price * usdinr) / OZ_TO_GRAM);
+  const silverPerGram = silver && silver.price != null ? round2((silver.price * usdinr) / OZ_TO_GRAM) : null;
+  const out = {
+    currency: 'INR',
+    usdinr: round2(usdinr),
+    gold: { perGram: goldPerGram, per10Gram: round2(goldPerGram * 10), perOunceUsd: gold.price, changePercent: gold.changePercent },
+    silver: silverPerGram != null
+      ? { perGram: silverPerGram, perKg: round2(silverPerGram * 1000), perOunceUsd: silver.price, changePercent: silver.changePercent }
+      : null,
+    source: 'Yahoo COMEX spot × live USD/INR',
+    note: 'International spot; excludes Indian import duty, GST and making charges.',
+    asOf: new Date().toISOString(),
+  };
+  quoteCache.set('metals', out);
+  return out;
+}
+
 /* ---------------- Crypto symbol map + unified price resolver ---------------- */
 
 const CRYPTO_SYMBOL_MAP = {
@@ -233,10 +300,14 @@ const CRYPTO_SYMBOL_MAP = {
  * @returns {Promise<{price:number, changePercent:(number|null), source:string}|null>}
  */
 async function resolveLivePrice({ type, symbol }) {
-  if (!symbol) return null;
-  const s = String(symbol).trim().toUpperCase();
-  if (!s) return null;
   try {
+    if (type === 'gold') {
+      const m = await getMetalPrices();
+      return m && m.gold ? { price: m.gold.perGram, changePercent: m.gold.changePercent, source: 'yahoo-metal' } : null;
+    }
+    if (!symbol) return null;
+    const s = String(symbol).trim().toUpperCase();
+    if (!s) return null;
     if (type === 'crypto') {
       const id = CRYPTO_SYMBOL_MAP[s] || s.toLowerCase();
       const data = await getCryptoPrices([id], 'inr');
@@ -253,6 +324,10 @@ async function resolveLivePrice({ type, symbol }) {
       }
       return null;
     }
+    if (type === 'mutual_fund') {
+      const mf = await getMutualFundNav(s);
+      return mf && mf.nav != null ? { price: mf.nav, changePercent: null, source: 'amfi' } : null;
+    }
     return null;
   } catch {
     return null;
@@ -268,6 +343,9 @@ module.exports = {
   getHistorical,
   getUniverseSnapshot,
   getCryptoPrices,
+  getMutualFundNav,
+  getMutualFundNavMap,
+  getMetalPrices,
   resolveLivePrice,
   mapLimit,
 };

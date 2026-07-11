@@ -413,4 +413,59 @@ router.get('/crypto', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/market/gold
+ * @desc    Live gold & silver prices in INR (international spot)
+ * @access  Private
+ */
+router.get('/gold', authenticate, async (req, res) => {
+  try {
+    const data = await live.getMetalPrices();
+    res.json({ success: true, data, live: true });
+  } catch (error) {
+    logger.error('Error fetching metal prices:', error.message);
+    res.status(503).json({ success: false, error: 'Live metal prices unavailable', live: false });
+  }
+});
+
+/**
+ * @route   GET /api/market/mf/:schemeCode
+ * @desc    Latest NAV for an AMFI mutual-fund scheme code
+ * @access  Private
+ */
+router.get('/mf/:schemeCode', authenticate, async (req, res) => {
+  try {
+    const nav = await live.getMutualFundNav(req.params.schemeCode);
+    if (!nav) return res.status(404).json({ success: false, error: 'Scheme code not found' });
+    res.json({ success: true, data: nav, live: true });
+  } catch (error) {
+    logger.error('Error fetching MF NAV:', error.message);
+    res.status(503).json({ success: false, error: 'NAV feed unavailable', live: false });
+  }
+});
+
+/**
+ * @route   GET /api/market/mf?q=<name>
+ * @desc    Search AMFI mutual-fund schemes by name (min 3 chars)
+ * @access  Private
+ */
+router.get('/mf', authenticate, async (req, res) => {
+  const q = String(req.query.q || '').trim().toLowerCase();
+  if (q.length < 3) return res.status(400).json({ success: false, error: 'Provide q (min 3 chars)' });
+  try {
+    const map = await live.getMutualFundNavMap();
+    const results = [];
+    for (const k in map) {
+      if (map[k].name.toLowerCase().includes(q)) {
+        results.push(map[k]);
+        if (results.length >= 25) break;
+      }
+    }
+    res.json({ success: true, count: results.length, data: results });
+  } catch (error) {
+    logger.error('Error searching MF NAV:', error.message);
+    res.status(503).json({ success: false, error: 'NAV feed unavailable' });
+  }
+});
+
 module.exports = router;

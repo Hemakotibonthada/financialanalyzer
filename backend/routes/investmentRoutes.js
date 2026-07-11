@@ -455,8 +455,7 @@ router.post('/sync-prices', async (req, res) => {
     const query = {
       userId: req.user._id,
       status: 'active',
-      type: { $in: ['stock', 'etf', 'crypto'] },
-      symbol: { $exists: true, $nin: [null, ''] },
+      type: { $in: ['stock', 'etf', 'crypto', 'mutual_fund', 'gold'] },
     };
     if (onlyAutoSync) query.autoSync = true;
 
