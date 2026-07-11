@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   Container,
@@ -39,7 +39,8 @@ import {
   AccountBalance as AccountBalanceIcon,
   ShowChart as ShowChartIcon,
   Assessment as AssessmentIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
@@ -77,6 +78,8 @@ function InvestmentPortfolio() {
   const [maturities, setMaturities] = useState([]);
   const [allocation, setAllocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshingPrices, setRefreshingPrices] = useState(false);
+  const didSyncRef = useRef(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState(null);
   const [showOptimizer, setShowOptimizer] = useState(false);
@@ -112,6 +115,12 @@ function InvestmentPortfolio() {
     try {
       setLoading(true);
 
+      // On first load, pull live prices for stock/etf/crypto holdings so values are current.
+      if (!didSyncRef.current) {
+        didSyncRef.current = true;
+        try { await api.post('/investments/sync-prices'); } catch { /* non-fatal: show stored values */ }
+      }
+
       const [investmentsRes, portfolioRes, maturitiesRes, allocationRes] = await Promise.all([
   api.get('/investments', { params: filters }),
         api.get('/investments/portfolio'),
@@ -135,6 +144,21 @@ function InvestmentPortfolio() {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshPrices = async () => {
+    try {
+      setRefreshingPrices(true);
+      const res = await api.post('/investments/sync-prices');
+      const n = res.data?.data?.synced ?? 0;
+      // eslint-disable-next-line no-console
+      console.info(`Live prices refreshed for ${n} holding(s)`);
+      await fetchData();
+    } catch (error) {
+      console.error('Price refresh failed:', error);
+    } finally {
+      setRefreshingPrices(false);
     }
   };
 
@@ -292,6 +316,19 @@ function InvestmentPortfolio() {
                 </Typography>
               </Box>
               <Box display="flex" gap={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={handleRefreshPrices}
+                  disabled={refreshingPrices}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' }
+                  }}
+                >
+                  {refreshingPrices ? 'Refreshing…' : 'Refresh Prices'}
+                </Button>
                 <Button
                   variant="outlined"
                   startIcon={<DownloadIcon />}
