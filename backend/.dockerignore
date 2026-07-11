@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+logs
+*.log
+data/local-mongo
+backups
+uploads
+coverage
+.git
+.gitignore
+Dockerfile
+.dockerignore

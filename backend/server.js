@@ -19,6 +19,12 @@ const jwt = require('jsonwebtoken');
 const envPath = path.join(__dirname, '.env');
 dotenv.config({ path: envPath });
 
+// Validate environment before anything else starts (hard-fails in production)
+require('./config/validateEnv')();
+
+// Initialize error tracking (no-op unless SENTRY_DSN + @sentry/node present)
+require('./config/sentry').init();
+
 // Add QPDF to PATH if configured (must happen before requiring any modules that use qpdf)
 if (process.env.QPDF_PATH) {
   const qpdfDir = path.dirname(process.env.QPDF_PATH);
@@ -166,8 +172,15 @@ app.use(cors({
 app.options('*', cors());
 
 // Body parsing with size limits to prevent DoS via large payloads
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  // Preserve raw body for webhook signature verification (e.g., Razorpay).
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Correlation id + structured request logging
+app.use(require('./middleware/requestContext'));
 
 // HTTP request logging via morgan → pipes into Winston file logs
 const morganStream = { write: (message) => logger.http(message.trim()) };
@@ -212,6 +225,7 @@ app.use('/uploads', authenticate, express.static('uploads'));
 
 // API Routes
 app.use('/api/auth', authLimiter, require('./routes/authRoutes')); // Apply stricter rate limit to auth
+app.use('/api/billing', require('./routes/billingRoutes')); // SaaS subscription & billing
 app.use('/api/2fa', authLimiter, require('./routes/twoFactorAuthRoutes')); // 2FA management
 app.use('/api/health', require('./routes/healthRoutes')); // Health checks (no auth required)
 app.use('/api/public', require('./routes/publicRoutes')); // Public stats for landing page (no auth required)

@@ -1899,14 +1899,14 @@ const EMITracker = () => {
       <Box 
         sx={{
           background: isDark 
-            ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)'
-            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: 4,
+            ? 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)'
+            : 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+          borderRadius: 3,
           p: { xs: 3, md: 4 },
           mb: 4,
           boxShadow: isDark 
-            ? '0 20px 60px rgba(30, 27, 75, 0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
-            : '0 20px 60px rgba(102, 126, 234, 0.3)',
+            ? '0 8px 24px rgba(0,0,0,0.35)'
+            : '0 8px 24px rgba(13, 148, 136, 0.25)',
           position: 'relative',
           overflow: 'hidden',
           '&::before': {
@@ -1949,7 +1949,7 @@ const EMITracker = () => {
                 gap: 2
               }}
             >
-              💳 EMI Tracker
+              EMI Tracker
             </Typography>
             <Typography 
               variant="subtitle1" 
@@ -2497,318 +2497,48 @@ const EMITracker = () => {
 
       {/* Enhanced Overview Cards */}
       {overview && (
-        <Grid container spacing={3} mb={4}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card 
-              elevation={0}
-              sx={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                borderRadius: 4,
-                overflow: 'hidden',
-                position: 'relative',
-                transform: animateCards ? 'translateY(0)' : 'translateY(20px)',
-                opacity: animateCards ? 1 : 0,
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                transitionDelay: '0ms',
-                '&:hover': { 
-                  transform: 'translateY(-12px) scale(1.02)', 
-                  boxShadow: '0 20px 40px rgba(102, 126, 234, 0.4)',
-                  '& .icon-container': {
-                    transform: 'rotate(360deg) scale(1.2)'
-                  },
-                  '& .stats-number': {
-                    transform: 'scale(1.1)'
-                  }
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '150px',
-                  height: '150px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '50%',
-                  transform: 'translate(30%, -30%)'
-                }
-              }}
-            >
-              <CardContent sx={{ position: 'relative', zIndex: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 600, mb: 1 }}>
-                      Active EMIs
-                    </Typography>
-                    <Typography 
-                      variant="h2" 
-                      className="stats-number"
-                      sx={{ 
-                        fontWeight: 800, 
-                        transition: 'transform 0.3s ease',
-                        textShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}
-                    >
-                      {overview.overview.totalActiveEMIs}
-                    </Typography>
+        <Grid container spacing={2.5} mb={4}>
+          {[
+            { label: 'Active EMIs', value: overview.overview.totalActiveEMIs, sub: `${overview.overview.totalCompletedEMIs} completed`, icon: <CreditCardIcon sx={{ fontSize: 22 }} />, subIcon: <CheckCircleIcon sx={{ fontSize: 15 }} />, accent: '#6366f1' },
+            { label: 'Outstanding Amount', value: formatCurrency(overview.overview.totalOutstanding + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0)), sub: 'Total remaining debt', icon: <AccountBalanceIcon sx={{ fontSize: 22 }} />, subIcon: <WarningIcon sx={{ fontSize: 15 }} />, accent: '#f43f5e', extra: (personalLoansSummary && personalLoansSummary.totalOutstanding > 0) ? `EMI ${formatCurrency(overview.overview.totalOutstanding)} + Loans ${formatCurrency(personalLoansSummary.totalOutstanding)}` : null },
+            { label: 'Monthly Burden', value: formatCurrency(overview.overview.monthlyBurden), sub: 'Paid monthly', icon: <TrendingUpIcon sx={{ fontSize: 22 }} />, subIcon: <CalendarIcon sx={{ fontSize: 15 }} />, accent: '#f59e0b' },
+            { label: 'Total Paid', value: formatCurrency(overview.overview.totalAmountPaid), sub: 'Successfully paid', icon: <CheckCircleIcon sx={{ fontSize: 22 }} />, subIcon: <TrendingUpIcon sx={{ fontSize: 15 }} />, accent: '#14b8a6' }
+          ].map((kpi, i) => (
+            <Grid key={kpi.label} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Card
+                elevation={0}
+                sx={{
+                  position: 'relative', overflow: 'hidden', height: '100%', borderRadius: 3,
+                  bgcolor: isDark ? '#1e293b' : '#ffffff',
+                  border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e5e7eb',
+                  boxShadow: isDark ? '0 1px 2px rgba(0,0,0,0.4)' : '0 1px 3px rgba(15,23,42,0.06)',
+                  transform: animateCards ? 'none' : 'translateY(12px)',
+                  opacity: animateCards ? 1 : 0,
+                  transition: 'transform .45s cubic-bezier(.4,0,.2,1), opacity .45s, box-shadow .25s ease, border-color .25s ease',
+                  transitionDelay: `${i * 70}ms`,
+                  '&:hover': { transform: 'translateY(-4px)', boxShadow: isDark ? '0 12px 28px rgba(0,0,0,0.5)' : '0 10px 24px rgba(15,23,42,0.1)', borderColor: kpi.accent },
+                  '&::before': { content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: kpi.accent }
+                }}
+              >
+                <CardContent sx={{ p: 2.5, pl: 3 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1.5} mb={1.5}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 600, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.75 }}>{kpi.label}</Typography>
+                      <Typography sx={{ color: isDark ? '#f1f5f9' : '#0f172a', fontWeight: 800, fontSize: { xs: '1.4rem', md: '1.75rem' }, lineHeight: 1.15, wordBreak: 'break-word' }}>{kpi.value}</Typography>
+                    </Box>
+                    <Box sx={{ flexShrink: 0, width: 44, height: 44, borderRadius: 2.5, display: 'grid', placeItems: 'center', color: kpi.accent, bgcolor: `${kpi.accent}1A` }}>{kpi.icon}</Box>
                   </Box>
-                  <Box 
-                    className="icon-container"
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                      borderRadius: 3,
-                      p: 1.5,
-                      transition: 'all 0.5s ease'
-                    }}
-                  >
-                    <CreditCardIcon sx={{ fontSize: 40 }} />
+                  <Box display="flex" alignItems="center" gap={0.75} sx={{ color: isDark ? '#94a3b8' : '#64748b' }}>
+                    {kpi.subIcon}
+                    <Typography sx={{ fontWeight: 500, fontSize: '0.8rem' }}>{kpi.sub}</Typography>
                   </Box>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckCircleIcon sx={{ fontSize: 16, opacity: 0.8 }} />
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
-                    {overview.overview.totalCompletedEMIs} completed
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card 
-              elevation={0}
-              sx={{ 
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                color: 'white',
-                borderRadius: 4,
-                overflow: 'hidden',
-                position: 'relative',
-                transform: animateCards ? 'translateY(0)' : 'translateY(20px)',
-                opacity: animateCards ? 1 : 0,
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                transitionDelay: '100ms',
-                '&:hover': { 
-                  transform: 'translateY(-12px) scale(1.02)', 
-                  boxShadow: '0 20px 40px rgba(245, 87, 108, 0.4)',
-                  '& .icon-container': {
-                    transform: 'rotate(360deg) scale(1.2)'
-                  },
-                  '& .stats-number': {
-                    transform: 'scale(1.1)'
-                  }
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '150px',
-                  height: '150px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '50%',
-                  transform: 'translate(30%, -30%)'
-                }
-              }}
-            >
-              <CardContent sx={{ position: 'relative', zIndex: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 600, mb: 1 }}>
-                      Outstanding Amount
-                    </Typography>
-                    <Typography 
-                      variant="h2" 
-                      className="stats-number"
-                      sx={{ 
-                        fontWeight: 800, 
-                        fontSize: { xs: '1.75rem', sm: '2.5rem' },
-                        transition: 'transform 0.3s ease',
-                        textShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}
-                    >
-                      {formatCurrency(overview.overview.totalOutstanding + ((personalLoansSummary && personalLoansSummary.totalOutstanding) || 0))}
-                    </Typography>
-                  </Box>
-                  <Box 
-                    className="icon-container"
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                      borderRadius: 3,
-                      p: 1.5,
-                      transition: 'all 0.5s ease'
-                    }}
-                  >
-                    <AccountBalanceIcon sx={{ fontSize: 40 }} />
-                  </Box>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <WarningIcon sx={{ fontSize: 16, opacity: 0.8 }} />
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
-                    Total remaining debt
-                  </Typography>
-                </Box>
-                {personalLoansSummary && personalLoansSummary.totalOutstanding > 0 && (
-                  <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: 400, mt: 0.5, display: 'block' }}>
-                    (EMI: {formatCurrency(overview.overview.totalOutstanding)} + Personal Loans: {formatCurrency(personalLoansSummary.totalOutstanding)})
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card 
-              elevation={0}
-              sx={{ 
-                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                color: 'white',
-                borderRadius: 4,
-                overflow: 'hidden',
-                position: 'relative',
-                transform: animateCards ? 'translateY(0)' : 'translateY(20px)',
-                opacity: animateCards ? 1 : 0,
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                transitionDelay: '200ms',
-                '&:hover': { 
-                  transform: 'translateY(-12px) scale(1.02)', 
-                  boxShadow: '0 20px 40px rgba(250, 112, 154, 0.4)',
-                  '& .icon-container': {
-                    transform: 'rotate(360deg) scale(1.2)'
-                  },
-                  '& .stats-number': {
-                    transform: 'scale(1.1)'
-                  }
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '150px',
-                  height: '150px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '50%',
-                  transform: 'translate(30%, -30%)'
-                }
-              }}
-            >
-              <CardContent sx={{ position: 'relative', zIndex: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 600, mb: 1 }}>
-                      Monthly Burden
-                    </Typography>
-                    <Typography 
-                      variant="h2" 
-                      className="stats-number"
-                      sx={{ 
-                        fontWeight: 800, 
-                        fontSize: { xs: '1.75rem', sm: '2.5rem' },
-                        transition: 'transform 0.3s ease',
-                        textShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}
-                    >
-                      {formatCurrency(overview.overview.monthlyBurden)}
-                    </Typography>
-                  </Box>
-                  <Box 
-                    className="icon-container"
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                      borderRadius: 3,
-                      p: 1.5,
-                      transition: 'all 0.5s ease'
-                    }}
-                  >
-                    <TrendingUpIcon sx={{ fontSize: 40 }} />
-                  </Box>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CalendarIcon sx={{ fontSize: 16, opacity: 0.8 }} />
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
-                    Paid monthly
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card 
-              elevation={0}
-              sx={{ 
-                background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-                color: 'white',
-                borderRadius: 4,
-                overflow: 'hidden',
-                position: 'relative',
-                transform: animateCards ? 'translateY(0)' : 'translateY(20px)',
-                opacity: animateCards ? 1 : 0,
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                transitionDelay: '300ms',
-                '&:hover': { 
-                  transform: 'translateY(-12px) scale(1.02)', 
-                  boxShadow: '0 20px 40px rgba(48, 207, 208, 0.4)',
-                  '& .icon-container': {
-                    transform: 'rotate(360deg) scale(1.2)'
-                  },
-                  '& .stats-number': {
-                    transform: 'scale(1.1)'
-                  }
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '150px',
-                  height: '150px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '50%',
-                  transform: 'translate(30%, -30%)'
-                }
-              }}
-            >
-              <CardContent sx={{ position: 'relative', zIndex: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 600, mb: 1 }}>
-                      Total Paid
-                    </Typography>
-                    <Typography 
-                      variant="h2" 
-                      className="stats-number"
-                      sx={{ 
-                        fontWeight: 800, 
-                        fontSize: { xs: '1.75rem', sm: '2.5rem' },
-                        transition: 'transform 0.3s ease',
-                        textShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}
-                    >
-                      {formatCurrency(overview.overview.totalAmountPaid)}
-                    </Typography>
-                  </Box>
-                  <Box 
-                    className="icon-container"
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                      borderRadius: 3,
-                      p: 1.5,
-                      transition: 'all 0.5s ease'
-                    }}
-                  >
-                    <CheckCircleIcon sx={{ fontSize: 40 }} />
-                  </Box>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <TrendingUpIcon sx={{ fontSize: 16, opacity: 0.8 }} />
-                  <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
-                    Successfully paid
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+                  {kpi.extra && (
+                    <Typography sx={{ color: isDark ? '#64748b' : '#94a3b8', fontWeight: 400, fontSize: '0.7rem', mt: 0.5, display: 'block' }}>{kpi.extra}</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
       )}
 

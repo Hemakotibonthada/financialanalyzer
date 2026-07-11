@@ -58,6 +58,7 @@
     "plaid": "^39.1.0",
     "qpdf": "^0.1.0-prealpha.1",
     "qrcode": "^1.5.4",
+    "razorpay": "^2.9.6",
     "redis": "^5.9.0",
     "sharp": "^0.34.4",
     "socket.io": "^4.8.1",

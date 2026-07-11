@@ -27,6 +27,34 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'lender', 'admin'],
     default: 'user'
   },
+  subscription: {
+    plan: {
+      type: String,
+      enum: ['free', 'pro', 'premium'],
+      default: 'free'
+    },
+    status: {
+      type: String,
+      enum: ['active', 'trialing', 'past_due', 'canceled', 'inactive'],
+      default: 'active'
+    },
+    billingCycle: {
+      type: String,
+      enum: ['monthly', 'yearly', 'none'],
+      default: 'none'
+    },
+    provider: {
+      type: String,
+      enum: ['razorpay', 'stripe', 'manual', 'none'],
+      default: 'none'
+    },
+    customerId: { type: String },
+    subscriptionId: { type: String },
+    currentPeriodEnd: { type: Date },
+    trialEndsAt: { type: Date },
+    cancelAtPeriodEnd: { type: Boolean, default: false },
+    updatedAt: { type: Date }
+  },
   isActive: {
     type: Boolean,
     default: true

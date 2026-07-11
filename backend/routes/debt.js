@@ -2,10 +2,15 @@ const express = require('express');
 const router = express.Router();
 const Debt = require('../models/Debt');
 const { authenticate } = require('../middleware/auth');
+const { enforceLimit } = require('../middleware/entitlements');
 
 // Create Debt
 router.post('/', authenticate, async (req, res) => {
   try {
+    // Enforce free-tier debt limit (unlimited on Pro/Premium/admin)
+    const activeCount = await Debt.countDocuments({ userId: req.user._id, status: 'active' });
+    if (!enforceLimit(req, res, 'maxDebts', activeCount)) return;
+
     const debt = new Debt({ ...req.body, userId: req.user._id });
     await debt.save();
     res.status(201).json(debt);

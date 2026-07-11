@@ -312,6 +312,7 @@ const Sidebar = () => {
 
   // — Bottom pinned items (always visible) —
   const bottomLinks = [
+    { label: 'Upgrade / Billing', icon: CreditCard, path: '/billing', color: 'teal' },
     { label: 'Settings', icon: Settings, path: '/settings', color: 'gray' },
     { label: 'Profile', icon: User, path: '/profile', color: 'blue' },
   ];

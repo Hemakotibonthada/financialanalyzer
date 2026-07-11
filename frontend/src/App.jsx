@@ -84,6 +84,8 @@ const AIInsightsHub = lazy(() => import('./pages/AIInsightsHub'));
 const SpendingInsights = lazy(() => import('./pages/SpendingInsights'));
 const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboard'));
 const DebtSpiralMonitor = lazy(() => import('./pages/DebtSpiralMonitor'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const Billing = lazy(() => import('./pages/Billing'));
 const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
 const CompanyExpensesDashboard = lazy(() => import('./pages/CompanyExpensesDashboard'));
 const Documents = lazy(() => import('./pages/Documents'));
@@ -376,6 +378,8 @@ function App() {
               {/* ========== DEBT & LOANS ========== */}
               <Route path="/debt-management" element={<ProtectedRoute><DebtManagementDashboard /></ProtectedRoute>} />
               <Route path="/debt-spiral" element={<ProtectedRoute><DebtSpiralMonitor /></ProtectedRoute>} />
+              <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
               <Route path="/debt-payoff" element={<ProtectedRoute><DebtPayoff /></ProtectedRoute>} />
               <Route path="/loan-calculator" element={<ProtectedRoute><LoanCalculator /></ProtectedRoute>} />
               <Route path="/emergency-fund" element={<ProtectedRoute><EmergencyFund /></ProtectedRoute>} />
