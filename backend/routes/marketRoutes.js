@@ -387,12 +387,7 @@ router.get('/portfolio-impact', authenticate, async (req, res) => {
  * @desc    Live crypto prices (CoinGecko). Query: ?ids=bitcoin,ethereum OR ?symbols=BTC,ETH&vs=inr
  * @access  Private
  */
-const CRYPTO_SYMBOL_MAP = {
-  BTC: 'bitcoin', ETH: 'ethereum', USDT: 'tether', BNB: 'binancecoin', XRP: 'ripple',
-  ADA: 'cardano', SOL: 'solana', DOGE: 'dogecoin', DOT: 'polkadot', MATIC: 'matic-network',
-  LTC: 'litecoin', TRX: 'tron', SHIB: 'shiba-inu', AVAX: 'avalanche-2', LINK: 'chainlink',
-  BCH: 'bitcoin-cash', XLM: 'stellar', UNI: 'uniswap', ATOM: 'cosmos', ETC: 'ethereum-classic',
-};
+const CRYPTO_SYMBOL_MAP = live.CRYPTO_SYMBOL_MAP;
 router.get('/crypto', authenticate, async (req, res) => {
   const vs = String(req.query.vs || 'inr').toLowerCase();
   let ids = [];

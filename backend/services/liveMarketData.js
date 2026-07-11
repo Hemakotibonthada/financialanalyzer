@@ -216,13 +216,58 @@ async function getCryptoPrices(ids, vs = 'inr') {
   return data;
 }
 
+/* ---------------- Crypto symbol map + unified price resolver ---------------- */
+
+const CRYPTO_SYMBOL_MAP = {
+  BTC: 'bitcoin', ETH: 'ethereum', USDT: 'tether', BNB: 'binancecoin', XRP: 'ripple',
+  ADA: 'cardano', SOL: 'solana', DOGE: 'dogecoin', DOT: 'polkadot', MATIC: 'matic-network',
+  LTC: 'litecoin', TRX: 'tron', SHIB: 'shiba-inu', AVAX: 'avalanche-2', LINK: 'chainlink',
+  BCH: 'bitcoin-cash', XLM: 'stellar', UNI: 'uniswap', ATOM: 'cosmos', ETC: 'ethereum-classic',
+};
+
+/**
+ * Resolve a live INR price for a holding by type + symbol.
+ * Supports 'stock'/'etf' (Yahoo NSE/BSE) and 'crypto' (CoinGecko). Returns null
+ * for unsupported types (mutual_fund/gold are handled by their own feeds) or on
+ * failure, so callers keep the stored value.
+ * @returns {Promise<{price:number, changePercent:(number|null), source:string}|null>}
+ */
+async function resolveLivePrice({ type, symbol }) {
+  if (!symbol) return null;
+  const s = String(symbol).trim().toUpperCase();
+  if (!s) return null;
+  try {
+    if (type === 'crypto') {
+      const id = CRYPTO_SYMBOL_MAP[s] || s.toLowerCase();
+      const data = await getCryptoPrices([id], 'inr');
+      const v = data && data[id];
+      if (!v || v.inr == null) return null;
+      return { price: round2(v.inr), changePercent: v.inr_24h_change != null ? round2(v.inr_24h_change) : null, source: 'coingecko' };
+    }
+    if (type === 'stock' || type === 'etf') {
+      for (const cand of [`${s}.NS`, `${s}.BO`, s]) {
+        try {
+          const q = await getQuote(cand);
+          if (q && q.price != null) return { price: q.price, changePercent: q.changePercent, source: 'yahoo' };
+        } catch { /* try next exchange suffix */ }
+      }
+      return null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 module.exports = {
   INDIA_INDICES,
   GLOBAL_INDICES,
   STOCK_UNIVERSE,
+  CRYPTO_SYMBOL_MAP,
   getQuote,
   getHistorical,
   getUniverseSnapshot,
   getCryptoPrices,
+  resolveLivePrice,
   mapLimit,
 };

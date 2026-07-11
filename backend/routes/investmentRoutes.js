@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const Investment = require('../models/Investment');
+const live = require('../services/liveMarketData');
 const logger = require('../utils/logger');
 
 // Apply authentication to all routes
@@ -444,34 +445,63 @@ router.put('/:id/price', async (req, res) => {
 
 /**
  * @route   POST /api/investments/sync-prices
- * @desc    Sync prices from external APIs (placeholder for future implementation)
+ * @desc    Refresh current prices for holdings from live feeds (Yahoo/CoinGecko)
  * @access  Private
+ * @query   onlyAutoSync=true  Restrict to holdings flagged autoSync (default: all eligible)
  */
 router.post('/sync-prices', async (req, res) => {
   try {
-    // Placeholder for price sync implementation
-    // Will integrate with Alpha Vantage, Yahoo Finance, CoinGecko APIs
-    
-    const investments = await Investment.find({
+    const onlyAutoSync = String(req.query.onlyAutoSync || '') === 'true';
+    const query = {
       userId: req.user._id,
       status: 'active',
-      autoSync: true
+      type: { $in: ['stock', 'etf', 'crypto'] },
+      symbol: { $exists: true, $nin: [null, ''] },
+    };
+    if (onlyAutoSync) query.autoSync = true;
+
+    const investments = await Investment.find(query);
+    const updated = [];
+
+    await live.mapLimit(investments, 5, async (inv) => {
+      const p = await live.resolveLivePrice({ type: inv.type, symbol: inv.symbol });
+      if (!p || p.price == null) return;
+
+      inv.currentPrice = p.price;
+      inv.currentValue = inv.quantity * p.price;
+      inv.absoluteReturn = inv.currentValue - inv.totalInvestedAmount;
+      inv.returnPercentage = inv.totalInvestedAmount
+        ? Number(((inv.absoluteReturn / inv.totalInvestedAmount) * 100).toFixed(2))
+        : 0;
+      if (p.changePercent != null) {
+        // Approx day change in ₹ from the % move on current value.
+        inv.dayChange = Number(((p.changePercent / 100) * inv.currentValue).toFixed(2));
+      }
+      inv.lastUpdated = new Date();
+      inv.syncSource = p.source;
+      inv.lastSyncedAt = new Date();
+      await inv.save();
+
+      updated.push({
+        id: inv._id, name: inv.name, symbol: inv.symbol, type: inv.type,
+        currentPrice: p.price, currentValue: inv.currentValue,
+        returnPercentage: inv.returnPercentage, source: p.source,
+      });
     });
-    
+
     res.json({
       success: true,
-      message: 'Price sync feature coming soon',
-      data: {
-        synced: 0,
-        total: investments.length
-      }
+      message: updated.length
+        ? `Refreshed live prices for ${updated.length} of ${investments.length} holding(s)`
+        : 'No holdings could be priced live (unsupported symbols or feeds unavailable)',
+      data: { synced: updated.length, total: investments.length, updated },
     });
   } catch (error) {
     logger.error('Sync prices error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to sync prices',
-      error: error.message
+      error: error.message,
     });
   }
 });
