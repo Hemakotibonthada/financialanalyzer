@@ -1,5 +1,5 @@
 <#
-  oci-retry.ps1  —  Keep asking Oracle Cloud for a free ARM VM until capacity appears.
+  oci-retry.ps1  -  Keep asking Oracle Cloud for a free ARM VM until capacity appears.
 
   Oracle's Always-Free Ampere (A1) shape is frequently "Out of host capacity".
   This script retries the launch across every availability domain on an interval
@@ -106,7 +106,7 @@ while ($true) {
       Write-Host "SUCCESS! Instance is launching." -ForegroundColor Green
       Write-Host "  OCID: $id"
       Write-Host "  Get its public IP in ~60s with:" -ForegroundColor Green
-      Write-Host "    oci compute instance list-vnics --instance-id $id --query 'data[0].\"public-ip\"' --raw-output"
+      Write-Host "    oci compute instance list-vnics --instance-id $id --query 'data[0].`"public-ip`"' --raw-output"
       exit 0
     }
     elseif ($out -match "Out of (host )?capacity") {
@@ -114,7 +114,7 @@ while ($true) {
     }
     elseif ($out -match "LimitExceeded|QuotaExceeded|reached the maximum") {
       Write-Host ""
-      Write-Host "Free-tier limit reached — you may already have an A1 instance." -ForegroundColor Red
+      Write-Host "Free-tier limit reached - you may already have an A1 instance." -ForegroundColor Red
       Write-Host $out
       exit 1
     }
