@@ -10,6 +10,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 # App source
 COPY . .
 
+# Pre-create writable dirs so named-volume mounts inherit the non-root owner
+RUN mkdir -p uploads/financial uploads/receipts logs
+
 # Run as non-root
 RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app
 USER app

@@ -1,0 +1,4 @@
+# Deploy scripts and Caddy config must always use LF, even when checked out on
+# Windows, so they run correctly on the Linux production VM.
+*.sh text eol=lf
+deploy/Caddyfile text eol=lf

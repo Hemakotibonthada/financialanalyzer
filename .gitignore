@@ -13,6 +13,9 @@ desktop/dist/
 *.env
 backend/.env
 frontend/.env
+# Production secrets (generated on the server by deploy.sh — never commit)
+.env.prod
+deploy/.env.prod
 Helper/credentials.json
 Helper/token.json
 
