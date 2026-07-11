@@ -46,6 +46,12 @@ function validateEnv() {
   // Optional integrations (informational)
   if (!process.env.RAZORPAY_KEY_ID) warnings.push('RAZORPAY_KEY_ID not set — billing runs in dev mode');
   if (!process.env.SENTRY_DSN) warnings.push('SENTRY_DSN not set — error tracking disabled');
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    warnings.push('EMAIL_USER / EMAIL_PASSWORD not set — verification & notification emails are logged, not sent');
+  }
+  if (isProd && !process.env.CLIENT_URL && !process.env.FRONTEND_URL) {
+    warnings.push('CLIENT_URL / FRONTEND_URL not set — email verification links fall back to the request host');
+  }
 
   warnings.forEach((w) => logger.warn(`[env] ${w}`));
 

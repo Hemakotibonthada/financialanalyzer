@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const encryptionService = require('../services/encryptionService');
 
 const userSchema = new mongoose.Schema({
@@ -94,6 +95,22 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     }
+  },
+  emailVerification: {
+    verified: {
+      type: Boolean,
+      default: false
+    },
+    token: {
+      type: String,
+      select: false
+    },
+    tokenExpires: {
+      type: Date
+    },
+    lastSentAt: {
+      type: Date
+    }
   }
 }, {
   timestamps: true
@@ -153,6 +170,18 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Generate an email-verification token. Stores a SHA-256 hash and returns the
+// raw token to embed in the verification link (only the hash is persisted).
+userSchema.methods.createEmailVerificationToken = function() {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  if (!this.emailVerification) this.emailVerification = {};
+  this.emailVerification.token = crypto.createHash('sha256').update(rawToken).digest('hex');
+  this.emailVerification.tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  this.emailVerification.lastSentAt = new Date();
+  this.emailVerification.verified = false;
+  return rawToken;
 };
 
 // Remove sensitive data when converting to JSON

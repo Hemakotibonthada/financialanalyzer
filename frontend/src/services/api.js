@@ -209,6 +209,8 @@ export const authService = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me', { timeout: 5000 }),
+  verifyEmail: (token) => api.get('/auth/verify-email', { params: { token } }),
+  resendVerification: () => api.post('/auth/resend-verification'),
   logout: () => api.post('/auth/logout'),
   changePassword: (data) => api.put('/auth/password', data),
 };

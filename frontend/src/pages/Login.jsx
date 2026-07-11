@@ -199,6 +199,11 @@ const Login = () => {
                 Sign up
               </Link>
             </p>
+            <p className={`text-[11px] ${dk ? 'text-slate-500' : 'text-slate-400'} pt-1`}>
+              <Link to="/terms" className="hover:underline">Terms</Link>
+              <span className="mx-1.5">·</span>
+              <Link to="/privacy" className="hover:underline">Privacy</Link>
+            </p>
           </div>
         </div>
       </div>

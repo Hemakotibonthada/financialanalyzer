@@ -2,15 +2,23 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
 const { registerValidation, loginValidation } = require('../middleware/validation');
 const { generateTokens, verifyRefreshToken, rotateRefreshToken, revokeRefreshToken, revokeAllUserTokens, getIpAddress } = require('../utils/tokenUtils');
 const logger = require('../utils/logger');
 const gmailService = require('../services/gmailService');
+const emailService = require('../services/emailService');
 const FinancialProfile = require('../models/FinancialProfile');
 const { google } = require('googleapis');
 const TwoFactorAuthService = require('../services/twoFactorAuthService');
+
+// Build an absolute verification link that points at the frontend app.
+function buildVerifyUrl(req, rawToken) {
+  const base = (process.env.CLIENT_URL || process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  return `${base}/verify-email?token=${rawToken}`;
+}
 
 /**
  * @route   POST /api/auth/register
@@ -39,6 +47,19 @@ router.post('/register', registerValidation, async (req, res) => {
 
     await user.save();
 
+    // Send a verification email (best-effort — never blocks registration).
+    try {
+      const rawToken = user.createEmailVerificationToken();
+      await user.save();
+      const verifyUrl = buildVerifyUrl(req, rawToken);
+      const result = await emailService.sendVerificationEmail(user, verifyUrl);
+      if (result.dev) {
+        logger.info(`[verify] Dev-mode verification link for ${user.email}: ${verifyUrl}`);
+      }
+    } catch (mailErr) {
+      logger.error('Failed to send verification email (registration continues):', mailErr);
+    }
+
     // Generate tokens (default to rememberMe for new registrations so they don't get immediately logged out)
     const ipAddress = getIpAddress(req);
     const { accessToken, refreshToken } = await generateTokens(user._id, ipAddress, true);
@@ -53,7 +74,8 @@ router.post('/register', registerValidation, async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          emailVerification: { verified: false }
         },
         accessToken,
         refreshToken
@@ -737,6 +759,87 @@ router.post('/gmail/save-tokens', authenticate, async (req, res) => {
         stack: error?.stack
       } : undefined
     });
+  }
+});
+
+/**
+ * @route   GET /api/auth/verify-email
+ * @desc    Verify a user's email address using the emailed token
+ * @access  Public
+ */
+router.get('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Verification token is required' });
+    }
+
+    const hashed = crypto.createHash('sha256').update(String(token)).digest('hex');
+    const user = await User.findOne({
+      'emailVerification.token': hashed,
+      'emailVerification.tokenExpires': { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'This verification link is invalid or has expired.' });
+    }
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: { 'emailVerification.verified': true },
+        $unset: { 'emailVerification.token': 1, 'emailVerification.tokenExpires': 1 }
+      }
+    );
+
+    logger.info(`Email verified: ${user.email}`);
+    res.json({ success: true, message: 'Your email has been verified.' });
+  } catch (error) {
+    logger.error('Email verification error:', error);
+    res.status(500).json({ success: false, message: 'Error verifying email' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/resend-verification
+ * @desc    Resend the email-verification link to the logged-in user
+ * @access  Private
+ */
+router.post('/resend-verification', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.emailVerification?.verified) {
+      return res.json({ success: true, message: 'Your email is already verified.' });
+    }
+
+    // Basic rate limit: one email per minute.
+    const last = user.emailVerification?.lastSentAt;
+    if (last && Date.now() - new Date(last).getTime() < 60 * 1000) {
+      return res.status(429).json({ success: false, message: 'Please wait a minute before requesting another email.' });
+    }
+
+    const rawToken = user.createEmailVerificationToken();
+    await user.save();
+    const verifyUrl = buildVerifyUrl(req, rawToken);
+    const result = await emailService.sendVerificationEmail(user, verifyUrl);
+    if (result.dev) {
+      logger.info(`[verify] Dev-mode verification link for ${user.email}: ${verifyUrl}`);
+    }
+
+    res.json({
+      success: true,
+      message: result.dev
+        ? 'Verification email generated. SMTP is not configured, so check the server logs for the link.'
+        : 'Verification email sent. Please check your inbox.',
+      // Only expose the link directly in non-production dev mode for convenience.
+      devUrl: (process.env.NODE_ENV !== 'production' && result.dev) ? verifyUrl : undefined
+    });
+  } catch (error) {
+    logger.error('Resend verification error:', error);
+    res.status(500).json({ success: false, message: 'Error sending verification email' });
   }
 });
 

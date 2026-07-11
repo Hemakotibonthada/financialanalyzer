@@ -117,7 +117,9 @@ const debtSchema = new mongoose.Schema({
   },
   collateral: {
     hasCollateral: Boolean,
-    type: String,
+    // Wrapped so Mongoose treats `collateral` as a nested object, not a String path
+    // (a bare `type: String` key makes Mongoose interpret the whole object as its type).
+    type: { type: String },
     description: String,
     value: Number,
     ltv: Number // Loan to Value ratio
@@ -128,7 +130,8 @@ const debtSchema = new mongoose.Schema({
     contact: String
   }],
   documents: [{
-    type: String,
+    // Wrapped for the same reason as `collateral.type` above.
+    type: { type: String },
     name: String,
     url: String,
     uploadDate: Date

@@ -255,12 +255,18 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="mt-5 sm:mt-6 text-center">
+          <div className="mt-5 sm:mt-6 text-center space-y-2">
             <p className={`text-xs sm:text-sm ${dk ? 'text-slate-400' : 'text-slate-500'}`}>
               Already have an account?{' '}
               <Link to="/login" className={`${dk ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'} font-medium`}>
                 Sign in
               </Link>
+            </p>
+            <p className={`text-[11px] ${dk ? 'text-slate-500' : 'text-slate-400'}`}>
+              By creating an account you agree to our{' '}
+              <Link to="/terms" className="hover:underline">Terms</Link>
+              {' '}and{' '}
+              <Link to="/privacy" className="hover:underline">Privacy Policy</Link>.
             </p>
           </div>
         </div>

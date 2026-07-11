@@ -87,6 +87,12 @@ connectDB().then(() => {
 
 const app = express();
 
+// Behind a reverse proxy (Caddy/nginx) in production, trust the first proxy hop
+// so req.protocol/secure and client IPs (rate limiting) reflect the real request.
+if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
 // Security: Helmet middleware for security headers
 app.use(helmet({
   contentSecurityPolicy: {

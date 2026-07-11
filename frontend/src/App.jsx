@@ -86,6 +86,9 @@ const DebtManagementDashboard = lazy(() => import('./pages/DebtManagementDashboa
 const DebtSpiralMonitor = lazy(() => import('./pages/DebtSpiralMonitor'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const Billing = lazy(() => import('./pages/Billing'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 const PortfolioAnalyticsDashboard = lazy(() => import('./pages/PortfolioAnalyticsDashboard'));
 const CompanyExpensesDashboard = lazy(() => import('./pages/CompanyExpensesDashboard'));
 const Documents = lazy(() => import('./pages/Documents'));
@@ -311,6 +314,9 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               
               {/* ========== CORE DASHBOARD ========== */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

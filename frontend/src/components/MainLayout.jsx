@@ -38,6 +38,7 @@ import Sidebar from './Sidebar';
 import ThemeToggle from './ThemeToggle';
 import ThemePicker from './ThemePicker';
 import NotificationBell from './NotificationBell';
+import EmailVerificationBanner from './EmailVerificationBanner';
 import api from '../services/api';
 import { useWebSocket } from '../context/WebSocketContext';
 
@@ -571,6 +572,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
           isCollapsed ? 'lg:ml-20' : 'lg:ml-72'
         }`}>
           <div className="px-4 sm:px-6 lg:px-8 py-6">
+            <EmailVerificationBanner />
             {children}
           </div>
         </main>
