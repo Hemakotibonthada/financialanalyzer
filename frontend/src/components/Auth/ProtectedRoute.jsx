@@ -2,6 +2,14 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+/**
+ * Route guard.
+ *
+ * `requiredRole` accepts either a single role string or an array of roles, in
+ * which case the user needs any one of them. Legacy Guard needs the array form
+ * because its consoles are shared by support, estate_officer, compliance and
+ * admin.
+ */
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { isAuthenticated, loading, user } = useAuth();
 
@@ -19,8 +27,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
 
   // Role-based access control
-  if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to="/dashboard" replace />;
+  if (requiredRole) {
+    const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!allowed.includes(user?.role)) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;

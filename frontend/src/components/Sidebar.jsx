@@ -320,6 +320,14 @@ const Sidebar = () => {
   const advancedItems = [
     { label: 'Lender Dashboard', icon: DollarSign, path: '/lender-dashboard', color: 'green', roles: ['lender', 'admin'] },
     { label: 'Admin Panel', icon: Shield, path: '/admin', color: 'red', roles: ['admin'] },
+    // Legacy Guard — dormancy triage is open to all support staff, estate
+    // settlement only to officers who can move money.
+    { label: 'My Nominees', icon: Users, path: '/nominees', color: 'purple' },
+    { label: 'Dormancy Queue', icon: Clock, path: '/legacy/dormancy', color: 'orange', roles: ['support', 'estate_officer', 'compliance', 'admin'] },
+    { label: 'Estate Claims', icon: FileText, path: '/legacy/claims', color: 'indigo', roles: ['estate_officer', 'compliance', 'admin'] },
+    { label: 'Settlements', icon: DollarSign, path: '/legacy/settlement', color: 'teal', roles: ['estate_officer', 'compliance', 'admin'] },
+    { label: 'Legacy Analytics', icon: Activity, path: '/legacy/analytics', color: 'blue', roles: ['compliance', 'admin'] },
+    { label: 'Legacy Policy', icon: Settings, path: '/legacy/policy', color: 'gray', roles: ['admin'] },
   ];
 
   const isActive = (path) => location.pathname === path;

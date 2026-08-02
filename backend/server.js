@@ -479,6 +479,21 @@ app.use('/api/borrowing-intelligence', require('./routes/borrowingIntelligenceRo
 // Local AI Engine — chat, categorization, alerts (works offline, Ollama optional)
 app.use('/api/local-ai', require('./routes/localAIRoutes'));
 
+// ---------------------------------------------------------------------------
+// Legacy Guard — dormancy detection, welfare outreach, estate settlement.
+// Support-facing routes gate on SUPPORT_ROLES inside each router. The nominee
+// portal deliberately does NOT use `authenticate`: nominees have no platform
+// account and are authenticated by a single-purpose signed token instead.
+// See docs/features/legacy-guard.md
+// ---------------------------------------------------------------------------
+app.use('/api/nominees', require('./routes/nomineeRoutes'));
+app.use('/api/legacy/dormancy', require('./routes/dormancyRoutes'));
+app.use('/api/legacy/estate', require('./routes/estateCaseRoutes'));
+app.use('/api/legacy/claims', require('./routes/recoveryClaimRoutes'));
+app.use('/api/legacy/settlement', require('./routes/settlementRoutes'));
+app.use('/api/legacy/admin', require('./routes/legacyAdminRoutes'));
+app.use('/api/nominee-portal', require('./routes/nomineePortalRoutes'));
+
 // Enterprise Health & Admin Analytics
 app.get('/api/enterprise-health', healthCheckHandler);
 app.get('/api/admin/system-analytics', adminAnalyticsHandler);
@@ -584,6 +599,16 @@ mongoose.connection.once('open', () => {
   if (selfTrainingScheduler) {
     selfTrainingScheduler.start();
     logger.info('🤖 AI Self-Training Scheduler: Active');
+  }
+
+  // Legacy Guard — daily dormancy scan, hourly escalation ladder, SLA sweep.
+  // Wrapped so a scheduler fault can never prevent the API from serving.
+  try {
+    const legacyScheduler = require('./services/legacy/legacyScheduler');
+    legacyScheduler.start();
+    logger.info('🛡️ Legacy Guard Scheduler: Active');
+  } catch (err) {
+    logger.warn('Legacy Guard scheduler not started:', err.message);
   }
 
   // Auto-train AI Intelligence Pipeline for all active users

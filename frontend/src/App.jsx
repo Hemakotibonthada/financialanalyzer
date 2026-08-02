@@ -62,6 +62,20 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const TransactionSearch = lazy(() => import('./components/TransactionSearch'));
 const CSVImportExport = lazy(() => import('./components/CSVImportExport'));
 const LenderDashboard = lazy(() => import('./pages/LenderDashboardEnhanced'));
+
+// ========== LEGACY GUARD ==========
+// Dormancy detection, welfare outreach and estate settlement.
+// See docs/features/legacy-guard.md
+const NomineeManagement = lazy(() => import('./pages/legacy/NomineeManagement'));
+const NomineePortal = lazy(() => import('./pages/legacy/NomineePortal'));
+const LegacyDormancyQueue = lazy(() => import('./pages/legacy/LegacyDormancyQueue'));
+const LegacyCaseDetail = lazy(() => import('./pages/legacy/LegacyCaseDetail'));
+const LegacyEstateWorkbench = lazy(() => import('./pages/legacy/LegacyEstateWorkbench'));
+const LegacyAssetRegistry = lazy(() => import('./pages/legacy/LegacyAssetRegistry'));
+const LegacyClaimTracker = lazy(() => import('./pages/legacy/LegacyClaimTracker'));
+const LegacySettlementConsole = lazy(() => import('./pages/legacy/LegacySettlementConsole'));
+const LegacyAnalytics = lazy(() => import('./pages/legacy/LegacyAnalytics'));
+const LegacyPolicySettings = lazy(() => import('./pages/legacy/LegacyPolicySettings'));
 const InvestmentPortfolio = lazy(() => import('./pages/InvestmentPortfolio'));
 const FinancialGoals = lazy(() => import('./pages/FinancialGoals'));
 const NetWorthTracker = lazy(() => import('./pages/NetWorthTracker'));
@@ -277,6 +291,11 @@ const LoadingFallback = () => (
   </Box>
 );
 
+// Legacy Guard console access. Dormancy triage is open to all support staff,
+// but estate settlement is restricted to officers who can move money.
+const SUPPORT_ROLES = ['support', 'estate_officer', 'compliance', 'admin'];
+const ESTATE_ROLES = ['estate_officer', 'compliance', 'admin'];
+
 function App() {
   // Initialize storage on app startup
   useEffect(() => {
@@ -317,6 +336,9 @@ function App() {
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              {/* Nominee portal: the nominee has no account and is authenticated
+                  by a single-purpose signed token carried in the query string. */}
+              <Route path="/nominee-portal" element={<NomineePortal />} />
               
               {/* ========== CORE DASHBOARD ========== */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -524,6 +546,24 @@ function App() {
               <Route path="/subscription-manager" element={<ProtectedRoute><SubscriptionManagerPage /></ProtectedRoute>} />
               <Route path="/goal-tax-optimizer" element={<ProtectedRoute><GoalAndTaxPage /></ProtectedRoute>} />
               <Route path="/financial-wellness-ai" element={<ProtectedRoute><FinancialWellnessPage /></ProtectedRoute>} />
+
+              {/* ========== LEGACY GUARD ========== */}
+              {/* End user: manage who inherits and how the estate is found */}
+              <Route path="/nominees" element={<ProtectedRoute><NomineeManagement /></ProtectedRoute>} />
+
+              {/* Support console: dormancy triage and welfare outreach */}
+              <Route path="/legacy/dormancy" element={<ProtectedRoute requiredRole={SUPPORT_ROLES}><LegacyDormancyQueue /></ProtectedRoute>} />
+              <Route path="/legacy/dormancy/:id" element={<ProtectedRoute requiredRole={SUPPORT_ROLES}><LegacyCaseDetail /></ProtectedRoute>} />
+
+              {/* Estate settlement: restricted to officers, not general support */}
+              <Route path="/legacy/estate/:id" element={<ProtectedRoute requiredRole={ESTATE_ROLES}><LegacyEstateWorkbench /></ProtectedRoute>} />
+              <Route path="/legacy/estate/:id/assets" element={<ProtectedRoute requiredRole={ESTATE_ROLES}><LegacyAssetRegistry /></ProtectedRoute>} />
+              <Route path="/legacy/claims" element={<ProtectedRoute requiredRole={ESTATE_ROLES}><LegacyClaimTracker /></ProtectedRoute>} />
+              <Route path="/legacy/settlement" element={<ProtectedRoute requiredRole={ESTATE_ROLES}><LegacySettlementConsole /></ProtectedRoute>} />
+
+              {/* Admin only: policy thresholds drive who gets escalated */}
+              <Route path="/legacy/analytics" element={<ProtectedRoute requiredRole={['admin', 'compliance']}><LegacyAnalytics /></ProtectedRoute>} />
+              <Route path="/legacy/policy" element={<ProtectedRoute requiredRole="admin"><LegacyPolicySettings /></ProtectedRoute>} />
 
               {/* ========== 404 CATCH-ALL ========== */}
               <Route path="*" element={<NotFound />} />
