@@ -82,7 +82,7 @@ service cloud.firestore {
     }
     
     // EMIs - user-scoped
-    match /emis/{emiId} {
+    match /emi/{emiId} {
       allow read: if isAuthenticated() && 
                      (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && 
@@ -118,7 +118,7 @@ service cloud.firestore {
     }
     
     // Bill Reminders - user-scoped
-    match /bill-reminders/{reminderId} {
+    match /billReminders/{reminderId} {
       allow read: if isAuthenticated() && 
                      (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && 
@@ -154,7 +154,7 @@ service cloud.firestore {
     }
     
     // Company Expenses - user-scoped with company sharing
-    match /company-expenses/{expenseId} {
+    match /companyExpenses/{expenseId} {
       allow read: if isAuthenticated() && 
                      (resource.data.userId == request.auth.uid || 
                       resource.data.companyId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companies ||

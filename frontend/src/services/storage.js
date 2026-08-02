@@ -115,9 +115,12 @@ export function getUserId() {
 
 // Generic API wrapper
 class StorageService {
-  constructor(endpoint) {
+  constructor(endpoint, collectionName) {
     this.endpoint = endpoint;
-    this.collectionName = endpoint.replace('/api/', '');
+    // Firestore paths must not begin with '/', and the REST path does not always
+    // match the Firestore collection (e.g. '/bill-reminders' -> 'billReminders'),
+    // so allow an explicit override.
+    this.collectionName = collectionName || endpoint.replace(/^\/(api\/)?/, '');
   }
 
   // GET all items
@@ -237,8 +240,8 @@ export const budgetsService = new StorageService('/budgets');
 export const goalsService = new StorageService('/goals');
 export const loansService = new StorageService('/loans');
 export const lendersService = new StorageService('/lenders');
-export const emissService = new StorageService('/emis');
-export const billRemindersService = new StorageService('/bill-reminders');
+export const emissService = new StorageService('/emis', 'emi');
+export const billRemindersService = new StorageService('/bill-reminders', 'billReminders');
 
 export default {
   initializeStorage,

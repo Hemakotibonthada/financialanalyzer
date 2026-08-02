@@ -9,8 +9,25 @@ try {
   console.warn('MongoDB User model not available, using Firebase Auth only');
 }
 
+// Never fall back to a hardcoded signing key: a known secret lets anyone forge
+// tokens for any account.
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    const error = new Error('JWT_SECRET is not configured');
+    error.name = 'ConfigurationError';
+    throw error;
+  }
+  return secret;
+};
+
 const authenticateToken = async (req, res, next) => {
   try {
+    // Allow a route to re-declare auth without paying for a second verification.
+    if (req.user) {
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -46,8 +63,12 @@ const authenticateToken = async (req, res, next) => {
       
       next();
     } catch (firebaseError) {
+      if (firebaseError.name === 'ConfigurationError') {
+        throw firebaseError;
+      }
+
       // Fallback to JWT verification
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+      const decoded = jwt.verify(token, getJwtSecret());
       
       if (User) {
         const user = await User.findById(decoded.id || decoded.uid).select('-password');
@@ -65,6 +86,14 @@ const authenticateToken = async (req, res, next) => {
       next();
     }
   } catch (error) {
+    if (error.name === 'ConfigurationError') {
+      console.error('Auth configuration error:', error.message);
+      return res.status(503).json({
+        success: false,
+        message: 'Authentication is not configured on this server'
+      });
+    }
+
     console.error('Auth error:', error);
     
     if (error.name === 'JsonWebTokenError') {
@@ -110,7 +139,7 @@ const optionalAuth = async (req, res, next) => {
           }
         }
       } catch (firebaseError) {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+        const decoded = jwt.verify(token, getJwtSecret());
         if (User) {
           const user = await User.findById(decoded.id || decoded.uid).select('-password');
           if (user && user.isActive) {

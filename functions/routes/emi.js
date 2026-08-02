@@ -1021,7 +1021,7 @@ router.post('/:id/mark-paid', authenticateToken, async (req, res) => {
     const emiId = req.params.id;
     const { paidDate, paidAmount, notes } = req.body;
     
-    const docRef = db.collection('emis').doc(emiId);
+    const docRef = db.collection('emi').doc(emiId);
     const doc = await docRef.get();
     
     if (!doc.exists || doc.data().userId !== userId) {
@@ -1099,7 +1099,7 @@ router.get('/export/csv', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.uid;
     
-    const snapshot = await db.collection('emis')
+    const snapshot = await db.collection('emi')
       .where('userId', '==', userId)
       .get();
     

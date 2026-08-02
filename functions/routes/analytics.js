@@ -939,7 +939,7 @@ router.get('/advanced/complete-dashboard', authenticateToken, async (req, res) =
       db.collection('incomes').where('userId', '==', userId).get(),
       db.collection('budgets').where('userId', '==', userId).get(),
       db.collection('goals').where('userId', '==', userId).get(),
-      db.collection('emis').where('userId', '==', userId).get(),
+      db.collection('emi').where('userId', '==', userId).get(),
       db.collection('lenders').where('userId', '==', userId).get()
     ]);
 

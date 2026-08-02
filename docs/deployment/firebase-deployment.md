@@ -202,10 +202,22 @@ const firebaseConfig = {
 
 ### 3. Set Environment Variables (Cloud Functions)
 
+The functions read configuration from `process.env`, which is populated from
+`functions/.env` at deploy time. Copy the template and fill it in:
+
 ```powershell
-firebase functions:config:set jwt.secret="your-super-secret-jwt-key"
-firebase functions:config:set app.url="https://finserveassist.web.app"
+Copy-Item functions/.env.example functions/.env
 ```
+
+Two values are **required** — the API fails closed without them:
+
+| Variable | Purpose | Where to get it |
+|---|---|---|
+| `JWT_SECRET` | Signs the JWTs the API issues. Without it, `/auth/login` returns 503 and every protected route returns 401. | `openssl rand -hex 32` |
+| `FIREBASE_API_KEY` | Verifies email/password logins via the Identity Toolkit REST API. The Admin SDK cannot check passwords, so login returns 503 without it. | Firebase Console → Project settings → General → Web API Key |
+
+> ⚠️ `firebase functions:config:set` populates `functions.config()`, **not**
+> `process.env`, so it will not work for these variables. Use `functions/.env`.
 
 **Redeploy functions after setting config:**
 ```powershell

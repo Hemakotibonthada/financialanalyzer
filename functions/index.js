@@ -13,6 +13,8 @@ dotenv.config();
 // Initialize Firebase Admin
 admin.initializeApp();
 
+const { authenticateToken } = require('./middleware/auth');
+
 // Set region to Asia South 1 (Mumbai)
 const functionsRegion = functions.region('asia-south1');
 
@@ -118,9 +120,26 @@ const searchRoutes = requireIfExists('./routes/search');
 const healthRoutes = requireIfExists('./routes/health');
 const twoFactorAuthRoutes = requireIfExists('./routes/twoFactorAuth');
 const dataManagementRoutes = requireIfExists('./routes/dataManagement');
+const publicRoutes = requireIfExists('./routes/public');
+
+// ---------------------------------------------------------------------------
+// Public routes - no authentication required
+// ---------------------------------------------------------------------------
+app.use('/auth', authRoutes);
+app.use('/public', publicRoutes);
+app.use('/health-check', healthRoutes);
+
+// ---------------------------------------------------------------------------
+// Authentication gate
+//
+// Every route mounted below this line requires a valid token. These handlers
+// talk to Firestore through the Admin SDK, which bypasses Firestore security
+// rules entirely, so this middleware is the only thing standing between a
+// caller and other users' data. Mount new protected routes below, not above.
+// ---------------------------------------------------------------------------
+app.use(authenticateToken);
 
 // API Routes - no /api prefix since the function URL already includes it
-app.use('/auth', authRoutes);
 app.use('/2fa', twoFactorAuthRoutes);
 app.use('/profile', profileRoutes);
 app.use('/analytics', analyticsRoutes);
@@ -178,12 +197,7 @@ app.use('/admin', adminRoutes);
 app.use('/activity-logs', activityLogRoutes);
 app.use('/cache', cacheRoutes);
 app.use('/search', searchRoutes);
-app.use('/health-check', healthRoutes);
 app.use('/data-management', dataManagementRoutes);
-
-// Public routes (no auth required)
-const publicRoutes = requireIfExists('./routes/public');
-app.use('/public', publicRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -226,7 +240,7 @@ exports.processBillReminders = functionsRegion.pubsub
       const db = admin.firestore();
       const now = new Date();
       
-      const remindersSnapshot = await db.collection('bill-reminders')
+      const remindersSnapshot = await db.collection('billReminders')
         .where('dueDate', '<=', new Date(now.getTime() + 24 * 60 * 60 * 1000))
         .where('dueDate', '>=', now)
         .where('status', '==', 'active')
@@ -266,37 +280,57 @@ exports.onUserCreate = functionsRegion.auth.user().onCreate(async (user) => {
   }
 });
 
+// Collections holding user-scoped documents, keyed by a `userId` field.
+// Keep this in sync with the collections written by routes/ - anything missing
+// here survives account deletion.
+const USER_DATA_COLLECTIONS = [
+  'activityLogs', 'bankAccounts', 'bankTransactions', 'billReminders', 'bonds',
+  'budgets', 'cibilHistory', 'companyExpenses', 'creditCards', 'debts',
+  'documents', 'emi', 'etfs', 'expenses', 'expenseTemplates',
+  'goal-contributions', 'goals', 'incomes', 'insurance', 'investments',
+  'lenderLoans', 'lenderPayments', 'lenders', 'loans', 'loansGiven',
+  'loginHistory', 'mutualFunds', 'netWorthHistory', 'notifications',
+  'personalLoans', 'realEstate', 'recurring', 'reports', 'retirementPlans',
+  'savings', 'securityEvents', 'securitySettings', 'stocks', 'subscriptions',
+  'taxDeductions', 'taxRecords', 'transactions', 'twoFactorAuth'
+];
+
+// Firestore caps a batch at 500 operations, so commit in chunks.
+const FIRESTORE_BATCH_LIMIT = 400;
+
+const deleteRefsInChunks = async (db, refs) => {
+  for (let i = 0; i < refs.length; i += FIRESTORE_BATCH_LIMIT) {
+    const batch = db.batch();
+    refs.slice(i, i + FIRESTORE_BATCH_LIMIT).forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
+};
+
 // Cloud Function for user deletion
 exports.onUserDelete = functionsRegion.auth.user().onDelete(async (user) => {
   const db = admin.firestore();
   
   try {
-    // Delete from Firestore
-    const batch = db.batch();
-    
-    const collections = [
-      'expenses', 'incomes', 'budgets', 'goals', 
-      'emis', 'lenders', 'loans', 'bill-reminders', 'reports',
-      'documents', 'transactions', 'notifications'
-    ];
-    
-    for (const collectionName of collections) {
+    const refs = [];
+
+    for (const collectionName of USER_DATA_COLLECTIONS) {
       const snapshot = await db.collection(collectionName)
         .where('userId', '==', user.uid)
         .get();
       
       snapshot.forEach(doc => {
-        batch.delete(doc.ref);
+        refs.push(doc.ref);
       });
     }
     
-    // Delete user profile
-    batch.delete(db.collection('users').doc(user.uid));
+    // Delete user profile last, so a partial failure leaves the account
+    // discoverable for a retry rather than orphaning its data silently.
+    await deleteRefsInChunks(db, refs);
+    await db.collection('users').doc(user.uid).delete();
     
-    await batch.commit();
-    
-    console.log(`User data deleted for: ${user.uid}`);
+    console.log(`User data deleted for ${user.uid}: ${refs.length} documents across ${USER_DATA_COLLECTIONS.length} collections`);
   } catch (error) {
-    console.error('Error deleting user data:', error);
+    console.error(`Error deleting user data for ${user.uid}:`, error);
+    throw error;
   }
 });

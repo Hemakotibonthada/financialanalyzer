@@ -2,14 +2,18 @@ const express = require('express');
 const router = express.Router();
 const cacheService = require('../services/cacheService');
 const { CacheHelpers } = require('../middleware/cacheMiddleware');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 const { query, body, validationResult } = require('express-validator');
+
+// Every cache endpoint requires a valid session.
+router.use(authenticate);
 
 /**
  * @route   GET /api/cache/stats
  * @desc    Get cache statistics
- * @access  Private
+ * @access  Private (Admin only)
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireAdmin, async (req, res) => {
   try {
     const stats = await cacheService.getStats();
 
@@ -29,9 +33,9 @@ router.get('/stats', async (req, res) => {
 /**
  * @route   GET /api/cache/get/:key
  * @desc    Get cached value by key
- * @access  Private
+ * @access  Private (Admin only - raw keys span all users)
  */
-router.get('/get/:key', async (req, res) => {
+router.get('/get/:key', requireAdmin, async (req, res) => {
   try {
     const { key } = req.params;
     const value = await cacheService.get(key);
@@ -62,10 +66,11 @@ router.get('/get/:key', async (req, res) => {
 /**
  * @route   POST /api/cache/set
  * @desc    Set cache value
- * @access  Private
+ * @access  Private (Admin only - raw keys span all users)
  */
 router.post(
   '/set',
+  requireAdmin,
   [
     body('key').notEmpty().withMessage('Key is required'),
     body('value').exists().withMessage('Value is required'),
@@ -98,9 +103,9 @@ router.post(
 /**
  * @route   DELETE /api/cache/delete/:key
  * @desc    Delete cache key
- * @access  Private
+ * @access  Private (Admin only - raw keys span all users)
  */
-router.delete('/delete/:key', async (req, res) => {
+router.delete('/delete/:key', requireAdmin, async (req, res) => {
   try {
     const { key } = req.params;
     await cacheService.del(key);
@@ -121,9 +126,9 @@ router.delete('/delete/:key', async (req, res) => {
 /**
  * @route   DELETE /api/cache/pattern/:pattern
  * @desc    Delete cache keys matching pattern
- * @access  Private
+ * @access  Private (Admin only - patterns span all users)
  */
-router.delete('/pattern/:pattern', async (req, res) => {
+router.delete('/pattern/:pattern', requireAdmin, async (req, res) => {
   try {
     const { pattern } = req.params;
     const count = await cacheService.delPattern(pattern);
@@ -149,7 +154,7 @@ router.delete('/pattern/:pattern', async (req, res) => {
  * @desc    Clear all cache
  * @access  Private (Admin only)
  */
-router.post('/clear', async (req, res) => {
+router.post('/clear', requireAdmin, async (req, res) => {
   try {
     await cacheService.clear();
 
