@@ -1,13 +1,30 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 
-const { SUPPORT_ROLES } = require('../constants/legacyConstants');
+const { ALL_USER_ROLES } = require('../constants/legacyConstants');
 
-function computeHash(sequence, estateCaseId, action, after, previousHash, occurredAt) {
+/**
+ * Hash over the chain key rather than the estate case id.
+ *
+ * Not every audited action belongs to an estate case: a user edits their
+ * nominees long before anyone dies, and dormancy outreach happens before an
+ * estate case exists. Chaining on a general scope key lets those events form
+ * their own tamper-evident sequence instead of being rejected outright.
+ */
+function computeHash(sequence, chainKey, action, after, previousHash, occurredAt) {
   return crypto
     .createHash('sha256')
-    .update(`${sequence}${estateCaseId}${action}${JSON.stringify(after)}${previousHash}${occurredAt}`)
+    .update(`${sequence}${chainKey}${action}${JSON.stringify(after)}${previousHash}${occurredAt}`)
     .digest('hex');
+}
+
+/** Events chain per subject: estate case, else dormancy case, else user. */
+function resolveChainKey(payload) {
+  const key = payload.estateCaseId || payload.dormancyCaseId || payload.userId;
+  if (!key) {
+    throw new Error('EstateAuditEvent requires one of estateCaseId, dormancyCaseId or userId');
+  }
+  return String(key);
 }
 
 const estateAuditEventSchema = new mongoose.Schema({
@@ -20,6 +37,12 @@ const estateAuditEventSchema = new mongoose.Schema({
   estateCaseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'EstateCase',
+    index: true
+  },
+  // Scope this event chains within. Equals estateCaseId when the event belongs
+  // to an estate case, so existing estate chains are unaffected.
+  chainKey: {
+    type: String,
     required: true,
     index: true
   },
@@ -41,9 +64,10 @@ const estateAuditEventSchema = new mongoose.Schema({
     index: true
   },
   actorRole: {
+    // Includes 'user': people audit-log their own nominee changes.
     type: String,
-    enum: SUPPORT_ROLES,
-    required: true,
+    enum: ALL_USER_ROLES,
+    default: 'user',
     index: true
   },
   action: {
@@ -99,7 +123,11 @@ const estateAuditEventSchema = new mongoose.Schema({
 });
 
 estateAuditEventSchema.index({ userId: 1, occurredAt: -1 });
-estateAuditEventSchema.index({ estateCaseId: 1, sequence: 1 }, { unique: true });
+// Sequence is unique per chain, not per estate case: events without an estate
+// case (nominee edits, dormancy outreach) all carry estateCaseId = null and
+// would otherwise collide with each other at sequence 1.
+estateAuditEventSchema.index({ chainKey: 1, sequence: 1 }, { unique: true });
+estateAuditEventSchema.index({ chainKey: 1, occurredAt: -1 });
 estateAuditEventSchema.index({ estateCaseId: 1, occurredAt: -1 });
 estateAuditEventSchema.index({ actorId: 1, occurredAt: -1 });
 estateAuditEventSchema.index({ entityType: 1, entityId: 1 });
@@ -131,15 +159,16 @@ estateAuditEventSchema.statics.computeHash = computeHash;
 
 estateAuditEventSchema.statics.record = async function(payload) {
   let lastError;
+  const chainKey = resolveChainKey(payload);
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const previous = await this.findOne({ estateCaseId: payload.estateCaseId }).sort({ sequence: -1 }).lean();
+    const previous = await this.findOne({ chainKey }).sort({ sequence: -1 }).lean();
     const sequence = previous ? previous.sequence + 1 : 1;
     const previousHash = previous ? previous.hash : 'GENESIS';
     const occurredAt = payload.occurredAt || new Date();
     const hash = computeHash(
       sequence,
-      payload.estateCaseId,
+      chainKey,
       payload.action,
       payload.after,
       previousHash,
@@ -149,6 +178,7 @@ estateAuditEventSchema.statics.record = async function(payload) {
     try {
       return await this.create({
         ...payload,
+        chainKey,
         sequence,
         previousHash,
         hash,
@@ -164,14 +194,19 @@ estateAuditEventSchema.statics.record = async function(payload) {
   throw lastError || new Error('Unable to append estate audit event after 5 attempts');
 };
 
-estateAuditEventSchema.statics.verifyChain = async function(estateCaseId) {
-  const events = await this.find({ estateCaseId }).sort({ sequence: 1 }).lean();
+/**
+ * Recompute every hash in a chain to detect tampering.
+ * Accepts an estate case id, dormancy case id or user id.
+ */
+estateAuditEventSchema.statics.verifyChain = async function(scopeId) {
+  const chainKey = String(scopeId);
+  const events = await this.find({ chainKey }).sort({ sequence: 1 }).lean();
   let previousHash = 'GENESIS';
 
   for (const event of events) {
     const expectedHash = computeHash(
       event.sequence,
-      event.estateCaseId,
+      event.chainKey,
       event.action,
       event.after,
       previousHash,
@@ -196,8 +231,8 @@ estateAuditEventSchema.statics.verifyChain = async function(estateCaseId) {
   };
 };
 
-estateAuditEventSchema.statics.getTrail = function(estateCaseId) {
-  return this.find({ estateCaseId }).sort({ sequence: 1 });
+estateAuditEventSchema.statics.getTrail = function(scopeId) {
+  return this.find({ chainKey: String(scopeId) }).sort({ sequence: 1 });
 };
 
 module.exports = mongoose.model('EstateAuditEvent', estateAuditEventSchema);

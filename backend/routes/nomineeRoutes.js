@@ -8,7 +8,6 @@ const router = express.Router();
 const { body, param, query, validationResult } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const nomineeService = require('../services/legacy/nomineeService');
-const estateAuditService = require('../services/legacy/estateAuditService');
 const Nominee = require('../models/Nominee');
 const logger = require('../utils/logger');
 const { RELATIONSHIP, NOMINEE_STATUS, ID_PROOF_TYPE, maskValue } = require('../constants/legacyConstants');
@@ -27,18 +26,9 @@ const pagination = (req) => {
   return { page, limit, skip: (page - 1) * limit };
 };
 
-const audit = (req, action, entityId, after, reason) => estateAuditService.record({
-  userId: req.user._id,
-  actorId: req.user._id,
-  actorRole: req.user.role,
-  action,
-  entityType: 'Nominee',
-  entityId,
-  after,
-  reason,
-  ipAddress: req.ip,
-  userAgent: req.get('user-agent')
-});
+// Auditing lives in nomineeService, which is the single place every caller
+// (routes, schedulers, other services) goes through. Auditing here as well
+// produced two identical audit events per write.
 
 const maskNominee = (nominee) => {
   if (!nominee) return nominee;
@@ -171,7 +161,6 @@ router.get('/:id', [param('id').isMongoId(), validate], async (req, res) => {
 router.post('/', nomineeValidators, validate, async (req, res) => {
   try {
     const nominee = await nomineeService.create(req.user._id, req.body, req.user);
-    await audit(req, 'nominee_created', nominee?._id, maskNominee(nominee), 'User created nominee');
     res.status(201).json({ success: true, message: 'Nominee created successfully', data: nominee });
   } catch (error) {
     logger.error('Create nominee error:', error);
@@ -189,7 +178,6 @@ router.put('/:id', [param('id').isMongoId(), ...nomineeValidators], validate, as
     const existing = await Nominee.findOne({ _id: req.params.id, userId: req.user._id }).select('_id');
     if (!existing) return res.status(404).json({ success: false, message: 'Nominee not found' });
     const nominee = await nomineeService.update(req.params.id, req.user._id, req.body, req.user);
-    await audit(req, 'nominee_updated', req.params.id, maskNominee(nominee), 'User updated nominee');
     res.json({ success: true, message: 'Nominee updated successfully', data: nominee });
   } catch (error) {
     logger.error('Update nominee error:', error);
@@ -214,7 +202,6 @@ router.patch('/rebalance', [
       return res.status(403).json({ success: false, message: 'Cannot rebalance nominees owned by another user' });
     }
     const result = await nomineeService.rebalanceShares(req.user._id, req.body.shares);
-    await audit(req, 'nominee_shares_rebalanced', null, { shares: req.body.shares }, 'User rebalanced nominee shares');
     res.json({ success: true, message: 'Nominee shares rebalanced successfully', data: result });
   } catch (error) {
     logger.error('Rebalance nominee shares error:', error);
@@ -232,7 +219,6 @@ router.delete('/:id', [param('id').isMongoId(), validate], async (req, res) => {
     const existing = await Nominee.findOne({ _id: req.params.id, userId: req.user._id }).select('_id');
     if (!existing) return res.status(404).json({ success: false, message: 'Nominee not found' });
     await nomineeService.remove(req.params.id, req.user._id, req.user);
-    await audit(req, 'nominee_removed', req.params.id, { status: 'inactive' }, 'User removed nominee');
     res.json({ success: true, message: 'Nominee removed successfully' });
   } catch (error) {
     logger.error('Remove nominee error:', error);

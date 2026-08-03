@@ -7,6 +7,8 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "db:local": "node scripts/start-local-db.js",
+    "db:cloud": "node scripts/setup-cloud-db.js",
+    "db:verify": "node scripts/setup-cloud-db.js --verify-only",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

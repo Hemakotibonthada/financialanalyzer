@@ -157,6 +157,67 @@ describe('Legacy Guard - audit trail integrity', () => {
     expect(result.valid).toBe(false);
     expect(result.brokenAtSequence).toBe(2);
   });
+
+  it('audits an action that has no estate case at all', async () => {
+    // Regression guard: a user edits their nominees long before anyone dies, so
+    // estateCaseId is genuinely absent and actorRole is the ordinary 'user'.
+    // Requiring either of those broke every nominee write with a 500.
+    const userId = oid();
+
+    const event = await EstateAuditEvent.record({
+      userId,
+      actorId: userId,
+      actorRole: 'user',
+      action: 'nominee_created',
+      entityType: 'Nominee',
+      entityId: oid(),
+      after: { fullName: 'Test Nominee' }
+    });
+
+    expect(event.sequence).toBe(1);
+    expect(event.previousHash).toBe('GENESIS');
+    expect(event.chainKey).toBe(String(userId));
+    expect(event.estateCaseId).toBeUndefined();
+  });
+
+  it('chains user-scoped events independently of estate chains', async () => {
+    const userA = oid();
+    const userB = oid();
+
+    const mk = (userId, action) => EstateAuditEvent.record({
+      userId,
+      actorId: userId,
+      actorRole: 'user',
+      action,
+      entityType: 'Nominee',
+      after: { action }
+    });
+
+    await mk(userA, 'nominee_created');
+    await mk(userA, 'nominee_updated');
+    await mk(userB, 'nominee_created');
+
+    const a = await EstateAuditEvent.verifyChain(userA);
+    const b = await EstateAuditEvent.verifyChain(userB);
+
+    expect(a.valid).toBe(true);
+    expect(a.totalEvents).toBe(2);
+    // userB's chain must restart at its own genesis, not continue userA's.
+    expect(b.valid).toBe(true);
+    expect(b.totalEvents).toBe(1);
+  });
+
+  it('refuses an event with no scope to chain against', async () => {
+    await expect(
+      EstateAuditEvent.record({
+        actorId: oid(),
+        actorRole: 'support',
+        action: 'orphan_event',
+        entityType: 'Nothing',
+        after: {}
+      })
+    ).rejects.toThrow(/estateCaseId, dormancyCaseId or userId/i);
+  });
 });
 
 describe('Legacy Guard - success fee', () => {
