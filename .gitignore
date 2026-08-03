@@ -13,6 +13,10 @@ desktop/dist/
 *.env
 backend/.env
 frontend/.env
+# Vercel CLI link + pulled env. .vercel/.env.production.local holds real values.
+# Relying on frontend/.gitignore alone is fragile - it was itself untracked.
+.vercel
+**/.vercel
 # Timestamped .env backups written by scripts/setup-cloud-db.js — these contain
 # live database credentials and must never be committed.
 .env.backup-*

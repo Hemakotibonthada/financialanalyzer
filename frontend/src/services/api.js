@@ -1,9 +1,11 @@
 import axios from 'axios';
 
 // Compute API URL dynamically:
-// - If VITE_API_URL is provided (override), use it.
-// - Otherwise construct from the current hostname so mobile devices
-//   that load the frontend from the laptop's IP will call the laptop backend.
+// - An explicit VITE_API_URL override always wins.
+// - On HTTPS we fall back to a same-origin /api, because any HTTPS host
+//   (Vercel, Caddy, nginx) is expected to proxy /api to the backend.
+// - On plain HTTP we construct from the current hostname so a phone on the LAN
+//   calls the laptop's backend rather than its own localhost.
 const computeApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
 
@@ -12,22 +14,28 @@ const computeApiUrl = () => {
     return envUrl;
   }
 
-  // Check if deployed on Firebase Hosting
   if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
+    const { hostname, protocol } = window.location;
+
     // Firebase Hosting detection
     if (hostname.includes('firebaseapp.com') || hostname.includes('web.app')) {
       // Use Cloud Functions API URL for Mumbai region
       return 'https://asia-south1-finserveassist.cloudfunctions.net/api';
     }
-    
-    // If VITE_API_URL points to localhost (common dev default), prefer using
-    // the host serving the frontend when available (so mobile devices call
-    // the laptop backend IP), otherwise fall back to the env value.
-    const pageHost = hostname || 'localhost';
-    if (pageHost && !/localhost|127\.0\.0\.1/.test(pageHost)) {
-      return `http://${pageHost}:5001/api`;
+
+    // Never build an http:// URL for a page served over https: the browser
+    // blocks it as mixed content and every request fails silently. Previously
+    // this produced things like http://my-app.vercel.app:5001/api. Same-origin
+    // /api works wherever a proxy or rewrite is in place, and deployments that
+    // host the API elsewhere should set VITE_API_URL.
+    if (protocol === 'https:') {
+      return '/api';
+    }
+
+    // Plain HTTP (local dev): prefer the host serving the frontend when it is
+    // not localhost, so devices on the LAN reach the developer's machine.
+    if (hostname && !/localhost|127\.0\.0\.1/.test(hostname)) {
+      return `http://${hostname}:5001/api`;
     }
   }
 

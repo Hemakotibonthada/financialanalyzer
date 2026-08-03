@@ -152,3 +152,52 @@ docker compose -p finanalyzer-fin --env-file .env.fin -f docker-compose.prod.yml
 2. Oracle Security List / VCN allows ingress TCP 80 and 443?
 3. `docker logs circuvent-edge` — certificate errors show here.
 4. `docker network inspect circuvent_edge` — both environments attached?
+
+---
+
+## Vercel (frontend previews)
+
+The frontend is also linked to a Vercel project. Vercel is used for **preview
+deployments** — every branch and pull request gets its own URL — while the VM
+above remains the source of truth for the real domains.
+
+Vercel cannot host the backend: Express, MongoDB, Redis and Socket.IO need a
+persistent process, and serverless functions cannot hold a WebSocket open.
+
+### Connecting Git
+
+In the Vercel dashboard for the project:
+
+1. **Settings → Git → Connect Git Repository** → pick this repo.
+2. **Settings → General → Root Directory** → `frontend`
+   (the app is not at the repo root; `frontend/vercel.json` supplies the rest).
+3. **Settings → Git → Production Branch** → `main`.
+
+Every other branch then produces a preview deployment automatically, and pull
+requests get a comment with the URL.
+
+### Environment variables
+
+`Settings → Environment Variables`. The only one that matters for the API:
+
+| Variable | Scope | Value |
+|---|---|---|
+| `VITE_API_URL` | Production | `https://<your-api-host>/api` |
+| `VITE_API_URL` | Preview | `https://dev.circuvent.com/api` |
+
+Without it the app falls back to a **same-origin `/api`**, which only works if
+something on that origin proxies to the backend. Vercel has no backend, so set
+this or previews will load the UI and fail every request.
+
+> The backend must allow the Vercel origin in `CORS_ORIGIN`, otherwise the
+> browser blocks the cross-origin calls. Add the preview domain(s) alongside the
+> main domain when you decide how previews should reach the API.
+
+### Why `frontend/vercel.json` exists
+
+- **SPA rewrites.** Without them every deep link (`/legacy/dormancy/123`) returns
+  404 on refresh, because no such file exists in `dist`. The rewrite excludes
+  `/api/*` so a future proxy rewrite is not swallowed.
+- **Cache headers.** Hashed assets are immutable for a year; `index.html` must
+  revalidate every time or users get a stale shell pointing at deleted bundles.
+- Build settings are pinned so the dashboard and the repo cannot drift.
