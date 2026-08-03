@@ -1,112 +1,154 @@
-# Deploying FinancialAnalyzer to `finserve.circuvent.com`
+# Deploying FinancialAnalyzer
 
-A single-VM, fully-Dockerized production deploy with automatic HTTPS.
-Target: **Oracle Cloud Always-Free ARM VM** (₹0/month), but any Ubuntu 22.04+ server works.
+Two environments run on one VM behind a single Caddy edge proxy:
 
-**Stack:** Caddy (TLS + routing) → nginx (SPA) + Node/Express API + MongoDB + Redis, all in Docker Compose.
+| Environment | URL | Branch | Deployed by |
+|---|---|---|---|
+| Production | https://fin.circuvent.com | `main` | GitHub Actions (`.github/workflows/deploy.yml`) |
+| Staging | https://dev.circuvent.com | `dev` | GitHub Actions |
+
+Caddy owns `:80`/`:443` and routes by hostname. Each environment is otherwise
+completely isolated: its own containers, MongoDB, Redis, volumes and secrets.
+Deploying one never touches the other, and staging cannot read production data.
+
+```
+                    ┌──────────────────────────┐
+   :80/:443  ───────▶  Caddy (circuvent-edge)  │
+                    └───────────┬──────────────┘
+                                │  circuvent_edge network
+                 ┌──────────────┴───────────────┐
+                 ▼                              ▼
+       fin-web / fin-api               dev-web / dev-api
+       + mongo + redis                 + mongo + redis
+       (project finanalyzer-fin)       (project finanalyzer-dev)
+```
 
 ---
 
-## What you do vs. what's automated
+## What you need to do once
 
-| Step | Who |
-|------|-----|
-| Create the Oracle VM + open ports in the cloud firewall | **You** (one-time, clicks) |
-| Point DNS `finserve` → server IP | **You** (or `godaddy-dns.sh`) |
-| Install Docker, generate secrets, build & run everything, get HTTPS | **Automated** (`deploy.sh`) |
-| Redeploy after code changes | `git pull && sudo bash deploy/deploy.sh` |
+| Task | Who |
+|---|---|
+| Create the VM (Oracle Cloud Always-Free ARM works) | **You** |
+| Allow ingress TCP 80 + 443 in the Oracle Security List / VCN | **You** |
+| Point DNS `fin` **and** `dev` → server IP | **You** (or `godaddy-dns.sh`) |
+| Install Docker, firewall, TLS, build, run | `deploy.sh` |
+
+### 1. DNS
+
+Both subdomains must resolve to the same server IP.
+
+In `circuvent.com → DNS → Records → Add`:
+- Type **A**, Name **fin**, Value **<server public IP>**, TTL 600
+- Type **A**, Name **dev**, Value **<server public IP>**, TTL 600
+
+Or via the API helper:
+
+```bash
+GODADDY_KEY=xxx GODADDY_SECRET=yyy bash deploy/godaddy-dns.sh circuvent.com fin
+GODADDY_KEY=xxx GODADDY_SECRET=yyy bash deploy/godaddy-dns.sh circuvent.com dev
+```
+
+Verify: `dig +short fin.circuvent.com` and `dig +short dev.circuvent.com` should
+both return your IP.
+
+### 2. First deploy
+
+SSH to the server, clone the repo, then:
+
+```bash
+# Production (also starts the shared edge proxy on first run)
+sudo ACME_EMAIL=you@example.com bash deploy/deploy.sh fin
+
+# Staging
+sudo ACME_EMAIL=you@example.com bash deploy/deploy.sh dev
+```
+
+`ACME_EMAIL` is only needed the first time — it is stored in `.env.edge`.
+
+First build takes ~5–8 min per environment. The first HTTPS request may take
+another 30–60s while Caddy obtains a Let's Encrypt certificate.
 
 ---
 
-## 1. Create the server (Oracle Cloud — free)
+## Continuous delivery
 
-1. Sign up at <https://www.oracle.com/cloud/free/> (needs a card for identity; the *Always Free* resources are not charged).
-2. **Compute → Instances → Create instance**:
-   - **Image:** Canonical Ubuntu 22.04
-   - **Shape:** *Ampere* → `VM.Standard.A1.Flex`, set **2 OCPU / 12 GB** (within Always-Free).
-   - **SSH keys:** upload your public key (or let it generate one — download it).
-   - Create. Note the **Public IP address**.
-   > If Oracle says "out of capacity" for ARM, try a different Availability Domain or region, or retry later — this is common on the free tier.
-3. **Open the cloud firewall** (this is separate from the host firewall):
-   - Networking → your VCN → Security Lists → default → **Add Ingress Rules**:
-     - Source `0.0.0.0/0`, TCP, dest port **80**
-     - Source `0.0.0.0/0`, TCP, dest port **443**
+After the first manual deploy, pushes deploy themselves:
 
-## 2. Point the subdomain at the server
+- push to `main` → https://fin.circuvent.com
+- push to `dev` → https://dev.circuvent.com
 
-**Option A — GoDaddy dashboard (manual, always works):**
-`circuvent.com → DNS → Records → Add`:
-- Type **A**, Name **finserve**, Value **<your server public IP>**, TTL 600.
+The workflow re-runs backend tests and the frontend build **before** deploying,
+then polls `/api/health` for up to 5 minutes and fails the run if the site does
+not come back.
 
-**Option B — automated** (from your laptop or the server; needs a GoDaddy API key from <https://developer.godaddy.com/keys>):
-```bash
-GODADDY_KEY=xxx GODADDY_SECRET=yyy bash deploy/godaddy-dns.sh circuvent.com finserve <PUBLIC_IP>
-```
+### Required repository secrets
 
-Verify: `dig +short finserve.circuvent.com` should return your IP.
+`Settings → Secrets and variables → Actions`:
 
-## 3. Deploy
+| Secret | Value |
+|---|---|
+| `DEPLOY_HOST` | server public IP or hostname |
+| `DEPLOY_USER` | SSH user, e.g. `ubuntu` |
+| `DEPLOY_SSH_KEY` | private key for that user (the whole PEM, including header/footer lines) |
+| `ACME_EMAIL` | e-mail for Let's Encrypt |
 
-SSH into the server, get the code, and run the one-shot script:
+Optional: `DEPLOY_PORT` (defaults to 22), `DEPLOY_PATH` (defaults to
+`~/FinancialAnalyzer`).
 
-```bash
-ssh -i <your-key> ubuntu@<PUBLIC_IP>
-
-# Get the code (private repo → use a GitHub Personal Access Token as the password)
-sudo apt-get update -y && sudo apt-get install -y git
-git clone https://github.com/Hemakotibonthada/financialanalyzer.git
-cd financialanalyzer
-git checkout feature/production-deploy   # branch that contains these deploy files
-
-# Deploy (installs Docker, generates secrets, builds, starts, gets HTTPS)
-sudo DOMAIN=finserve.circuvent.com ACME_EMAIL=hemakotibonthada@gmail.com bash deploy/deploy.sh
-```
-
-First build takes ~5–8 min. When done, open **https://finserve.circuvent.com**
-(give Caddy ~30–60s on the very first request to issue the certificate).
-
-## 4. Create your admin account
-
-Register normally at `https://finserve.circuvent.com/register`, then promote yourself:
-
-```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml exec mongo \
-  mongosh -u root -p "$(grep MONGO_ROOT_PASSWORD .env.prod | cut -d= -f2)" --authenticationDatabase admin \
-  financial_analyzer --eval 'db.users.updateOne({email:"you@example.com"},{$set:{role:"admin"}})'
-```
-Admins get every feature unlocked (no subscription needed for you).
+You can also deploy manually from the Actions tab via **Run workflow** and pick
+the environment.
 
 ---
 
-## Day-2 operations
+## Day-to-day
 
 ```bash
-# Redeploy latest code
-git pull && sudo bash deploy/deploy.sh
+# Redeploy after a git pull
+sudo bash deploy/deploy.sh fin
 
 # Logs
-docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f api
-docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f caddy
+docker logs -f circuvent-edge                                   # proxy / TLS
+docker compose -p finanalyzer-fin --env-file .env.fin \
+  -f docker-compose.prod.yml logs -f api                        # production API
+docker compose -p finanalyzer-dev --env-file .env.dev \
+  -f docker-compose.prod.yml logs -f api                        # staging API
 
-# Restart / stop
-docker compose --env-file .env.prod -f docker-compose.prod.yml restart
-docker compose --env-file .env.prod -f docker-compose.prod.yml down
-
-# Back up the database
-docker compose --env-file .env.prod -f docker-compose.prod.yml exec mongo \
-  sh -c 'mongodump -u root -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --archive' > backup-$(date +%F).archive
+# Status
+docker compose -p finanalyzer-fin --env-file .env.fin -f docker-compose.prod.yml ps
 ```
 
-## Turning on the paid / email features (optional, later)
+### Promoting a user to admin
 
-Edit `.env.prod`, fill the OPTIONAL block, then `sudo bash deploy/deploy.sh` to apply:
-- **Email verification & alerts:** set `EMAIL_HOST/PORT/USER/PASSWORD/FROM` (any SMTP; e.g. a Gmail App Password).
-- **Real subscriptions:** set `RAZORPAY_KEY_ID/SECRET/WEBHOOK_SECRET` (live keys). Add a webhook in Razorpay → `https://finserve.circuvent.com/api/billing/webhook`.
-- **Error tracking:** set `SENTRY_DSN`.
+Register normally at `https://fin.circuvent.com/register`, then:
 
-Secrets live only in `.env.prod` on the server (git-ignored, `chmod 600`). Never commit it.
+```bash
+docker compose -p finanalyzer-fin --env-file .env.fin -f docker-compose.prod.yml \
+  exec mongo mongosh -u root -p "$(grep MONGO_ROOT_PASSWORD .env.fin | cut -d= -f2)" \
+  --authenticationDatabase admin financial_analyzer \
+  --eval 'db.users.updateOne({email:"you@example.com"},{$set:{role:"admin"}})'
+```
 
-## Security notes
-- MongoDB and Redis are **not** exposed to the internet — only reachable on the internal Docker network. Only Caddy (80/443) is public.
-- The API runs as a non-root user; env validation hard-fails on missing/insecure secrets in production.
-- Rotate secrets by editing `.env.prod` and redeploying (note: changing `ENCRYPTION_KEY` makes previously-encrypted fields unreadable).
+---
+
+## Notes
+
+- **Secrets are per-environment.** `.env.fin` and `.env.dev` hold different JWT,
+  encryption, session and Mongo credentials, so a leaked staging key grants
+  nothing in production. Both are gitignored and generated once, then preserved
+  across redeploys.
+- **Certificates survive redeploys.** Caddy's data lives in the external volume
+  `circuvent_caddy_data`, outside the app stacks, so tearing an environment down
+  does not discard certificates or risk Let's Encrypt rate limits.
+- **Staging is not indexed.** Caddy sends `X-Robots-Tag: noindex, nofollow` and
+  serves a disallow-all `robots.txt` on `dev.circuvent.com`, so it never
+  competes with production in search results.
+- **Real subscriptions:** set `RAZORPAY_KEY_ID/SECRET/WEBHOOK_SECRET` (live keys)
+  in `.env.fin` and redeploy. Leave blank in staging so it stays in dev mode.
+
+## If it does not load
+
+1. `dig +short fin.circuvent.com` returns your server IP?
+2. Oracle Security List / VCN allows ingress TCP 80 and 443?
+3. `docker logs circuvent-edge` — certificate errors show here.
+4. `docker network inspect circuvent_edge` — both environments attached?

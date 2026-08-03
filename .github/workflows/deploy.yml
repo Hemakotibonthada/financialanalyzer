@@ -1,0 +1,151 @@
+name: Deploy
+
+# Continuous delivery.
+#
+#   main  -> https://fin.circuvent.com   (production)
+#   dev   -> https://dev.circuvent.com   (staging)
+#
+# Both environments live on the same VM behind one Caddy edge proxy but are
+# otherwise isolated (separate containers, database, volumes and secrets).
+#
+# Required repository secrets:
+#   DEPLOY_HOST       public IP or hostname of the VM
+#   DEPLOY_USER       SSH user (e.g. ubuntu)
+#   DEPLOY_SSH_KEY    private key with access to that user
+#   ACME_EMAIL        e-mail for Let's Encrypt registration
+# Optional:
+#   DEPLOY_PORT       SSH port (defaults to 22)
+#   DEPLOY_PATH       checkout path on the VM (defaults to ~/FinancialAnalyzer)
+
+on:
+  push:
+    branches: [main, dev, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        required: true
+        default: dev
+        type: choice
+        options: [dev, fin]
+
+concurrency:
+  # Never let two deploys of the same environment overlap; they share a git
+  # checkout and a docker project on the VM.
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # Maps the pushed branch (or the manual choice) onto an environment, so the
+  # mapping lives in exactly one place.
+  resolve:
+    name: Resolve target
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.pick.outputs.env_name }}
+      domain: ${{ steps.pick.outputs.domain }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV_NAME="${{ inputs.environment }}"
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            ENV_NAME="fin"
+          else
+            ENV_NAME="dev"
+          fi
+
+          if [ "$ENV_NAME" = "fin" ]; then
+            DOMAIN="fin.circuvent.com"
+          else
+            DOMAIN="dev.circuvent.com"
+          fi
+
+          echo "env_name=$ENV_NAME" >> "$GITHUB_OUTPUT"
+          echo "domain=$DOMAIN" >> "$GITHUB_OUTPUT"
+          echo "Deploying '$ENV_NAME' to $DOMAIN"
+  # Re-run the checks here rather than trusting a previous run: a deploy must
+  # never ship a commit whose tests were not verified.
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Backend tests
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci-test-jwt-secret-please-change
+          ENCRYPTION_KEY: ci0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd
+        run: |
+          npm ci
+          npm test --if-present
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Frontend build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    name: Deploy ${{ needs.resolve.outputs.env_name }}
+    needs: [verify, resolve]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.resolve.outputs.env_name }}
+      url: https://${{ needs.resolve.outputs.domain }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            REPO="${{ secrets.DEPLOY_PATH || '$HOME/FinancialAnalyzer' }}"
+            BRANCH="${{ github.ref_name }}"
+            ENV_NAME="${{ needs.resolve.outputs.env_name }}"
+
+            if [ ! -d "$REPO/.git" ]; then
+              git clone https://github.com/${{ github.repository }}.git "$REPO"
+            fi
+            cd "$REPO"
+
+            git fetch --all --prune
+            git checkout "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            sudo ACME_EMAIL='${{ secrets.ACME_EMAIL }}' bash deploy/deploy.sh "$ENV_NAME"
+
+      - name: Wait for the site to come back
+        run: |
+          DOMAIN="${{ needs.resolve.outputs.domain }}"
+          echo "Waiting for https://$DOMAIN/api/health ..."
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/api/health" || true)
+            if [ "$code" = "200" ]; then
+              echo "Healthy after ${i} attempt(s)."
+              exit 0
+            fi
+            echo "  attempt $i: HTTP $code"
+            sleep 10
+          done
+          echo "::error::$DOMAIN did not return a healthy /api/health within 5 minutes"
+          exit 1
+

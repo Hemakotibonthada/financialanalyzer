@@ -1,0 +1,55 @@
+# Edge proxy — one Caddy instance fronting every environment.
+#
+# Only one process can bind :80/:443 on the host, so Caddy is deployed once,
+# separately from the app stacks. It joins the shared `circuvent_edge` network
+# and routes by hostname to whichever environments are running:
+#
+#   fin.circuvent.com -> fin-web / fin-api
+#   dev.circuvent.com -> dev-web / dev-api
+#
+# An environment that is not deployed simply returns 502 for its hostname; the
+# other keeps serving. Bring up with:
+#
+#   docker compose --env-file .env.edge -f docker-compose.edge.yml up -d
+#
+# (deploy/deploy.sh does this for you.)
+
+services:
+  caddy:
+    # Pinned: the Caddyfile uses `{args[0]}` snippet placeholders, which require
+    # Caddy 2.7+. Floating on `2-alpine` risks a future tag changing the syntax.
+    image: caddy:2.8-alpine
+    container_name: circuvent-edge
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PROD_DOMAIN: ${PROD_DOMAIN:-fin.circuvent.com}
+      DEV_DOMAIN: ${DEV_DOMAIN:-dev.circuvent.com}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  edge:
+    name: circuvent_edge
+    external: true
+
+volumes:
+  # Kept out of the app stacks so redeploying an environment never discards
+  # issued certificates and triggers Let's Encrypt rate limits.
+  caddy_data:
+    name: circuvent_caddy_data
+  caddy_config:
+    name: circuvent_caddy_config

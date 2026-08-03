@@ -1,25 +1,21 @@
-# Production stack for finserve.circuvent.com (single VM, e.g. Oracle Cloud Always-Free ARM).
-# Caddy terminates TLS and routes: /api/* + /socket.io/* -> api, everything else -> web (SPA).
-# Bring up with:  bash deploy/deploy.sh   (which passes --env-file .env.prod)
+# Application stack for ONE environment (single VM, e.g. Oracle Cloud Always-Free ARM).
+#
+# The same file deploys both environments. ENV_NAME selects which:
+#
+#   ENV_NAME=fin  DOMAIN=fin.circuvent.com   <- main branch, production
+#   ENV_NAME=dev  DOMAIN=dev.circuvent.com   <- dev branch, staging
+#
+# Each environment is fully isolated: its own containers, its own MongoDB and
+# Redis, its own named volumes (prefixed by COMPOSE_PROJECT_NAME). Staging can
+# therefore never read or corrupt production data.
+#
+# There are deliberately no host port bindings here. TLS and routing belong to
+# the shared edge proxy in docker-compose.edge.yml, which reaches these
+# services through the `${ENV_NAME}-api` / `${ENV_NAME}-web` network aliases.
+#
+# Bring up with:  bash deploy/deploy.sh fin   (or `dev`)
 
 services:
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - web
-      - api
-
   web:
     build:
       context: ./frontend
@@ -30,6 +26,11 @@ services:
       - "80"
     depends_on:
       - api
+    networks:
+      default: {}
+      edge:
+        aliases:
+          - ${ENV_NAME}-web
 
   api:
     build: ./backend
@@ -40,6 +41,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "5001"
+      APP_ENV: ${ENV_NAME}
       MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongo:27017/financial_analyzer?authSource=admin
       REDIS_HOST: redis
       REDIS_PORT: "6379"
@@ -50,8 +52,9 @@ services:
       CLIENT_URL: https://${DOMAIN}
       CORS_ORIGIN: https://${DOMAIN}
       SECURE_COOKIES: "true"
+      TRUST_PROXY: "true"
       APP_NAME: ${APP_NAME:-Financial Analyzer}
-      # Optional integrations — safe to leave blank (features degrade gracefully)
+      # Optional integrations - safe to leave blank (features degrade gracefully)
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_USER: ${EMAIL_USER:-}
@@ -66,6 +69,11 @@ services:
     volumes:
       - api_uploads:/app/uploads
       - api_logs:/app/logs
+    networks:
+      default: {}
+      edge:
+        aliases:
+          - ${ENV_NAME}-api
 
   mongo:
     image: mongo:7
@@ -75,8 +83,10 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo_data:/data/db
+    networks:
+      - default
     healthcheck:
-      test: ["CMD", "mongosh", "-u", "root", "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "-u", "root", "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand(''ping'')"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -88,11 +98,19 @@ services:
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
     volumes:
       - redis_data:/data
+    networks:
+      - default
+
+networks:
+  # Private per-environment network: mongo and redis are unreachable from the
+  # other environment and from the edge proxy.
+  default: {}
+  edge:
+    name: circuvent_edge
+    external: true
 
 volumes:
   mongo_data:
   redis_data:
   api_uploads:
   api_logs:
-  caddy_data:
-  caddy_config:

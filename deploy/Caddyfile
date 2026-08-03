@@ -1,28 +1,68 @@
-# Caddy reverse proxy — automatic HTTPS via Let's Encrypt.
-# DOMAIN and ACME_EMAIL are injected from the environment (see docker-compose.prod.yml).
+# Caddy edge proxy - automatic HTTPS via Let's Encrypt.
+#
+# One Caddy instance fronts BOTH environments, because only one process can
+# bind :80/:443 on the host. Each environment runs its own isolated app stack
+# (separate containers, database and volumes) and is reached here through a
+# network alias on the shared `circuvent_edge` network:
+#
+#   fin.circuvent.com  ->  fin-web / fin-api    (main branch, production)
+#   dev.circuvent.com  ->  dev-web / dev-api    (dev branch, staging)
+#
+# PROD_DOMAIN, DEV_DOMAIN and ACME_EMAIL are injected from .env.edge -
+# see docker-compose.edge.yml.
 {
 	email {$ACME_EMAIL}
 }
 
-{$DOMAIN} {
+# ---------------------------------------------------------------------------
+# Shared snippet: routing and security headers for one environment.
+# Invoked with the upstream prefix, e.g. `import site fin`.
+# ---------------------------------------------------------------------------
+(site) {
 	encode zstd gzip
 
 	# API + WebSocket (socket.io) go to the Node backend
 	@backend path /api/* /socket.io/*
 	handle @backend {
-		reverse_proxy api:5001
+		reverse_proxy {args[0]}-api:5001
 	}
 
-	# Everything else is the static SPA (nginx)
+	# Everything else is the static SPA served by nginx
 	handle {
-		reverse_proxy web:80
+		reverse_proxy {args[0]}-web:80
 	}
 
-	# Sensible security headers for the whole site
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Production - deployed from `main`
+# ---------------------------------------------------------------------------
+{$PROD_DOMAIN} {
+	import site fin
+}
+
+# ---------------------------------------------------------------------------
+# Staging - deployed from `dev`
+#
+# Staging holds throwaway data and must never be indexed by search engines,
+# otherwise it competes with the production site and leaks test content into
+# results.
+# ---------------------------------------------------------------------------
+{$DEV_DOMAIN} {
+	import site dev
+
+	header {
+		X-Robots-Tag "noindex, nofollow"
+	}
+
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /" 200
 	}
 }
