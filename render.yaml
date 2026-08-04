@@ -1,0 +1,103 @@
+# Render blueprint — https://render.com/docs/blueprint-spec
+#
+# Hosts the Express API. The frontend lives on Vercel and MongoDB on Atlas, so
+# this deploys the one piece that genuinely needs a persistent process:
+# Socket.IO, the Legacy Guard schedulers, Gmail sync and file uploads all break
+# on serverless.
+#
+# Setup:
+#   1. Render dashboard → New → Blueprint → connect this repo.
+#   2. Render reads this file and creates the service.
+#   3. Fill the secrets marked `sync: false` (they are never committed).
+#
+# Free tier caveats, in order of how much they will bite:
+#   - The instance sleeps after 15 minutes with no traffic. This app takes a
+#     long time to boot (heavy require graph: sharp, googleapis, pdf and AI
+#     modules), so the first request after sleeping can take minutes. Keep it
+#     warm by pinging /api/health every ~10 minutes from an external cron.
+#   - No persistent disk: anything written to uploads/ disappears on restart.
+#     Uploaded statements are parsed into MongoDB, so the data survives, but the
+#     original files do not. Attach a paid disk if you need them.
+#   - 512 MB RAM. This is the real ceiling for this service.
+#   - Schedulers only run while the instance is awake.
+
+services:
+  - type: web
+    name: financialanalyzer-api
+    runtime: node
+    plan: free
+    region: singapore # closest free region to an India-focused user base
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render injects PORT and the app already honours it (process.env.PORT).
+
+      # ---- Secrets: set these in the Render dashboard ----
+      # MongoDB Atlas connection string, including /financial_analyzer
+      - key: MONGODB_URI
+        sync: false
+      # openssl rand -hex 32
+      - key: JWT_SECRET
+        sync: false
+      # openssl rand -hex 32. Encrypts Gmail tokens and nominee identity
+      # numbers. Changing it makes existing encrypted data unreadable.
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+
+      # ---- Front end origins ----
+      # Exact origins allowed by CORS (comma-separated).
+      - key: CORS_ORIGIN
+        value: https://financialanalyzer-web.vercel.app
+      - key: FRONTEND_URL
+        value: https://financialanalyzer-web.vercel.app
+      - key: CLIENT_URL
+        value: https://financialanalyzer-web.vercel.app
+      # Vercel preview URLs change on every deployment, so they are matched by
+      # pattern. `*` matches within one DNS label only, so this allows this
+      # project's previews without allowing every *.vercel.app site.
+      - key: CORS_ORIGIN_PATTERNS
+        value: https://financialanalyzer-web-*.vercel.app
+
+      # Render terminates TLS at its proxy; without this, rate limiting and
+      # secure cookies see the proxy address instead of the client.
+      - key: TRUST_PROXY
+        value: "true"
+      - key: SECURE_COOKIES
+        value: "true"
+
+      # ---- Optional integrations (blank = feature degrades gracefully) ----
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_REDIRECT_URI
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

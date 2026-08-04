@@ -128,6 +128,29 @@ const authLimiter = rateLimit({
 app.use(generalLimiter);
 
 // Build allowed origins list once at startup (avoid rebuilding per-request)
+const parseOriginList = (value) =>
+  (value || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+/**
+ * Convert a narrow glob into an anchored RegExp.
+ *
+ * `*` matches within a single DNS label only ([^.]*), so
+ * `financialanalyzer-web-*.vercel.app` matches this project's preview URLs but
+ * NOT `evil.vercel.app`. That distinction matters: anyone can deploy to
+ * *.vercel.app, so a bare suffix match would hand every Vercel user a
+ * credentialed cross-origin channel to this API.
+ */
+const originGlobToRegExp = (pattern) => {
+  const escaped = pattern
+    .split('*')
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('[^.]*');
+  return new RegExp(`^${escaped}$`);
+};
+
 const buildAllowedOrigins = () => {
   const frontendPorts = [3000, 3001, 3002, 3003, 3004, 3005, 5173, 5174, 5175];
   const origins = new Set();
@@ -135,7 +158,11 @@ const buildAllowedOrigins = () => {
     origins.add(`http://localhost:${port}`);
     origins.add(`http://127.0.0.1:${port}`);
   }
-  if (process.env.FRONTEND_URL) origins.add(process.env.FRONTEND_URL);
+
+  // Both accept a comma-separated list, so one deployment can serve several
+  // front ends (e.g. the custom domain plus the platform URL).
+  parseOriginList(process.env.FRONTEND_URL).forEach((o) => origins.add(o));
+  parseOriginList(process.env.CORS_ORIGIN).forEach((o) => origins.add(o));
 
   // Firebase Hosting domains
   origins.add('https://finserveassist.web.app');
@@ -155,12 +182,23 @@ const buildAllowedOrigins = () => {
 };
 const allowedOrigins = buildAllowedOrigins();
 
+// Opt-in patterns for platform preview URLs, which get a new hostname on every
+// deployment and so cannot be listed exactly. Example:
+//   CORS_ORIGIN_PATTERNS=https://financialanalyzer-web-*.vercel.app
+// Empty by default: no pattern matching happens unless it is configured.
+const allowedOriginPatterns = parseOriginList(process.env.CORS_ORIGIN_PATTERNS).map(originGlobToRegExp);
+
+const isOriginAllowed = (origin) => {
+  if (allowedOrigins.has(origin)) return true;
+  return allowedOriginPatterns.some((re) => re.test(origin));
+};
+
 // Middleware - CORS Configuration (FIXED: removed origin.includes('localhost') bypass)
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.has(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       logger.warn(`CORS blocked origin: ${origin}`);
