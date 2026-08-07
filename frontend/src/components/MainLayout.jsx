@@ -112,7 +112,7 @@ const MainLayout = ({ children, title, subtitle, headerActions }) => {
     if (!expenseForm.description.trim() || !expenseForm.amount) return;
     setExpenseSaving(true);
     try {
-      await api.post('/api/transactions', {
+      await api.post('/transactions', {
         ...expenseForm,
         amount: parseFloat(expenseForm.amount),
       });

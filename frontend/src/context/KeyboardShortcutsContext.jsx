@@ -14,9 +14,9 @@ export const SHORTCUTS = {
   // Navigation
   DASHBOARD: { key: 'ctrl+shift+d', description: 'Go to Dashboard', action: 'navigate', path: '/dashboard' },
   TRANSACTIONS: { key: 'ctrl+shift+t', description: 'Go to Transactions', action: 'navigate', path: '/transactions' },
-  ANALYTICS: { key: 'ctrl+shift+a', description: 'Go to Analytics', action: 'navigate', path: '/analytics' },
+  ANALYTICS: { key: 'ctrl+shift+a', description: 'Go to Analytics', action: 'navigate', path: '/advanced-analytics' },
   PROFILE: { key: 'ctrl+shift+p', description: 'Go to Profile', action: 'navigate', path: '/profile' },
-  EMI: { key: 'ctrl+shift+e', description: 'Go to EMI Tracker', action: 'navigate', path: '/emi' },
+  EMI: { key: 'ctrl+shift+e', description: 'Go to EMI Tracker', action: 'navigate', path: '/emi-tracker' },
   
   // Actions
   NEW_TRANSACTION: { key: 'ctrl+n', description: 'Add New Transaction', action: 'modal', modal: 'addTransaction' },

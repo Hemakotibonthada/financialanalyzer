@@ -73,16 +73,15 @@ function getLocalAIEngine() {
 //  Middleware — Auth
 // ──────────────────────────────────────────────────────────────────────────
 
-let authMiddleware;
-try {
-  const auth = require('../middleware/auth');
-  authMiddleware = auth.authenticate || auth;
-} catch {
-  // Fallback: pass through
-  authMiddleware = (req, res, next) => next();
-}
+// Auth is required, not optional. Previously this was wrapped in a try/catch
+// that fell back to `(req, res, next) => next()` - a pass-through. If the
+// require ever failed (a typo, a circular import, a missing dependency) every
+// endpoint below would have silently served unauthenticated traffic with no
+// error and no log. Failing to load auth must crash the process at boot
+// instead.
+const { authenticate } = require('../middleware/auth');
 
-router.use(authMiddleware);
+router.use(authenticate);
 
 // ──────────────────────────────────────────────────────────────────────────
 //  GET  /dashboard — Full dashboard data

@@ -5,7 +5,14 @@ const path = require('path');
 const fs = require('fs');
 const CSVService = require('../services/csvService');
 const Transaction = require('../models/Transaction');
+const { authenticate } = require('../middleware/auth');
 const { body, query, validationResult } = require('express-validator');
+
+// Every endpoint here is documented `@access Private` but none of them applied
+// auth. The multer filename below also dereferences req.user.id, so an
+// anonymous upload threw a TypeError inside the file handler rather than being
+// rejected cleanly.
+router.use(authenticate);
 
 // Configure multer for CSV uploads
 const storage = multer.diskStorage({

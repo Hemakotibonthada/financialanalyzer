@@ -16,14 +16,12 @@ try { riskAssessmentService = require('../services/enterpriseRiskAssessment').ri
 try { taxEngine = require('../services/enterpriseTaxEngine').taxEngine; } catch (e) { console.warn('[Enterprise Routes] Tax engine not available:', e.message); }
 try { reportGenerator = require('../services/enterpriseReportGenerator').reportGenerator; } catch (e) { console.warn('[Enterprise Routes] Report generator not available:', e.message); }
 
-// ── Auth middleware (try multiple paths) ──
-let auth;
-try { auth = require('../middleware/auth'); } catch (e) {
-  try { auth = require('../middleware/authMiddleware'); } catch (e2) {
-    auth = (req, res, next) => next(); // fallback for dev
-  }
-}
-const authMiddleware = auth.protect || auth.authenticate || auth.verifyToken || auth;
+// ── Auth middleware ──
+// Auth is required, not optional. Previously this fell back to
+// `(req, res, next) => next()` when the require failed, which would have
+// silently exposed all 19 endpoints below - including the prediction engine -
+// to unauthenticated callers. A missing auth module must crash at boot.
+const { authenticate: authMiddleware } = require('../middleware/auth');
 
 // ============================================================================
 // §1  PREDICTION ENDPOINTS

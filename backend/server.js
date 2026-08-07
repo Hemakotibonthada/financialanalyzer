@@ -194,7 +194,7 @@ const isOriginAllowed = (origin) => {
 };
 
 // Middleware - CORS Configuration (FIXED: removed origin.includes('localhost') bypass)
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
@@ -210,10 +210,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   maxAge: 600
-}));
+};
 
-// Handle preflight requests explicitly
-app.options('*', cors());
+app.use(cors(corsOptions));
+
+// Preflight uses the SAME allowlist. A bare cors() here would default to
+// origin '*', which contradicts the allowlist above - preflight would approve
+// an origin the actual request then rejects.
+app.options('*', cors(corsOptions));
 
 // Body parsing with size limits to prevent DoS via large payloads
 app.use(express.json({

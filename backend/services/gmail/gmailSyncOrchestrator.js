@@ -715,7 +715,7 @@ class GmailSyncOrchestrator extends EventEmitter {
         const { EmailTransactionExtractor } = require('./emailTransactionExtractor');
         const extractor = new EmailTransactionExtractor();
         for (const email of emailsWithAttachments) {
-          const txns = extractor.extractFromEmail(email);
+          const txns = await extractor.extractFromEmail(email);
           extractedTransactions.push(...txns);
           tracker.incrementTransactions(txns.length);
         }
