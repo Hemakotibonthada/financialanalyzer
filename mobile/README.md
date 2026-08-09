@@ -1,409 +1,156 @@
-# Financial Analyzer - Mobile App
+# Financial Analyzer — Mobile
 
-<div align="center">
+Expo (SDK 54) React Native app for **iOS and Android** from one codebase.
 
-![React Native](https://img.shields.io/badge/React_Native-0.73-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-green.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+## Why Expo
 
-**Complete Mobile Application for Financial Management**
+The previous `mobile/` was bare React Native with **no `android/` or `ios/` folders at
+all**, so it could not build for either platform.
 
-Track EMIs • Manage Bills • Monitor Investments • Achieve Goals
+Expo was chosen for one decisive reason: **the development machine is Windows with no
+Xcode**, and bare React Native cannot produce an iOS build there. EAS Build compiles iOS
+on hosted macOS workers, so both platforms ship from this machine.
 
-</div>
+The old code is preserved at `mobile/_legacy_bare_rn/` for reference.
 
----
-
-## 📱 Overview
-
-Financial Analyzer Mobile is a comprehensive React Native application that brings powerful financial management tools to your smartphone. Seamlessly track your expenses, manage EMIs, set financial goals, and monitor investments - all from your mobile device.
+Targets **iOS 15.1+** and **Android 7.0+ (API 24)**.
 
 ---
 
-## ✨ Features
-
-### 🔐 Authentication
-- Secure login with JWT tokens
-- User registration
-- Token-based session management
-- Biometric authentication ready
-
-### 📊 Dashboard
-- Financial overview at a glance
-- Total balance display
-- Income vs. Expense tracking
-- Quick action shortcuts
-- Recent transactions list
-
-### 💳 EMI Tracker
-- Track all loan EMIs
-- Payment progress visualization
-- Due date reminders
-- Status filtering (Active/Completed)
-- Detailed EMI information
-
-### 🔔 Bill Reminders
-- Categorized bill management (11+ categories)
-- Beautiful gradient-based cards
-- Approval workflow for auto-payments
-- Due date tracking
-- Overdue alerts
-- Recurring bill support
-
-### 📈 Investments
-- Portfolio value tracking
-- Gain/Loss calculations
-- Multiple investment types
-  - Stocks
-  - Mutual Funds
-  - Fixed Deposits
-  - Gold
-- Real-time performance metrics
-
-### 👤 Profile
-- User information management
-- Settings & preferences
-- Notification controls
-- Currency settings
-- Data export
-- Logout functionality
-
----
-
-## 🏗️ Tech Stack
-
-### Core
-- **React Native**: 0.73.2
-- **React**: 18.2.0
-- **React Navigation**: 6.x
-- **React Native Paper**: 5.12.3
-
-### State Management
-- **React Context API**
-- **AsyncStorage** for persistence
-
-### Networking
-- **Axios** for API calls
-- **Socket.io** for real-time updates
-
-### UI Components
-- **React Native Vector Icons**: Material Community Icons
-- **React Native Linear Gradient**: Beautiful gradients
-- **React Native Chart Kit**: Data visualization
-- **React Native SVG**: Custom graphics
-
-### Utilities
-- **date-fns**: Date formatting
-- **lodash**: Utility functions
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js (v18+)
-- React Native CLI
-- Android Studio (for Android)
-- Xcode (for iOS, macOS only)
-
-### Installation
+## Running it
 
 ```bash
-# Navigate to mobile directory
 cd mobile
-
-# Install dependencies
 npm install
-
-# iOS only: Install pods
-cd ios && pod install && cd ..
-
-# Start Metro Bundler
-npm start
-
-# Run on Android
-npm run android
-
-# Run on iOS
-npm run ios
+npm start           # then scan the QR code with Expo Go
 ```
 
-### Configuration
+Point it at a backend by setting the API URL — resolution order:
 
-Update API URL in `src/services/api.js`:
+1. `EXPO_PUBLIC_API_URL` (set per build profile in `eas.json`)
+2. `extra.apiUrl` in `app.json`
+3. Platform dev fallback (`10.0.2.2:5001` on Android emulators, `localhost:5001` on iOS)
 
-```javascript
-// For Android Emulator
-const API_URL = 'http://10.0.2.2:5001/api';
+> The base URL already ends in `/api`, so endpoint paths must not repeat it. Requesting
+> `/api/transactions` produces `/api/api/transactions` — that exact bug shipped in the
+> web app.
 
-// For iOS Simulator
-const API_URL = 'http://localhost:5001/api';
+### Local backend from a real device
 
-// For Physical Device (use your computer's IP)
-const API_URL = 'http://192.168.x.x:5001/api';
-```
-
----
-
-## 📁 Project Structure
-
-```
-mobile/
-├── src/
-│   ├── App.js                 # Main app component
-│   ├── theme.js              # App theme configuration
-│   ├── context/
-│   │   └── AuthContext.js    # Authentication context
-│   ├── navigation/
-│   │   └── BottomTabNavigator.js
-│   ├── screens/
-│   │   ├── Auth/
-│   │   │   ├── LoginScreen.js
-│   │   │   └── RegisterScreen.js
-│   │   ├── Dashboard/
-│   │   │   └── DashboardScreen.js
-│   │   ├── EMI/
-│   │   │   └── EMITrackerScreen.js
-│   │   ├── BillReminders/
-│   │   │   └── BillRemindersScreen.js
-│   │   ├── Investments/
-│   │   │   └── InvestmentsScreen.js
-│   │   └── Profile/
-│   │       └── ProfileScreen.js
-│   └── services/
-│       └── api.js            # API service layer
-├── android/                  # Android native code
-├── ios/                      # iOS native code
-├── package.json
-├── babel.config.js
-├── metro.config.js
-└── MOBILE_SETUP_GUIDE.md
-```
-
----
-
-## 🎨 UI/UX Highlights
-
-### Design System
-- **Colors**: Consistent indigo/purple primary palette
-- **Typography**: System fonts with proper hierarchy
-- **Spacing**: 4px base unit grid
-- **Shadows**: Elevation-based shadow system
-- **Animations**: Smooth transitions throughout
-
-### Screen Designs
-
-#### Dashboard
-- Financial overview card with gradient
-- Quick stats in grid layout
-- Recent activity list
-- Action buttons for common tasks
-
-#### EMI Tracker
-- Header with total monthly EMI
-- Filter chips for status
-- Progress bars showing completion
-- Card-based EMI list
-
-#### Bill Reminders
-- Category-specific gradient cards
-- Dashboard stats at top
-- Filter by status
-- Beautiful icon system
-
-#### Investments
-- Portfolio summary with gain/loss
-- Type-based filtering
-- Card layout with performance metrics
-- Color-coded profit/loss indicators
-
----
-
-## 🔧 API Integration
-
-### Endpoints Used
-
-- **Auth**: `/api/auth/login`, `/api/auth/register`, `/api/auth/me`
-- **Dashboard**: `/api/dashboard`
-- **EMIs**: `/api/emis`
-- **Bills**: `/api/bill-reminders`, `/api/bill-reminders/dashboard`
-- **Investments**: `/api/investments`, `/api/investments/dashboard`
-- **Profile**: `/api/profile`
-- **Transactions**: `/api/transactions`
-- **Notifications**: `/api/notifications`
-
-### Authentication Flow
-
-1. User enters credentials
-2. API returns JWT token + user data
-3. Token stored in AsyncStorage
-4. Token attached to all subsequent requests
-5. Auto-logout on token expiration
-
----
-
-## 📲 Platform-Specific Notes
-
-### Android
-- Minimum SDK: 23 (Android 6.0)
-- Target SDK: 34 (Android 14)
-- Permissions required:
-  - Internet
-  - Network State
-  - Biometric (optional)
-
-### iOS
-- Minimum iOS: 13.0
-- Permissions required in Info.plist:
-  - Network access
-  - Face ID (optional)
-  - Camera (for document scanning)
-
----
-
-## 🧪 Testing
-
-### Manual Testing
-```bash
-# Run app on Android emulator
-npm run android
-
-# Run app on iOS simulator
-npm run ios
-
-# Run on specific iOS device
-npx react-native run-ios --simulator="iPhone 15"
-```
-
-### Debug Menu
-- **Android**: Shake device or `Ctrl+M` (Windows) / `Cmd+M` (Mac)
-- **iOS**: Shake device or `Cmd+D`
-
----
-
-## 📦 Building for Production
-
-### Android APK
+An Android emulator reaches the host through `10.0.2.2`. A physical phone needs your
+machine's LAN address:
 
 ```bash
-cd android
-./gradlew assembleRelease
+EXPO_PUBLIC_API_URL=http://192.168.1.x:5001/api npm start
 ```
-
-Output: `android/app/build/outputs/apk/release/app-release.apk`
-
-### iOS IPA
-
-1. Open `ios/FinancialAnalyzer.xcworkspace` in Xcode
-2. Select **Product** → **Archive**
-3. Distribute to App Store or export IPA
 
 ---
 
-## 🐛 Troubleshooting
+## Building
 
-### Metro Bundler Issues
 ```bash
-npx react-native start --reset-cache
+npm run build:android    # APK, internal distribution
+npm run build:ios        # IPA via EAS (macOS workers, no Mac needed locally)
+npm run build:all        # production, both platforms
 ```
 
-### Android Build Issues
+First run of any EAS command prompts for login and writes a real `projectId` into
+`app.json`. The committed placeholder must be replaced before a build succeeds.
+
+An App Store build additionally needs an Apple Developer account; Play needs a Play
+Console account. Neither is required for `preview` builds installed directly.
+
+---
+
+## Structure
+
+```
+src/
+  api/          client.js (axios, refresh, offline cache), endpoints.js (all calls)
+  contexts/     Auth, Theme, Network
+  hooks/        useApi, useMutation
+  navigation/   RootNavigator (auth gate), TabNavigator (5 tabs, per-tab stacks)
+  theme/        tokens.js — the only place a colour is defined
+  components/   ui/ (15 primitives), charts/ (3 wrappers)
+  screens/      auth, dashboard, transactions, emi, budgets, bills,
+                loans, investments, goals, legacy, insights, profile
+  utils/        format, storage, biometrics, notifications
+```
+
+### Navigation
+
+Five bottom tabs, each owning a native stack so back behaviour is per-tab:
+
+| Tab | Root | Also reachable |
+|---|---|---|
+| Home | Dashboard | Insights |
+| Money | Transactions | Transaction form, Budgets, Bills |
+| Debt | EMIs | EMI detail/form, Money lent, Money borrowed |
+| Wealth | Investments | Net worth, Goals |
+| Profile | Profile | Settings, Security, Nominees |
+
+---
+
+## Conventions
+
+- **No fabricated data.** A screen with nothing to show renders an empty state. It never
+  invents numbers to fill a chart. The web app had this problem; it is not repeated here.
+- **Four states everywhere**: loading skeleton, empty, error with retry, content.
+- **Currency only through `formatMoney` / `formatCompact`** — INR, `en-IN` grouping, so
+  ₹1,50,000 renders as `₹1.5L` rather than the misleading `₹150K`.
+- **Colours only from `useTheme()`.** No raw hex in a screen; that is what makes dark mode
+  work without auditing every file.
+- **Tokens in SecureStore** (Keychain / Keystore), never AsyncStorage — AsyncStorage is
+  unencrypted plain files. Cached API payloads may go there; credentials may not.
+- **Accessibility**: every touchable carries `accessibilityLabel` and `accessibilityRole`,
+  minimum 44×44 target.
+- Permissions are requested **at the point of use**, never on first launch.
+
+---
+
+## Native capabilities
+
+| Capability | Package | Notes |
+|---|---|---|
+| Biometric unlock | `expo-local-authentication` | Opt-in. The toggle is disabled with an explanation when no hardware is present or nothing is enrolled, rather than offering a control that cannot work. Labelled "Face ID" or "Fingerprint" per device. |
+| Local reminders | `expo-notifications` | Bill and EMI due dates. Android channel `reminders`. Permission requested when the user first enables a reminder. |
+| Receipt capture | `expo-image-picker` | Camera or library → `POST /receipts/scan` to prefill a transaction. |
+| Secure storage | `expo-secure-store` | Access and refresh tokens. |
+| Offline | `@react-native-community/netinfo` | Banner while offline; cached GETs are served and labelled with their age rather than passed off as live. |
+
+---
+
+## Verifying a change
+
 ```bash
-cd android && ./gradlew clean && cd ..
-npm run android
+npx expo-doctor                       # dependency and config health
+npx expo export --platform android    # proves it bundles
+npx expo export --platform ios
 ```
 
-### iOS Pod Issues
-```bash
-cd ios && pod deintegrate && pod install && cd ..
-```
+Both exports must succeed. Bundling is the only real proof — a file can pass a syntax
+check and still fail to resolve a module at runtime.
 
-### Network Errors
-- Verify backend is running on port 5001
-- Check API_URL matches your network setup
-- Disable any VPN or proxy
-- Ensure firewall allows connections
+### Two failures worth remembering
 
----
+**`babel-preset-expo` must match the SDK.** Installing it with plain `npm install` pulled
+`57.x` against SDK 54, and Hermes then rejected React Native's own private class fields
+(`#registry`, `#length`) with *"private properties are not supported"* — after bundling
+1,592 modules successfully, so the error looked like application code. `npx expo install`
+picks the matched version (`54.0.12`).
 
-## 🔜 Roadmap
-
-### Phase 1 (Current)
-- ✅ Core authentication
-- ✅ Dashboard overview
-- ✅ EMI tracking
-- ✅ Bill reminders
-- ✅ Investments
-- ✅ Profile management
-
-### Phase 2 (Planned)
-- [ ] Push notifications
-- [ ] Biometric authentication
-- [ ] Offline mode
-- [ ] Document scanning (OCR)
-- [ ] Advanced charts
-- [ ] Data export
-
-### Phase 3 (Future)
-- [ ] Goals management
-- [ ] Net worth tracking
-- [ ] Budget planner
-- [ ] Expense analytics
-- [ ] Multi-currency support
-- [ ] Cloud backup
+**A stale `package-lock.json`** from the old bare-RN app pinned React Navigation v6 and
+made v7 unresolvable. Deleting the lockfile fixed it.
 
 ---
 
-## 🤝 Contributing
+## Scope
 
-Contributions are welcome! Please follow these steps:
+This covers the core product: authentication, dashboard, transactions, EMIs, budgets,
+bills, lending in both directions, investments, net worth, goals, nominees, insights and
+settings.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-## 📞 Support
-
-For detailed setup instructions, see [MOBILE_SETUP_GUIDE.md](./MOBILE_SETUP_GUIDE.md)
-
-### Resources
-- [React Native Documentation](https://reactnative.dev/)
-- [React Navigation](https://reactnavigation.org/)
-- [React Native Paper](https://callstack.github.io/react-native-paper/)
-
----
-
-## 🎯 Key Stats
-
-- **Screens**: 10+ fully functional screens
-- **Components**: 50+ reusable components
-- **API Endpoints**: 30+ integrated endpoints
-- **Lines of Code**: 5,000+ lines
-- **Platforms**: Android + iOS
-- **Performance**: 60 FPS smooth animations
-
----
-
-## 🌟 Screenshots
-
-_(Coming soon - Add screenshots of your app here)_
-
----
-
-**Built with ❤️ using React Native**
-
----
-
-*Last Updated: November 11, 2025*
-*Version: 1.0.0*
+The web app has ~160 pages. This is not all of them and does not pretend to be — the long
+tail (enterprise V3 consoles, the AI laboratory pages, admin tooling) is deliberately
+absent. Those are desktop workflows, and shipping thin imitations of them on a phone would
+be worse than leaving them out.

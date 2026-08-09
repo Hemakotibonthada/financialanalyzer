@@ -1,4 +1,81 @@
 {
-  "name": "FinancialAnalyzer",
-  "displayName": "Financial Analyzer"
+  "expo": {
+    "name": "Financial Analyzer",
+    "slug": "financial-analyzer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "financialanalyzer",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d9488"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.circuvent.financialanalyzer",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to unlock Financial Analyzer without typing your password.",
+        "NSCameraUsageDescription": "Take a photo of a receipt or bank statement so its transactions can be captured automatically.",
+        "NSPhotoLibraryUsageDescription": "Choose an existing receipt or statement image to import its transactions.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.circuvent.financialanalyzer",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d9488"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Use Face ID to unlock Financial Analyzer."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to unlock Financial Analyzer."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a receipt image to import its transactions.",
+          "cameraPermission": "Take a photo of a receipt to import its transactions."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0d9488",
+          "defaultChannel": "reminders"
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://financialanalyzer-api.onrender.com/api",
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
 }

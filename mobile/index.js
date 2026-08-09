@@ -1,10 +1,6 @@
-/**
- * Financial Analyzer Mobile App
- * @format
- */
-
-import {AppRegistry} from 'react-native';
+import { registerRootComponent } from 'expo';
 import App from './src/App';
-import {name as appName} from './app.json';
 
-AppRegistry.registerComponent(appName, () => App);
+// registerRootComponent calls AppRegistry.registerComponent('main', () => App)
+// and sets up the environment for both Expo Go and a native build.
+registerRootComponent(App);
