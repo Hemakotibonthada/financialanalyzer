@@ -16,6 +16,31 @@ const SALT_ROUNDS = 12;
 const TOTP_WINDOW = 30; // seconds
 const MAX_LOGIN_HISTORY = 100;
 
+// Email OTP policy
+const EMAIL_OTP_LENGTH = 6;
+const EMAIL_OTP_TTL_MINUTES = 10;
+const EMAIL_OTP_MAX_ATTEMPTS = 5;
+const EMAIL_OTP_RESEND_COOLDOWN_SECONDS = 60;
+
+/** Cryptographically random numeric code, zero-padded to a fixed length. */
+function generateNumericOtp(length = EMAIL_OTP_LENGTH) {
+  const max = 10 ** length;
+  return String(crypto.randomInt(0, max)).padStart(length, '0');
+}
+
+/** Codes are stored hashed so a database read cannot yield a usable factor. */
+function hashOtp(code) {
+  return crypto.createHash('sha256').update(String(code)).digest('hex');
+}
+
+/** Constant-time compare, so a wrong code cannot be narrowed by timing. */
+function otpMatches(candidate, storedHash) {
+  if (!storedHash) return false;
+  const a = Buffer.from(hashOtp(candidate));
+  const b = Buffer.from(storedHash);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 /* ---------- Mongoose Schemas ---------- */
 
 const twoFactorSchema = new mongoose.Schema(
@@ -30,6 +55,15 @@ const twoFactorSchema = new mongoose.Schema(
         usedAt: { type: Date },
       },
     ],
+    // Email OTP state. `method: 'email'` was accepted from the start but never
+    // actually sent anything - enable2FA stored the choice and returned "scan
+    // the QR code", so an email user could never complete setup.
+    // The code is stored hashed: a leaked database read should not hand over a
+    // usable second factor.
+    emailOtpHash: { type: String, select: false },
+    emailOtpExpiresAt: { type: Date },
+    emailOtpAttempts: { type: Number, default: 0 },
+    emailOtpSentAt: { type: Date },
     isEnabled: { type: Boolean, default: false },
     verifiedAt: { type: Date },
   },
@@ -271,6 +305,24 @@ const securityService = {
       // In production, convert secret to TOTP URI / QR code
       const otpauthUrl = `otpauth://totp/FinancialAnalyzer:user?secret=${secret}&issuer=FinancialAnalyzer`;
 
+      // The email method needs a code delivered, not a QR code to scan.
+      if (method === 'email') {
+        const delivery = await this.sendEmailOtp(userId, { purpose: 'two-factor setup' });
+        logger.info(`2FA setup initiated for user ${userId} via email`);
+        return {
+          success: true,
+          data: {
+            method,
+            backupCodes: backupCodes.map((bc) => bc.code),
+            codeSent: delivery.success,
+            expiresInMinutes: EMAIL_OTP_TTL_MINUTES,
+            message: delivery.success
+              ? `We sent a ${EMAIL_OTP_LENGTH}-digit code to your email address. Enter it to finish enabling two-factor authentication.`
+              : `Could not send the code: ${delivery.error}`,
+          },
+        };
+      }
+
       logger.info(`2FA setup initiated for user ${userId} via ${method}`);
       return {
         success: true,
@@ -284,6 +336,75 @@ const securityService = {
       };
     } catch (error) {
       logger.error(`enable2FA error: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /* ----------------------------------------------------------
+   *  sendEmailOtp
+   * ---------------------------------------------------------- */
+  /**
+   * Generate a one-time code and email it to the account holder.
+   *
+   * Rate limited by a resend cooldown so this cannot be used to flood an
+   * inbox, and the previous code is invalidated on every send.
+   *
+   * @param {string} userId
+   * @param {{purpose?: string}} [options]
+   * @returns {Promise<{success: boolean, error?: string, retryAfterSeconds?: number}>}
+   */
+  async sendEmailOtp(userId, { purpose = 'sign-in' } = {}) {
+    try {
+      if (!userId) throw new Error('userId is required');
+
+      const twoFactor = await TwoFactor.findOne({ userId });
+      if (!twoFactor) throw new Error('Two-factor authentication is not set up');
+
+      if (twoFactor.emailOtpSentAt) {
+        const elapsed = (Date.now() - twoFactor.emailOtpSentAt.getTime()) / 1000;
+        if (elapsed < EMAIL_OTP_RESEND_COOLDOWN_SECONDS) {
+          const retryAfterSeconds = Math.ceil(EMAIL_OTP_RESEND_COOLDOWN_SECONDS - elapsed);
+          return {
+            success: false,
+            error: `Please wait ${retryAfterSeconds}s before requesting another code`,
+            retryAfterSeconds,
+          };
+        }
+      }
+
+      const User = mongoose.model('User');
+      const user = await User.findById(userId).select('email name');
+      if (!user?.email) throw new Error('User has no email address on file');
+
+      const code = generateNumericOtp();
+
+      // Issuing a new code invalidates the previous one and resets attempts.
+      twoFactor.emailOtpHash = hashOtp(code);
+      twoFactor.emailOtpExpiresAt = new Date(Date.now() + EMAIL_OTP_TTL_MINUTES * 60000);
+      twoFactor.emailOtpAttempts = 0;
+      twoFactor.emailOtpSentAt = new Date();
+      await twoFactor.save();
+
+      const emailService = require('./emailService');
+      const result = await emailService.sendOtpEmail(user, code, {
+        expiresInMinutes: EMAIL_OTP_TTL_MINUTES,
+        purpose,
+      });
+
+      if (!result.delivered) {
+        // Surface the real reason. Silently "succeeding" here is what made
+        // undelivered OTPs impossible to diagnose.
+        return {
+          success: false,
+          error: result.error || 'Email could not be delivered - check the mail configuration in the admin console',
+        };
+      }
+
+      // The code itself is never logged.
+      logger.info(`Email OTP issued for user ${userId}`);
+      return { success: true, expiresInMinutes: EMAIL_OTP_TTL_MINUTES };
+    } catch (error) {
+      logger.error(`sendEmailOtp error: ${error.message}`);
       return { success: false, error: error.message };
     }
   },
@@ -326,6 +447,43 @@ const securityService = {
             remainingBackupCodes: twoFactor.backupCodes.filter((bc) => !bc.used).length,
           },
         };
+      }
+
+      // Email OTP: the code was delivered by mail, not derived from a shared
+      // secret, so it is checked against the stored hash rather than TOTP.
+      if (twoFactor.method === 'email') {
+        const withSecret = await TwoFactor.findOne({ userId }).select('+emailOtpHash');
+        const storedHash = withSecret?.emailOtpHash;
+
+        if (!storedHash || !twoFactor.emailOtpExpiresAt) {
+          throw new Error('No code has been requested. Request a new code and try again.');
+        }
+        if (twoFactor.emailOtpExpiresAt.getTime() < Date.now()) {
+          throw new Error('That code has expired. Request a new one.');
+        }
+        if (twoFactor.emailOtpAttempts >= EMAIL_OTP_MAX_ATTEMPTS) {
+          throw new Error('Too many incorrect attempts. Request a new code.');
+        }
+
+        if (!otpMatches(String(code).trim(), storedHash)) {
+          twoFactor.emailOtpAttempts += 1;
+          await twoFactor.save();
+          const remaining = Math.max(EMAIL_OTP_MAX_ATTEMPTS - twoFactor.emailOtpAttempts, 0);
+          throw new Error(`Invalid verification code. ${remaining} attempt(s) remaining.`);
+        }
+
+        // Consume the code so it cannot be replayed.
+        twoFactor.emailOtpHash = undefined;
+        twoFactor.emailOtpExpiresAt = undefined;
+        twoFactor.emailOtpAttempts = 0;
+        if (!twoFactor.isEnabled) {
+          twoFactor.isEnabled = true;
+          twoFactor.verifiedAt = new Date();
+        }
+        await twoFactor.save();
+
+        logger.info(`2FA verified via email OTP for user ${userId}`);
+        return { success: true, data: { verified: true, method: 'email' } };
       }
 
       // Simple TOTP-like verification (time-based mock)

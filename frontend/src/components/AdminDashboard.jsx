@@ -1,10 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Users, FileText, Activity, TrendingUp, Database, Shield,
-  AlertTriangle, CheckCircle, XCircle, Clock, Search, Filter,
-  Download, RefreshCw, Trash2, UserCheck, UserX, Crown, Settings,
-  BarChart3, PieChart, Server, HardDrive, Cpu, MemoryStick,
-  MessageSquare, Bell, Eye, Edit2, Lock, Unlock, User
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  CheckCircle,
+  CheckCircle2,
+  Clock,
+  Cpu,
+  Crown,
+  Database,
+  Download,
+  Edit2,
+  Eye,
+  FileText,
+  Filter,
+  HardDrive,
+  Lock,
+  Mail,
+  MemoryStick,
+  MessageSquare,
+  PieChart,
+  RefreshCw,
+  Search,
+  Send,
+  Server,
+  Settings,
+  Shield,
+  Trash2,
+  TrendingUp,
+  Unlock,
+  User,
+  UserCheck,
+  Users,
+  UserX,
+  XCircle
 } from 'lucide-react';
 import api from '../services/api';
 import CacheManagementPanel from './CacheManagementPanel';
@@ -51,6 +81,20 @@ const AdminDashboard = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // Mail log: outbound email delivery, plus the live SMTP status. Added
+  // because email failures were previously invisible - a misconfigured relay
+  // just logged a warning to a file, so "no verification email arrived" had no
+  // diagnosable cause from this console.
+  const [emailLogs, setEmailLogs] = useState([]);
+  const [emailSummary, setEmailSummary] = useState(null);
+  const [emailStatus, setEmailStatus] = useState(null);
+  const [emailPage, setEmailPage] = useState(1);
+  const [emailPages, setEmailPages] = useState(1);
+  const [emailFilter, setEmailFilter] = useState('');
+  const [emailSearch, setEmailSearch] = useState('');
+  const [emailTesting, setEmailTesting] = useState(false);
+  const [emailTestResult, setEmailTestResult] = useState(null);
+
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -66,8 +110,60 @@ const AdminDashboard = () => {
       loadAnalytics();
     } else if (activeTab === 'system') {
       loadSystemHealth();
+    } else if (activeTab === 'mail') {
+      loadMailLog();
     }
-  }, [activeTab, userPage, docPage, userSearch, userStatus, userRole, segmentPage, segmentFilters]);
+  }, [activeTab, userPage, docPage, userSearch, userStatus, userRole, segmentPage, segmentFilters, emailPage, emailFilter, emailSearch]);
+
+  const loadMailLog = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({ page: String(emailPage), limit: '25' });
+      if (emailFilter) params.set('status', emailFilter);
+      if (emailSearch) params.set('search', emailSearch);
+
+      const [logsRes, summaryRes, statusRes] = await Promise.allSettled([
+        api.get(`/admin/email/logs?${params.toString()}`),
+        api.get('/admin/email/summary?days=7'),
+        api.get('/admin/email/status')
+      ]);
+
+      if (logsRes.status === 'fulfilled' && logsRes.value.data?.success) {
+        setEmailLogs(logsRes.value.data.data.items || []);
+        setEmailPages(logsRes.value.data.data.pages || 1);
+      }
+      if (summaryRes.status === 'fulfilled' && summaryRes.value.data?.success) {
+        setEmailSummary(summaryRes.value.data.data);
+      }
+      if (statusRes.status === 'fulfilled' && statusRes.value.data?.success) {
+        setEmailStatus(statusRes.value.data.data);
+      }
+    } catch (error) {
+      console.error('Error loading mail log:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendTestEmail = async () => {
+    try {
+      setEmailTesting(true);
+      setEmailTestResult(null);
+      const res = await api.post('/admin/email/test', {});
+      setEmailTestResult({
+        ok: !!res.data?.data?.delivered,
+        message: res.data?.message || 'Test sent'
+      });
+      loadMailLog();
+    } catch (error) {
+      setEmailTestResult({
+        ok: false,
+        message: error.response?.data?.message || error.message
+      });
+    } finally {
+      setEmailTesting(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -562,6 +658,24 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-2">
                 <Server className="w-4 h-4" />
                 <span>System Health</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('mail')}
+              className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'mail'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Mail className="w-4 h-4" />
+                <span>Mail Log</span>
+                {emailSummary?.failed > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                    {emailSummary.failed}
+                  </span>
+                )}
               </div>
             </button>
             <button
@@ -1436,6 +1550,194 @@ const AdminDashboard = () => {
                 Save Changes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mail Log Tab */}
+      {activeTab === 'mail' && (
+        <div className="space-y-6">
+          {/* SMTP status. Shown first because a broken relay explains every
+              missing email below, and this was previously undiagnosable. */}
+          {emailStatus && (
+            <div
+              className={`rounded-lg border p-5 ${
+                emailStatus.connection?.ok
+                  ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+                  : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-start gap-3">
+                  {emailStatus.connection?.ok ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      {emailStatus.connection?.ok
+                        ? 'Outbound email is working'
+                        : 'Outbound email is NOT working'}
+                    </h3>
+                    {!emailStatus.connection?.ok && emailStatus.connection?.error && (
+                      <p className="text-sm text-red-700 dark:text-red-300 mt-1 font-mono break-all">
+                        {emailStatus.connection.error}
+                      </p>
+                    )}
+                    {emailStatus.hint && (
+                      <p className="text-sm text-gray-700 dark:text-slate-300 mt-2">
+                        {emailStatus.hint}
+                      </p>
+                    )}
+                    {emailStatus.fromWarning && (
+                      <p className="text-sm text-amber-700 dark:text-amber-300 mt-2 flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span>{emailStatus.fromWarning}</span>
+                      </p>
+                    )}
+                    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 mt-3 text-xs text-gray-600 dark:text-slate-400">
+                      <div><dt className="inline font-medium">Host: </dt><dd className="inline">{emailStatus.host}:{emailStatus.port}</dd></div>
+                      <div><dt className="inline font-medium">User: </dt><dd className="inline">{emailStatus.user || '—'}</dd></div>
+                      <div><dt className="inline font-medium">From: </dt><dd className="inline break-all">{emailStatus.from}</dd></div>
+                      <div><dt className="inline font-medium">Config: </dt><dd className="inline">{emailStatus.source}</dd></div>
+                    </dl>
+                  </div>
+                </div>
+                <button
+                  onClick={sendTestEmail}
+                  disabled={emailTesting}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
+                >
+                  <Send className="w-4 h-4" />
+                  {emailTesting ? 'Sending…' : 'Send test email'}
+                </button>
+              </div>
+              {emailTestResult && (
+                <p className={`mt-3 text-sm ${emailTestResult.ok ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                  {emailTestResult.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 7-day counts */}
+          {emailSummary && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Sent', value: emailSummary.sent, tone: 'text-green-600' },
+                { label: 'Failed', value: emailSummary.failed, tone: 'text-red-600' },
+                { label: 'Skipped', value: emailSummary.skipped, tone: 'text-amber-600' },
+                { label: 'Total', value: emailSummary.total, tone: 'text-gray-900 dark:text-white' }
+              ].map((s) => (
+                <div key={s.label} className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-4">
+                  <div className={`text-2xl font-bold ${s.tone}`}>{s.value ?? 0}</div>
+                  <div className="text-sm text-gray-500 dark:text-slate-400">{s.label} (7d)</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/30 p-6">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">Outbound email</h3>
+              <input
+                type="text"
+                value={emailSearch}
+                onChange={(e) => { setEmailPage(1); setEmailSearch(e.target.value); }}
+                placeholder="Search recipient or subject"
+                aria-label="Search email log"
+                className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+              />
+              <select
+                value={emailFilter}
+                onChange={(e) => { setEmailPage(1); setEmailFilter(e.target.value); }}
+                aria-label="Filter by delivery status"
+                className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+              >
+                <option value="">All statuses</option>
+                <option value="sent">Sent</option>
+                <option value="failed">Failed</option>
+                <option value="skipped">Skipped</option>
+              </select>
+            </div>
+
+            {emailLogs.length === 0 ? (
+              <div className="text-center py-12">
+                <Mail className="w-10 h-10 mx-auto text-gray-300 dark:text-slate-600 mb-3" />
+                <p className="text-gray-500 dark:text-slate-400">No email has been sent yet.</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
+                  Entries appear here as soon as the application attempts a send — including failures.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="border-b border-gray-200 dark:border-slate-700">
+                      <tr>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700 dark:text-slate-300">When</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700 dark:text-slate-300">To</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700 dark:text-slate-300">Subject</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700 dark:text-slate-300">Type</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700 dark:text-slate-300">Status</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-700 dark:text-slate-300">Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {emailLogs.map((log) => (
+                        <tr key={log._id} className="border-b border-gray-100 dark:border-slate-700/50">
+                          <td className="py-3 px-3 text-sm text-gray-600 dark:text-slate-400 whitespace-nowrap">
+                            {new Date(log.createdAt).toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-3 px-3 text-sm text-gray-900 dark:text-white">{log.toMasked || log.to}</td>
+                          <td className="py-3 px-3 text-sm text-gray-600 dark:text-slate-400">{log.subject}</td>
+                          <td className="py-3 px-3 text-sm text-gray-500 dark:text-slate-400">{log.template}</td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                log.status === 'sent'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                                  : log.status === 'failed'
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                              }`}
+                            >
+                              {log.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-xs text-gray-500 dark:text-slate-400 max-w-xs break-words">
+                            {log.errorMessage || log.reason || log.smtpResponse || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-sm text-gray-500 dark:text-slate-400">
+                    Page {emailPage} of {emailPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEmailPage((p) => Math.max(1, p - 1))}
+                      disabled={emailPage <= 1}
+                      className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setEmailPage((p) => Math.min(emailPages, p + 1))}
+                      disabled={emailPage >= emailPages}
+                      className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

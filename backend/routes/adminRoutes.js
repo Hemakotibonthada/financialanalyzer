@@ -9,6 +9,8 @@ const Analysis = require('../models/Analysis');
 const FinancialProfile = require('../models/FinancialProfile');
 const EMI = require('../models/EMI');
 const BillReminder = require('../models/BillReminder');
+const EmailLog = require('../models/EmailLog');
+const emailService = require('../services/emailService');
 const logger = require('../utils/logger');
 const fs = require('fs').promises;
 const path = require('path');
@@ -22,8 +24,7 @@ router.use(isAdmin);
  * @route GET /api/admin/dashboard/stats
  * @desc Get comprehensive system statistics
  * @access Admin
- */
-router.get('/dashboard/stats', async (req, res) => {
+ */router.get('/dashboard/stats', async (req, res) => {
   try {
     const [
       totalUsers,
@@ -1144,6 +1145,151 @@ router.post('/users/bulk-action', async (req, res) => {
       success: false,
       message: 'Failed to perform bulk action'
     });
+  }
+});
+
+/**
+ * @route GET /api/admin/email/status
+ * @desc SMTP configuration and a live connection test
+ * @access Admin
+ *
+ * Exists because email failures were previously invisible. A misconfigured
+ * relay produced a warning in a log file and nothing else, so "no OTP arrived"
+ * had no diagnosable cause from the console.
+ */
+router.get('/email/status', async (req, res) => {
+  try {
+    const status = emailService.getStatus();
+    const connection = status.configured
+      ? await emailService.verifyConnection()
+      : { ok: false, error: 'SMTP credentials are not configured' };
+
+    // Translate the common SMTP rejections into something actionable rather
+    // than surfacing a raw provider code.
+    let hint = null;
+    if (!status.configured) {
+      hint = 'Set SMTP_USER and SMTP_PASS (or EMAIL_USER and EMAIL_PASSWORD) in the backend environment.';
+    } else if (!connection.ok && /BadCredentials|535|Username and Password not accepted/i.test(connection.error || '')) {
+      hint = 'The mail server rejected the credentials. Gmail requires a 16-character App Password when 2-Step Verification is enabled - a normal account password will always be refused.';
+    } else if (!connection.ok && /self.signed|certificate/i.test(connection.error || '')) {
+      hint = 'TLS negotiation failed. Check EMAIL_PORT/EMAIL_SECURE (587 with secure=false, or 465 with secure=true).';
+    }
+
+    // A From address on a different domain to the authenticated account is
+    // rewritten or rejected by most relays, Gmail included.
+    let fromWarning = null;
+    const fromMatch = /<([^>]+)>/.exec(status.from || '');
+    const fromAddr = fromMatch ? fromMatch[1] : status.from;
+    if (status.configured && fromAddr && status.user) {
+      const fromDomain = String(fromAddr).split('@')[1];
+      const userDomain = String(status.user).split('@')[1];
+      if (fromDomain && userDomain && fromDomain !== userDomain) {
+        fromWarning = `EMAIL_FROM (@${fromDomain}) is on a different domain to the SMTP account (@${userDomain}). Most providers rewrite or reject this. Use the authenticated address or a verified alias.`;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: { ...status, connection, hint, fromWarning }
+    });
+  } catch (error) {
+    logger.error('Email status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to read email status', error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/admin/email/logs
+ * @desc Paginated outbound email log
+ * @access Admin
+ */
+router.get('/email/logs', async (req, res) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 25, 1), 100);
+    const { status, template, search } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (template) filter.template = template;
+    if (search) {
+      filter.$or = [
+        { to: { $regex: search, $options: 'i' } },
+        { subject: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      EmailLog.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      EmailLog.countDocuments(filter)
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        items,
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1
+      }
+    });
+  } catch (error) {
+    logger.error('Email logs error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch email logs', error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/admin/email/summary
+ * @desc Sent / skipped / failed counts over a window
+ * @access Admin
+ */
+router.get('/email/summary', async (req, res) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 7, 1), 90);
+    const summary = await EmailLog.getSummary(days);
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    logger.error('Email summary error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch email summary', error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/admin/email/test
+ * @desc Send a test email and report exactly what the relay said
+ * @access Admin
+ */
+router.post('/email/test', async (req, res) => {
+  try {
+    const to = req.body.to || req.user.email;
+    if (!to) {
+      return res.status(400).json({ success: false, message: 'A recipient address is required' });
+    }
+
+    const result = await emailService.sendMail({
+      to,
+      subject: 'Financial Analyzer test email',
+      text: 'This is a test email. If you received it, outbound mail is working.',
+      html: '<p>This is a test email. If you received it, outbound mail is working.</p>',
+      template: 'admin_test',
+      userId: req.user._id
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: result.delivered
+        ? `Test email accepted by the relay for ${to}`
+        : `Not delivered: ${result.error || result.reason}`
+    });
+  } catch (error) {
+    logger.error('Email test error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send test email', error: error.message });
   }
 });
 
