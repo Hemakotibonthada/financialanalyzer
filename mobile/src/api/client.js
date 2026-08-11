@@ -178,4 +178,74 @@ export function unwrap(response) {
   return body;
 }
 
+/* ------------------------------------------------------------ downloads */
+
+/**
+ * Download a binary response (Excel/PDF export) to a local file.
+ *
+ * Deliberately does NOT go through axios. Two reasons:
+ *
+ *  1. Binary through axios in React Native arrives mangled unless responseType
+ *     is set, and the response interceptor here would try to unwrap it as JSON.
+ *  2. These export endpoints return password-protected workbooks and put the
+ *     password in an `X-Document-Password` response header. A download that
+ *     drops that header produces a file the user cannot open, so the header
+ *     has to be read and handed back to the caller.
+ *
+ * Note on expo-file-system: SDK 54 ships a new File API, and the legacy
+ * functions re-exported from the package root are deprecated shims that THROW
+ * at runtime. They must be imported from 'expo-file-system/legacy'.
+ */
+export async function downloadFile(path, { method = 'GET', body = null, filename } = {}) {
+  const FileSystem = require('expo-file-system/legacy');
+
+  const token = await getAccessToken();
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (body) headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  if (!response.ok) {
+    // The failure body is JSON even though the success body is binary.
+    let message = `Export failed (${response.status}).`;
+    try {
+      const problem = await response.json();
+      if (problem?.message) message = problem.message;
+    } catch {
+      // Keep the status-based message.
+    }
+    throw new Error(message);
+  }
+
+  const documentPassword = response.headers.get('X-Document-Password') || null;
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const suggested = /filename=([^;]+)/i.exec(disposition)?.[1]?.trim().replace(/"/g, '');
+  const name = filename || suggested || `export-${Date.now()}.xlsx`;
+
+  const blob = await response.blob();
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read the downloaded file.'));
+    reader.onloadend = () => {
+      // readAsDataURL yields "data:<mime>;base64,<payload>".
+      const result = String(reader.result || '');
+      const comma = result.indexOf(',');
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.readAsDataURL(blob);
+  });
+
+  const uri = `${FileSystem.cacheDirectory}${name}`;
+  await FileSystem.writeAsStringAsync(uri, base64, {
+    encoding: FileSystem.EncodingType.Base64
+  });
+
+  return { uri, name, documentPassword, size: blob.size };
+}
+
 export default client;

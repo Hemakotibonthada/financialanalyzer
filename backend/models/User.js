@@ -111,6 +111,23 @@ const userSchema = new mongoose.Schema({
     lastSentAt: {
       type: Date
     }
+  },
+  passwordReset: {
+    // Only the SHA-256 hash of the reset token is stored, so a database leak
+    // does not hand over working reset links.
+    token: {
+      type: String,
+      select: false
+    },
+    tokenExpires: {
+      type: Date
+    },
+    lastSentAt: {
+      type: Date
+    },
+    usedAt: {
+      type: Date
+    }
   }
 }, {
   timestamps: true
@@ -184,6 +201,24 @@ userSchema.methods.createEmailVerificationToken = function() {
   return rawToken;
 };
 
+// Generate a password-reset token. Same design as the verification token:
+// only the SHA-256 hash is persisted, and the raw token goes in the email.
+userSchema.methods.createPasswordResetToken = function() {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  if (!this.passwordReset) this.passwordReset = {};
+  this.passwordReset.token = crypto.createHash('sha256').update(rawToken).digest('hex');
+  // One hour: long enough to find the email, short enough to limit exposure.
+  this.passwordReset.tokenExpires = new Date(Date.now() + 60 * 60 * 1000);
+  this.passwordReset.lastSentAt = new Date();
+  this.passwordReset.usedAt = undefined;
+  return rawToken;
+};
+
+// Hash a raw token the same way, so a lookup can be done by hash.
+userSchema.statics.hashResetToken = function(rawToken) {
+  return crypto.createHash('sha256').update(String(rawToken)).digest('hex');
+};
+
 // Remove sensitive data when converting to JSON
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
@@ -192,6 +227,13 @@ userSchema.methods.toJSON = function() {
   if (obj.twoFactorAuth) {
     delete obj.twoFactorAuth.backupCodes;
     delete obj.twoFactorAuth.secret;
+  }
+  // Reset tokens must never travel to a client, even hashed.
+  if (obj.passwordReset) {
+    delete obj.passwordReset.token;
+  }
+  if (obj.emailVerification) {
+    delete obj.emailVerification.token;
   }
   return obj;
 };

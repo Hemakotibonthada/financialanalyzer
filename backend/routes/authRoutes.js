@@ -20,6 +20,11 @@ function buildVerifyUrl(req, rawToken) {
   return `${base}/verify-email?token=${rawToken}`;
 }
 
+function buildResetUrl(req, rawToken) {
+  const base = (process.env.CLIENT_URL || process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  return `${base}/reset-password?token=${rawToken}`;
+}
+
 /**
  * @route   POST /api/auth/register
  * @desc    Register new user
@@ -840,6 +845,132 @@ router.post('/resend-verification', authenticate, async (req, res) => {
   } catch (error) {
     logger.error('Resend verification error:', error);
     res.status(500).json({ success: false, message: 'Error sending verification email' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Email a one-time password reset link
+ * @access  Public
+ *
+ * Always answers 200 with the same message whether or not the address exists.
+ * Revealing "no account with that email" here turns this endpoint into a free
+ * account-enumeration oracle for anyone who can send a POST.
+ */
+router.post('/forgot-password', async (req, res) => {
+  const genericResponse = {
+    success: true,
+    message: 'If an account exists for that address, a reset link is on its way.'
+  };
+
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
+    const user = await User.findOne({ email }).select('+passwordReset.token');
+    if (!user) {
+      logger.info(`Password reset requested for unknown address: ${email}`);
+      return res.json(genericResponse);
+    }
+
+    // Rate limit: one reset email per minute per account. Returned as the same
+    // generic message so timing cannot be used to probe for valid accounts.
+    const last = user.passwordReset?.lastSentAt;
+    if (last && Date.now() - new Date(last).getTime() < 60 * 1000) {
+      logger.info(`Password reset throttled for ${email}`);
+      return res.json(genericResponse);
+    }
+
+    const rawToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = buildResetUrl(req, rawToken);
+    const result = await emailService.sendPasswordResetEmail(user, resetUrl);
+
+    if (result.dev) {
+      logger.info(`[reset] Dev-mode password reset link for ${user.email}: ${resetUrl}`);
+    }
+
+    res.json({
+      ...genericResponse,
+      // Only in non-production dev mode, so a developer without SMTP can proceed.
+      devUrl: (process.env.NODE_ENV !== 'production' && result.dev) ? resetUrl : undefined
+    });
+  } catch (error) {
+    logger.error('Forgot password error:', error);
+    // Still generic: an internal failure must not reveal whether the account exists.
+    res.json(genericResponse);
+  }
+});
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Consume a reset token and set a new password
+ * @access  Public
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: 'Reset token and new password are required' });
+    }
+
+    if (String(password).length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    // Look the user up by token hash, never by the raw token.
+    const tokenHash = User.hashResetToken(token);
+    const user = await User.findOne({
+      'passwordReset.token': tokenHash,
+      'passwordReset.tokenExpires': { $gt: new Date() }
+    }).select('+password +passwordReset.token');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'That reset link is invalid or has expired. Please request a new one.'
+      });
+    }
+
+    user.password = password; // hashed by the pre-save hook
+    // Burn the token so the link cannot be replayed.
+    user.passwordReset.token = undefined;
+    user.passwordReset.tokenExpires = undefined;
+    user.passwordReset.usedAt = new Date();
+
+    // A password reset is the standard recovery path after a compromise, so
+    // every other session must die with it.
+    if (user.loginAttempts !== undefined) user.loginAttempts = 0;
+    if (user.lockUntil !== undefined) user.lockUntil = undefined;
+
+    await user.save();
+
+    try {
+      await revokeAllUserTokens(user._id);
+    } catch (revokeError) {
+      // The password is already changed; failing to revoke must not report
+      // failure to the user, but it must be visible in the logs.
+      logger.error(`Password reset succeeded but token revocation failed for ${user.email}:`, revokeError);
+    }
+
+    // Best effort: the reset already happened, so a mail failure is not fatal.
+    emailService.sendPasswordChangedEmail(user).catch((mailError) => {
+      logger.error(`Password-changed notification failed for ${user.email}:`, mailError);
+    });
+
+    logger.info(`Password reset completed for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Your password has been reset. Please sign in with your new password.'
+    });
+  } catch (error) {
+    logger.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Could not reset your password. Please try again.' });
   }
 });
 

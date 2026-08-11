@@ -221,6 +221,8 @@ export const authService = {
   resendVerification: () => api.post('/auth/resend-verification'),
   logout: () => api.post('/auth/logout'),
   changePassword: (data) => api.put('/auth/password', data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
 };
 
 // Profile Services

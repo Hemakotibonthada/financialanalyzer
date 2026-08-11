@@ -227,11 +227,64 @@ async function sendOtpEmail(user, code, { expiresInMinutes = 10, purpose = 'sign
   return sendMail({ to: user.email, subject, html, text, template: 'otp', userId: user._id });
 }
 
+/**
+ * Password reset link.
+ *
+ * The copy deliberately tells the user what happens if they ignore it: a
+ * reset email is the one message an attacker can trigger for someone else's
+ * inbox, so the recipient needs to know that ignoring it is safe and that
+ * their current password still works.
+ */
+async function sendPasswordResetEmail(user, resetUrl, { expiresInMinutes = 60 } = {}) {
+  const subject = 'Reset your password';
+  const html = baseTemplate('Reset your password', `
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">
+      Hi ${user.name || 'there'}, we received a request to reset the password for this account.
+    </p>
+    <p style="margin:0 0 28px;">
+      <a href="${resetUrl}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:15px;">Choose a new password</a>
+    </p>
+    <p style="margin:0 0 8px;font-size:13px;color:#64748b;">Or paste this link into your browser:</p>
+    <p style="margin:0;font-size:13px;word-break:break-all;color:#0d9488;">${resetUrl}</p>
+    <p style="margin:20px 0 0;font-size:13px;color:#94a3b8;">
+      This link expires in ${expiresInMinutes} minutes and can only be used once.
+    </p>
+    <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
+      If you didn't ask for this, you can ignore this email - your password will not change.
+    </p>
+  `);
+  const text = `Reset your ${process.env.APP_NAME || 'Financial Analyzer'} password: ${resetUrl} (expires in ${expiresInMinutes} minutes). If you didn't request this, ignore this email.`;
+  return sendMail({ to: user.email, subject, html, text, template: 'password-reset', userId: user._id });
+}
+
+/**
+ * Confirmation that a password actually changed. This is the message that
+ * lets a victim notice an account takeover, so it is sent even though the
+ * reset itself already succeeded.
+ */
+async function sendPasswordChangedEmail(user) {
+  const subject = 'Your password was changed';
+  const html = baseTemplate('Your password was changed', `
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">
+      Hi ${user.name || 'there'}, the password for your account was just changed, and all
+      other signed-in devices were signed out.
+    </p>
+    <p style="margin:0;font-size:14px;color:#334155;">
+      If this was you, no action is needed. If it wasn't, reset your password immediately and
+      contact support.
+    </p>
+  `);
+  const text = `Your ${process.env.APP_NAME || 'Financial Analyzer'} password was changed. If this wasn't you, reset it immediately.`;
+  return sendMail({ to: user.email, subject, html, text, template: 'password-changed', userId: user._id });
+}
+
 module.exports = {
   isConfigured,
   getStatus,
   verifyConnection,
   sendMail,
   sendVerificationEmail,
-  sendOtpEmail
+  sendOtpEmail,
+  sendPasswordResetEmail,
+  sendPasswordChangedEmail
 };

@@ -126,12 +126,34 @@ Five bottom tabs, each owning a native stack so back behaviour is per-tab:
 npx expo-doctor                       # dependency and config health
 npx expo export --platform android    # proves it bundles
 npx expo export --platform ios
+
+# from the repo root - these catch what bundling cannot:
+node scripts/verify-mobile-endpoints.js     # every API call hits a real route
+node scripts/verify-mobile-navigation.js    # every navigate() target exists
+node scripts/verify-legacy-transitions.js   # claim state machine matches backend
 ```
 
-Both exports must succeed. Bundling is the only real proof — a file can pass a syntax
-check and still fail to resolve a module at runtime.
+Both exports must succeed. Bundling is the only real proof that the app *builds* — but it
+proves nothing about whether the app *works*, which is what the three verify scripts are
+for. See below.
 
-### Two failures worth remembering
+### Failures worth remembering
+
+**Bundling does not prove an endpoint exists.** The first version of this app shipped ten
+API calls to routes that do not exist, including `GET /emi` and `POST /emi` — meaning the
+EMI list and EMI form screens had never worked. Every one of them bundled cleanly and
+failed only in a user's hands as a generic error. `scripts/verify-mobile-endpoints.js`
+now cross-checks all 279 calls against `backend/routes/*.js` on every change.
+
+**A screen can exist and be unreachable.** `receiptsApi` shipped with no screen at all,
+and the `Notifications` route rendered `InsightsScreen`. `scripts/verify-mobile-navigation.js`
+now fails on dangling `navigate()` targets and on screen files no navigator imports.
+
+**`expo-file-system` v19 (SDK 54) throws at runtime for legacy calls.** The package moved
+to a new `File`/`Paths` API. `writeAsStringAsync`, `readAsStringAsync` and friends are
+still exported from the package root, but they are deprecated shims documented as *"This
+method will throw in runtime"*, and `cacheDirectory` is simply `undefined` there. Import
+from `expo-file-system/legacy` instead. This bundles fine either way.
 
 **`babel-preset-expo` must match the SDK.** Installing it with plain `npm install` pulled
 `57.x` against SDK 54, and Hermes then rejected React Native's own private class fields
@@ -142,15 +164,54 @@ picks the matched version (`54.0.12`).
 **A stale `package-lock.json`** from the old bare-RN app pinned React Navigation v6 and
 made v7 unresolvable. Deleting the lockfile fixed it.
 
+### Known problem: `package-lock.json` is not portable
+
+This lockfile was generated on a machine whose npm registry is an internal corporate
+proxy. All 862 `resolved` URLs point at that proxy rather than `registry.npmjs.org`, and
+every `integrity` value is `sha1-` rather than `sha512-`.
+
+Consequences outside that network: `npm ci` will fail, and `npm install` is unreliable.
+
+It cannot be fixed from that machine — `registry.npmjs.org` is TLS-intercepted there, so
+regenerating produces a lockfile with no integrity hashes at all, which is worse. On a
+machine with public npm access:
+
+```bash
+cd mobile
+rm package-lock.json
+npm install --registry=https://registry.npmjs.org/
+# confirm: grep -c 'registry.npmjs.org' package-lock.json  should match the resolved count
+```
+
+`package.json` itself is correct and portable; only the lockfile is affected.
+
 ---
 
 ## Scope
 
-This covers the core product: authentication, dashboard, transactions, EMIs, budgets,
-bills, lending in both directions, investments, net worth, goals, nominees, insights and
-settings.
+57 screens across six tabs. Covers authentication and password reset, dashboard,
+transactions, receipts, EMIs, budgets, bills, credit-card bills, lending in both
+directions, bank accounts, recurring payments, subscriptions, split expenses,
+investments, net worth, goals, retirement, insurance, tax, credit score, family,
+documents, reports and export, search, notifications, achievements, the AI assistant,
+and the full Legacy Guard estate-settlement workflow (nominees, dormancy cases, estate
+cases, recovery claims, settlement and the nominee portal).
 
-The web app has ~160 pages. This is not all of them and does not pretend to be — the long
-tail (enterprise V3 consoles, the AI laboratory pages, admin tooling) is deliberately
-absent. Those are desktop workflows, and shipping thin imitations of them on a phone would
-be worse than leaving them out.
+Five tabs could not hold that, so anything that is not a daily-use surface lives behind
+the **More** hub rather than being built and then left unreachable.
+
+The web app has ~160 pages. This is still not all of them and does not pretend to be —
+the long tail (enterprise V3 consoles, the AI laboratory pages, admin tooling) is
+deliberately absent. Those are desktop workflows, and shipping thin imitations of them on
+a phone would be worse than leaving them out.
+
+### What is deliberately not faked
+
+No screen invents data. Where the backend returns nothing, the screen says so rather than
+rendering a plausible number:
+
+- a course or account with no history shows an empty state, not a zero
+- a credit score is shown only when the API returns one — never estimated
+- AI features report the backend's own "not configured" message rather than substituting
+  a canned reply
+- an export reports success only after a file is actually written to disk
