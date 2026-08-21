@@ -278,6 +278,23 @@ app.use(performanceMiddleware);
 app.use(responseFormatterMiddleware);
 app.use(auditMiddleware);
 
+/**
+ * Per-day request rollup.
+ *
+ * Counted once per authenticated request against a primary-key row, so "how
+ * active was this user on this day" is a single lookup rather than a scan over
+ * the whole audit log. Runs after the response is sent and is never awaited -
+ * a usage counter must not sit in front of the user's request.
+ */
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    const userId = req.user?.id || req.user?._id;
+    if (!userId || req.path.startsWith('/api/health')) return;
+    require('./db/postgres').bumpDaily(userId, 'requests', 1).catch(() => {});
+  });
+  next();
+});
+
 // Static files for uploads (protected with auth - financial docs should not be public)
 const { authenticate } = require('./middleware/auth');
 app.use('/uploads', authenticate, express.static('uploads'));

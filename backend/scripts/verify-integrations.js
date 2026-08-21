@@ -113,10 +113,86 @@ async function checkStorage() {
   }
 }
 
+async function checkAuditDurability() {
+  console.log('\nDurable audit trail');
+  if (!pg.isConfigured()) {
+    return record('configured', null, 'DATABASE_URL not set (skipped)');
+  }
+
+  const { auditLog } = require('../middleware/enterpriseMiddleware');
+  if (!auditLog) {
+    return record('audit log exported', false, 'enterpriseMiddleware does not export auditLog');
+  }
+
+  const action = `verify_${Date.now()}`;
+  try {
+    auditLog.log({
+      action,
+      userId: 'verification-user',
+      resource: 'verification',
+      resourceId: 'abc123',
+      ip: '127.0.0.1'
+    });
+
+    // The write is fire-and-forget, so give it a moment to land.
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const rows = await auditLog.queryPersisted({ userId: 'verification-user', action });
+    // The in-memory ring buffer is per-process and lost on restart, so a
+    // financial audit trail has to survive in Postgres to be worth anything.
+    record('audit event persisted to Postgres', rows.length >= 1, `${rows.length} row(s)`);
+    record('audit event has action + resource',
+      rows[0]?.action === action && rows[0]?.resource === 'verification');
+  } catch (err) {
+    record('audit durability', false, err.message);
+  } finally {
+    await pg.safeQuery("DELETE FROM audit_log WHERE user_id = 'verification-user'");
+  }
+}
+
+async function checkStorageIndex() {
+  console.log('\nStorage index');
+  if (!pg.isConfigured() || !storage.isAvailable()) {
+    return record('configured', null, 'Postgres or storage not configured (skipped)');
+  }
+
+  const key = 'verification-user/documents/indexed.txt';
+  try {
+    await storage.uploadFile(key, Buffer.from('indexed'), 'text/plain', { originalName: 'indexed.txt' });
+    await new Promise((r) => setTimeout(r, 1500));
+
+    // R2 exposes no queryable metadata, so without this index there is no way
+    // to total a user's usage or find objects orphaned by a failed request
+    // without listing the entire bucket.
+    const res = await pg.query(
+      'SELECT owner_id, scope, size_bytes FROM storage_objects WHERE object_key = $1 AND deleted_at IS NULL',
+      [key]
+    );
+    record('upload indexed in Postgres', res.rows.length === 1, `${res.rows.length} row(s)`);
+    record('owner and scope derived from key',
+      res.rows[0]?.owner_id === 'verification-user' && res.rows[0]?.scope === 'documents');
+
+    await storage.deleteFile(key);
+    await new Promise((r) => setTimeout(r, 1500));
+    const after = await pg.query(
+      'SELECT deleted_at FROM storage_objects WHERE object_key = $1',
+      [key]
+    );
+    record('delete soft-deletes the index row', after.rows[0]?.deleted_at !== null);
+  } catch (err) {
+    record('storage index', false, err.message);
+  } finally {
+    await storage.deleteFile(key).catch(() => {});
+    await pg.safeQuery("DELETE FROM storage_objects WHERE owner_id = 'verification-user'");
+  }
+}
+
 (async () => {
   console.log('Verifying Financial Analyzer integrations...');
   await checkPostgres();
   await checkStorage();
+  await checkAuditDurability();
+  await checkStorageIndex();
 
   const failed = results.filter((r) => r.ok === false);
   const skipped = results.filter((r) => r.ok === null);

@@ -19,6 +19,7 @@
 const crypto = require('crypto');
 const path = require('path');
 const logger = require('../utils/logger');
+const pg = require('../db/postgres');
 
 class R2StorageService {
   constructor() {
@@ -187,6 +188,26 @@ class R2StorageService {
       throw new Error(`R2 upload failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
     }
 
+    // R2 has no queryable metadata, so without an index there is no way to
+    // answer "how much has this user stored" or to find objects orphaned by a
+    // failed request, short of listing the whole bucket. Best-effort: a missing
+    // index row must not fail an upload that already succeeded.
+    //
+    // The first path segment is the owner id - that is the layout every write
+    // path in this service uses.
+    const [ownerId, scope] = String(filePath).split('/');
+    pg.indexStorageObject({
+      provider: 'r2',
+      bucket: this.bucketName,
+      key: filePath,
+      ownerId,
+      scope,
+      originalName: metadata.originalName,
+      contentType,
+      size: body.length,
+      metadata
+    }).catch(() => {});
+
     logger.info(`📤 Uploaded file to r2://${this.bucketName}/${filePath} (${body.length} bytes)`);
     return { bucket: this.bucketName, path: filePath, size: body.length, metadata };
   }
@@ -232,6 +253,12 @@ class R2StorageService {
     if (!res.ok && res.status !== 404) {
       throw new Error(`R2 delete failed (${res.status})`);
     }
+    // Soft-delete in the index so the row still records that the object existed
+    // and when it went away.
+    pg.safeQuery(
+      'UPDATE storage_objects SET deleted_at = now() WHERE bucket = $1 AND object_key = $2',
+      [this.bucketName, filePath]
+    ).catch(() => {});
     logger.info(`🗑️  Deleted r2://${this.bucketName}/${filePath}`);
     return res.status !== 404;
   }
