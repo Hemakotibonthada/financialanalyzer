@@ -21,9 +21,15 @@ describe('CSVService', () => {
   });
 
   afterAll(() => {
-    // Cleanup test files
+    // Cleanup test files. Use retries and swallow errors: on Windows the
+    // temp files can still be briefly locked by the CSV read streams, which
+    // previously caused an ENOTEMPTY error that failed the whole suite.
     if (fs.existsSync(testFilesDir)) {
-      fs.rmSync(testFilesDir, { recursive: true, force: true });
+      try {
+        fs.rmSync(testFilesDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      } catch (err) {
+        // Best-effort cleanup — never let teardown fail the test run.
+      }
     }
   });
 

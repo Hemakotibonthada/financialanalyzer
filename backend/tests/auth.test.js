@@ -24,14 +24,14 @@ describe('Authentication API', () => {
         .send(userData)
         .expect(201);
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('refreshToken');
-      expect(response.body.user).toMatchObject({
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data).toHaveProperty('refreshToken');
+      expect(response.body.data.user).toMatchObject({
         name: userData.name,
-        email: userData.email,
-        phone: userData.phone
+        email: userData.email
       });
-      expect(response.body.user).not.toHaveProperty('password');
+      expect(response.body.data.user).not.toHaveProperty('password');
     });
 
     it('should fail with invalid email format', async () => {
@@ -108,9 +108,10 @@ describe('Authentication API', () => {
         })
         .expect(200);
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('refreshToken');
-      expect(response.body.user.email).toBe('test@example.com');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data).toHaveProperty('refreshToken');
+      expect(response.body.data.user.email).toBe('test@example.com');
     });
 
     it('should fail with invalid password', async () => {
@@ -138,7 +139,7 @@ describe('Authentication API', () => {
     });
   });
 
-  describe('POST /api/auth/refresh', () => {
+  describe('POST /api/auth/refresh-token', () => {
     let refreshToken;
 
     beforeEach(async () => {
@@ -152,22 +153,23 @@ describe('Authentication API', () => {
           phone: '9876543210'
         });
 
-      refreshToken = response.body.refreshToken;
+      refreshToken = response.body.data.refreshToken;
     });
 
     it('should refresh access token with valid refresh token', async () => {
       const response = await request(app)
-        .post('/api/auth/refresh')
+        .post('/api/auth/refresh-token')
         .send({ refreshToken })
         .expect(200);
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('refreshToken');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data).toHaveProperty('refreshToken');
     });
 
     it('should fail with invalid refresh token', async () => {
       const response = await request(app)
-        .post('/api/auth/refresh')
+        .post('/api/auth/refresh-token')
         .send({ refreshToken: 'invalid-token' })
         .expect(401);
 

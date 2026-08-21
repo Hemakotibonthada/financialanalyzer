@@ -1,10 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import Login from '../pages/Login';
-import { AuthProvider } from '../context/AuthContext';
 
-// Mock the useNavigate hook
+// Mock the useNavigate hook (Login calls navigate() after login)
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -14,43 +13,57 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Helper to render with providers
-const renderWithProviders = (component) => {
-  return render(
-    <BrowserRouter>
-      <AuthProvider>
-        {component}
-      </AuthProvider>
-    </BrowserRouter>
-  );
-};
+// Mock ThemeContext so components relying on useTheme render without a provider
+vi.mock('../context/ThemeContext', () => ({
+  useTheme: () => ({ mode: 'light' }),
+  ThemeProvider: ({ children }) => children,
+}));
+
+// Mock AuthContext so we can control the login() behaviour without any network
+const mockLogin = vi.fn();
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    login: mockLogin,
+    isAuthenticated: false,
+    loading: false,
+  }),
+  AuthProvider: ({ children }) => children,
+}));
+
+// Helper to render with the router (other providers are mocked above)
+const renderWithProviders = (component) =>
+  render(<BrowserRouter>{component}</BrowserRouter>);
 
 describe('Login Component', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    mockLogin.mockReset();
+  });
+
   it('renders login form correctly', () => {
     renderWithProviders(<Login />);
-    
-    expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
   });
 
   it('validates empty form submission', async () => {
     renderWithProviders(<Login />);
-    
-    const submitButton = screen.getByRole('button', { name: /sign in/i });
-    fireEvent.click(submitButton);
+
+    const emailInput = screen.getByLabelText(/email/i);
+    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     await waitFor(() => {
-      // Check for validation messages
-      const emailInput = screen.getByLabelText(/email/i);
       expect(emailInput).toBeInvalid();
     });
+    expect(mockLogin).not.toHaveBeenCalled();
   });
 
   it('validates invalid email format', async () => {
     renderWithProviders(<Login />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
     fireEvent.blur(emailInput);
@@ -61,51 +74,42 @@ describe('Login Component', () => {
   });
 
   it('handles successful login', async () => {
-    // Mock successful API call
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          token: 'fake-token',
-          refreshToken: 'fake-refresh-token',
-          user: { id: '1', email: 'test@example.com', name: 'Test User' }
-        }),
-      })
-    );
+    mockLogin.mockResolvedValue({ success: true });
 
     renderWithProviders(<Login />);
-    
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'Test@123456' } });
-    fireEvent.click(submitButton);
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'test@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^password/i), {
+      target: { value: 'Test@123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+      expect(mockLogin).toHaveBeenCalledWith(
+        'test@example.com',
+        'Test@123456',
+        expect.objectContaining({ rememberThisMonth: false })
+      );
+    });
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
     });
   });
 
   it('displays error message on failed login', async () => {
-    // Mock failed API call
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: false,
-        json: () => Promise.resolve({ message: 'Invalid credentials' }),
-      })
-    );
+    mockLogin.mockResolvedValue({ success: false, message: 'Invalid credentials' });
 
     renderWithProviders(<Login />);
-    
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'wrong-password' } });
-    fireEvent.click(submitButton);
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'test@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^password/i), {
+      target: { value: 'wrong-password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
@@ -114,21 +118,21 @@ describe('Login Component', () => {
 
   it('toggles password visibility', () => {
     renderWithProviders(<Login />);
-    
-    const passwordInput = screen.getByLabelText(/password/i);
+
+    const passwordInput = screen.getByLabelText(/^password/i);
     expect(passwordInput).toHaveAttribute('type', 'password');
 
-    // Find and click the visibility toggle button
-    const toggleButton = screen.getByRole('button', { name: /show password/i });
-    fireEvent.click(toggleButton);
-
+    fireEvent.click(screen.getByRole('button', { name: /show password/i }));
     expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: /hide password/i }));
+    expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('navigates to register page when clicking sign up link', () => {
+  it('provides a link to the register page', () => {
     renderWithProviders(<Login />);
-    
-    const signUpLink = screen.getByText(/don't have an account/i).closest('a');
+
+    const signUpLink = screen.getByRole('link', { name: /sign up/i });
     expect(signUpLink).toHaveAttribute('href', '/register');
   });
 });
