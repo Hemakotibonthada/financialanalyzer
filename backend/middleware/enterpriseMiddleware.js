@@ -3,6 +3,7 @@
 // ============================================================================
 
 const logger = require('../utils/logger') || console;
+const pg = require('../db/postgres');
 
 // ============================================================================
 // § 1 — Request Performance Monitor
@@ -289,6 +290,28 @@ class AuditLog {
       this.logs = this.logs.slice(-this.maxLogs);
     }
 
+    // The in-memory ring buffer above is per-process and lost on restart, so on
+    // its own it cannot answer "who touched this account last month" - which is
+    // the entire point of an audit trail in a financial application, and is
+    // also what a compliance review asks for. Postgres gets a durable copy.
+    //
+    // Fire-and-forget: an audit write must never add latency to, or be able to
+    // fail, the request that triggered it.
+    pg.recordAudit({
+      userId: entry.userId,
+      action: entry.action,
+      entityType: entry.resource,
+      entityId: entry.resourceId,
+      ip: entry.ip,
+      userAgent: entry.userAgent,
+      details: {
+        ...entry.details,
+        requestId: entry.requestId,
+        success: entry.success,
+        severity: entry.severity
+      }
+    }).catch(() => {});
+
     // Log sensitive actions
     if (entry.severity === 'HIGH') {
       const logFn = typeof logger.info === 'function' ? logger.info : console.info;
@@ -299,6 +322,54 @@ class AuditLog {
     }
 
     return entry;
+  }
+
+  /**
+   * Durable history from Postgres.
+   *
+   * `query` below stays synchronous because callers and tests depend on that,
+   * so the persistent view is a separate async method rather than a change in
+   * the existing contract.
+   */
+  async queryPersisted({ userId, action, resource, startDate, endDate, limit = 100 } = {}) {
+    if (!pg.isConfigured()) return this.query({ userId, action, resource, startDate, endDate, limit });
+
+    const conditions = [];
+    const params = [];
+    const add = (sql, value) => {
+      params.push(value);
+      conditions.push(sql.replace('$?', `$${params.length}`));
+    };
+
+    if (userId) add('user_id = $?', String(userId));
+    if (action) add('action = $?', action);
+    if (resource) add('entity_type = $?', resource);
+    if (startDate) add('created_at >= $?', new Date(startDate));
+    if (endDate) add('created_at <= $?', new Date(endDate));
+
+    params.push(Math.min(Number(limit) || 100, 1000));
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const res = await pg.query(
+      `SELECT user_id, action, entity_type, entity_id, ip_address, user_agent, details, created_at
+         FROM audit_log ${where}
+        ORDER BY created_at DESC
+        LIMIT $${params.length}`,
+      params
+    );
+
+    return (res?.rows || []).map((r) => ({
+      timestamp: r.created_at,
+      userId: r.user_id,
+      action: r.action,
+      resource: r.entity_type,
+      resourceId: r.entity_id,
+      ip: r.ip_address,
+      userAgent: r.user_agent,
+      details: r.details || {},
+      success: r.details?.success !== false,
+      severity: r.details?.severity || 'NORMAL'
+    }));
   }
 
   query({ userId, action, resource, startDate, endDate, limit = 100 } = {}) {

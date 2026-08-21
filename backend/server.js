@@ -72,13 +72,24 @@ connectDB().then(() => {
     logger.warn('Bill Reminder service initialization failed:', err.message);
   });
 
-  // Initialize GCP Cloud Storage Service
-  const gcpStorageService = require('./services/gcpStorageService');
-  const gcpReady = gcpStorageService.initialize();
-  if (gcpReady) {
-    gcpStorageService.ensureBucket().catch(err => {
-      logger.warn('GCP Storage bucket check failed:', err.message);
+  // Initialize cloud object storage (Cloudflare R2, falling back to GCP)
+  const cloudStorage = require('./services/storageProvider');
+  const storageReady = cloudStorage.initialize();
+  if (storageReady) {
+    cloudStorage.ensureBucket().catch(err => {
+      logger.warn('Cloud storage bucket check failed:', err.message);
     });
+  }
+
+  // Neon Postgres backs the audit trail, analytics rollups and the storage
+  // index. Optional: without DATABASE_URL the app runs on MongoDB alone.
+  const postgres = require('./db/postgres');
+  if (postgres.isConfigured()) {
+    postgres.init()
+      .then(ok => logger.info(ok
+        ? '✅ Neon Postgres connected and schema applied'
+        : `⚠️  Neon Postgres unavailable: ${postgres.disabledReason}`))
+      .catch(err => logger.warn('Postgres init failed:', err.message));
   }
 }).catch(err => {
   logger.error('Failed to start — MongoDB connection could not be established');
@@ -266,6 +277,23 @@ app.use(apiVersionMiddleware('2.0.0'));
 app.use(performanceMiddleware);
 app.use(responseFormatterMiddleware);
 app.use(auditMiddleware);
+
+/**
+ * Per-day request rollup.
+ *
+ * Counted once per authenticated request against a primary-key row, so "how
+ * active was this user on this day" is a single lookup rather than a scan over
+ * the whole audit log. Runs after the response is sent and is never awaited -
+ * a usage counter must not sit in front of the user's request.
+ */
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    const userId = req.user?.id || req.user?._id;
+    if (!userId || req.path.startsWith('/api/health')) return;
+    require('./db/postgres').bumpDaily(userId, 'requests', 1).catch(() => {});
+  });
+  next();
+});
 
 // Static files for uploads (protected with auth - financial docs should not be public)
 const { authenticate } = require('./middleware/auth');

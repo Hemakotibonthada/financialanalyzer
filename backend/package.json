@@ -11,7 +11,9 @@
     "db:verify": "node scripts/setup-cloud-db.js --verify-only",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:migrate": "node scripts/migrate-postgres.js",
+    "verify": "node scripts/verify-integrations.js"
   },
   "keywords": [
     "financial",
@@ -24,6 +26,7 @@
   "license": "ISC",
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
+    "@neondatabase/serverless": "^1.1.0",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
     "chartjs-node-canvas": "^5.0.0",
@@ -68,6 +71,7 @@
     "twilio": "^5.10.5",
     "uuid": "^13.0.0",
     "winston": "^3.11.0",
+    "ws": "^8.21.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
