@@ -72,13 +72,24 @@ connectDB().then(() => {
     logger.warn('Bill Reminder service initialization failed:', err.message);
   });
 
-  // Initialize GCP Cloud Storage Service
-  const gcpStorageService = require('./services/gcpStorageService');
-  const gcpReady = gcpStorageService.initialize();
-  if (gcpReady) {
-    gcpStorageService.ensureBucket().catch(err => {
-      logger.warn('GCP Storage bucket check failed:', err.message);
+  // Initialize cloud object storage (Cloudflare R2, falling back to GCP)
+  const cloudStorage = require('./services/storageProvider');
+  const storageReady = cloudStorage.initialize();
+  if (storageReady) {
+    cloudStorage.ensureBucket().catch(err => {
+      logger.warn('Cloud storage bucket check failed:', err.message);
     });
+  }
+
+  // Neon Postgres backs the audit trail, analytics rollups and the storage
+  // index. Optional: without DATABASE_URL the app runs on MongoDB alone.
+  const postgres = require('./db/postgres');
+  if (postgres.isConfigured()) {
+    postgres.init()
+      .then(ok => logger.info(ok
+        ? '✅ Neon Postgres connected and schema applied'
+        : `⚠️  Neon Postgres unavailable: ${postgres.disabledReason}`))
+      .catch(err => logger.warn('Postgres init failed:', err.message));
   }
 }).catch(err => {
   logger.error('Failed to start — MongoDB connection could not be established');

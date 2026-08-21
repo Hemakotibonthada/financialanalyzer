@@ -45,6 +45,43 @@ jobs:
       - run: npm test --if-present
       - run: npm run build
 
+  # Live checks against Cloudflare R2 and Neon Postgres.
+  #
+  # Push-only: a pull request from a fork cannot read repository secrets, so
+  # gating fork contributions on them would fail every one of them for a reason
+  # the contributor cannot fix.
+  integrations:
+    name: Integrations (R2 + Neon)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+
+      - name: Apply Postgres schema
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Verify integrations
+        run: npm run verify
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STORAGE_PROVIDER: r2
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_REGION: auto
+
   docker:
     name: Docker images build
     runs-on: ubuntu-latest

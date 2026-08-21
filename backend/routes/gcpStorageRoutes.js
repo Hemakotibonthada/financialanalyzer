@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
-const gcpStorage = require('../services/gcpStorageService');
+// Resolves to Cloudflare R2 when the R2_* variables are set, otherwise GCP.
+// Both backends expose the same interface, so nothing below this line changes.
+const gcpStorage = require('../services/storageProvider');
 const BankAccount = require('../models/BankAccount');
 const Transaction = require('../models/Transaction');
 const FinancialProfile = require('../models/FinancialProfile');

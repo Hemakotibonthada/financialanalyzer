@@ -41,11 +41,35 @@ frontend/uploads/
 **/mails/
 **/mails/*
 
+# User data backups written by services/backupService.js. These are gzipped
+# dumps of real accounts, transactions and financial profiles — committing one
+# would publish a user's finances.
+backend/backups/
+backups/
+
+# Local MongoDB data directory created by scripts/start-local-db.js. Database
+# files, not source.
+backend/data/local-mongo/
+**/data/local-mongo/
+
 # Debugging artifacts
+*.log
+!**/logs/.gitkeep
+backend/server-crash.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# Editor/scratch copies — these drift from the real file and get edited by
+# mistake.
+*.bak
+*.orig
+*.rej
+
+# Python bytecode
+__pycache__/
+*.py[cod]
 
 # IDE/editor files
 .vscode/
