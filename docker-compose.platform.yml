@@ -1,0 +1,93 @@
+# Deployed by Circuvent Platform on the VM. The Platform supplies the private
+# env file, domain, and public container name; Mongo/Redis stay on this stack's
+# private network with persistent Docker volumes.
+services:
+  web:
+    container_name: ${CIRCUVENT_CONTAINER_NAME:?}
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - default
+      - coolify
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ${CIRCUVENT_ENV_FILE:?}
+    environment:
+      NODE_ENV: production
+      PORT: "5001"
+      MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD:?}@mongo:27017/financial_analyzer?authSource=admin
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      FRONTEND_URL: https://${CIRCUVENT_APP_DOMAIN:?}
+      CLIENT_URL: https://${CIRCUVENT_APP_DOMAIN:?}
+      CORS_ORIGIN: https://${CIRCUVENT_APP_DOMAIN:?}
+      SECURE_COOKIES: "true"
+      TRUST_PROXY: "true"
+      STORAGE_PROVIDER: r2
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - api_uploads:/app/uploads
+      - api_logs:/app/logs
+    networks:
+      - default
+      - platform
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: [CMD-SHELL, 'mongosh --quiet -u root -p "$${MONGO_INITDB_ROOT_PASSWORD}" --authenticationDatabase admin --eval "db.adminCommand({ ping: 1 })" >/dev/null']
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: [redis-server, --save, "60", "1", --loglevel, warning]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default: {}
+  coolify:
+    external: true
+    name: coolify
+  platform:
+    external: true
+    name: platform_platform-net
+
+volumes:
+  mongo_data: {}
+  redis_data: {}
+  api_uploads: {}
+  api_logs: {}
