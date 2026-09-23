@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import {
-  Building2, Plus, CreditCard, ArrowRightLeft, Wallet, TrendingUp,
-  TrendingDown, Search, Filter, MoreVertical, X, Check, RefreshCw,
-  Landmark, Banknote, PiggyBank, ArrowUpRight, ArrowDownRight, Edit, Trash2
+  Building2, Plus, ArrowRightLeft, Wallet, Search, X,
+  Landmark, Banknote, PiggyBank, ArrowUpRight, ArrowDownRight, Trash2
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend
+  XAxis, YAxis, Tooltip, CartesianGrid
 } from 'recharts';
 import MainLayout from '../components/MainLayout';
 import api from '../services/api';
@@ -27,15 +25,27 @@ const ACCOUNT_TYPES = ['Savings', 'Current', 'FD', 'RD'];
 const CATEGORIES = ['Personal', 'Business', 'Joint'];
 const BANK_COLORS = { 'SBI': '#1a237e', 'HDFC': '#004b87', 'ICICI': '#f37b21', 'Axis': '#800020', 'Kotak': '#ed1c24', 'PNB': '#0d47a1', 'Default': '#3b82f6' };
 
+const normalizeAccount = (account) => ({
+  id: String(account._id || account.id),
+  bank: account.bankName || account.bank || 'Bank',
+  accountNo: account.accountNumber || account.accountNo || '—',
+  type: ({ savings: 'Savings', current: 'Current', salary: 'Salary' })[account.accountType] || account.accountType || 'Savings',
+  category: account.tags?.find((tag) => CATEGORIES.includes(tag)) || 'Personal',
+  balance: Number(account.balance) || 0,
+  lastSync: account.lastSyncedAt ? new Date(account.lastSyncedAt).toLocaleDateString() : 'Not synced',
+  synced: Boolean(account.lastSyncedAt),
+});
+
+const getApiError = (error) => error.response?.data?.message || error.message || 'Please try again.';
+
 export default function BankAccountManager() {
-  const { mode, isDark, isBlack } = useTheme();
-  const dk = isDark || isBlack;
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [newAccount, setNewAccount] = useState({ bank: '', accountNo: '', type: 'Savings', category: 'Personal', balance: '' });
@@ -44,15 +54,18 @@ export default function BankAccountManager() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [accRes, txnRes] = await Promise.all([
-          api.get('/bank-accounts'),
+        const [accRes, txnRes] = await Promise.allSettled([
+          api.get('/bank-accounts', { params: { isActive: true } }),
           api.get('/financial/transactions', { params: { limit: 10 } }),
         ]);
-        setAccounts(Array.isArray(accRes.data) ? accRes.data : []);
-        setTransactions(Array.isArray(txnRes.data) ? txnRes.data : []);
-      } catch {
-        setAccounts([]);
-        setTransactions([]);
+        if (accRes.status === 'fulfilled') {
+          setAccounts((accRes.value.data?.data?.accounts || []).map(normalizeAccount));
+        } else {
+          setError(`Accounts could not be loaded: ${getApiError(accRes.reason)}`);
+        }
+        if (txnRes.status === 'fulfilled') {
+          setTransactions(txnRes.value.data?.transactions || []);
+        }
       } finally {
         setLoading(false);
       }
@@ -62,7 +75,7 @@ export default function BankAccountManager() {
 
   const totalBalance = accounts.reduce((s, a) => s + (a.balance || 0), 0);
   const savingsTotal = accounts.filter((a) => a.type === 'Savings').reduce((s, a) => s + (a.balance || 0), 0);
-  const currentTotal = accounts.filter((a) => a.type === 'Current').reduce((s, a) => s + (a.balance || 0), 0);
+  const currentTotal = accounts.filter((a) => a.type === 'Current' || a.type === 'Salary').reduce((s, a) => s + (a.balance || 0), 0);
   const fdTotal = accounts.filter((a) => a.type === 'FD' || a.type === 'RD').reduce((s, a) => s + (a.balance || 0), 0);
 
   const filteredAccounts = useMemo(() => {
@@ -72,53 +85,75 @@ export default function BankAccountManager() {
     return list;
   }, [accounts, searchTerm, filterCategory]);
 
-  const accountTxns = selectedAccount ? transactions.filter((t) => t.accountId === selectedAccount) : transactions.slice(0, 6);
-
-  const spendingByAccount = accounts.map((a) => ({
-    name: a.bank,
-    spending: transactions.filter((t) => t.accountId === a.id && t.type === 'debit').reduce((s, t) => s + (t.amount || 0), 0),
-    income: transactions.filter((t) => t.accountId === a.id && t.type === 'credit').reduce((s, t) => s + (t.amount || 0), 0),
-  }));
+  const accountBalances = accounts.map((a) => ({ name: a.bank, balance: a.balance }));
 
   const typeBreakdown = [
     { name: 'Savings', value: savingsTotal },
-    { name: 'Current', value: currentTotal },
+    { name: 'Current / Salary', value: currentTotal },
     { name: 'FD/RD', value: fdTotal },
   ].filter((d) => d.value > 0);
 
   const addAccount = async () => {
-    if (!newAccount.bank || !newAccount.accountNo) return;
-    try {
-      const payload = { ...newAccount, balance: +newAccount.balance || 0 };
-      const res = await api.post('/bank-accounts', payload);
-      setAccounts([...accounts, res.data]);
-    } catch {
-      // silently fail
+    if (!newAccount.bank.trim() || !/^\d{4}$/.test(newAccount.accountNo.trim())) {
+      setError('Enter a bank name and the last four account digits.');
+      return;
     }
-    setNewAccount({ bank: '', accountNo: '', type: 'Savings', category: 'Personal', balance: '' });
-    setShowAddModal(false);
+    setBusy(true);
+    setError('');
+    try {
+      const payload = {
+        bankName: newAccount.bank.trim(), accountNumber: `XXXX${newAccount.accountNo.trim()}`,
+        accountType: newAccount.type === 'Savings' || newAccount.type === 'Current' ? newAccount.type.toLowerCase() : newAccount.type,
+        balance: Number(newAccount.balance) || 0, tags: [newAccount.category],
+      };
+      const res = await api.post('/bank-accounts', payload);
+      setAccounts((previous) => [...previous, normalizeAccount(res.data.data.account)]);
+      setNewAccount({ bank: '', accountNo: '', type: 'Savings', category: 'Personal', balance: '' });
+      setShowAddModal(false);
+    } catch (error) {
+      setError(getApiError(error));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const deleteAccount = (id) => setAccounts(accounts.filter((a) => a.id !== id));
+  const deleteAccount = async (id) => {
+    if (!window.confirm('Deactivate this account? Its history will be retained.')) return;
+    setError('');
+    try {
+      await api.delete(`/bank-accounts/${id}`);
+      setAccounts((previous) => previous.filter((a) => a.id !== id));
+    } catch (error) {
+      setError(getApiError(error));
+    }
+  };
 
   const doTransfer = async () => {
     const amt = +transfer.amount;
-    if (!transfer.from || !transfer.to || !amt || transfer.from === transfer.to) return;
+    if (!transfer.from || !transfer.to || !Number.isFinite(amt) || amt <= 0 || transfer.from === transfer.to) {
+      setError('Choose two different accounts and enter a positive amount.');
+      return;
+    }
+    setBusy(true);
+    setError('');
     try {
-      await api.post('/bank-accounts/transfer', { from: transfer.from, to: transfer.to, amount: amt });
-      setAccounts(accounts.map((a) => {
-        if (String(a.id) === String(transfer.from)) return { ...a, balance: a.balance - amt };
-        if (String(a.id) === String(transfer.to)) return { ...a, balance: a.balance + amt };
+      const response = await api.post('/bank-accounts/transfer', { fromAccountId: transfer.from, toAccountId: transfer.to, amount: amt });
+      const result = response.data.data.transfer;
+      setAccounts((previous) => previous.map((a) => {
+        if (a.id === transfer.from) return { ...a, balance: result.from.newBalance };
+        if (a.id === transfer.to) return { ...a, balance: result.to.newBalance };
         return a;
       }));
-    } catch {
-      // silently fail
+      setTransfer({ from: '', to: '', amount: '' });
+      setShowTransferModal(false);
+    } catch (error) {
+      setError(getApiError(error));
+    } finally {
+      setBusy(false);
     }
-    setTransfer({ from: '', to: '', amount: '' });
-    setShowTransferModal(false);
   };
 
-  const getBankColor = (bank) => BANK_COLORS[bank] || BANK_COLORS.Default;
+  const getBankColor = (bank) => BANK_COLORS[Object.keys(BANK_COLORS).find((name) => bank.toLowerCase().startsWith(name.toLowerCase()))] || BANK_COLORS.Default;
   const getTypeIcon = (type) => type === 'Savings' ? PiggyBank : type === 'Current' ? Banknote : Landmark;
 
   if (loading) {
@@ -128,6 +163,7 @@ export default function BankAccountManager() {
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400">Loading accounts...</p>
         </div>
+
       </div>
     );
   }
@@ -143,14 +179,15 @@ export default function BankAccountManager() {
             <p className="text-slate-500 dark:text-slate-400 mt-1">Manage all your bank accounts in one place</p>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => setShowTransferModal(true)} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium px-4 py-2 flex items-center gap-2 hover:bg-slate-300 dark:hover:bg-slate-600">
-              <ArrowRightLeft className="w-4 h-4" /> Transfer
+            <button onClick={() => { setError(''); setShowTransferModal(true); }} disabled={accounts.length < 2} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium px-4 py-2 flex items-center gap-2 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50">
+              <ArrowRightLeft className="w-4 h-4" /> Move Balance
             </button>
-            <button onClick={() => setShowAddModal(true)} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-600/30 px-4 py-2 flex items-center gap-2">
+            <button onClick={() => { setError(''); setShowAddModal(true); }} className="bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-600/30 px-4 py-2 flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add Account
             </button>
           </div>
         </div>
+        {error && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 dashboard-grid animate-fade-in-up" style={{ animationDelay: '100ms' }}>
@@ -163,7 +200,7 @@ export default function BankAccountManager() {
             <p className="text-2xl font-bold text-emerald-600"><AnimatedValue end={savingsTotal} /></p>
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-2 mb-2"><Banknote className="w-5 h-5 text-amber-600" /><span className="text-xs text-slate-500 dark:text-slate-400">Current</span></div>
+            <div className="flex items-center gap-2 mb-2"><Banknote className="w-5 h-5 text-amber-600" /><span className="text-xs text-slate-500 dark:text-slate-400">Current / Salary</span></div>
             <p className="text-2xl font-bold text-amber-600"><AnimatedValue end={currentTotal} /></p>
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
@@ -197,11 +234,11 @@ export default function BankAccountManager() {
                         {acc.bank.slice(0, 2)}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-white">{acc.bank} Bank</h3>
+                        <h3 className="font-semibold text-slate-900 dark:text-white">{acc.bank}</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">{acc.accountNo} · {acc.type}</p>
                       </div>
                     </div>
-                    <button onClick={() => deleteAccount(acc.id)} className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={() => deleteAccount(acc.id)} aria-label={`Deactivate ${acc.bank} account`} className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                   </div>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white mb-3">₹{acc.balance.toLocaleString()}</p>
                   <div className="flex items-center justify-between">
@@ -211,14 +248,12 @@ export default function BankAccountManager() {
                       <span className="text-xs text-slate-400">{acc.lastSync}</span>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedAccount(selectedAccount === acc.id ? null : acc.id)} className="mt-3 w-full text-center text-xs text-blue-600 hover:underline">
-                    {selectedAccount === acc.id ? 'Hide Transactions' : 'View Transactions'}
-                  </button>
                 </div>
               </div>
             );
           })}
         </div>
+        {filteredAccounts.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{accounts.length ? 'No accounts match your search.' : 'No accounts yet. Add one to start tracking balances.'}</p>}
 
         {/* Charts & Transactions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -240,18 +275,16 @@ export default function BankAccountManager() {
             </div>
           </div>
 
-          {/* Spending Chart */}
+          {/* Bank balances */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Account Activity</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Balance by Account</h3>
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={spendingByAccount.filter((d) => d.spending > 0 || d.income > 0)}>
+              <BarChart data={accountBalances}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#94a3b8" />
                 <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" />
                 <Tooltip formatter={(v) => `₹${v.toLocaleString()}`} />
-                <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="spending" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                <Legend />
+                <Bar dataKey="balance" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -262,18 +295,18 @@ export default function BankAccountManager() {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent Transactions</h3>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50 max-h-72 overflow-y-auto">
-              {accountTxns.map((txn) => (
+              {transactions.slice(0, 6).map((txn) => (
                 <div key={txn.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${txn.type === 'credit' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
                       {txn.type === 'credit' ? <ArrowDownRight className="w-4 h-4 text-emerald-600" /> : <ArrowUpRight className="w-4 h-4 text-red-500" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">{txn.desc}</p>
-                      <p className="text-xs text-slate-400">{txn.date}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{txn.description}</p>
+                      <p className="text-xs text-slate-400">{new Date(txn.date).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <p className={`font-semibold text-sm ${txn.type === 'credit' ? 'text-emerald-600' : 'text-red-500'}`}>{txn.type === 'credit' ? '+' : '-'}₹{txn.amount.toLocaleString()}</p>
+                  <p className={`font-semibold text-sm ${txn.type === 'credit' ? 'text-emerald-600' : 'text-red-500'}`}>{txn.type === 'credit' ? '+' : '-'}₹{Math.abs(txn.amount).toLocaleString()}</p>
                 </div>
               ))}
             </div>
@@ -287,11 +320,11 @@ export default function BankAccountManager() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-700 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Add Bank Account</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
+              <button onClick={() => setShowAddModal(false)} aria-label="Close add account" className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               <input value={newAccount.bank} onChange={(e) => setNewAccount({ ...newAccount, bank: e.target.value })} placeholder="Bank Name" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none focus:ring-2 focus:ring-blue-500" />
-              <input value={newAccount.accountNo} onChange={(e) => setNewAccount({ ...newAccount, accountNo: e.target.value })} placeholder="Account Number (last 4 digits)" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none focus:ring-2 focus:ring-blue-500" />
+              <input value={newAccount.accountNo} onChange={(e) => setNewAccount({ ...newAccount, accountNo: e.target.value })} placeholder="Account Number (last 4 digits)" maxLength={4} inputMode="numeric" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none focus:ring-2 focus:ring-blue-500" />
               <input type="number" value={newAccount.balance} onChange={(e) => setNewAccount({ ...newAccount, balance: e.target.value })} placeholder="Current Balance" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none focus:ring-2 focus:ring-blue-500" />
               <div className="grid grid-cols-2 gap-3">
                 <select value={newAccount.type} onChange={(e) => setNewAccount({ ...newAccount, type: e.target.value })} className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none">
@@ -302,9 +335,10 @@ export default function BankAccountManager() {
                 </select>
               </div>
             </div>
+            {error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowAddModal(false)} className="flex-1 px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium">Cancel</button>
-              <button onClick={addAccount} className="flex-1 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-600/30 px-4 py-2.5">Add Account</button>
+              <button onClick={addAccount} disabled={busy} className="flex-1 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/30 px-4 py-2.5">{busy ? 'Saving…' : 'Add Account'}</button>
             </div>
           </div>
         </div>
@@ -315,9 +349,10 @@ export default function BankAccountManager() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-700 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2"><ArrowRightLeft className="w-5 h-5 text-blue-600" /> Transfer Funds</h3>
-              <button onClick={() => setShowTransferModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2"><ArrowRightLeft className="w-5 h-5 text-blue-600" /> Move Tracked Balance</h3>
+              <button onClick={() => setShowTransferModal(false)} aria-label="Close move balance" className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><X className="w-5 h-5 text-slate-500" /></button>
             </div>
+            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">This updates your tracked balances. It does not move money between banks.</p>
             <div className="space-y-3">
               <select value={transfer.from} onChange={(e) => setTransfer({ ...transfer, from: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none">
                 <option value="">From Account</option>
@@ -329,9 +364,10 @@ export default function BankAccountManager() {
               </select>
               <input type="number" value={transfer.amount} onChange={(e) => setTransfer({ ...transfer, amount: e.target.value })} placeholder="Amount" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-sm border-0 outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
+            {error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowTransferModal(false)} className="flex-1 px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium">Cancel</button>
-              <button onClick={doTransfer} className="flex-1 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-600/30 px-4 py-2.5">Transfer</button>
+              <button onClick={doTransfer} disabled={busy} className="flex-1 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/30 px-4 py-2.5">{busy ? 'Updating…' : 'Move Balance'}</button>
             </div>
           </div>
         </div>
