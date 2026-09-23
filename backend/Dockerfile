@@ -3,8 +3,10 @@ FROM node:20-alpine AS base
 WORKDIR /app
 ENV NODE_ENV=production
 
-# qpdf enables unlocking password-protected PDF statements at runtime
-RUN apk add --no-cache qpdf
+# qpdf handles protected statements. canvas (used by chart exports) builds
+# from source on the Oracle ARM VM, so its native toolchain and libraries are
+# required during npm ci.
+RUN apk add --no-cache qpdf python3 make g++ pkgconf cairo-dev pango-dev jpeg-dev giflib-dev pixman-dev
 
 # Install production dependencies first (better layer caching)
 COPY package*.json ./
