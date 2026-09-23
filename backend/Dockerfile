@@ -10,7 +10,9 @@ RUN apk add --no-cache qpdf python3 make g++ pkgconf cairo-dev pango-dev jpeg-de
 
 # Install production dependencies first (better layer caching)
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# canvas 3.2.0 omits <cstdint> from its ARM source; supply it at compile time
+# without patching the dependency or disabling chart exports.
+RUN CXXFLAGS='-include cstdint' npm ci --omit=dev && npm cache clean --force
 
 # App source
 COPY . .
