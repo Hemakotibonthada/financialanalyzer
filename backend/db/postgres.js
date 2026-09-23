@@ -1,5 +1,5 @@
 /**
- * Neon Postgres access layer.
+ * PostgreSQL access layer for the VM project database or a managed Postgres.
  *
  * MongoDB stays the primary store for the financial domain (transactions,
  * accounts, EMIs, documents). Postgres carries the workloads that are
@@ -11,19 +11,12 @@
  *   - storage_objects  index of everything written to R2, so a backup or
  *                      document is findable without listing the bucket
  *
- * `@neondatabase/serverless` is API-compatible with `pg` and works in both a
- * long-running container and a serverless function, so one module covers both.
- *
+ * A long-running VM container uses the PostgreSQL wire protocol on port 5432.
  * Postgres is OPTIONAL: with no DATABASE_URL every helper degrades to a no-op
  * rather than failing the request. An audit write must never be the reason a
  * user's action fails.
  */
-const { Pool, neonConfig } = require('@neondatabase/serverless');
-
-if (!globalThis.WebSocket) {
-  // eslint-disable-next-line global-require
-  neonConfig.webSocketConstructor = require('ws');
-}
+const { Pool } = require('pg');
 
 let pool = null;
 let initPromise = null;
