@@ -81,14 +81,14 @@ connectDB().then(() => {
     });
   }
 
-  // Neon Postgres backs the audit trail, analytics rollups and the storage
+  // Project Postgres backs the audit trail, analytics rollups and the storage
   // index. Optional: without DATABASE_URL the app runs on MongoDB alone.
   const postgres = require('./db/postgres');
   if (postgres.isConfigured()) {
     postgres.init()
       .then(ok => logger.info(ok
-        ? '✅ Neon Postgres connected and schema applied'
-        : `⚠️  Neon Postgres unavailable: ${postgres.disabledReason}`))
+        ? '✅ PostgreSQL connected and schema applied'
+        : `⚠️  PostgreSQL unavailable: ${postgres.disabledReason}`))
       .catch(err => logger.warn('Postgres init failed:', err.message));
   }
 }).catch(err => {

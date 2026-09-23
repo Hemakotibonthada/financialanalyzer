@@ -73,6 +73,11 @@ async function seedDemoAccount() {
 
     // ─── 1. Delete existing demo user & data ──────────────────────
     const existingUser = await User.findOne({ email: DEMO_EMAIL });
+    if (existingUser && process.env.DEMO_SEED_IF_MISSING === '1') {
+      await User.updateOne({ _id: existingUser._id }, { $set: { 'emailVerification.verified': true } });
+      console.log('✅ Demo account already exists; preserving its data');
+      return;
+    }
     if (existingUser) {
       const uid = existingUser._id;
       console.log('🗑️  Cleaning existing demo data...');
@@ -115,6 +120,7 @@ async function seedDemoAccount() {
       role: 'user',
       isActive: true,
       lastLogin: new Date(),
+      emailVerification: { verified: true },
     });
     await user.save();
     const userId = user._id;
@@ -891,10 +897,10 @@ async function seedDemoAccount() {
 
   } catch (error) {
     console.error('❌ Error seeding demo account:', error);
+    process.exitCode = 1;
   } finally {
     await mongoose.disconnect();
     console.log('\n🔌 Disconnected from MongoDB');
-    process.exit(0);
   }
 }
 

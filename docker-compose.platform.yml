@@ -24,6 +24,7 @@ services:
 
   api:
     build: ./backend
+    image: circuvent-financialanalyzer-api
     restart: unless-stopped
     env_file: ${CIRCUVENT_ENV_FILE:?}
     environment:
@@ -39,6 +40,8 @@ services:
       TRUST_PROXY: "true"
       STORAGE_PROVIDER: r2
     depends_on:
+      demo-seed:
+        condition: service_completed_successfully
       mongo:
         condition: service_healthy
       redis:
@@ -49,6 +52,20 @@ services:
     networks:
       - default
       - platform
+
+  demo-seed:
+    image: circuvent-financialanalyzer-api
+    restart: "no"
+    command: [node, scripts/seed-demo-account.js]
+    env_file: ${CIRCUVENT_ENV_FILE:?}
+    environment:
+      MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD:?}@mongo:27017/financial_analyzer?authSource=admin
+      DEMO_SEED_IF_MISSING: "1"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - default
 
   mongo:
     image: mongo:7

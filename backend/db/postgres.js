@@ -165,7 +165,7 @@ async function init() {
     const p = getPool();
     if (!p) return false;
     await p.query(SCHEMA);
-    console.log('[postgres] Neon schema ready');
+    console.log('[postgres] schema ready');
     return true;
   })().catch((err) => {
     console.error('[postgres] schema init failed:', err.message);
